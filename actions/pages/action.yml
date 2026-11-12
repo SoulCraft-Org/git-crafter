@@ -172,6 +172,7 @@ runs:
       run: node "$GITHUB_ACTION_PATH/../../tools/collect_org.mjs" --config "$CONFIG" --phase api --api "$API"
 
     # Full SHAs: a caller whose Actions policy requires SHA pins refuses a tag at job setup, even on a skipped step.
+    # gh actions-lock's fix mode turns them back into tags; keep the SHA keys in actions.lock (tests/pages-collect).
     - name: Upload the collected half
       if: inputs.mode == 'collect'
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
