@@ -589,7 +589,7 @@ test("the pages action runs scripts that exist, passes its inputs only through e
   assert.match(yml, /default: \$\{\{ github\.token \}\}/);
   for (const line of yml.split("\n").filter((l) => /^\s*run:/.test(l))) assert.doesNotMatch(line, /\$\{\{/, `an input reaches a run line only through env: ${line.trim()}`);
   const cfg = readJson("tests/action-config.json");
-  assert.deepEqual(configScope(cfg).repos, ["code-os"], "the action job's config is a valid repo scope");
+  assert.deepEqual(configScope(cfg).repos, ["git-crafter"], "the action job's config is a valid repo scope");
 });
 
 test("the pages action's admin-read-token is optional and reaches the Quality collect step's env alone; pages.yml passes it on main only", () => {

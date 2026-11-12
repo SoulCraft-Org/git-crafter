@@ -11,7 +11,7 @@
     "security",
     "accessibility"
    ],
-   "project_title": "code-os",
+   "project_title": "Git Crafter",
    "project_columns": [
     "Later",
     "Waiting on data",
@@ -20,22 +20,6 @@
     "Done"
    ]
   }
- },
- {
-  "id": "security.secret_scanning_on",
-  "drop": true
- },
- {
-  "id": "security.secret_scanning_open",
-  "drop": true
- },
- {
-  "id": "security.code_scanning_on",
-  "drop": true
- },
- {
-  "id": "security.code_scanning_open",
-  "drop": true
  },
  {
   "id": "security.code_quality_on",
