@@ -1,0 +1,10 @@
+# Fixture: a cut-down token file. Scale 15, 18 and 24 px at a 16 px root.
+color:
+  ground: "#FFFBF3"
+  text: "#2B1D12"
+  link: "#A3400F"
+type:
+  step--1: "0.9375rem"
+  step-0: "1.125rem"
+  step-2: "1.5rem"
+  measure: "68ch"

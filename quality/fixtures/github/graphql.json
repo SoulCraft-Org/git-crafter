@@ -1,0 +1,280 @@
+{
+  "_comment": "Answers by GraphQL operation name for quality/collectors/github/github.test.mjs. An array is a list of pages, indexed by the cursor. Read with now = 2026-11-02T20:00:00Z. OpenIssueTypes: #5 has no type and is 3 days old (parked), so its bug label makes it no open bug; #6 and #8 are Bugs, #8 in security; #7 is a Feature exactly 24 hours old, so not yet over params.park_hours. LabelUse: question is listed by REST only, archived. MergedPulls reviews: #20 is reviewed at the commit it merged at (known clean); #18 merged at a fix pushed after its only human review, and a bot review at that head does not count (known bad); #17 was reviewed at its head only after the merge; #19 has no review. MergedPulls size: #20 carries a quality/data snapshot and #18 a package-lock.json, both left out of the size metrics. Flow: #20 went green at 10:30 (its latest check) and a person reviewed that head at 10:40; #18 went green at 21:30 and no person reviewed its head. #19 reverts #17 by title, 3.4 days after #17 merged. MergedPulls base: #18 merged into feat/fixture-b, the others into main. OpenPulls: #12 conflicts and #31 is stacked on feat/fixture-a; #31 went green at 18:30, 90 minutes before the read, with a review request pending and no review; the UNKNOWN mergeability case has its own test. ProjectFind: the board is named after the repo, the default params.project_title. ProjectItems: two issue cards wait in Next, both with a picture; the first carries the bug label and few words, the second is typed Task and runs to 80 words. The Done issue card is typed Bug, which no open-card metric counts. Two cards sit in Doing: the pull request is open, and the empty draft has no pull request, so it alone is in progress with nothing building it. RecentIssues: #7 has a table, #6 only a diagram, #4 an image; #5 has 80 words; #3 is empty and #2 holds only a footer. SecurityReviews: #20 by Claude's app and #18 by Claude's bot count; #19's comment is forged by another author and #17's check comes from another app.",
+  "Issues": {
+    "repository": {
+      "issues": {
+        "pageInfo": { "hasNextPage": false, "endCursor": null },
+        "nodes": [
+          {
+            "number": 1, "state": "CLOSED", "stateReason": "COMPLETED",
+            "createdAt": "2026-11-01T00:00:00Z", "closedAt": "2026-11-01T10:00:00Z",
+            "issueType": { "name": "Bug" }, "labels": { "nodes": [{ "name": "bug" }, { "name": "code" }] },
+            "closedBy": { "nodes": [{ "closer": { "__typename": "PullRequest", "merged": true } }] },
+            "reopened": { "totalCount": 0 }
+          },
+          {
+            "number": 2, "state": "CLOSED", "stateReason": "COMPLETED",
+            "createdAt": "2026-11-01T00:00:00Z", "closedAt": "2026-11-02T06:00:00Z",
+            "issueType": { "name": "Bug" }, "labels": { "nodes": [{ "name": "bug" }, { "name": "ci" }] },
+            "closedBy": { "nodes": [{ "closer": { "__typename": "Commit", "associatedPullRequests": { "nodes": [{ "merged": true }] } } }] },
+            "reopened": { "totalCount": 1 }
+          },
+          {
+            "number": 3, "state": "CLOSED", "stateReason": "NOT_PLANNED",
+            "createdAt": "2026-10-31T00:00:00Z", "closedAt": "2026-10-31T02:00:00Z",
+            "issueType": { "name": "Task" }, "labels": { "nodes": [{ "name": "enhancement" }] },
+            "closedBy": { "nodes": [{ "closer": null }] },
+            "reopened": { "totalCount": 0 }
+          },
+          {
+            "number": 4, "state": "CLOSED", "stateReason": "COMPLETED",
+            "createdAt": "2026-11-02T00:00:00Z", "closedAt": "2026-11-02T04:00:00Z",
+            "issueType": { "name": "Bug" }, "labels": { "nodes": [{ "name": "bug" }, { "name": "documentation" }] },
+            "closedBy": { "nodes": [{ "closer": null }] },
+            "reopened": { "totalCount": 0 }
+          },
+          {
+            "number": 5, "state": "OPEN", "stateReason": null,
+            "createdAt": "2026-10-30T20:00:00Z", "closedAt": null,
+            "issueType": null, "labels": { "nodes": [{ "name": "bug" }, { "name": "security" }] },
+            "closedBy": { "nodes": [] },
+            "reopened": { "totalCount": 0 }
+          },
+          {
+            "number": 6, "state": "OPEN", "stateReason": null,
+            "createdAt": "2026-11-02T08:00:00Z", "closedAt": null,
+            "issueType": { "name": "Bug" }, "labels": { "nodes": [{ "name": "bug" }] },
+            "closedBy": { "nodes": [] },
+            "reopened": { "totalCount": 0 }
+          },
+          {
+            "number": 7, "state": "OPEN", "stateReason": null,
+            "createdAt": "2026-11-01T20:00:00Z", "closedAt": null,
+            "issueType": { "name": "Feature" }, "labels": { "nodes": [{ "name": "enhancement" }, { "name": "design" }] },
+            "closedBy": { "nodes": [] },
+            "reopened": { "totalCount": 0 }
+          }
+        ]
+      }
+    }
+  },
+  "MergedPulls": [
+    {
+      "repository": {
+        "pullRequests": {
+          "pageInfo": { "hasNextPage": true, "endCursor": "1" },
+          "nodes": [
+            {
+              "number": 20, "title": "Add the fixture guide", "body": "Adds the guide.\n\n| File | Change |\n| --- | --- |\n| guide.md | new page with many words in it |\n\n<!-- codesmith:footer -->\n<sub>Reviewed by codesmith: boilerplate words no author of this change wrote or can edit</sub>\n<!-- /codesmith:footer -->", "createdAt": "2026-11-02T10:00:00Z", "mergedAt": "2026-11-02T11:00:00Z", "baseRefName": "main", "baseRepository": { "defaultBranchRef": { "name": "main" } },
+              "additions": 100, "deletions": 20, "headRefOid": "2020202020202020202020202020202020202020",
+              "files": { "nodes": [
+                { "path": "site/src/pages/guide.astro", "additions": 90, "deletions": 15 },
+                { "path": "quality/data/local.json", "additions": 10, "deletions": 5 }
+              ] },
+              "reviews": { "nodes": [
+                { "submittedAt": "2026-11-02T10:40:00Z", "commit": { "oid": "2020202020202020202020202020202020202020" }, "author": { "__typename": "User" } }
+              ] },
+              "headCommit": { "nodes": [{ "commit": { "statusCheckRollup": { "state": "SUCCESS", "contexts": { "nodes": [
+                { "__typename": "CheckRun", "completedAt": "2026-11-02T10:30:00Z" },
+                { "__typename": "StatusContext", "createdAt": "2026-11-02T10:20:00Z" }
+              ] } } } }] }
+            },
+            {
+              "number": 19, "title": "Revert \"Add the fixture page\"", "createdAt": "2026-11-01T10:00:00Z", "mergedAt": "2026-11-01T10:30:00Z", "baseRefName": "main", "baseRepository": { "defaultBranchRef": { "name": "main" } },
+              "additions": 10, "deletions": 0, "headRefOid": "1919191919191919191919191919191919191919", "reviews": { "nodes": [] },
+              "files": { "nodes": [{ "path": "site/src/pages/page.astro", "additions": 10, "deletions": 0 }] },
+              "headCommit": { "nodes": [{ "commit": { "statusCheckRollup": { "state": "FAILURE", "contexts": { "nodes": [
+                { "__typename": "CheckRun", "completedAt": "2026-11-01T10:20:00Z" }
+              ] } } } }] }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "repository": {
+        "pullRequests": {
+          "pageInfo": { "hasNextPage": false, "endCursor": null },
+          "nodes": [
+            {
+              "number": 18, "title": "Rebuild the fixture lockfile", "body": "<!-- codesmith:footer -->\n<sub>Reviewed by codesmith</sub>\n<!-- /codesmith:footer -->", "createdAt": "2026-10-30T00:00:00Z", "mergedAt": "2026-10-31T00:00:00Z", "baseRefName": "feat/fixture-b", "baseRepository": { "defaultBranchRef": { "name": "main" } },
+              "additions": 500, "deletions": 300, "headRefOid": "8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b",
+              "files": { "nodes": [
+                { "path": "package-lock.json", "additions": 250, "deletions": 50 },
+                { "path": "site/src/lib/fixture.ts", "additions": 250, "deletions": 250 }
+              ] },
+              "reviews": { "nodes": [
+                { "submittedAt": "2026-10-30T06:00:00Z", "commit": { "oid": "8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a" }, "author": { "__typename": "User" } },
+                { "submittedAt": "2026-10-30T20:00:00Z", "commit": { "oid": "8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b" }, "author": { "__typename": "Bot" } }
+              ] },
+              "headCommit": { "nodes": [{ "commit": { "statusCheckRollup": { "state": "SUCCESS", "contexts": { "nodes": [
+                { "__typename": "CheckRun", "completedAt": "2026-10-30T21:30:00Z" }
+              ] } } } }] }
+            },
+            {
+              "number": 17, "title": "Add the fixture page", "body": "Adds the fixture page here.\n\n```\nnode build.mjs one two three\nCloses #9\n```", "createdAt": "2026-10-29T00:00:00Z", "mergedAt": "2026-10-29T02:00:00Z", "baseRefName": "main", "baseRepository": { "defaultBranchRef": { "name": "main" } },
+              "additions": 40, "deletions": 10, "headRefOid": "1717171717171717171717171717171717171717",
+              "files": { "nodes": [{ "path": "site/src/pages/page.astro", "additions": 40, "deletions": 10 }] },
+              "reviews": { "nodes": [
+                { "submittedAt": "2026-10-29T03:00:00Z", "commit": { "oid": "1717171717171717171717171717171717171717" }, "author": { "__typename": "User" } }
+              ] },
+              "headCommit": { "nodes": [{ "commit": { "statusCheckRollup": null } }] }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "OpenPulls": {
+    "repository": {
+      "pullRequests": {
+        "pageInfo": { "hasNextPage": false, "endCursor": null },
+        "nodes": [
+          { "number": 12, "createdAt": "2026-10-09T20:00:00Z", "mergeable": "CONFLICTING", "baseRefName": "main", "author": { "login": "dependabot" }, "labels": { "nodes": [{ "name": "dependencies" }, { "name": "javascript" }] } },
+          { "number": 30, "createdAt": "2026-10-26T20:00:00Z", "mergeable": "MERGEABLE", "baseRefName": "main", "author": { "login": "dependabot" }, "labels": { "nodes": [{ "name": "dependencies" }, { "name": "github_actions" }] } },
+          { "number": 31, "createdAt": "2026-11-01T20:00:00Z", "mergeable": "MERGEABLE", "baseRefName": "feat/fixture-a", "author": { "login": "fixture-user" }, "labels": { "nodes": [] },
+            "isDraft": false, "headRefOid": "3131313131313131313131313131313131313131", "reviewDecision": null, "reviewRequests": { "totalCount": 1 }, "reviews": { "nodes": [] }, "markerComments": { "nodes": [] },
+            "headCommit": { "nodes": [{ "commit": { "statusCheckRollup": { "state": "SUCCESS", "contexts": { "nodes": [{ "__typename": "CheckRun", "completedAt": "2026-11-02T18:30:00Z" }, { "__typename": "StatusContext", "createdAt": "2026-11-02T18:00:00Z" }] } } } }] } }
+        ]
+      }
+    }
+  },
+  "RecentIssues": {
+    "repository": {
+      "issues": {
+        "nodes": [
+          { "number": 7, "createdAt": "2026-11-01T20:00:00Z", "body": "Fix the page.\n\n| Page | Error |\n| --- | --- |\n| /a | 404 |" },
+          { "number": 6, "createdAt": "2026-11-02T08:00:00Z", "body": "```mermaid\ngraph LR; A-->B\n```" },
+          { "number": 5, "createdAt": "2026-10-30T20:00:00Z", "body": "word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word" },
+          { "number": 4, "createdAt": "2026-11-02T00:00:00Z", "body": "Broken:\n\n![screenshot](https://example.org/a.png)" },
+          { "number": 3, "createdAt": "2026-10-31T00:00:00Z", "body": "" },
+          { "number": 2, "createdAt": "2026-11-01T00:00:00Z", "body": "<!-- codesmith:footer -->\n<sub>Reviewed by codesmith</sub>\n<!-- /codesmith:footer -->" }
+        ]
+      }
+    }
+  },
+  "SecurityPolicy": { "repository": { "isSecurityPolicyEnabled": true } },
+  "VulnerabilityAlerts": { "repository": { "hasVulnerabilityAlertsEnabled": true } },
+  "SecurityReviews": {
+    "repository": {
+      "p20": { "number": 20, "comments": { "nodes": [] }, "reviews": { "nodes": [] }, "commits": { "nodes": [{ "commit": { "checkSuites": { "nodes": [{ "app": { "slug": "claude" }, "checkRuns": { "nodes": [{ "name": "Claude security review" }] } }] } } }] } },
+      "p19": { "number": 19, "comments": { "nodes": [{ "body": "## Security review\nNo findings.", "author": { "__typename": "Bot", "login": "fixture-bot" } }] }, "reviews": { "nodes": [] }, "commits": { "nodes": [] } },
+      "p18": { "number": 18, "comments": { "nodes": [] }, "reviews": { "nodes": [{ "body": "## Security review\nNo findings.", "author": { "__typename": "Bot", "login": "claude" } }] }, "commits": { "nodes": [] } },
+      "p17": { "number": 17, "comments": { "nodes": [{ "body": "## Security review\nNo findings.", "author": { "__typename": "User", "login": "claude" } }] }, "reviews": { "nodes": [] }, "commits": { "nodes": [{ "commit": { "checkSuites": { "nodes": [{ "app": { "slug": "github-actions" }, "checkRuns": { "nodes": [{ "name": "security review" }] } }] } } }] } }
+    }
+  },
+  "BranchCommits": {
+    "repository": {
+      "defaultBranchRef": {
+        "target": {
+          "history": {
+            "nodes": [
+              { "oid": "a1", "associatedPullRequests": { "nodes": [{ "merged": true }] } },
+              { "oid": "a2", "associatedPullRequests": { "nodes": [{ "merged": true }] } },
+              { "oid": "a3", "associatedPullRequests": { "nodes": [{ "merged": false }, { "merged": true }] } },
+              { "oid": "a4", "associatedPullRequests": { "nodes": [] } }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "ProjectFind": {
+    "repositoryOwner": {
+      "projectsV2": {
+        "nodes": [
+          { "id": "PVT_other", "title": "fixture-repo-archive" },
+          { "id": "PVT_site", "title": "fixture-repo", "workflows": { "nodes": [{ "name": "Item closed", "enabled": true }, { "name": "Pull request merged", "enabled": true }, { "name": "Item added to project", "enabled": false }] } }
+        ]
+      }
+    }
+  },
+  "ProjectItems": {
+    "node": {
+      "items": {
+        "pageInfo": { "hasNextPage": false, "endCursor": null },
+        "nodes": [
+          {
+            "createdAt": "2026-10-20T00:00:00Z",
+            "status": { "name": "Ideas", "updatedAt": "2026-10-20T00:00:00Z" }, "linked": null,
+            "content": { "__typename": "DraftIssue", "body": "An idea." }
+          },
+          {
+            "createdAt": "2026-10-21T00:00:00Z",
+            "status": { "name": "Next", "updatedAt": "2026-10-21T00:00:00Z" }, "linked": { "pullRequests": { "nodes": [] } },
+            "content": { "__typename": "Issue", "body": "![card](https://fixture.example/cards/1.svg)\n\n| Need | Change |\n|---|---|\n| a | b |", "labels": { "nodes": [{ "name": "bug" }] }, "issueType": null, "closedByPullRequestsReferences": { "nodes": [] } }
+          },
+          {
+            "createdAt": "2026-10-22T00:00:00Z",
+            "status": { "name": "Next", "updatedAt": "2026-10-22T00:00:00Z" }, "linked": { "pullRequests": { "nodes": [] } },
+            "content": { "__typename": "Issue", "body": "![card](https://fixture.example/cards/2.svg)\n\nThis card says too much. This card says too much. This card says too much. This card says too much. This card says too much. This card says too much. This card says too much. This card says too much. This card says too much. This card says too much. This card says too much. This card says too much. This card says too much. This card says too much. This card says too much. This card says too much.", "labels": { "nodes": [] }, "issueType": { "name": "Task" }, "closedByPullRequestsReferences": { "nodes": [] } }
+          },
+          {
+            "createdAt": "2026-10-30T00:00:00Z",
+            "status": { "name": "Doing", "updatedAt": "2026-10-31T00:00:00Z" }, "linked": null,
+            "content": { "__typename": "DraftIssue", "body": "" }
+          },
+          {
+            "createdAt": "2026-10-31T00:00:00Z",
+            "status": { "name": "Done", "updatedAt": "2026-11-01T12:00:00Z" }, "linked": null,
+            "content": { "__typename": "DraftIssue", "body": "PR: https://github.com/fixture-org/fixture-repo/pull/18" }
+          },
+          {
+            "createdAt": "2026-11-01T00:00:00Z",
+            "status": { "name": "Done", "updatedAt": "2026-11-02T00:00:00Z" }, "linked": { "pullRequests": { "nodes": [] } },
+            "content": { "__typename": "Issue", "issueType": { "name": "Bug" }, "closedByPullRequestsReferences": { "nodes": [{ "merged": true, "createdAt": "2026-11-01T12:00:00Z" }] } }
+          },
+          {
+            "createdAt": "2026-11-02T00:00:00Z",
+            "status": { "name": "Done", "updatedAt": "2026-11-02T10:00:00Z" }, "linked": null,
+            "content": { "__typename": "DraftIssue", "body": "Done with no link." }
+          },
+          {
+            "createdAt": "2026-11-02T01:00:00Z",
+            "status": null, "linked": null,
+            "content": { "__typename": "DraftIssue", "body": "" }
+          },
+          {
+            "createdAt": "2026-11-02T02:00:00Z",
+            "status": { "name": "Doing", "updatedAt": "2026-11-02T02:00:00Z" }, "linked": null,
+            "content": { "__typename": "PullRequest", "merged": false, "state": "OPEN", "createdAt": "2026-11-02T02:00:00Z" }
+          }
+        ]
+      }
+    }
+  },
+  "DraftLinks": {
+    "repository": {
+      "p18": { "number": 18, "merged": true, "createdAt": "2026-10-30T00:00:00Z" }
+    }
+  },
+  "OpenIssueTypes": {
+    "repository": {
+      "issues": {
+        "pageInfo": { "hasNextPage": false, "endCursor": null },
+        "nodes": [
+          { "number": 5, "createdAt": "2026-10-30T20:00:00Z", "issueType": null, "labels": { "nodes": [{ "name": "bug" }, { "name": "security" }] } },
+          { "number": 6, "createdAt": "2026-11-02T08:00:00Z", "issueType": { "name": "Bug" }, "labels": { "nodes": [{ "name": "bug" }] } },
+          { "number": 7, "createdAt": "2026-11-01T20:00:00Z", "issueType": { "name": "Feature" }, "labels": { "nodes": [{ "name": "enhancement" }, { "name": "design" }] } },
+          { "number": 8, "createdAt": "2026-11-02T10:00:00Z", "issueType": { "name": "Bug" }, "labels": { "nodes": [{ "name": "security" }] } }
+        ]
+      }
+    }
+  },
+  "LabelUse": {
+    "repository": {
+      "labels": {
+        "pageInfo": { "hasNextPage": false, "endCursor": null },
+        "nodes": [
+          { "name": "bug", "issues": { "totalCount": 5 }, "pullRequests": { "totalCount": 0 } },
+          { "name": "code", "issues": { "totalCount": 1 }, "pullRequests": { "totalCount": 0 } },
+          { "name": "enhancement", "issues": { "totalCount": 2 }, "pullRequests": { "totalCount": 0 } },
+          { "name": "dependencies", "issues": { "totalCount": 0 }, "pullRequests": { "totalCount": 2 } },
+          { "name": "usability", "issues": { "totalCount": 0 }, "pullRequests": { "totalCount": 0 } },
+          { "name": "good first issue", "issues": { "totalCount": 0 }, "pullRequests": { "totalCount": 0 } },
+          { "name": "wontfix", "issues": { "totalCount": 0 }, "pullRequests": { "totalCount": 0 } }
+        ]
+      }
+    }
+  }
+}

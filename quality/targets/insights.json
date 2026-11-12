@@ -1,0 +1,72 @@
+[
+  {
+    "id": "insights.community_health_pct",
+    "tab": "insights",
+    "kind": "quality",
+    "group": "Community",
+    "label": "Community health checklist",
+    "means": "GitHub's own score for the health files a repo should have: README, license, contributing, code of conduct, templates",
+    "unit": "%",
+    "goal": 100,
+    "near": 85,
+    "direction": "higher",
+    "goal_source": "GitHub docs, About community profiles for public repositories and REST community metrics (read 2026-11-10): the checklist names the recommended files and the API scores how many are present; goal: all of them",
+    "source": "state: gh api repos/{repo}/community/profile, GitHub's health percentage and the files it found",
+    "needs": "none",
+    "chart": "bar",
+    "params": {
+      "repo": "",
+      "keep_branches": [],
+      "idle_days": 90,
+      "branch_grace_hours": 24
+    }
+  },
+  {
+    "id": "insights.leftover_branches",
+    "tab": "insights",
+    "kind": "quality",
+    "group": "Network",
+    "label": "Leftover branches",
+    "means": "Branches whose pull request closed or merged, or that are over a day old with none: finished or abandoned work",
+    "unit": "branches",
+    "goal": 0,
+    "near": 5,
+    "direction": "lower",
+    "goal_source": "GitHub docs, Managing the automatic deletion of branches (read 2026-11-10): GitHub can delete a head branch once its pull request merges; template goal: no branch outlives its pull request, near 5; a branch under a day old with no pull request is live work",
+    "source": "state: GraphQL refs under refs/heads (the first 1000) with their pull requests: a branch whose pull request closed or merged, or one older than params.branch_grace_hours (24) with none; the default branch, open pull requests and params.keep_branches do not count",
+    "needs": "none",
+    "chart": "bar"
+  },
+  {
+    "id": "insights.oldest_leftover_hours",
+    "tab": "insights",
+    "kind": "speed",
+    "group": "Network",
+    "label": "Oldest leftover branch",
+    "means": "Hours the oldest leftover branch has waited since its pull request closed, or since its last commit; 0 when none",
+    "unit": "hours",
+    "goal": 24,
+    "near": 72,
+    "direction": "lower",
+    "goal_source": "template goal (2026-11-10): a finished branch is gone within a day, near three; GitHub docs, Managing the automatic deletion of branches: a merged pull request's branch can go at once, so only closed and never-proposed ones wait",
+    "source": "state: GraphQL refs under refs/heads (the first 1000) with their pull requests: a branch whose pull request closed or merged, or one older than params.branch_grace_hours (24) with none; the default branch, open pull requests and params.keep_branches do not count; each timed from its pull request's close, or from its last commit",
+    "needs": "none",
+    "chart": "number"
+  },
+  {
+    "id": "insights.idle_access",
+    "tab": "insights",
+    "kind": "quality",
+    "group": "People",
+    "label": "People with unused write access",
+    "means": "People who can push but have landed no commit on the default branch in 90 days; access nobody uses is only risk",
+    "unit": "people",
+    "goal": 0,
+    "near": 1,
+    "direction": "lower",
+    "goal_source": "Microsoft Learn, Microsoft cloud security benchmark PA-4 (read 2026-11-10): review access regularly and remove what goes unused, with accounts unused for 90 days flagged; GitHub docs, Viewing people with access to your repository: the list serves offboarding and security reviews",
+    "source": "state: gh api repos/{repo}/collaborators (people who can push, the first 100) and each one's latest default-branch commit: those with none in params.idle_days days (90, the benchmark's line)",
+    "needs": "github-admin",
+    "chart": "number"
+  }
+]

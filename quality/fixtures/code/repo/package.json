@@ -1,0 +1,10 @@
+{
+  "name": "fixture-root",
+  "private": true,
+  "workspaces": ["packages/shared", "site", "workers/bot"],
+  "devDependencies": {
+    "@secretlint/secretlint-rule-preset-recommend": "13.0.7",
+    "@vitest/coverage-v8": "4.1.11",
+    "left-pad": "1.3.0"
+  }
+}

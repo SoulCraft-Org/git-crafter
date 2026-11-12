@@ -1,0 +1,25 @@
+[
+ {
+  "id": "deploy.waiting_merges",
+  "goal": 0,
+  "near": 2,
+  "goal_source": "Git Crafter goal: pages.yml publishes on every push to main (its build job's timeout is 15 minutes), so no merge waits once its run ends; near: one or two merges inside a running publish",
+  "params": {
+   "comment": "Git Crafter ships GitHub Pages, read by deploy-pages.mjs through the GitHub API, in CI as well. Every merge to main counts as shipping.",
+   "platform": "pages",
+   "branch": "origin/main"
+  }
+ },
+ {
+  "id": "deploy.oldest_waiting_hours",
+  "goal": 1,
+  "near": 24,
+  "goal_source": "Git Crafter goal: pages.yml publishes on every push to main (its build job's timeout is 15 minutes), so a merge waits under an hour; near: DORA's elite lead time, one day (2024 Accelerate State of DevOps Report, p. 13)"
+ },
+ {
+  "id": "deploy.latest_lead_hours",
+  "goal": 1,
+  "near": 24,
+  "goal_source": "Git Crafter goal: pages.yml publishes on every push to main (its build job's timeout is 15 minutes), so the latest deploy is live within an hour of its merge; near: DORA's elite lead time, one day (2024 Accelerate State of DevOps Report, p. 13)"
+ }
+]

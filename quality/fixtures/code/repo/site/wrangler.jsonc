@@ -1,0 +1,7 @@
+{
+  // The fixture site Worker. The account id is made up.
+  "name": "fixture-site",
+  "account_id": "0123456789abcdef0123456789abcdef",
+  "main": "worker/index.ts",
+  "assets": { "directory": "./dist", "binding": "ASSETS" },
+}

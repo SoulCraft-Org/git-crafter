@@ -1,0 +1,407 @@
+[
+  {
+    "id": "docs.dead_paths",
+    "tab": "documentation",
+    "kind": "quality",
+    "group": "Correct",
+    "label": "Named repo paths that are missing",
+    "means": "File and folder paths a doc writes in code that no longer exist in the repo",
+    "unit": "paths",
+    "goal": 0,
+    "near": 2,
+    "direction": "lower",
+    "goal_source": "Git Crafter default goal: every path a doc names exists. Source: Microsoft Engineering Fundamentals Playbook: Documentation (an inaccurate doc names the wrong folders and settings)",
+    "source": "state: quality/collectors/docs/docs.mjs: each word of inline code and code blocks in the doc set that starts with a top-level repo entry and exists neither from the repo root nor from the doc's folder; git-ignored paths and records (docs with an empty area in params.areas) skipped. A heuristic",
+    "needs": "none",
+    "chart": "table",
+    "params": {
+      "doc_set": [
+        "**/*.md"
+      ],
+      "skip_dirs": [
+        "node_modules",
+        "worktrees",
+        "vendor",
+        "dist",
+        "build",
+        "coverage",
+        ".venv",
+        ".astro",
+        ".wrangler"
+      ],
+      "doc_set_left_out": [
+        {
+          "glob": "quality/fixtures/**",
+          "why": "frozen test fixtures of the Quality collectors"
+        }
+      ],
+      "agent_docs_readme": "Docs written for an agent to load, as { glob, why }: docs.interactive_share leaves them out, since a diagram or drill-down there costs tokens on every load. Every other docs metric still reads them.",
+      "agent_docs": [
+        {
+          "glob": "**/CLAUDE.md",
+          "why": "project instructions Claude loads every session"
+        },
+        {
+          "glob": "**/SKILL.md",
+          "why": "a skill Claude loads when it applies"
+        },
+        {
+          "glob": "**/.claude/**",
+          "why": "rules, agents and commands Claude loads"
+        }
+      ],
+      "areas_readme": "First matching doc glob wins. area is a list of git pathspecs, and {dir} is the doc's own folder; the doc itself is always excluded. An empty area means the doc is a record that covers nothing in this repo (a log, an off-site record or external research): it has no lag and no dated claim to judge, and the paths and npm scripts it names are history, so docs.dead_paths and docs.dead_scripts skip it. The default says each doc covers the folder it sits in.",
+      "overlays_readme": "A folder an export places elsewhere, as { dir, onto, why }: a public folder whose files land at another repo's root has onto \"\". A doc under dir resolves each link and named path as if it sat at onto plus its path inside dir, in dir first, then in the repository; a link starting with / starts at onto, and one that climbs out of onto is broken. A malformed entry makes docs.broken_links and docs.dead_paths could not check.",
+      "overlays": [],
+      "areas": [
+        {
+          "doc": "**",
+          "area": [
+            "{dir}/"
+          ]
+        }
+      ],
+      "markers": [
+        {
+          "term": "TODO",
+          "match_case": true
+        },
+        {
+          "term": "TBD",
+          "match_case": true
+        },
+        {
+          "term": "FIXME",
+          "match_case": true
+        },
+        {
+          "term": "not yet",
+          "match_case": false
+        },
+        {
+          "term": "coming soon",
+          "match_case": false
+        }
+      ],
+      "as_of": [
+        "current as of",
+        "last verified"
+      ],
+      "folder_map": {
+        "doc": "README.md",
+        "heading": "Folder map"
+      },
+      "runbooks": [
+        "**/runbooks/*.md"
+      ],
+      "verified": "last verified",
+      "words_per_minute": 238,
+      "minutes_goal": 2,
+      "mermaid_charts": [
+        "pie",
+        "xychart-beta"
+      ],
+      "text_only_below": 20,
+      "community_files_readme": "GitHub's community health files, as { name, globs }: a file at any glob counts as present. GitHub reads each from the repo root, docs/ or .github/.",
+      "community_files": [
+        {
+          "name": "README",
+          "globs": [
+            "README.md",
+            ".github/README.md",
+            "docs/README.md"
+          ]
+        },
+        {
+          "name": "License",
+          "globs": [
+            "LICENSE",
+            "LICENSE.md",
+            "LICENSE.txt",
+            "COPYING"
+          ]
+        },
+        {
+          "name": "Contributing guide",
+          "globs": [
+            "CONTRIBUTING.md",
+            ".github/CONTRIBUTING.md",
+            "docs/CONTRIBUTING.md"
+          ]
+        },
+        {
+          "name": "Code of conduct",
+          "globs": [
+            "CODE_OF_CONDUCT.md",
+            ".github/CODE_OF_CONDUCT.md",
+            "docs/CODE_OF_CONDUCT.md"
+          ]
+        },
+        {
+          "name": "Support file",
+          "globs": [
+            "SUPPORT.md",
+            ".github/SUPPORT.md",
+            "docs/SUPPORT.md"
+          ]
+        },
+        {
+          "name": "Pull request template",
+          "globs": [
+            ".github/PULL_REQUEST_TEMPLATE.md",
+            ".github/pull_request_template.md",
+            "PULL_REQUEST_TEMPLATE.md",
+            "pull_request_template.md",
+            "docs/PULL_REQUEST_TEMPLATE.md",
+            "docs/pull_request_template.md",
+            ".github/PULL_REQUEST_TEMPLATE/*.md"
+          ]
+        }
+      ],
+      "alt_max_chars": 150
+    }
+  },
+  {
+    "id": "docs.dead_scripts",
+    "tab": "documentation",
+    "kind": "quality",
+    "group": "Correct",
+    "label": "Named npm scripts that are missing",
+    "means": "npm commands in a doc that run a script no package.json in the repo defines",
+    "unit": "scripts",
+    "goal": 0,
+    "near": 1,
+    "direction": "lower",
+    "goal_source": "Git Crafter default goal: every npm script a doc names runs. Source: Microsoft Engineering Fundamentals Playbook: Documentation (inaccurate docs)",
+    "source": "state: quality/collectors/docs/docs.mjs: npm run, npm test and npm start in inline code and code blocks of the doc set, against the scripts of the root package.json and its workspaces; with -w, against that workspace alone. Records (docs with an empty area in params.areas) are skipped",
+    "needs": "none",
+    "chart": "table"
+  },
+  {
+    "id": "docs.broken_links",
+    "tab": "documentation",
+    "kind": "quality",
+    "group": "Correct",
+    "label": "Broken relative links and anchors",
+    "means": "Links from one doc to another file or heading in the repo that lead nowhere",
+    "unit": "links",
+    "goal": 0,
+    "near": 1,
+    "direction": "lower",
+    "goal_source": "Git Crafter default goal: every relative link and anchor resolves. Source: GitHub Docs: About the repository README file (relative links)",
+    "source": "state: quality/collectors/docs/docs.mjs: relative markdown links and #anchors in the doc set, resolved against the repo and GitHub heading slugs",
+    "needs": "none",
+    "chart": "table"
+  },
+  {
+    "id": "docs.lint_warn",
+    "tab": "documentation",
+    "kind": "quality",
+    "group": "Correct",
+    "label": "Content-lint WARN in docs",
+    "means": "Likely breaks of the repo's own writing rules, in the docs those rules cover",
+    "unit": "findings",
+    "goal": 0,
+    "near": 3,
+    "direction": "lower",
+    "goal_source": "Git Crafter default goal: no content-lint warning in the docs the lint covers. Source: Microsoft Style Guide: Top 10 tips for Microsoft style and voice (prune every excess word)",
+    "source": "state: params.lint over the doc set: the summary line 'N file(s) checked, X FAIL, Y WARN'. Docs outside the lint's scope are skipped by the lint. A repo with no params.lint names no lint, and this metric is not measured",
+    "needs": "none",
+    "chart": "number"
+  },
+  {
+    "id": "docs.markup_faults",
+    "tab": "documentation",
+    "kind": "quality",
+    "group": "Correct",
+    "label": "Heading and image faults",
+    "means": "Headings that skip a level or repeat, and images a screen reader cannot describe",
+    "unit": "faults",
+    "goal": 0,
+    "near": 2,
+    "direction": "lower",
+    "goal_source": "Git Crafter default goal: headings run in order with no repeat, and every image has alt text within the limit. Sources: GitHub Docs: Style guide (no header level is skipped, and each header at a level is unique); Microsoft Style Guide: Alternative text (limit the length to 150 characters)",
+    "source": "state: quality/collectors/docs/docs.mjs: in each doc of the doc set, outside code, a heading more than one level below the one before it, an H1 after the first, a heading whose text repeats at its level anywhere in the doc, and an image with no alt text or alt text over params.alt_max_chars",
+    "needs": "none",
+    "chart": "table"
+  },
+  {
+    "id": "docs.stale_markers",
+    "tab": "documentation",
+    "kind": "quality",
+    "group": "Current",
+    "label": "Stale markers in docs",
+    "means": "Words that flag unfinished text, such as TODO or not yet, outside code",
+    "unit": "markers",
+    "goal": 0,
+    "near": 3,
+    "direction": "lower",
+    "goal_source": "Git Crafter default goal: no doc says its own text is unfinished. Source: Microsoft Engineering Fundamentals Playbook: Documentation (incomplete docs)",
+    "source": "state: quality/collectors/docs/docs.mjs: each of params.markers outside code and comments in the doc set, counted per doc",
+    "needs": "none",
+    "chart": "bar"
+  },
+  {
+    "id": "docs.stale_dates",
+    "tab": "documentation",
+    "kind": "quality",
+    "group": "Current",
+    "label": "Dated claims older than their area",
+    "means": "Current as of and last verified dates set before the files the doc covers last changed",
+    "unit": "dates",
+    "goal": 0,
+    "near": 1,
+    "direction": "lower",
+    "goal_source": "Git Crafter default goal: a dated claim is at least as new as what it describes. Source: Microsoft Engineering Fundamentals Playbook: Documentation (obsolete docs)",
+    "source": "state: quality/collectors/docs/docs.mjs: each params.as_of phrase and its date outside code in the doc set, against the last commit to the doc's area in params.areas; detail is days older",
+    "needs": "none",
+    "chart": "bar"
+  },
+  {
+    "id": "docs.oldest_lag_days",
+    "tab": "documentation",
+    "kind": "quality",
+    "group": "Current",
+    "label": "Oldest doc lag behind its area",
+    "means": "Days the doc that trails its subject most has gone without catching up to it",
+    "unit": "days",
+    "goal": 7,
+    "near": 14,
+    "direction": "lower",
+    "goal_source": "Git Crafter default goal, 2026-11-04: no doc trails the files it covers by more than a week; a point-in-time value, the one doc to fix, never a mean over docs. Source: Microsoft Engineering Fundamentals Playbook: Documentation (docs not updated along with the code)",
+    "source": "state: git log -1 --format=%ct for each doc and for its area in params.areas; the largest gap of any doc now, which the detail names",
+    "needs": "none",
+    "chart": "bar"
+  },
+  {
+    "id": "docs.unmapped",
+    "tab": "documentation",
+    "kind": "quality",
+    "group": "Current",
+    "label": "Unmapped docs and dead area paths",
+    "means": "Docs with no usable params.areas entry, and area paths that match no other tracked file: the lag checks skip both",
+    "unit": "docs and paths",
+    "goal": 0,
+    "near": 0,
+    "direction": "lower",
+    "goal_source": "Git Crafter default goal, 2026-11-04: none, since the doc lag and dated-claim checks skip an unmapped doc or a dead area path without a word; above the goal, the pages action fails a pull request. Source: Microsoft Engineering Fundamentals Playbook: Documentation (docs not updated along with the code)",
+    "source": "state: each doc in params.doc_set against params.areas, the first entry whose doc glob matches, and each area path it names through git ls-files. A path that matches no tracked file is dead, and so is an area whose paths together match only the doc; an area of [] is a record, mapped on purpose; the detail names each doc and path",
+    "needs": "none",
+    "chart": "table",
+    "gate": true
+  },
+  {
+    "id": "docs.folder_coverage",
+    "tab": "documentation",
+    "kind": "quality",
+    "group": "Complete",
+    "label": "Folders with README or map row",
+    "means": "Top-level folders explained by a README inside them or a row in the folder map",
+    "unit": "%",
+    "goal": 100,
+    "near": 80,
+    "direction": "higher",
+    "goal_source": "Git Crafter default goal: every top-level folder is explained. Source: Microsoft Engineering Fundamentals Playbook: Documentation (non-existent docs)",
+    "source": "state: quality/collectors/docs/docs.mjs: top-level folders, less dot folders and git-ignored ones, with a README or a row under params.folder_map.heading in params.folder_map.doc",
+    "needs": "none",
+    "chart": "table"
+  },
+  {
+    "id": "docs.runbooks_verified",
+    "tab": "documentation",
+    "kind": "quality",
+    "group": "Complete",
+    "label": "Runbooks with a last-verified date",
+    "means": "Runbooks that say when someone last ran their steps and found them right",
+    "unit": "%",
+    "goal": 100,
+    "near": 75,
+    "direction": "higher",
+    "goal_source": "Git Crafter default goal: every runbook is dated by its last check. Source: Microsoft Engineering Fundamentals Playbook: Documentation (obsolete docs)",
+    "source": "state: quality/collectors/docs/docs.mjs: \"last verified <date>\" (params.verified) outside code in each of params.runbooks, less params.doc_set_left_out; detail is the newest date",
+    "needs": "none",
+    "chart": "table"
+  },
+  {
+    "id": "docs.community_files",
+    "tab": "documentation",
+    "kind": "quality",
+    "group": "Complete",
+    "label": "Community health files present",
+    "means": "The files GitHub lists for a healthy project, such as a code of conduct and a support guide",
+    "unit": "%",
+    "goal": 100,
+    "near": 80,
+    "direction": "higher",
+    "goal_source": "Git Crafter default goal: every community health file is there. Sources: GitHub Docs: About community profiles for public repositories (README, code of conduct, license, contributing); GitHub Docs: Adding support resources to your project; GitHub Docs: Creating a default community health file (pull request template). The issue template and the security policy are measured as issues.templates_present and security.policy_on",
+    "source": "state: quality/collectors/docs/docs.mjs: each entry of params.community_files (README, license, contributing guide, code of conduct, support file, pull request template) with a file at any of its globs",
+    "needs": "none",
+    "chart": "table"
+  },
+  {
+    "id": "docs.over_read_goal",
+    "tab": "documentation",
+    "kind": "speed",
+    "group": "Reading time",
+    "label": "Docs over 2 minutes to read",
+    "means": "Docs that take longer to read than the reading goal, counted by folder",
+    "unit": "docs",
+    "goal": 0,
+    "near": 10,
+    "direction": "lower",
+    "goal_source": "Git Crafter default goal: 2 minutes or less to read each doc, at 238 words a minute, the mean silent reading rate for English non-fiction. Sources: Brysbaert, 2019: How many words do we read per minute? (Journal of Memory and Language 109); Microsoft Style Guide: Top 10 tips for Microsoft style and voice (shorter is always better)",
+    "source": "state: quality/collectors/docs/docs.mjs: docs of params.doc_set with more words than params.minutes_goal times params.words_per_minute, counted by top-level folder",
+    "needs": "none",
+    "chart": "bar"
+  },
+  {
+    "id": "docs.interactive_share",
+    "tab": "documentation",
+    "kind": "quality",
+    "group": "Visual share",
+    "label": "Docs with an interactive element",
+    "means": "Reader docs with something to open, pan or zoom: a diagram, a chart or a drill-down",
+    "unit": "%",
+    "goal": 80,
+    "near": 50,
+    "direction": "higher",
+    "goal_source": "Git Crafter default goal: most reader docs give the reader something to open, pan or zoom before more prose. Sources: GitHub Docs: Creating diagrams (Mermaid renders in Markdown); GitHub Docs: Organizing information with collapsed sections (a section the reader chooses to expand). The pan and zoom controls on a rendered diagram are as seen on github.com, 2026-11-10, not stated on that page. Docs written for an agent are left out: Claude Docs: Skill authoring best practices (concise is key)",
+    "source": "state: quality/collectors/docs/docs.mjs: docs of the doc set outside params.agent_docs with a mermaid diagram, a mermaid chart (params.mermaid_charts) or a <details> block, outside code; detail counts each element type",
+    "needs": "none",
+    "chart": "bar",
+    "defined": "2026-11-10"
+  },
+  {
+    "id": "docs.text_only",
+    "tab": "documentation",
+    "kind": "quality",
+    "group": "Visual share",
+    "label": "Text-only docs",
+    "defined": "2026-11-10",
+    "means": "Docs that are nearly all prose, with hardly a table, diagram, chart, image or code block",
+    "unit": "docs",
+    "goal": 0,
+    "near": 5,
+    "direction": "lower",
+    "goal_source": "Git Crafter default goal: no doc under 20% visual lines. Sources: Microsoft Style Guide: Scannable content (dense text set out as lists and tables); Microsoft Style Guide: Tables (a table is not for a plain list, so a one-column table counts as prose)",
+    "source": "state: quality/collectors/docs/docs.mjs: docs of the doc set whose table (two or more columns; a one-column table is a list), code, diagram and image lines are under params.text_only_below percent of their non-blank lines, counted by top-level folder",
+    "needs": "none",
+    "chart": "bar"
+  },
+  {
+    "id": "docs.tokens_past_read_goal",
+    "tab": "documentation",
+    "kind": "consumption",
+    "group": "Tokens",
+    "label": "Tokens past the reading goal",
+    "means": "Tokens Claude loads from docs beyond the length a reader finishes within the reading goal",
+    "unit": "tokens",
+    "goal": 0,
+    "near": 20000,
+    "direction": "lower",
+    "goal_source": "Git Crafter default goal: no doc runs past what a reader finishes in 2 minutes at 238 words a minute, so Claude loads no tokens past it; the near band is a Git Crafter default. Sources: Brysbaert, 2019: How many words do we read per minute? (Journal of Memory and Language 109); Claude Code Docs: How Claude remembers your project (longer files consume more context); Claude Docs: Skill authoring best practices (concise is key)",
+    "source": "state: quality/collectors/docs/docs.mjs: bytes / 4 of each doc of params.doc_set (the estimate the Instructions tab uses), the share of its words past params.minutes_goal times params.words_per_minute, summed; detail is the heaviest docs",
+    "needs": "none",
+    "chart": "bar"
+  }
+]

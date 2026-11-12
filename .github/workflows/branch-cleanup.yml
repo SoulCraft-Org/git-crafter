@@ -1,0 +1,57 @@
+name: branch-cleanup
+
+# Deletes the head branch of a pull request closed without merging, while the branch still sits at the pull
+# request's head, so GitHub can restore it from the pull request. GitHub's own setting deletes a branch only
+# on merge (docs.github.com, Managing the automatic deletion of branches, read 2026-11-10), so closed ones
+# piled up: 28 were deleted by hand on 2026-11-10 (insights.leftover_branches). No checkout and no action:
+# at most four gh api calls. The job is skipped, and bills nothing, on a merge or a fork. A read or delete
+# GitHub refuses leaves the branch and the run green: could not tidy, never a failure of the pull request.
+# pull_request_target, not pull_request: GitHub runs no pull_request workflow on a pull request with a merge
+# conflict (docs.github.com, Events that trigger workflows, read 2026-11-11), and a conflict is the usual
+# reason one closes unmerged (#842 kept its branch). This is safe here: the job checks out nothing and runs no
+# code from the pull request; it reads three fields of the event and calls the API.
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: branch-cleanup-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  branch-cleanup:
+    name: branch-cleanup
+    if: ${{ !github.event.pull_request.merged && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    # Write, on this job alone: deleting a ref is a contents write.
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      # The branch name reaches the script through the environment, never through the shell line.
+      - name: Delete the branch while it sits at the pull request's head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          say() { echo "$1" | tee -a "$GITHUB_STEP_SUMMARY"; }
+          if [ "$BRANCH" = "$DEFAULT_BRANCH" ]; then say "Left alone: $BRANCH is the default branch."; exit 0; fi
+          # A long-lived branch carries protection; a pull request's own branch does not.
+          prot=$(gh api "repos/$GITHUB_REPOSITORY/branches/$BRANCH" --jq .protected 2>/dev/null || echo unknown)
+          if [ "$prot" != "false" ]; then say "Left alone: $BRANCH is protected, or its protection could not be read."; exit 0; fi
+          tip=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$BRANCH" --jq .object.sha 2>/dev/null || true)
+          if [ "$tip" != "$HEAD_SHA" ]; then say "Left alone: $BRANCH is gone, has moved past the pull request's head, or could not be read."; exit 0; fi
+          open=$(gh api -X GET "repos/$GITHUB_REPOSITORY/pulls" -f state=open -f head="$OWNER:$BRANCH" --jq length 2>/dev/null || echo unknown)
+          if [ "$open" != "0" ]; then say "Left alone: another open pull request uses $BRANCH, or the list could not be read."; exit 0; fi
+          if gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$BRANCH" >/dev/null 2>&1; then
+            say "Deleted $BRANCH at $HEAD_SHA; restore it from the pull request."
+          else
+            say "Could not delete $BRANCH; GitHub refused the call."
+          fi

@@ -1,0 +1,357 @@
+[
+  {
+    "id": "blockers.costly",
+    "tab": "blockers",
+    "kind": "quality",
+    "group": "Quality",
+    "label": "Blockers that cost more than they help",
+    "means": "Restrictions whose false alarms are half or more of their alarms; one with no catch measure is not measured.",
+    "unit": "blockers",
+    "goal": 0,
+    "near": 3,
+    "direction": "lower",
+    "goal_source": "template goal, no public benchmark: a restriction whose false alarms are half its fires or more costs more than it catches, so none should",
+    "source": "state of the ledger, every blocker in it (verdict() in quality/collectors/blockers/blockers.mjs): costs when false alarms are half or more of its alarms; fires, hours and tokens summed over the last 1,000 tool calls, the pinned review and CI checks over the last 20 merged PRs. N = 1,000 tool calls (LAST_CALLS in blockers.mjs), so new work replaces old within hours in a busy repo; N = the last 20 merged PRs (LAST_PRS)",
+    "needs": "local-files",
+    "chart": "ledger",
+    "params": {
+      "comment": "Each setting has a default that names no repo, path or person (config() in blockers.mjs): project_match (default the repo's own project folder), checkout_path (default the main checkout), repo (default params, then GITHUB_REPOSITORY, then the origin remote), reviewer (the GitHub login of the pinned review; default any reviewer), guard_log (default ~/.claude/code-os/bash_guard.log), managed_claude_md (default the platform's managed policy CLAUDE.md). enforcement_paths: the paths the revert breaker watches. projects_dir: where Claude Code keeps session transcripts; a ~/ path is under home, an absolute one is itself, any other is under the repo root. fix_signals: rule id to regexes, each tried on each step of a retry as typed; a step that matches one and writes no file applies the fix the block named. One that starts with ! is a veto, a known way around the rule: any command that succeeds in the window and matches it makes the block a false alarm, similar or not. A block holds only when each similar retry runs the blocked command's own steps, fix steps and allowlisted read-only steps (neutralStep() in blockers.mjs), nothing else. They list the commands each rule's fix text in tools/bash_guard_rules.json names, and the compliant ways sessions take (merge --ff-only after reset --hard, wrangler deploy after npm run deploy). A rule with none has no fix to apply. guard_script: the guard each recent block is replayed through; default ~/.claude/code-os/bash_guard.py.",
+      "enforcement_paths": [
+        "^\\.github/workflows/",
+        "^\\.githooks/",
+        "^\\.claude/hooks/",
+        "(^|/)(bash|write)_guard[\\w.]*$",
+        "(^|/)settings[^/]*\\.json$",
+        "_rules\\.json$",
+        "(^|/)verify\\.sh$",
+        "(^|/)manifest\\.json$",
+        "(^|/)cloud-test\\.json$",
+        "(^|/)protected_clauses\\.json$"
+      ],
+      "projects_dir": "~/.claude/projects",
+      "fix_signals": {
+        "git-force-push": [
+          "^git push(?!.*(--force|--mirror|\\s-[a-zA-Z]*f\\b|\\s\\+))"
+        ],
+        "git-push-main": [
+          "^git push( -[a-zA-Z]+| --[a-z-]+)* origin (?!(main|master|HEAD:main|HEAD:refs/heads/main)\\b)\\S+",
+          "^gh pr create\\b"
+        ],
+        "git-skip-hooks": [
+          "^(?!.*(--no-v|core\\.[Hh][Oo][Oo][Kk][Ss][Pp][Aa][Tt][Hh]|\\s-n\\b))git( -C \\S+| -c \\S+)* (commit|merge|push|rebase)(\\s|$)",
+          "!(^|[\\s/'\\\"=])(\\.git/hooks|\\.githooks|\\.husky)(/|\\s|$)",
+          "!^git( -C \\S+| -c \\S+)* commit-tree\\b",
+          "!^cd [\\\"']?\\.git[\\\"']?(/|\\s|$)",
+          "!\\s-c\\s*[\\\"']?[Cc][Oo][Rr][Ee]\\.[Hh][Oo][Oo][Kk][Ss][Pp][Aa][Tt][Hh]="
+        ],
+        "hook-skip-export": [
+          "^unset HUSKY\\b"
+        ],
+        "git-reset-hard": [
+          "^git (revert|stash( push| save)?)\\b(?!.*\\b(drop|clear)\\b)",
+          "^git merge\\b.*--ff-only\\b",
+          "^git (checkout|switch)\\b.* -[bc] \\S+",
+          "^git (checkout|switch)\\b.* -[BC] (?!(main|master)\\b)\\S+",
+          "^git reset( -q)? --(soft|mixed|keep)\\b",
+          "!^git (checkout|switch)\\b.* -[BC] (main|master)\\b",
+          "!^git stash (drop|clear)\\b",
+          "!^git branch -f (main|master)\\b",
+          "!^git (checkout|switch)\\b.*\\s(-f|--force|--detach|--discard-changes)(\\s|$)",
+          "!^git read-tree\\b",
+          "!^git branch -([dDmM]|-delete|-move)\\b.*(\\s|$)(main|master)(\\s|$)"
+        ],
+        "git-discard-all": [
+          "^git commit\\b",
+          "^git (checkout|restore)( -q)?( --staged)? -- (?!\\.(\\s|$))\\S",
+          "^git restore( -q)?( --staged)? (?!-|\\.(\\s|$))\\S",
+          "^git clone\\b"
+        ],
+        "git-clean-force": [
+          "^git clean (-[a-z]*n|--dry-run)\\b",
+          "^rm\\b"
+        ],
+        "git-one-side-checkout": [
+          "^git add\\b",
+          "^git (checkout|restore) .*-- (?!\\.$)\\S"
+        ],
+        "git-one-side-merge": [
+          "^git merge(?!.*(-s ours|-X ?(ours|theirs)|--strategy[= ]ours))\\b",
+          "^git( -c \\S+)* subtree (add|merge)\\b",
+          "^git add\\b"
+        ],
+        "gh-merge-unsafe": [
+          "--match-head-commit [0-9a-f]{40}\\b",
+          "\\bgh pr (view|checks|diff)\\b",
+          "!\\bgh pr merge\\b(?!.*--match-head-commit [0-9a-f]{40}\\b)",
+          "!\\bmergePullRequest\\b",
+          "!/pulls/\\S+/merge\\b"
+        ],
+        "gh-api-merge": [
+          "--match-head-commit [0-9a-f]{40}\\b",
+          "\\bgh pr (view|checks|diff)\\b",
+          "!\\bgh pr merge\\b(?!.*--match-head-commit [0-9a-f]{40}\\b)",
+          "!\\bmergePullRequest\\b",
+          "!/pulls/\\S+/merge\\b"
+        ],
+        "gh-stack-merge": [
+          "/pulls/\\d+/merge-async\\b(?!.*bypass_rules=(?!false))(?=.*\\bsha=[0-9a-f]{40}\\b)",
+          "\\bgh (pr (view|checks|diff)|stack view)\\b",
+          "!\\bgh stack merge\\b"
+        ],
+        "gh-api-merge-bypass": [
+          "/pulls/\\d+/merge-async\\b(?!.*bypass_rules=(?!false))(?=.*\\bsha=[0-9a-f]{40}\\b)",
+          "\\bgh pr (view|checks|diff)\\b",
+          "!\\bbypass_rules=(?!false)"
+        ],
+        "gh-token-print": [
+          "^gh (api|pr)\\b"
+        ],
+        "git-credential-print": [
+          "^git( -C \\S+| -c \\S+)* (push|fetch|pull|clone|ls-remote)\\b",
+          "^gh (api|pr|repo)\\b"
+        ],
+        "rm-root": [
+          "^rm (-[a-zA-Z]+ )*(~/|/|\\./)?[\\w.-]+/[^*\\s]"
+        ],
+        "heredoc-backticks": [
+          "<<-?\\s*'\\w+'",
+          "<<-?\\s*\"\\w+\""
+        ],
+        "keychain-secret-read": [
+          "^security find-generic-password(?!.*\\s-[wg]\\b)",
+          "keys\\.sh (check|list)\\b"
+        ],
+        "env-dump": [
+          "\\[ -n \"?\\$\\w+\"? \\]"
+        ],
+        "key-var-print": [
+          "\\[ -n \"?\\$\\w+\"? \\]",
+          "\\$\\{#\\w+\\}"
+        ],
+        "credential-file-read": [
+          "^(ls|test -e|stat)\\b",
+          "^\\[ -[ef] "
+        ],
+        "local-test-suite": [
+          "^gh (pr checks|run (view|watch|list)|workflow run)\\b",
+          "^git push\\b",
+          "\\bvitest run\\b.*\\s\\S+\\.(test|spec)\\.[cm]?[jt]sx?\\b",
+          "^node --test( --?[\\w-]+(=\\S+)?)* \\S+\\.test\\.[cm]?js\\b"
+        ],
+        "local-heavy-compute": [
+          "^gh (pr checks|run (view|watch|list)|workflow run)\\b",
+          "^git push\\b",
+          "--where cloud\\b"
+        ],
+        "npm-deploy-script": [
+          "\\bwrangler deploy\\b"
+        ],
+        "git-clean-force-exclude": [
+          "^git clean (-[a-df-z]*n[a-df-z]*|--dry-run)(\\s|$)(?!.*--no-d)",
+          "^rm\\b"
+        ],
+        "git-clean-force-value": [
+          "^git clean (-[a-df-z]*n[a-df-z]*|--dry-run)(\\s|$)(?!.*--no-d)",
+          "^rm\\b"
+        ],
+        "git-discard-all-staged": [
+          "^git commit\\b",
+          "^git (checkout|restore)( -q)?( --staged)? -- (?!\\.(\\s|$))\\S",
+          "^git restore( -q)?( --staged)? (?!-|(\\.|:/|\\*|\\./\\*)(\\s|$))\\S",
+          "^git clone\\b"
+        ],
+        "gh-merge-disable-auto": [
+          "--match-head-commit [0-9a-f]{40}\\b",
+          "\\bgh pr (view|checks|diff)\\b",
+          "^gh pr merge \\S+ --disable-auto$",
+          "!\\bgh pr merge\\b(?!.*--match-head-commit [0-9a-f]{40}\\b)",
+          "!\\bmergePullRequest\\b",
+          "!/pulls/\\S+/merge\\b"
+        ],
+        "gh-merge-disable-auto-off": [
+          "--match-head-commit [0-9a-f]{40}\\b",
+          "\\bgh pr (view|checks|diff)\\b",
+          "^gh pr merge \\S+ --disable-auto$",
+          "!\\bgh pr merge\\b(?!.*--match-head-commit [0-9a-f]{40}\\b)",
+          "!\\bmergePullRequest\\b",
+          "!/pulls/\\S+/merge\\b"
+        ],
+        "gh-merge-unpinned-last": [
+          "--match-head-commit [0-9a-f]{40}\\b",
+          "\\bgh pr (view|checks|diff)\\b",
+          "!\\bgh pr merge\\b(?!.*--match-head-commit [0-9a-f]{40}\\b)",
+          "!\\bmergePullRequest\\b",
+          "!/pulls/\\S+/merge\\b"
+        ],
+        "gh-api-write-door": [
+          "--match-head-commit [0-9a-f]{40}\\b",
+          "\\bgh pr (view|checks|diff)\\b",
+          "!\\bgh pr merge\\b(?!.*--match-head-commit [0-9a-f]{40}\\b)",
+          "!\\bmergePullRequest\\b",
+          "!/pulls/\\S+/merge\\b"
+        ]
+      }
+    }
+  },
+  {
+    "id": "blockers.guard_false_alarm_share",
+    "tab": "blockers",
+    "kind": "quality",
+    "group": "Simplicity and drift",
+    "label": "Guard blocks that were false alarms",
+    "means": "Upper bound: a block counts unless each retry ran its own steps, the fix, reads, or with the fix an unblocked edit.",
+    "unit": "%",
+    "goal": 5,
+    "near": 15,
+    "direction": "lower",
+    "goal_source": "template goal, no public benchmark: a guard that blocks commands which then run in another form slows work without stopping anything",
+    "source": "the last 15 bash guard blocks in this repo's transcripts. Held: no similar command succeeded in the same transcript within 10 minutes, or every one that did ran only the blocked command's own steps, as typed, steps that apply the fix the block named (params.fix_signals) and write no file, and allowlisted read-only steps whose every flag is on their list. A retry call that runs the fix may also edit a step the guard did not block: its first two words are an unblocked step's and no blocked step's, by the replay of each step alone (at most REPLAY_STEPS), and it holds no blocked step's command word; on the 15 latest blocks of 2026-11-11 that moved the reading from 53.3% to 40%. A held block the current guard still blocks under another rule reads as narrowed. False alarm: anything else (a misfire, or a route around), a veto, the same command run unblocked, a current guard (params.guard_script) that breaks no rule on the blocked command on replay (a misfire since fixed), or a guard log line with misfire: true. Ambiguities read as false alarm and known workaround families are vetoed; a workaround sharing no words with the blocked command and hitting no veto can still read held. A block whose command cannot be read is left out and counted. N = 15 (LAST_GUARD). Reads above hand labels: 40.4% vs 21.2% on 52 blocks, 2026-11-03. A heredoc's body stays in the step that opened it, and fix signals read a step without a leading timeout, git -C or a discarded redirection (signalForm); on the 12 latest blocks of 2026-11-04 that moved the reading from 50% to 33.3%.",
+    "needs": "local-files",
+    "chart": "bar",
+    "defined": "2026-11-11"
+  },
+  {
+    "id": "blockers.enforcement_reverts",
+    "tab": "blockers",
+    "kind": "quality",
+    "group": "Quality",
+    "label": "Enforcement PRs reverted or bugged",
+    "means": "Of the latest merged changes to workflows, git hooks, guards or settings, those a later change undid or a bug blamed.",
+    "unit": "PRs",
+    "goal": 0,
+    "near": 1,
+    "direction": "lower",
+    "goal_source": "template goal, no public benchmark: a change to a workflow, hook, guard or setting that is reverted or causes a bug is a gate that broke work",
+    "source": "the last 20 merged PRs whose files match params.enforcement_paths, against later merged PRs titled Revert that name them by title or number, and bug issues opened since the oldest of them merged that name them as the cause: a Regressed-by: #N line or a cause phrase (caused by, introduced in, regressed in, broken by) before the number. N = the last 20 merged PRs (LAST_PRS)",
+    "needs": "gh",
+    "chart": "table"
+  },
+  {
+    "id": "blockers.guard_blocks_per_100_calls",
+    "tab": "blockers",
+    "kind": "quality",
+    "group": "Simplicity and drift",
+    "label": "Guard blocks per 100 tool calls",
+    "means": "Commands the bash guard stopped in this repo's sessions, per hundred of the latest tool calls.",
+    "unit": "blocks",
+    "goal": 0.05,
+    "near": 0.1,
+    "direction": "lower",
+    "goal_source": "template goal, no public benchmark: one block in 2,000 tool calls; a guard that fires often is in the way more than it protects",
+    "source": "params.guard_log (default ~/.claude/code-os/bash_guard.log): ts, cwd and rules of each block whose cwd is in this repo's checkout (params.checkout_path, default the main checkout), from the oldest of the last 1,000 tool calls in this repo's transcripts to now, per 100 of those calls. N = 1,000 tool calls (LAST_CALLS in blockers.mjs), so new work replaces old within hours in a busy repo",
+    "needs": "local-files",
+    "chart": "bar"
+  },
+  {
+    "id": "blockers.latest_block_seconds",
+    "tab": "blockers",
+    "kind": "speed",
+    "group": "Speed",
+    "label": "Seconds the latest block cost",
+    "means": "Time from the latest blocked call to the session's next call, read now.",
+    "unit": "s",
+    "goal": 40,
+    "near": 120,
+    "direction": "lower",
+    "goal_source": "template goal, no public benchmark: set 2026-11-04; a blocked call answered and replaced in well under a minute",
+    "source": "this repo's transcripts: the newest tool call among the last 1,000 refused by the bash guard, the write guard, an app hook, a permission check or a git hook, timed to the next tool call in its transcript, at most 10 minutes; each blocker's own latest block beside it. A value read now, never a mean. N = 1,000 tool calls (LAST_CALLS in blockers.mjs), so new work replaces old within hours in a busy repo",
+    "needs": "local-files",
+    "chart": "bar"
+  },
+  {
+    "id": "blockers.git_commit_seconds",
+    "tab": "blockers",
+    "kind": "speed",
+    "group": "Speed",
+    "label": "git commit, median",
+    "means": "How long a commit takes with its pre-commit checks, from the call to its result.",
+    "unit": "s",
+    "goal": 5,
+    "near": 15,
+    "direction": "lower",
+    "goal_source": "template goal, no public benchmark: pre-commit checks quick enough not to break a session's flow",
+    "source": "this repo's transcripts: the last 20 Bash calls that run git commit and not git push, tool call to tool result. N = 20 (LAST_GIT)",
+    "needs": "local-files",
+    "chart": "table"
+  },
+  {
+    "id": "blockers.git_push_seconds",
+    "tab": "blockers",
+    "kind": "speed",
+    "group": "Speed",
+    "label": "git push, median",
+    "means": "How long a push takes with its pre-push checks, from the call to its result.",
+    "unit": "s",
+    "goal": 10,
+    "near": 30,
+    "direction": "lower",
+    "goal_source": "template goal, no public benchmark: pre-push checks quick enough not to break a session's flow; the full suite runs in CI",
+    "source": "this repo's transcripts: the last 20 Bash calls that run git push and not git commit, tool call to tool result. N = 20 (LAST_GIT)",
+    "needs": "local-files",
+    "chart": "table"
+  },
+  {
+    "id": "blockers.pushes_per_merged_pr",
+    "tab": "blockers",
+    "kind": "speed",
+    "group": "Speed",
+    "label": "Pushes per merged PR",
+    "means": "Commits that started checks, per merged pull request; each one is another wait.",
+    "unit": "pushes",
+    "goal": 2,
+    "near": 3,
+    "direction": "lower",
+    "goal_source": "template goal, no public benchmark: one push and at most one fix push per merged PR; each push is another CI wait",
+    "source": "gh api graphql: commits with at least one check run, on the last 20 merged PRs (the last 30 commits of each). N = the last 20 merged PRs (LAST_PRS)",
+    "needs": "gh",
+    "chart": "bar"
+  },
+  {
+    "id": "blockers.latest_block_tokens",
+    "tab": "blockers",
+    "kind": "consumption",
+    "group": "Use",
+    "label": "Tokens the latest block cost",
+    "means": "The model call the latest block forced, everything it read and wrote, read now.",
+    "unit": "tokens",
+    "goal": 250000,
+    "near": 750000,
+    "direction": "lower",
+    "goal_source": "template goal, no public benchmark: set 2026-11-04; less than two model calls at the Claude tab's context goal of 150,000 tokens (2 x 150,000 = 300,000); a block should cost one short answer",
+    "source": "this repo's transcripts: message.usage (input, cache write, cache read, output) of the first model call after the newest block's result among the last 1,000 tool calls, in full, one share when blocks refused together share it, one count per message.id; each blocker's own latest block beside it. A value read now, never a mean. N = 1,000 tool calls (LAST_CALLS in blockers.mjs), so new work replaces old within hours in a busy repo",
+    "needs": "local-files",
+    "chart": "bar"
+  },
+  {
+    "id": "blockers.hook_tokens_per_session",
+    "tab": "claude-settings",
+    "kind": "consumption",
+    "group": "Hooks",
+    "label": "Hook output tokens per session",
+    "means": "Text hooks add to a session, counted each time a later model call reads it again.",
+    "unit": "tokens",
+    "goal": 10000,
+    "near": 30000,
+    "direction": "lower",
+    "goal_source": "template goal, no public benchmark: hook text is read again by every later call until a compaction, so a session should carry little of it",
+    "source": "this repo's transcripts: hook attachments and the WARN and INFRA lines of git commit and push results, characters / 4, times the model calls after them in the same transcript up to its next compaction, summed per session with its subagents; the mean over the last 5 main sessions by start. N = 5 sessions (LAST_SESSIONS)",
+    "needs": "local-files",
+    "chart": "bar"
+  },
+  {
+    "id": "blockers.review_tokens_per_pr",
+    "tab": "blockers",
+    "kind": "consumption",
+    "group": "Use",
+    "label": "Reviewer tokens per merged PR",
+    "means": "Tokens used by review subagents while the latest merged pull requests were open, per pull request.",
+    "unit": "tokens",
+    "goal": 1000000,
+    "near": 2000000,
+    "direction": "lower",
+    "goal_source": "template goal, no public benchmark: half the Claude tab's template goal of 2,000,000 tokens per merged PR",
+    "source": "this repo's subagent transcripts whose meta.json agentType or description says review: message.usage billable (input, output, cache write), one count per message.id, from the merge before the last 20 merged PRs to the newest merge (gh api graphql), over those 20; reviews the main session does itself are left out. N = the last 20 merged PRs (LAST_PRS)",
+    "needs": "local-files",
+    "chart": "table"
+  }
+]

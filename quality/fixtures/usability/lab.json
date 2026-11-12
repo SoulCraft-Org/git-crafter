@@ -1,0 +1,17 @@
+{
+  "browser": "fixture",
+  "read_at": "2026-11-02T21:00:00.000Z",
+  "pages": {
+    "/rankings/": {
+      "fcp": 1000,
+      "lcp": [{ "startTime": 1800, "size": 40000 }],
+      "shifts": [],
+      "tasks": [
+        { "startTime": 800, "duration": 300 },
+        { "startTime": 2000, "duration": 700 },
+        { "startTime": 20000, "duration": 400 }
+      ],
+      "end": 16000
+    }
+  }
+}

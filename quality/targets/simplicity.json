@@ -1,0 +1,98 @@
+[
+  {
+    "id": "simplicity.restated_rules",
+    "tab": "instructions",
+    "kind": "quality",
+    "group": "Bloat",
+    "label": "Rules said twice",
+    "means": "Rule sentences that appear in more than one always-loaded or rule file.",
+    "unit": "sentences",
+    "goal": 0,
+    "near": 3,
+    "direction": "lower",
+    "goal_source": "template goal, no public benchmark: a rule said in two always-loaded files costs its tokens twice on every call and drifts when one copy changes",
+    "source": "sentences of eight or more words, markdown and case ignored, in the managed CLAUDE.md, ~/.claude/CLAUDE.md, ~/.claude/rules/*.md, the repo CLAUDE.md and the memory index; detail is the files that share them",
+    "needs": "local-files",
+    "chart": "table",
+    "params": {
+      "comment": "Each setting has a default (simplicity.mjs): project_match (the repo's own project folder), managed_claude_md (the platform's managed policy CLAUDE.md), code_os_checkout (the Git Crafter checkout this collector runs from), sync_entry (user-claude). not_living: doc paths that record the past on purpose. stale_days: how old a figure's read date may be. doc_set, doc_set_left_out ([{ glob }]) and skip_dirs: the living docs, used when the engine does not pass docs.json's. projects_dir: where Claude Code keeps session transcripts; a ~/ path is under home, an absolute one is itself, any other is under the repo root.",
+      "not_living": [
+        "baseline"
+      ],
+      "stale_days": 30,
+      "doc_set": [
+        "**/*.md"
+      ],
+      "doc_set_left_out": [],
+      "skip_dirs": [
+        "node_modules",
+        "dist"
+      ],
+      "projects_dir": "~/.claude/projects"
+    }
+  },
+  {
+    "id": "simplicity.broken_refs",
+    "tab": "instructions",
+    "kind": "quality",
+    "group": "Drift",
+    "label": "Broken references in rules and memory",
+    "means": "Files named in a rule, a CLAUDE.md or a memory note that no longer exist.",
+    "unit": "references",
+    "goal": 0,
+    "near": 3,
+    "direction": "lower",
+    "goal_source": "template goal, no public benchmark: a reference to a file that is gone sends Claude looking for it",
+    "source": "paths in code spans and markdown links, resolved from home, the naming file's folder, the repo and the Git Crafter checkout; living docs are docs.dead_paths on the Docs tab",
+    "needs": "local-files",
+    "chart": "table"
+  },
+  {
+    "id": "simplicity.copy_drift",
+    "tab": "instructions",
+    "kind": "quality",
+    "group": "Drift",
+    "label": "Installed copies that differ from source",
+    "means": "Installed rules and guards that no longer match their source in Git Crafter.",
+    "unit": "copies",
+    "goal": 0,
+    "near": 1,
+    "direction": "lower",
+    "goal_source": "template goal, no public benchmark: an installed copy that differs from its source runs rules nobody reviewed",
+    "source": "the Git Crafter checkout this collector runs from (params.code_os_checkout overrides): its sync tool, tools/code_os_sync.py or tools/claude_os_sync.py, status params.sync_entry (default user-claude); every file not in-sync; state, read now",
+    "needs": "local-files",
+    "chart": "table"
+  },
+  {
+    "id": "simplicity.undated_figures",
+    "tab": "documentation",
+    "kind": "quality",
+    "group": "Current",
+    "label": "Figures with no recent read date",
+    "means": "Numbers in living docs whose sentence has no read date, or one older than a month.",
+    "unit": "figures",
+    "goal": 0,
+    "near": 20,
+    "direction": "lower",
+    "goal_source": "template goal, no public benchmark: a figure is attributed or labeled a goal (Git Crafter rules/writing-and-gates.md); one with no read date cannot be checked; near band: template default",
+    "source": "the Docs tab's doc set (params.doc_set on quality/targets/docs.json) less params.not_living; a percent, money, a comma-grouped number or a number with a unit, outside code, without a YYYY-MM-DD within params.stale_days (default 30) in its sentence or table row",
+    "needs": "local-files",
+    "chart": "bar"
+  },
+  {
+    "id": "simplicity.memory_stale_refs",
+    "tab": "instructions",
+    "kind": "quality",
+    "group": "Drift",
+    "label": "Memory notes naming what is gone",
+    "means": "Memory notes that name a path or a command flag that no longer exists.",
+    "unit": "notes",
+    "goal": 0,
+    "near": 1,
+    "direction": "lower",
+    "goal_source": "template goal, no public benchmark: a memory note naming a path or flag that is gone teaches a session something false",
+    "source": "memory notes, not the index: paths as in simplicity.broken_refs, and --flags in code spans that git grep finds in neither the repo nor the Git Crafter checkout",
+    "needs": "local-files",
+    "chart": "table"
+  }
+]

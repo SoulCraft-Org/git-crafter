@@ -1,0 +1,173 @@
+/* ---- Process tabs, the repo filter, pipelines and suites ---- */
+.pbar-row { position: sticky; top: 2.8125rem; z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) 1.125rem; margin: calc(-1 * var(--s-2)) calc(-1 * var(--gut)) 1.25rem; padding: var(--s-2) var(--gut); background: var(--c-ground); border-bottom: var(--line-hair) solid var(--c-rule); }
+.ptabs { display: flex; flex-wrap: wrap; gap: var(--s-1); }
+.ptabs a { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.5rem; padding: 0.375rem 0.875rem; border: var(--line-hair) solid var(--c-border); border-radius: var(--r-chisel); color: var(--c-text); font-weight: 600; text-decoration: none; }
+.ptabs a:hover { background: var(--c-surface); }
+.ptabs a[aria-current] { border-color: var(--c-night); background: var(--c-night); color: var(--c-on-night); }
+.ptabs a[aria-current] .ic { color: var(--c-on-night); }
+[data-vg].dimmed { opacity: 0.5; }
+tspan[data-vg].dimmed { fill-opacity: 0.5; }
+.t-nv { display: inline-flex; align-items: center; gap: var(--s-2); }
+.gates { margin: 0 0 0.875rem; padding: 0; list-style: none; font-size: 0.875rem; }
+.gates li { padding: 0.375rem 0; border-bottom: var(--line-hair) solid var(--c-rule); overflow-wrap: anywhere; }
+.gates b { margin-right: var(--s-1); }
+.repo-sec { border-top: var(--line-hair) solid var(--c-rule); }
+.repo-sec > summary { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem 0.875rem; padding: var(--s-3) 0; cursor: pointer; list-style: none; }
+.repo-sec > summary::-webkit-details-marker { display: none; }
+.repo-sec > summary::after { content: ""; width: 0.4375rem; height: 0.4375rem; margin-left: auto; border: solid var(--c-text-dim); border-width: 0 var(--line-edge) var(--line-edge) 0; transform: translateY(-0.125rem) rotate(45deg); }
+.repo-sec[open] > summary::after { transform: rotate(-135deg); }
+.rs-n { display: inline-flex; align-items: center; gap: 0.375rem; font-size: 1.0625rem; font-weight: 650; }
+.rs-n .ic { color: var(--c-text-dim); }
+.repo-sec .src { margin-bottom: 0.875rem; }
+.mac { display: flex; align-items: center; gap: var(--s-2); margin: 0 0 var(--s-3); font-size: 0.875rem; color: var(--c-text-dim); }
+.pyr { margin: var(--s-1) 0 1.125rem; }
+.py { margin: 0; padding: 0; list-style: none; }
+.py li { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 4.5rem; gap: var(--s-1) var(--s-3); align-items: center; padding: var(--s-2) 0; border-bottom: var(--line-hair) solid var(--c-rule); }
+.py-l { font-weight: 600; }
+.py-bar { display: flex; justify-content: center; height: 0.875rem; }
+.py-bar i { display: block; height: 100%; min-width: 0.125rem; border-radius: 0.125rem; background: var(--c-community); }
+.py-n { font-weight: 650; text-align: right; font-variant-numeric: tabular-nums; }
+.py-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 0.125rem var(--s-4); font-size: 0.8125rem; color: var(--c-text-dim); }
+.py-meta .g { width: 0.75rem; height: 0.75rem; margin-right: var(--s-1); }
+.suites { width: 100%; min-width: 40rem; font-size: 0.8125rem; }
+.suites th, .suites td { padding: 0.4375rem var(--s-3) 0.4375rem 0; border-bottom: var(--line-hair) solid var(--c-rule); text-align: left; vertical-align: top; }
+.suites thead th { font-weight: 400; color: var(--c-text-dim); }
+.suites tbody th { font-weight: 600; white-space: nowrap; }
+.suites .num { text-align: right; white-space: nowrap; }
+.suites .g { width: 0.75rem; height: 0.75rem; margin-right: var(--s-1); }
+.disp { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; margin: 0.625rem 0 var(--s-1); font-size: 0.8125rem; }
+.disp code { padding: 0.0625rem 0.375rem; border: var(--line-hair) solid var(--c-rule); border-radius: var(--r-chisel); }
+@media (max-width: 40em) {
+  .py li { grid-template-columns: 6.5rem minmax(0, 1fr) 3.5rem; }
+  .pbar-row { position: static; }
+}
+
+/* ---- Claude tab ---- */
+.cm-c { fill: var(--c-ground); stroke: var(--c-night); stroke-width: 2; }
+.routes g { cursor: pointer; color: var(--c-night); }
+.routes g:focus { outline: none; }
+.routes g:focus-visible .cm-c { stroke: var(--c-focus); stroke-width: 2.5; }
+.routes { display: block; width: 100%; min-width: 40rem; max-width: 56.25rem; height: auto; }
+.rt-path { fill: none; stroke: var(--lane); }
+.rt-path.sh { stroke: var(--c-community); }
+.rt-l { font-size: var(--t-step--1); font-weight: 650; fill: var(--c-text); }
+.rt-s { font-size: 0.8125rem; fill: var(--c-text-dim); }
+.ch { display: flex; align-items: center; gap: var(--s-2); }
+.ch .ic, .decide h3 .ic { width: 1.125rem; height: 1.125rem; color: var(--c-text-dim); }
+.mts { display: grid; grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr)); gap: var(--s-4) var(--s-5); }
+.mt { padding-top: var(--s-2); border-top: var(--line-bold) solid var(--c-rule); }
+.mt.s-meets { border-top-color: var(--c-pine); }
+.mt.s-near { border-top-color: var(--c-brass); }
+.mt.s-misses { border-top-color: var(--c-danger); }
+.mt-n { display: flex; align-items: center; gap: 0.375rem; margin: 0.125rem 0 var(--s-1); font-size: 1.75rem; font-weight: 700; line-height: 1.1; }
+.mt-n .g { width: 1rem; height: 1rem; }
+.mt .bl { max-width: 13.75rem; }
+.where { margin-top: var(--s-4); max-width: 45rem; }
+.decide { display: grid; gap: var(--s-2) 2.5rem; }
+@media (min-width: 47.5em) { .decide { grid-template-columns: 1fr 1fr; } }
+.decide ul { margin: 0; padding: 0; list-style: none; }
+.decide li { display: flex; align-items: center; gap: var(--s-2); padding: 0.4375rem 0; border-bottom: var(--line-hair) solid var(--c-rule); font-size: 0.875rem; }
+.decide li .ic { color: var(--c-text-dim); }
+.apart-h { display: flex; align-items: center; gap: 0.375rem; margin: var(--s-1) 0 0.375rem; font-size: 0.875rem; color: var(--c-text-dim); }
+.apart-h .ic { color: var(--c-text-dim); }
+.suites tr.job th { padding-left: 0.875rem; font-weight: 400; color: var(--c-text-dim); }
+.suites tr.job td { color: var(--c-text-dim); }
+.rt-list { display: none; margin: 0; padding: 0; list-style: none; }
+.rt-list li { display: flex; align-items: center; gap: var(--s-2); padding: var(--s-2) 0; border-bottom: var(--line-hair) solid var(--c-rule); font-weight: 600; }
+.rt-list b { margin-left: auto; }
+@media (max-width: 40em) {
+  .rt-box { display: none; }
+  .rt-list { display: block; }
+}
+
+/* ---- Systems tab ---- */
+.smap { display: block; width: 100%; min-width: 57.5rem; height: auto; }
+.sy-box { fill: var(--c-ground); stroke: var(--c-border); stroke-width: 1; }
+.sy-node { cursor: pointer; color: var(--c-night); }
+.sy-node:hover .sy-box { fill: color-mix(in oklab, var(--c-surface) 60%, var(--c-ground)); }
+.sy-node[aria-current] .sy-box { stroke: var(--c-night); stroke-width: 2.5; }
+.sy-node:focus { outline: none; }
+.sy-node:focus-visible .sy-box { stroke: var(--c-focus); stroke-width: 3; }
+.sy-n { font-size: 0.8125rem; font-weight: 650; fill: var(--c-text); }
+.sy-v { font-size: 0.75rem; fill: var(--c-text-dim); }
+.sy-track { fill: var(--c-rule); }
+.sy-fill.s-meets { fill: var(--c-pine); }
+.sy-fill.s-near { fill: var(--c-brass); }
+.sy-fill.s-misses { fill: var(--c-danger); }
+.sy-tick { stroke: var(--c-text); stroke-width: 1.5; }
+.sy-edge { fill: none; stroke: var(--c-night); stroke-width: 1.75; }
+.sy-head { fill: var(--c-night); }
+.sy-w { font-size: 0.75rem; fill: var(--c-text-dim); text-anchor: middle; }
+.sy-w.l { text-anchor: start; }
+.sy-lane { font-size: 0.8125rem; font-weight: 650; fill: var(--c-text-dim); }
+.sypanel { margin-top: var(--s-4); }
+.sypanel h3 { display: flex; align-items: center; gap: var(--s-2); margin: 0 0 0.125rem; }
+.sypanel h3 .ic { width: 1.125rem; height: 1.125rem; color: var(--c-text-dim); }
+.lims { margin: 0.625rem 0 0.875rem; font-size: 0.875rem; }
+.lims th, .lims td { padding: 0.3125rem var(--s-4) 0.3125rem 0; border-bottom: var(--line-hair) solid var(--c-rule); text-align: left; }
+.lims th { font-weight: 600; }
+.hand { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; margin: 0.625rem 0 0; }
+.hand .chip { color: var(--c-text); text-decoration: none; }
+.mlane { min-width: 32.5rem; font-size: 0.875rem; }
+.mlane th, .mlane td { padding: var(--s-2) 1.125rem var(--s-2) 0; border-bottom: var(--line-hair) solid var(--c-rule); text-align: left; }
+.mlane thead th { font-size: var(--t-step--1); }
+.mlane thead .ic { width: 1rem; height: 1rem; margin-right: 0.375rem; vertical-align: -0.1875rem; color: var(--c-text-dim); }
+.mlane tbody th { font-weight: 400; color: var(--c-text-dim); }
+.mlane td { font-weight: 650; }
+.mlane td.nm { color: var(--c-text-dim); font-weight: 400; }
+
+
+/* Tokens */
+.ts-total { display: flex; align-items: center; gap: 0.375rem; margin: var(--s-1) 0 0; font-size: var(--t-step--1); }
+.tstack { height: 1.375rem; }
+.rest { background: repeating-linear-gradient(135deg, var(--c-rule) 0 0.25rem, transparent 0.25rem 0.5rem); box-shadow: inset 0 0 0 0.0625rem var(--c-rule); }
+.tparts { max-width: 35rem; }
+.tparts tr { cursor: default; }
+.tparts th { width: auto; }
+.tparts th a { color: var(--c-text); }
+.tflow { display: block; width: 100%; min-width: 40rem; height: auto; }
+.tf-band { fill: color-mix(in oklab, var(--c-surface) 45%, var(--c-ground)); stroke: var(--c-rule); }
+.tf-g { font-size: 0.8125rem; font-weight: 650; fill: var(--c-text-dim); }
+.tf-fig text, .tf-cache text { font-size: 0.75rem; fill: var(--c-text); }
+.tf-cache text { text-anchor: end; fill: var(--c-text-dim); }
+.tf-cache { color: var(--c-text-dim); }
+.tf-box { fill: var(--c-ground); stroke: var(--c-border); }
+.tf-node { color: var(--c-night); }
+.tf-n { font-size: 0.8125rem; font-weight: 650; fill: var(--c-text); }
+.tf-v { font-size: 0.75rem; fill: var(--c-text-dim); }
+.tf-edge, .tf-draw { fill: none; stroke: var(--c-night); stroke-width: 1.75; }
+.tf-draw { stroke-dasharray: 3 3; stroke-width: 1.25; }
+.tf-head { fill: var(--c-night); }
+.tf-w { font-size: 0.75rem; fill: var(--c-text-dim); text-anchor: middle; }
+.tf-ring rect { fill: var(--c-ground); stroke: var(--c-border); stroke-dasharray: 4 3; }
+.tflow g[tabindex]:focus { outline: none; }
+.tflow g[tabindex]:focus-visible rect, .tflow g[tabindex]:focus-visible text { stroke: var(--c-focus); }
+.clayers { display: flex; flex-wrap: wrap; gap: var(--s-1); margin: var(--s-2) 0 0.875rem; padding: 0; list-style: none; font-size: 0.8125rem; }
+.clayers li { padding: 0.375rem 0.875rem 0.375rem 0.625rem; background: var(--c-ground); border: var(--line-hair) solid var(--c-border); clip-path: polygon(0 0, calc(100% - 0.5rem) 0, 100% 50%, calc(100% - 0.5rem) 100%, 0 100%); }
+.practices { min-width: 40rem; font-size: 0.875rem; }
+.practices th, .practices td { padding: 0.4375rem var(--s-4) 0.4375rem 0; border-bottom: var(--line-hair) solid var(--c-rule); text-align: left; vertical-align: middle; }
+.practices thead th { font-size: 0.8125rem; font-weight: 600; color: var(--c-text-dim); }
+.practices tbody th { font-weight: 400; }
+.practices tbody th a { color: var(--c-text); }
+.practices td.num { font-weight: 650; white-space: nowrap; }
+.practices td.nm { color: var(--c-text-dim); font-weight: 400; }
+.practices .tg { min-width: 9.375rem; }
+.practices .tg .bl { max-width: 8.75rem; }
+
+/* When to delegate */
+.dmap { display: block; width: 100%; min-width: 47.5rem; height: auto; }
+.dm-rect { fill: var(--c-ground); stroke: var(--c-border); }
+.dm-node { color: var(--c-night); }
+.dm-n { font-size: 0.8125rem; font-weight: 650; fill: var(--c-text); }
+.dm-v { font-size: 0.75rem; fill: var(--c-text-dim); }
+.dm-edge { fill: none; stroke: var(--c-night); stroke-width: 1.75; }
+.dm-head { fill: var(--c-night); }
+.dm-w { font-size: 0.75rem; fill: var(--c-text-dim); text-anchor: middle; }
+.dm-w.l { text-anchor: start; }
+.dm-band { fill: color-mix(in oklab, var(--c-surface) 45%, var(--c-ground)); stroke: var(--c-rule); }
+.dm-lane { font-size: 0.8125rem; font-weight: 650; fill: var(--c-text-dim); }
+.dmap g[tabindex]:focus { outline: none; }
+.dmap g[tabindex]:focus-visible .dm-rect { stroke: var(--c-focus); stroke-width: 3; }
+.mpick td a { color: var(--c-text); }
+.mpick td { font-weight: 400; }
+.mpick td:nth-child(2) { font-weight: 650; }

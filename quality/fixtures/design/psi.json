@@ -1,0 +1,8 @@
+{
+  "/": { "lcp_ms": 2100, "cls": 0.02, "tbt_ms": 150 },
+  "/directory/": { "lcp_ms": 3400, "cls": 0.12, "tbt_ms": 450 },
+  "/rankings/": { "runtimeError": "NO_FCP" },
+  "/places/": { "lcp_ms": 2600, "cls": 0.004, "tbt_ms": 210 },
+  "/people/": { "status": 429 },
+  "/join/": { "lcp_ms": 9900, "cls": 0.9, "tbt_ms": 9900 }
+}

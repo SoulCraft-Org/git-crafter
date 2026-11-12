@@ -1,0 +1,41 @@
+# Dependabot bumps Git Crafter's own action pins and npm packages once a week, each ecosystem in one grouped pull
+# request. A new release waits 14 days first (the Quality page's params.cooldown_days), long enough to be reported
+# and pulled; default-days is the one cooldown key GitHub documents for every ecosystem, GitHub Actions included.
+# Security updates skip the cooldown (GitHub docs, Dependabot options reference, read 2026-11-10: cooldown is for
+# version updates only) and arrive as one pull request per ecosystem: the second group in each entry, with
+# applies-to: security-updates. A group without applies-to covers version updates only.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    # actions/pages names the same actions as pages.yml, and actions.lock records both: they must move in one pull request.
+    directories:
+      - /
+      - /actions/pages
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    groups:
+      actions:
+        patterns: ["*"]
+      actions-security:
+        applies-to: security-updates
+        patterns: ["*"]
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    # Held: TypeScript 7 ships its compiler API only as typescript/unstable/*, and the template collectors every repo
+    # runs (complexity.mjs, code.mjs) must not depend on an unstable API (orchestrator, 2026-11-04, #100). Minor and
+    # patch updates still come. Revisit when TypeScript publishes a stable API.
+    ignore:
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+    groups:
+      npm:
+        patterns: ["*"]
+      npm-security:
+        applies-to: security-updates
+        patterns: ["*"]

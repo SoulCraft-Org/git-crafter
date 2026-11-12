@@ -1,0 +1,34 @@
+[
+ {
+  "id": "ci.skip_unchanged_share",
+  "drop": true,
+  "goal_source": "Git Crafter drop, 2026-11-04: its 80% goal is out of reach by design. verify is the required ci / ci-ok and checks the whole repo, so it runs every change; secret-scan scans every commit; pages redeploys the live Quality page on every push to main. That leaves 4 of 7 triggers at most. ci.light_run_share keeps the tab's Consumption"
+ },
+ {
+  "id": "ci.latest_flow",
+  "goal": 4,
+  "near": 10,
+  "goal_source": "Git Crafter goal (2026-11-10): the 90th percentile of 15 readings 2026-11-04 to 2026-11-11 (data/quality/history and the 12 quality-run artifacts GitHub still keeps), which read 1.7 to 4.3 minutes, so a slowdown shows; near is the template's ten-minute build. Under the template's 10 it met its goal in every reading"
+ },
+ {
+  "id": "ci.latest_full_run_minutes",
+  "drop": true,
+  "goal_source": "Git Crafter drop, 2026-11-10: it read 1.7 to 5.7 minutes, under its goal of 10, in all 15 readings 2026-11-04 to 2026-11-11 (data/quality/history and the 12 quality-run artifacts GitHub still keeps), and equal to ci.latest_flow in 10 of them: the slowest workflow sets the pipeline time. ci.latest_flow, which draws every stage, keeps the tab's build speed"
+ },
+ {
+  "id": "ci.light_run_share",
+  "goal": 10,
+  "near": 25,
+  "goal_source": "Git Crafter goal (2026-11-10): at most one run in ten starts a runner only to skip; 15 readings 2026-11-04 to 2026-11-11 (data/quality/history and the 12 quality-run artifacts GitHub still keeps) read 4.1 to 17.7%, 3 of them over 10. Near is the template's one in four, which it met in every reading"
+ },
+ {
+  "id": "ci.flaky_reruns",
+  "drop": true,
+  "goal_source": "Git Crafter drop, 2026-11-10: 0% in all 15 readings 2026-11-04 to 2026-11-11 (data/quality/history and the 12 quality-run artifacts GitHub still keeps), and no goal is tighter than 0. A check that fails then passes still shows in insights.failed_minutes_share and ci.main_red_minutes"
+ },
+ {
+  "id": "ci.cache_hit_rate",
+  "drop": true,
+  "goal_source": "Git Crafter drop, 2026-11-10: 100% in all 15 readings 2026-11-04 to 2026-11-11 (data/quality/history and the 12 quality-run artifacts GitHub still keeps), and no goal is tighter than 100. setup-node keys its npm cache on package-lock.json, so a miss follows only a lockfile change; a slow install still shows in ci.latest_flow"
+ }
+]

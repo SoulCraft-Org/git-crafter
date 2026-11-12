@@ -1,0 +1,63 @@
+{
+ "comment": "Starter Process page config. Copy it to quality/process/config.json, set repos and repo_url to this repo, and keep or drop maps. It is also the repo's maps file (docs.maps names it), so the starter is one file. Each map step reads its metric from this repo's Quality page; drop a step whose tab the Quality config drops. Keys: Git Crafter actions/pages/action.yml; maps: pages/maps/README.md.",
+ "repos": [
+  "my-repo"
+ ],
+ "docs": {
+  "maps": "quality/process/config.json"
+ },
+ "repo_url": "https://github.com/OWNER/my-repo/blob/main",
+ "maps": [
+  {
+   "use": "delivery"
+  },
+  {
+   "use": "deploy"
+  },
+  {
+   "use": "guard"
+  },
+  {
+   "use": "adopt"
+  },
+  {
+   "use": "measure"
+  },
+  {
+   "use": "code"
+  },
+  {
+   "use": "triage"
+  },
+  {
+   "use": "secure"
+  }
+ ],
+ "data": "quality/process/data/org.json",
+ "history": null,
+ "out": "quality/dist",
+ "pages": {
+  "process": "process.html"
+ },
+ "tabs": [
+  "build",
+  "ci",
+  "testing",
+  "claude",
+  "tokens"
+ ],
+ "heading": "my-repo",
+ "collector": "Git Crafter actions/pages",
+ "nav": [
+  {
+   "href": "index.html",
+   "label": "Quality, Speed and Consumption",
+   "icon": "speed"
+  },
+  {
+   "page": "process",
+   "label": "Process",
+   "icon": "plan"
+  }
+ ]
+}

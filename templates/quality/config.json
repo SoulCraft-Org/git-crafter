@@ -1,0 +1,26 @@
+{
+ "comment": "Starter Quality, Speed and Consumption config. Copy it to quality/config.json and drop the tabs this repo has no use for (templates/quality/README.md has a table per kind of repo). Every other key keeps its default: quality/targets for overrides, quality/data for runs, quality/dist for the page. Keys: Git Crafter quality/CONFIG.md.",
+ "tabs": [
+  "code",
+  "documentation",
+  "issues",
+  "projects",
+  "pull-requests",
+  "actions",
+  "tests",
+  "security",
+  "insights",
+  "settings",
+  "design",
+  "usability",
+  "claude",
+  "claude-settings",
+  "desktop-app",
+  "blockers",
+  "tokens",
+  "instructions",
+  "deploy",
+  "credits",
+  "tools"
+ ]
+}

@@ -1,0 +1,8 @@
+{
+  "/": { "lcp_ms": 2100, "cls": 0.02, "tbt_ms": 150 },
+  "/directory/": { "lcp_ms": 3400, "cls": 0.12, "tbt_ms": 450 },
+  "/rankings/": { "status": 500 },
+  "/places/": { "lcp_ms": 1800, "cls": 0, "tbt_ms": 90 },
+  "/people/": { "lcp_ms": 2000, "cls": 0, "tbt_ms": 310 },
+  "/join/": { "lcp_ms": 2600, "cls": 0.004, "tbt_ms": 210 }
+}

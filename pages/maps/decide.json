@@ -1,0 +1,18 @@
+{
+ "id": "decide",
+ "name": "Decide",
+ "why": "A question or blocker, from where it arises to Claude's call or the owner's queue, then cleared for good",
+ "ideal": "Claude makes every call its delegation allows and moves on; only questions and human steps reach the owner, and a false block is fixed once.",
+ "sources": [
+  {"title": "Claude Code: configure permissions", "url": "https://code.claude.com/docs/en/permissions", "date": "2026-11-04"},
+  {"title": "Claude Code: hooks reference", "url": "https://code.claude.com/docs/en/hooks", "date": "2026-11-04"},
+  {"title": "Claude Code Docs: Best practices", "url": "https://code.claude.com/docs/en/best-practices", "date": "2026-11-10"}
+ ],
+ "critical_path": ["arise", "decide", "clear"],
+ "steps": [
+  {"id": "arise", "name": "Arise", "tools": ["The bash guard's fix line", "rules/delegation.md"], "rule": "A question or blocker surfaces once with its fix named; none costs more than it helps.", "rule_ref": "https://code.claude.com/docs/en/hooks", "metric": "blockers.costly", "at": [0, 0]},
+  {"id": "decide", "name": "Claude decides", "tools": ["Decide without asking", "The PR description"], "rule": "Within its delegation Claude decides, records reason and reversal in the PR, and moves on.", "rule_ref": "https://code.claude.com/docs/en/best-practices", "metric": "blockers.latest_block_tokens", "at": [1, 0]},
+  {"id": "queue", "name": "Owner's queue", "tools": ["The owner's queue", "One question listing every item"], "rule": "Only questions and human steps reach the owner; any other prompt is a defect to remove.", "rule_ref": "https://code.claude.com/docs/en/permissions", "metric": "claude_settings.prompts_per_100_calls", "at": [1, 1]},
+  {"id": "clear", "name": "Clear", "tools": ["A guard fix by PR", "One regression case"], "rule": "Few blocks are false alarms; each one on a safe command becomes a guard fix by PR.", "rule_ref": "https://code.claude.com/docs/en/hooks", "metric": "blockers.guard_false_alarm_share", "at": [2, 0]}
+ ]
+}

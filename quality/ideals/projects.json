@@ -1,0 +1,140 @@
+{
+  "ideal": "Features are visual cards; bugs stay in issues. A card in progress has an open pull request, and Done cards link a merged one.",
+  "parts": [
+    {
+      "part": "Cards",
+      "ideal": "A feature is a draft card: a picture of its metric and steps, a table, at most 75 words",
+      "setup": "Add it on the board; convert it to an issue, with its area label, when its pull request opens"
+    },
+    {
+      "part": "Pictures",
+      "ideal": "One image per card: its pillar, a meter from now to goal, its steps left to right",
+      "setup": "Run the card picture tool, push the file to the cards branch, link it by its raw address"
+    },
+    {
+      "part": "Fields",
+      "ideal": "Status, Pillar and Area; each fact lives in one field",
+      "setup": "Create them with the Projects API; show Linked pull requests on every card"
+    },
+    {
+      "part": "Views",
+      "ideal": "Board, Backlog, Shipped and Stuck: each is the search behind one metric",
+      "setup": "Create views with the REST views endpoint; set no column limit"
+    },
+    {
+      "part": "Workflows",
+      "ideal": "Added sets Todo, a linked pull request In Progress, closed or merged Done, reopened Todo",
+      "setup": "Turn each on in the Workflows page; GitHub offers no API to edit them"
+    },
+    {
+      "part": "Insights",
+      "ideal": "Charts of cards by status and pillar, by area and status, and the burn up",
+      "setup": "Create them in the Insights page; never archive a card, since archived cards leave the charts"
+    },
+    {
+      "part": "Sessions",
+      "ideal": "One fresh session per card, ended at the merge; the card names its goal, its files and a check",
+      "setup": "Start a session per card in its own worktree; merge a green pull request before opening another"
+    },
+    {
+      "part": "Limit",
+      "ideal": "No count limit on cards; a card in progress has an open pull request, and open pull requests carry the limit",
+      "setup": "Move a waiting card back to Todo and name what it waits on"
+    }
+  ],
+  "sources": [
+    {
+      "title": "GitHub Docs: Best practices for Projects",
+      "url": "https://docs.github.com/en/issues/planning-and-tracking-with-projects/learning-about-projects/best-practices-for-projects",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Using the built-in automations",
+      "url": "https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project/using-the-built-in-automations",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Customizing the board layout",
+      "url": "https://docs.github.com/en/issues/planning-and-tracking-with-projects/customizing-views-in-your-project/customizing-the-board-layout",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: About insights for Projects",
+      "url": "https://docs.github.com/en/issues/planning-and-tracking-with-projects/viewing-insights-from-your-project/about-insights-for-projects",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Using the API to manage Projects",
+      "url": "https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project/using-the-api-to-manage-projects",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: REST API endpoints for Project views",
+      "url": "https://docs.github.com/en/rest/projects/views",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Adding items to your project",
+      "url": "https://docs.github.com/en/issues/planning-and-tracking-with-projects/managing-items-in-your-project/adding-items-to-your-project",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Basic writing and formatting syntax",
+      "url": "https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Claude Code Docs: Best practices for Claude Code",
+      "url": "https://code.claude.com/docs/en/best-practices",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Claude Code Docs: Claude Code GitHub Actions",
+      "url": "https://code.claude.com/docs/en/github-actions",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Anthropic: Effective harnesses for long-running agents",
+      "url": "https://www.anthropic.com/research/effective-harnesses-for-long-running-agents",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Microsoft Learn: Set Work in Progress limits in Azure Boards",
+      "url": "https://learn.microsoft.com/en-us/azure/devops/boards/boards/wip-limits?view=azure-devops",
+      "date": "2026-03-24"
+    },
+    {
+      "title": "Microsoft Learn: Cumulative flow, lead time and cycle time guidance",
+      "url": "https://learn.microsoft.com/en-us/azure/devops/report/dashboards/cumulative-flow-cycle-lead-time-guidance?view=azure-devops",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Microsoft Learn: Show bugs on backlogs and boards",
+      "url": "https://learn.microsoft.com/en-us/azure/devops/organizations/settings/show-bugs-on-backlog?view=azure-devops",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "DORA: Working in small batches",
+      "url": "https://dora.dev/capabilities/working-in-small-batches/",
+      "date": "2025-12-08"
+    },
+    {
+      "title": "DORA: Work in process limits",
+      "url": "https://dora.dev/capabilities/wip-limits/",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Claude Code Docs: Manage costs effectively",
+      "url": "https://code.claude.com/docs/en/costs",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Anthropic: How we built our multi-agent research system",
+      "url": "https://www.anthropic.com/research/multi-agent-research-system",
+      "date": "2026-11-10"
+    }
+  ],
+  "quality": "Every open card shows a picture in few words, no bug sits on the board, and each card in progress has an open pull request.",
+  "speed": "A card is done within three days of its first pull request, and none stays in progress past a week.",
+  "consumption": "A card's pull requests use no more runner time than a typical merged pull request."
+}

@@ -1,0 +1,29 @@
+name: ci
+
+# The Git Crafter CI standard (templates/ci/README.md): this repo calls Git Crafter's reusable workflow, which runs each
+# job on GitHub's standard hosted runners. Copy this file to .github/workflows/ci.yml, replace your-org with the
+# owner of the Git Crafter you call, and set the paths and commands. Pin a full commit SHA of that Git Crafter's main with
+# a # v1 comment; Dependabot's github-actions entry bumps it.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A newer push cancels a pull request's older run; a push to main always finishes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  ci:
+    uses: your-org/git-crafter/.github/workflows/ci-standard.yml@5572b2ded8c42d9aee72c6b250ee961c3358e9e9 # v1
+    with:
+      paths: |
+        src/**
+        package.json
+        package-lock.json
+      short: npm run lint
+      standard: npm test

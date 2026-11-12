@@ -1,0 +1,56 @@
+{
+  "_comment": "Answers by REST route for quality/collectors/github/github.test.mjs, repo fixture-org/fixture-repo. An __error entry makes the fake gh throw that GhError. Security features as on a private repo of a plan without the paid ones: code scanning, secret scanning and code quality off, nobody billed. Alerts: 5 open vulnerabilities, 1 open malware alert, 2 fixed in 2 and 6 days.",
+  "repos/fixture-org/fixture-repo": {
+    "default_branch": "main",
+    "private": true,
+    "owner": { "type": "Organization" },
+    "security_and_analysis": {
+      "secret_scanning": { "status": "disabled" },
+      "secret_scanning_push_protection": { "status": "enabled" },
+      "dependabot_security_updates": { "status": "enabled" }
+    }
+  },
+  "repos/fixture-org/fixture-repo/dependabot/alerts?per_page=100": [
+    { "state": "open", "created_at": "2026-10-20T20:00:00Z", "fixed_at": null, "security_advisory": { "severity": "critical" } },
+    { "state": "open", "created_at": "2026-10-30T20:00:00Z", "fixed_at": null, "security_advisory": { "severity": "high" } },
+    { "state": "open", "created_at": "2026-10-01T00:00:00Z", "fixed_at": null, "security_advisory": { "severity": "medium" } },
+    { "state": "open", "created_at": "2026-10-01T00:00:00Z", "fixed_at": null, "security_advisory": { "severity": "low" } },
+    { "state": "open", "created_at": "2026-10-02T00:00:00Z", "fixed_at": null, "security_advisory": { "severity": "low" } },
+    { "state": "open", "created_at": "2026-11-01T00:00:00Z", "fixed_at": null, "security_advisory": { "severity": "critical", "classification": "malware", "summary": "Malware in fixture-lib" } },
+    { "state": "fixed", "created_at": "2026-10-10T00:00:00Z", "fixed_at": "2026-10-12T00:00:00Z", "security_advisory": { "severity": "high" } },
+    { "state": "fixed", "created_at": "2026-10-10T00:00:00Z", "fixed_at": "2026-10-16T00:00:00Z", "security_advisory": { "severity": "medium" } },
+    { "state": "dismissed", "created_at": "2026-09-01T00:00:00Z", "fixed_at": null, "security_advisory": { "severity": "critical" } }
+  ],
+  "repos/fixture-org/fixture-repo/code-scanning/default-setup": {
+    "__error": { "status": 403, "message": "Code Security must be enabled for this repository to use code scanning." }
+  },
+  "repos/fixture-org/fixture-repo/code-quality/setup": { "state": "not-configured" },
+  "repos/fixture-org/fixture-repo/actions/permissions/workflow": { "default_workflow_permissions": "read", "can_approve_pull_request_reviews": false },
+  "repos/fixture-org/fixture-repo/actions/permissions": { "enabled": true, "allowed_actions": "selected", "sha_pinning_required": false },
+  "orgs/fixture-org/settings/billing/advanced-security?advanced_security_product=code_security": { "total_advanced_security_committers": 0 },
+  "orgs/fixture-org/settings/billing/advanced-security?advanced_security_product=secret_protection": { "total_advanced_security_committers": 0 },
+  "repos/fixture-org/fixture-repo/code-scanning/analyses?per_page=1": {
+    "__error": { "status": 403, "message": "Code Security must be enabled for this repository to use code scanning." }
+  },
+  "repos/fixture-org/fixture-repo/branches/main/protection": {
+    "__error": { "status": 404, "message": "Branch not protected" }
+  },
+  "repos/fixture-org/fixture-repo/rules/branches/main": [
+    { "type": "pull_request", "ruleset_id": 1 },
+    { "type": "non_fast_forward", "ruleset_id": 1 },
+    { "type": "deletion", "ruleset_id": 1 },
+    { "type": "required_status_checks", "ruleset_id": 1, "parameters": { "required_status_checks": [{ "context": "unit-tests" }, { "context": "lint" }] } }
+  ],
+  "repos/fixture-org/fixture-repo/pages": { "public": false },
+  "orgs/fixture-org": { "plan": { "name": "enterprise" } },
+  "repos/fixture-org/fixture-repo/labels?per_page=100": [
+    { "name": "bug", "archived_at": null },
+    { "name": "code", "archived_at": null },
+    { "name": "enhancement", "archived_at": null },
+    { "name": "dependencies", "archived_at": null },
+    { "name": "usability", "archived_at": null },
+    { "name": "good first issue", "archived_at": null },
+    { "name": "wontfix", "archived_at": null },
+    { "name": "question", "archived_at": "2026-10-01T00:00:00Z" }
+  ]
+}

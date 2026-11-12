@@ -1,0 +1,48 @@
+{
+ "$schema": "https://unpkg.com/knip@6/schema.json",
+ "entry": [
+  "pages/build.mjs",
+  "quality/build.mjs",
+  "quality/cards/picture.mjs",
+  "quality/collect.mjs",
+  "quality/selftest.mjs",
+  "tools/collect_org.mjs",
+  "**/*.test.mjs",
+  "pages/client.js",
+  "quality/render/client.js",
+  "config/quality/collectors/guard-speed.mjs",
+  "config/quality/collectors/page-speed.mjs",
+  "quality/collectors/blockers/blockers.mjs",
+  "quality/collectors/ci/ci.mjs",
+  "quality/collectors/claude/claude-settings.mjs",
+  "quality/collectors/claude/claude.mjs",
+  "quality/collectors/claude/lead-time.mjs",
+  "quality/collectors/code/code.mjs",
+  "quality/collectors/credits/credits.mjs",
+  "quality/collectors/desktop-app/desktop-app.mjs",
+  "quality/collectors/docs/docs.mjs",
+  "quality/collectors/github/github.mjs",
+  "quality/collectors/insights/insights.mjs",
+  "quality/collectors/instructions/instructions.mjs",
+  "quality/collectors/settings/repo-settings.mjs",
+  "quality/collectors/simplicity/simplicity.mjs",
+  "quality/collectors/site/deploy.mjs",
+  "quality/collectors/site/design.mjs",
+  "quality/collectors/site/usability.mjs",
+  "quality/collectors/tests/tests.mjs",
+  "quality/collectors/tokens/tokens.mjs",
+  "quality/collectors/tools/tools.mjs"
+ ],
+ "project": [
+  "**/*.{mjs,js}"
+ ],
+ "ignore": [
+  "quality/fixtures/**",
+  "tests/fixtures/**",
+  "pages/dist/**"
+ ],
+ "ignoreDependencies": [
+  "axe-core",
+  "playwright-core"
+ ]
+}

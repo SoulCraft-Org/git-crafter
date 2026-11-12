@@ -1,0 +1,120 @@
+{
+  "ideal": "Issues hold bugs and quick fixes: typed, labeled by area, closed within a day, a bug by its pull request. Features wait on the board.",
+  "parts": [
+    {
+      "part": "Issues",
+      "ideal": "Only bugs and quick fixes, each typed, labeled by area, shown as a table or image, a bug closed by its pull request",
+      "setup": "Use the organization's Bug and Task issue types; file with gh issue create and its type flag"
+    },
+    {
+      "part": "Intake",
+      "ideal": "Two valid forms, Bug and Quick fix, and no blank issue",
+      "setup": "Each form sets its type; config.yml turns blank issues off"
+    },
+    {
+      "part": "Labels",
+      "ideal": "Area labels only; the type says what kind; a label nothing uses is archived",
+      "setup": "Archive through the labels API or the Labels page; history stays on old issues"
+    },
+    {
+      "part": "Milestones",
+      "ideal": "None open, unless a dated goal spans several issues",
+      "setup": "Give each a due date and close it when done"
+    },
+    {
+      "part": "Views",
+      "ideal": "Shared, pinned views, each the search behind one metric",
+      "setup": "Create them in the Issues sidebar; GitHub offers no API for views"
+    },
+    {
+      "part": "Features",
+      "ideal": "A draft card on the board; an issue only while its pull request is open",
+      "setup": "Convert the draft and add its area label when the pull request opens"
+    }
+  ],
+  "sources": [
+    {
+      "title": "GitHub Docs: About issues",
+      "url": "https://docs.github.com/en/issues/tracking-your-work-with-issues/learning-about-issues/about-issues",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Quickstart for GitHub Issues",
+      "url": "https://docs.github.com/en/issues/tracking-your-work-with-issues/learning-about-issues/quickstart",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Managing issue types in an organization",
+      "url": "https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/managing-issue-types-in-an-organization",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Syntax for issue forms",
+      "url": "https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Configuring issue templates for your repository",
+      "url": "https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Managing labels",
+      "url": "https://docs.github.com/en/issues/using-labels-and-milestones-to-track-work/managing-labels",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: REST API endpoints for labels",
+      "url": "https://docs.github.com/en/rest/issues/labels",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Changelog: Label archiving is generally available",
+      "url": "https://github.blog/changelog/2026-08-27-label-archiving-is-generally-available/",
+      "date": "2026-08-27"
+    },
+    {
+      "title": "GitHub Docs: About milestones",
+      "url": "https://docs.github.com/en/issues/using-labels-and-milestones-to-track-work/about-milestones",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Changelog: Saved views for repository issues",
+      "url": "https://github.blog/changelog/2026-06-25-saved-views-for-repository-issues-and-adjustable-row-heights-in-projects/",
+      "date": "2026-06-25"
+    },
+    {
+      "title": "GitHub Docs: Linking a pull request to an issue",
+      "url": "https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Adding items to your project (draft issues)",
+      "url": "https://docs.github.com/en/issues/planning-and-tracking-with-projects/managing-items-in-your-project/adding-items-to-your-project",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Creating diagrams",
+      "url": "https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-diagrams",
+      "date": "2026-11-03"
+    },
+    {
+      "title": "Claude Code Docs: Claude Code GitHub Actions",
+      "url": "https://code.claude.com/docs/en/github-actions",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Claude Code Action: Solutions and use cases (issue triage)",
+      "url": "https://github.com/anthropics/claude-code-action/blob/main/docs/solutions.md",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Microsoft Learn: Manage work with GitHub Projects",
+      "url": "https://learn.microsoft.com/en-us/training/modules/manage-work-github-projects/",
+      "date": "2026-11-10"
+    }
+  ],
+  "quality": "Valid forms, every issue typed, labeled and shown as a table, no parked work or unused labels, every bug closed by a merged pull request.",
+  "speed": "Each issue closes within a day, and none waits more than two.",
+  "consumption": "A fix uses no more runner time than a typical merged pull request."
+}

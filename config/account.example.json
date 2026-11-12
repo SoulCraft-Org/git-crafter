@@ -1,0 +1,75 @@
+{
+ "version": 1,
+ "comment_purpose": "One Mac account's own facts for the Git Crafter rules, with placeholders only. Copy it to code-os/account.json in the account's private overlay folder and fill it in; claude_os_sync.py apply user-claude --yes --overlay DIR installs it as ~/.claude/code-os/account.json. rules/compute.md, rules/compute-detail.md and rules/keys.md read these fields, and skills/merging/orchestrating.md reads delegate. Names, paths and command shapes only, never a key value (rules/keys.md). Every field takes a source: where the value was read, or the owner's dated words.",
+ "machine": {
+  "model": "<model, chip and memory, and how they were read>",
+  "local_seconds": 30,
+  "limits": "<what this machine cannot do, such as GPU rendering>",
+  "admin": "<the macOS account that installs and upgrades shared tools>",
+  "source": "<where the model and limits were read>"
+ },
+ "keys": {
+  "checkout": "~/<keys-checkout>",
+  "repo": "<owner>/<keys-repo>",
+  "policy": "<file in the checkout whose naming and rotation rules win>",
+  "tool": "~/<path to the keys tool>",
+  "naming": "<how a key is named, or an object of provider, keychain, variable and rules>",
+  "use": "<command shape that runs a child with one key, e.g. keys exec <software>:<purpose> -- <command>>",
+  "use_runs": "session | owner",
+  "use_note": "<what the tool refuses or redacts, optional>",
+  "check": ["<command that prints key names only>"],
+  "owner_runs": ["<command only the owner runs, such as add, rotate or remove>"],
+  "source": "<where these were read>"
+ },
+ "compute": {
+  "options": "~/<folder that lists this account's compute lanes>",
+  "included": ["<a free tier or included credit, and the stop at its limit>"],
+  "gpu": ["<a GPU lane on included credits>"],
+  "bulk_models": ["<a free model lane for bulk text work>"],
+  "deploys": "<the host's build that deploys on merge>",
+  "comfy": {
+   "standing_yes": "<what runs without a yes per run, or none>",
+   "standing_yes_source": "<the owner's dated words granting it, and where they were recorded>",
+   "stop": "<where the guard pauses, e.g. 90% of the cycle's plan credits>",
+   "guard": "<command that answers go with exit 1, e.g. usage-guard check comfy-cloud>",
+   "guard_source": "<the owner's dated words on the guard>",
+   "desktop_ended": "<date local Comfy Desktop stopped running here, or none>",
+   "desktop_source": "<where that was decided>"
+  },
+  "spend_exceptions": [
+   {
+    "what": "<the one paid use>",
+    "cap": "<amount a month>",
+    "guard": "<what stops it at the cap>",
+    "source": "<the owner's dated words>"
+   }
+  ],
+  "source": "<where these were read>"
+ },
+ "ci": {
+  "pool": "<the org whose Actions minutes the pool uses>",
+  "budget": "<the hard stop, e.g. a $0 Actions budget with prevent_further_usage>",
+  "overflow": "<the lane that takes overflow and the stop it needs first, or none>",
+  "paid_features": [],
+  "source": "<where these were read>"
+ },
+ "delegate": {
+  "comment": "This account's installed routes for the Delegating table in skills/merging/orchestrating.md. Each route names how to call it and one metric the pages read.",
+  "review": {
+   "use": "<agent, plugin or connector, and how to call it>",
+   "metric": "pull_requests.fixed_after_review"
+  },
+  "bulk_text": {
+   "use": "<a free model lane for bulk text work, the guard check before it, and how the commit credits the model>",
+   "metric": "models.third_party_share"
+  },
+  "design_to_code": {
+   "use": "<the skill or connector that turns a design into code>",
+   "metric": "site.design.contrast_violations"
+  },
+  "never": {
+   "what": "<tools or models this account never routes work to>",
+   "source": "<the owner's dated words>"
+  }
+ }
+}

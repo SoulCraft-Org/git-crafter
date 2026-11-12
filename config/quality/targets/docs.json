@@ -1,0 +1,226 @@
+[
+ {
+  "id": "docs.dead_paths",
+  "params": {
+   "lint": {
+    "interpreter": "python3",
+    "script": "tools/voice_lint.py",
+    "args": [],
+    "scope": "every doc of the doc set"
+   },
+   "doc_set_left_out": [
+    {
+     "glob": "quality/fixtures/**",
+     "why": "frozen test fixtures of the Quality collectors"
+    },
+    {
+     "glob": ".github/PULL_REQUEST_TEMPLATE.md",
+     "why": "a form GitHub copies into each pull request, not a doc read in the repo"
+    }
+   ],
+   "agent_docs": [
+    {
+     "glob": "rules/**",
+     "why": "rules Claude loads, four of them every turn"
+    },
+    {
+     "glob": "skills/**",
+     "why": "skills Claude loads when they apply"
+    },
+    {
+     "glob": ".claude/**",
+     "why": "agent definitions Claude loads"
+    }
+   ],
+   "text_only_below": 50,
+   "areas": [
+    {
+     "doc": "skills/merging/SKILL.md",
+     "area": [
+      "rules/delegation.md",
+      "tools/bash_guard.py",
+      "tools/bash_guard_cases.json"
+     ]
+    },
+    {
+     "doc": ".claude/agents/*.md",
+     "area": [
+      "skills/merging/"
+     ]
+    },
+    {
+     "doc": "rules/delegation.md",
+     "area": [
+      "tools/bash_guard.py",
+      "tools/bash_guard_rules.json",
+      "skills/merging/SKILL.md"
+     ]
+    },
+    {
+     "doc": "rules/keys.md",
+     "area": [
+      "tools/bash_guard_rules.json",
+      "config/account.example.json"
+     ]
+    },
+    {
+     "doc": "rules/comfy.md",
+     "area": [
+      "tools/comfy_guard.py"
+     ]
+    },
+    {
+     "doc": "rules/compute.md",
+     "area": [
+      ".github/workflows/ci-standard.yml"
+     ]
+    },
+    {
+     "doc": "rules/compute-detail.md",
+     "area": [
+      ".github/workflows/ci-standard.yml",
+      "tools/ci_standard.py"
+     ]
+    },
+    {
+     "doc": "rules/gates.md",
+     "area": [
+      "tools/verify.sh",
+      "rules/writing-and-gates.md"
+     ]
+    },
+    {
+     "doc": "rules/writing-and-gates.md",
+     "area": [
+      "tools/voice_lint.py"
+     ]
+    },
+    {
+     "doc": "README.md",
+     "area": [
+      "manifest.json",
+      "templates/",
+      "pages/maps/",
+      "LICENSE"
+     ]
+    },
+    {
+     "doc": "CONTRIBUTING.md",
+     "area": [
+      "tools/verify.sh",
+      ".github/dco.yml",
+      "manifest.json",
+      "actions/pages/",
+      ".github/workflows/ci-standard.yml"
+     ]
+    },
+    {
+     "doc": "SECURITY.md",
+     "area": [
+      ".github/workflows/secret-scan.yml",
+      ".github/workflows/push-ruleset-proof.yml",
+      "tools/secret_scan.sh",
+      "tools/bash_guard.py",
+      "tools/bash_guard_*.py",
+      "tools/write_guard.py",
+      "tools/comfy_guard.py"
+     ]
+    },
+    {
+     "doc": "tools/THREAT-MODEL.md",
+     "area": [
+      "tools/bash_guard.py",
+      "tools/bash_guard_*.py",
+      "tools/write_guard.py",
+      "tools/bash_guard_rules.json",
+      "tools/comfy_guard.py",
+      "tools/claude_os_sync.py",
+      ".claude/settings.json",
+      "manifest.json"
+     ]
+    },
+    {
+     "doc": "THREAT-MODEL.md",
+     "area": [
+      "actions/pages/",
+      ".github/workflows/"
+     ]
+    },
+    {
+     "doc": "CODE_OF_CONDUCT.md",
+     "area": []
+    },
+    {
+     "doc": "SUPPORT.md",
+     "area": [
+      ".github/ISSUE_TEMPLATE/",
+      "SECURITY.md",
+      "CONTRIBUTING.md"
+     ]
+    },
+    {
+     "doc": "quality/README.md",
+     "area": [
+      "quality/collect.mjs",
+      "quality/build.mjs",
+      "quality/score.mjs",
+      "actions/pages/",
+      "config/quality.json"
+     ]
+    },
+    {
+     "doc": "quality/CONFIG.md",
+     "area": [
+      "quality/config.mjs",
+      "quality/overlay.mjs",
+      "config/quality.json"
+     ]
+    },
+    {
+     "doc": "quality/SCORING.md",
+     "area": [
+      "quality/score.mjs",
+      "quality/render/model.mjs",
+      "quality/collect.mjs",
+      "quality/build.mjs"
+     ]
+    },
+    {
+     "doc": "quality/collectors/README.md",
+     "area": [
+      "quality/collect.mjs",
+      "quality/collectors/lib/",
+      "quality/collectors/github/github-reviews.mjs"
+     ]
+    },
+    {
+     "doc": "quality/ideals/README.md",
+     "area": [
+      "quality/score.mjs"
+     ]
+    },
+    {
+     "doc": "**",
+     "area": [
+      "{dir}/"
+     ]
+    }
+   ],
+   "areas_readme": "First match wins. Each doc maps to the files it describes: a change there can make the doc wrong, a change to a sibling doc cannot. THREAT-MODEL.md and tools/THREAT-MODEL.md each take the code their rows describe, from the paths of security.threat_model_current, the guard rules and the Comfy guard. CODE_OF_CONDUCT.md adopts an outside standard, so it is a record. Any other doc covers its own folder."
+  }
+ },
+ {
+  "id": "docs.interactive_share",
+  "goal": 100,
+  "near": 80,
+  "goal_source": "Git Crafter goal, 2026-11-10: every reader doc here holds a diagram, a chart or a drill-down, since the owner asks for visual and interactive docs first (rules/writing-and-gates.md); the template goal is 80. Sources: GitHub Docs: Creating diagrams; GitHub Docs: Organizing information with collapsed sections"
+ },
+ {
+  "id": "docs.text_only",
+  "goal_source": "Git Crafter goal, 2026-11-10: no doc under 50% visual lines, since the owner asks for every doc to be as visual as possible, with as little text as possible (rules/writing-and-gates.md, Visual first); the template goal is 20%. Source: Microsoft Style Guide: Scannable content (dense text set out as lists and tables)"
+ },
+ {
+  "id": "docs.runbooks_verified",
+  "drop": true
+ }
+]

@@ -1,0 +1,20 @@
+{
+ "id": "secure",
+ "name": "Secure",
+ "why": "A repo's security, from keys no session reads to alerts closed within a week",
+ "ideal": "No session reads a key, scans run in minutes, the threat model stays current, reports have a private path, and alerts close within a week.",
+ "sources": [
+  {"title": "Claude Code: configure permissions", "url": "https://code.claude.com/docs/en/permissions", "date": "2026-11-04"},
+  {"title": "GitHub Docs: GitHub security features", "url": "https://docs.github.com/en/code-security/getting-started/github-security-features", "date": "2026-11-10"},
+  {"title": "GitHub Docs: Quickstart for securing your repository", "url": "https://docs.github.com/en/code-security/getting-started/quickstart-for-securing-your-repository", "date": "2026-11-10"},
+  {"title": "GitHub Docs: Adding a security policy to your repository", "url": "https://docs.github.com/en/code-security/getting-started/adding-a-security-policy-to-your-repository", "date": "2026-11-03"}
+ ],
+ "critical_path": ["keys", "scan", "model", "report", "alerts"],
+ "steps": [
+  {"id": "keys", "name": "Keys", "tools": ["Claude Code deny rules"], "rule": "Deny rules keep key files out of a session's reach.", "rule_ref": "https://code.claude.com/docs/en/permissions", "metric": "security.claude_deny_coverage"},
+  {"id": "scan", "name": "Scan", "tools": ["Secret scanning", "Code scanning in CI"], "rule": "A scan runs on every push and finishes in minutes.", "rule_ref": "https://docs.github.com/en/code-security/getting-started/github-security-features", "metric": "security.latest_scan_minutes", "gates_from": "workflows"},
+  {"id": "model", "name": "Model", "tools": ["THREAT-MODEL.md"], "rule": "The threat model is reviewed whenever the attack surface changes.", "rule_ref": "https://docs.github.com/en/code-security/getting-started/github-security-features", "metric": "security.threat_model_current"},
+  {"id": "report", "name": "Report", "tools": ["SECURITY.md", "Private vulnerability reporting"], "rule": "A security policy gives reporters a private path.", "rule_ref": "https://docs.github.com/en/code-security/getting-started/adding-a-security-policy-to-your-repository", "metric": "security.policy_on"},
+  {"id": "alerts", "name": "Alerts", "tools": ["Dependabot alerts"], "rule": "An open alert closes within a week.", "rule_ref": "https://docs.github.com/en/code-security/getting-started/github-security-features", "metric": "security.oldest_open_alert_days"}
+ ]
+}

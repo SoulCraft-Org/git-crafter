@@ -1,0 +1,51 @@
+{
+ "comment": "A known-bad maps file for tests/pages-build.test.mjs: each map and step breaks one rule, and each error must name its map and step.",
+ "repo_url": "http://example.com",
+ "maps": [
+  {
+   "id": "delivery",
+   "name": "Delivery",
+   "why": "A change, from plan to merged",
+   "critical_path": ["plan", "ship"],
+   "steps": [
+    { "id": "plan", "name": "Plan", "tools": ["Plan mode"], "rule": "Plan first.", "rule_ref": "CONTRIBUTING.md" },
+    { "id": "build", "name": "Build", "tools": ["Claude Code"], "rule": "Build.", "rule_ref": "README.md", "metric": "claude.tokens_per_merged_pr", "time": "claude.hours_session_to_pr" },
+    { "id": "check", "name": "Check", "tools": ["CI"], "rule": "Check.", "rule_ref": "README.md", "metric": "ci.pass_rate" },
+    { "id": "review", "name": "Review", "tools": ["gh pr checks"], "rule": "Review.", "rule_ref": "README.md", "metric": ["pull_requests.fixed_after_review", "pull_requests.reviewed"] },
+    { "id": "review", "name": "Review again", "tools": ["gh"], "rule": "Again.", "rule_ref": "README.md", "metric": "pull_requests.reviewed", "icon": "rocket", "gates_from": "everything" }
+   ]
+  },
+  {
+   "id": "long",
+   "name": "Too long",
+   "steps": [
+    { "id": "s1", "name": "1", "tools": [], "rule": "r", "rule_ref": "r", "metric": "ci.latest_flow" },
+    { "id": "s2", "name": "2", "tools": [], "rule": "r", "rule_ref": "r", "metric": "ci.latest_flow" },
+    { "id": "s3", "name": "3", "tools": [], "rule": "r", "rule_ref": "r", "metric": "ci.latest_flow" },
+    { "id": "s4", "name": "4", "tools": [], "rule": "r", "rule_ref": "r", "metric": "ci.latest_flow" },
+    { "id": "s5", "name": "5", "tools": [], "rule": "r", "rule_ref": "r", "metric": "ci.latest_flow" },
+    { "id": "s6", "name": "6", "tools": [], "rule": "r", "rule_ref": "r", "metric": "ci.latest_flow" },
+    { "id": "s7", "name": "7", "tools": [], "rule": "r", "rule_ref": "r", "metric": "ci.latest_flow" }
+   ]
+  },
+  {
+   "id": "fork",
+   "name": "Fork",
+   "why": "One step off the grid, one unplaced",
+   "steps": [
+    { "id": "a", "name": "A", "at": [0, 0], "tools": [], "rule": "r", "rule_ref": "r", "metric": "ci.latest_flow" },
+    { "id": "b", "name": "B", "at": [1, -1], "tools": [], "rule": "r", "rule_ref": "r", "metric": "ci.latest_flow" },
+    { "id": "c", "name": "C", "tools": [], "rule": "r", "rule_ref": "r", "metric": "ci.latest_flow" }
+   ]
+  },
+  {
+   "id": "overlap",
+   "name": "Overlap",
+   "why": "Two steps in one cell",
+   "steps": [
+    { "id": "a", "name": "A", "at": [0, 0], "tools": [], "rule": "r", "rule_ref": "r", "metric": "ci.latest_flow" },
+    { "id": "b", "name": "B", "at": [0, 0], "tools": [], "rule": "r", "rule_ref": "r", "metric": "ci.latest_flow" }
+   ]
+  }
+ ]
+}

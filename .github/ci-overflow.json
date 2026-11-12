@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "$comment": "The overflow lanes tools/ci_overflow.py meters. The repo variable CI_OVERFLOW_RUNNER names one lane's label; unset is off, and every job runs on fallback. A second lane is one more entry here. workflows are the files whose heavy jobs take the chosen label; a caller of ci-overflow.yml names its own. A lane's repos are the only repos it serves: its free minutes are per organization and the meter reads one repo, so a second repo waits for an org-wide meter. Empty repos: the lane is off, as in Git Crafter, whose public repo runs free on GitHub's runners. budget_calls caps the GitHub API calls one meter run spends; a backlog over it means GitHub's runner. templates/ci/DECISIONS.md, 2026-11-10 and 2026-11-11.",
+  "fallback": "ubuntu-latest",
+  "workflows": ["pages.yml", "verify.yml"],
+  "trusted_branch": "main",
+  "budget_calls": {"main": 400, "pull_request": 80},
+  "lanes": {
+    "blacksmith": {
+      "labels": ["blacksmith-2vcpu-ubuntu-2404"],
+      "repos": [],
+      "match": "^blacksmith-(\\d+)vcpu-",
+      "unit_vcpus": 2,
+      "free": 3000,
+      "stop": 2700,
+      "cycle_day": 1,
+      "source": "docs.blacksmith.sh/blacksmith-runners/overview, read 2026-11-10: 3000 x64 2vCPU minutes a month per organization; a 4vCPU minute counts 2. Labels from the same page. No card on file, so the stop is this meter (the owner, 2026-11-04)"
+    }
+  }
+}

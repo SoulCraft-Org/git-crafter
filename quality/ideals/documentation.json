@@ -1,0 +1,83 @@
+{
+  "ideal": "Every fact a reader needs is present, correct and current, in short, visual, accessible docs a person finishes in two minutes and Claude loads cheaply.",
+  "sources": [
+    {
+      "title": "GitHub Docs: About the repository README file",
+      "url": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: About community profiles for public repositories",
+      "url": "https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/about-community-profiles-for-public-repositories",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Adding support resources to your project",
+      "url": "https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/adding-support-resources-to-your-project",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Creating a default community health file",
+      "url": "https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/creating-a-default-community-health-file",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Style guide",
+      "url": "https://docs.github.com/en/contributing/style-guide-and-content-model/style-guide",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Creating diagrams",
+      "url": "https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-diagrams",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Organizing information with collapsed sections",
+      "url": "https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/organizing-information-with-collapsed-sections",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Microsoft Style Guide: Top 10 tips for Microsoft style and voice",
+      "url": "https://learn.microsoft.com/en-us/style-guide/top-10-tips-style-voice",
+      "date": "2026-07-02"
+    },
+    {
+      "title": "Microsoft Style Guide: Scannable content",
+      "url": "https://learn.microsoft.com/en-us/style-guide/scannable-content/",
+      "date": "2023-06-20"
+    },
+    {
+      "title": "Microsoft Style Guide: Tables",
+      "url": "https://learn.microsoft.com/en-us/style-guide/scannable-content/tables",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Microsoft Style Guide: Alternative text",
+      "url": "https://learn.microsoft.com/en-us/style-guide/accessibility/alternative-text",
+      "date": "2026-04-03"
+    },
+    {
+      "title": "Microsoft Engineering Fundamentals Playbook: Documentation",
+      "url": "https://microsoft.github.io/code-with-engineering-playbook/documentation/",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Claude Code Docs: How Claude remembers your project",
+      "url": "https://code.claude.com/docs/en/memory",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Claude Docs: Skill authoring best practices",
+      "url": "https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Brysbaert, 2019: How many words do we read per minute? (Journal of Memory and Language 109)",
+      "url": "https://doi.org/10.1016/j.jml.2019.104047",
+      "date": "2026-11-03"
+    }
+  ],
+  "quality": "Paths, scripts and links resolve, nothing is stale, folders and community files are covered, headings and images are accessible, and docs are visual first.",
+  "speed": "Each doc read in two minutes at 238 words a minute.",
+  "consumption": "No doc runs past its reading goal, so Claude loads no tokens past it."
+}

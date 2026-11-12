@@ -1,0 +1,133 @@
+[
+  {
+    "id": "tests.e2e_routes",
+    "tab": "tests",
+    "kind": "quality",
+    "group": "Coverage",
+    "label": "Page routes an e2e spec opens",
+    "means": "Share of the site's page routes that an end-to-end spec opens in a real browser",
+    "unit": "%",
+    "goal": 90,
+    "near": 70,
+    "direction": "higher",
+    "goal_source": "Git Crafter default goal: nearly every page route is opened by an end-to-end spec",
+    "source": "state: page files in params.pages_dir and the site paths the specs of params.suites' e2e suite name, in code lines",
+    "needs": "none",
+    "chart": "table",
+    "params": {
+      "suites": [
+        {
+          "label": "Unit",
+          "dir": "test/",
+          "file": "\\.test\\.[cm]?[jt]sx?$"
+        },
+        {
+          "label": "End to end",
+          "dir": "e2e/",
+          "file": "\\.(spec|test)\\.[cm]?[jt]sx?$",
+          "e2e": true
+        }
+      ],
+      "pages_dir": "src/pages/",
+      "page_file": "\\.(astro|mdx?|html)$",
+      "workflows": [],
+      "default_branch": ""
+    }
+  },
+  {
+    "id": "tests.axe_routes",
+    "tab": "tests",
+    "kind": "quality",
+    "group": "Coverage",
+    "label": "Page routes with an axe check",
+    "means": "Share of the site's page routes that an end-to-end spec checks for accessibility with axe",
+    "unit": "%",
+    "goal": 100,
+    "near": 80,
+    "direction": "higher",
+    "goal_source": "goal: every route, as WCAG 2.2 conformance is claimed for full pages only (WCAG 2.2, Conformance Requirement 2, w3.org/TR/WCAG22); the near band is a Git Crafter default",
+    "source": "state: page files in params.pages_dir and the site paths named by the e2e suite's specs that run AxeBuilder",
+    "needs": "none",
+    "chart": "table"
+  },
+  {
+    "id": "tests.main_pass_rate",
+    "tab": "tests",
+    "kind": "quality",
+    "group": "Trust",
+    "label": "Test job pass rate on main",
+    "means": "Share of the latest runs on main whose test job passed; cancelled runs and runs with no site change are left out",
+    "unit": "%",
+    "goal": 95,
+    "near": 85,
+    "direction": "higher",
+    "goal_source": "Git Crafter default goal: the test jobs pass on main nearly every time, so a red run means a real break",
+    "source": "last N runs: gh api runs of each workflow in params.workflows (newest 100 runs a workflow), with GraphQL check runs: the last 20 runs on main of each workflow that runs there; a run counts when a test job ran, and cancelled runs and runs that skipped every test job are left out. N is 20 (ci.mjs's LAST_RUNS): enough to turn over within hours where the test workflows run many times a day",
+    "needs": "none",
+    "chart": "table"
+  },
+  {
+    "id": "tests.skipped",
+    "tab": "tests",
+    "kind": "quality",
+    "group": "Trust",
+    "label": "Skipped and todo tests",
+    "means": "Tests marked skip, todo or fixme, which never run; skips on a condition are read from code and shown apart",
+    "unit": "tests",
+    "goal": 0,
+    "near": 2,
+    "direction": "lower",
+    "goal_source": "Git Crafter default goal: no test skips unconditionally; a skipped test checks nothing",
+    "source": "state: git ls-files in params.suites; skip, todo and fixme markers in code lines, a marked block by its cases. skipIf, runIf and run-time skips are read from code, not CI, and shown apart",
+    "needs": "none",
+    "chart": "table"
+  },
+  {
+    "id": "tests.site_tests_p50",
+    "tab": "tests",
+    "kind": "speed",
+    "group": "Suite time",
+    "label": "Test job, median",
+    "means": "Typical minutes for the job that runs the test suites, in its latest passes",
+    "unit": "minutes",
+    "goal": 10,
+    "near": 20,
+    "direction": "lower",
+    "goal_source": "goal: the ten-minute build, the same source as ci.latest_full_run_minutes (Kent Beck, Extreme Programming Explained, 2nd edition, 2004; Martin Fowler, Continuous Integration, martinfowler.com)",
+    "source": "last N passing jobs: gh api runs of the suite workflow in params.workflows (newest 100 runs a workflow), with GraphQL check runs: the last 20 passing test jobs. N is 20 (ci.mjs's LAST_RUNS): enough to turn over within hours where the test workflows run many times a day",
+    "needs": "none",
+    "chart": "bar"
+  },
+  {
+    "id": "tests.e2e_shard_p50",
+    "tab": "tests",
+    "kind": "speed",
+    "group": "Suite time",
+    "label": "Slowest e2e shard, median",
+    "means": "Typical minutes for the slowest end-to-end shard; the shards split the browser specs",
+    "unit": "minutes",
+    "goal": 10,
+    "near": 20,
+    "direction": "lower",
+    "goal_source": "goal: the ten-minute build, the same source as ci.latest_full_run_minutes (Kent Beck, Extreme Programming Explained, 2nd edition, 2004; Martin Fowler, Continuous Integration, martinfowler.com)",
+    "source": "last N passing jobs: gh api runs of the e2e workflow in params.workflows (newest 100 runs a workflow), with GraphQL check runs: the last 20 passing jobs of each shard. N is 20 (ci.mjs's LAST_RUNS): enough to turn over within hours where the test workflows run many times a day",
+    "needs": "none",
+    "chart": "bar"
+  },
+  {
+    "id": "tests.ci_minutes_latest_main",
+    "tab": "tests",
+    "kind": "consumption",
+    "group": "Cost",
+    "label": "Billed test job minutes, latest run",
+    "means": "Runner minutes GitHub billed for the site test job and each browser test shard in their latest run",
+    "unit": "minutes",
+    "goal": 20,
+    "near": 40,
+    "direction": "lower",
+    "goal_source": "Git Crafter default goal: the test jobs' sum at their speed goals, one suite job and one e2e job at 10 minutes each, 10 + 10 = 20; near the same at their near bands, 20 + 20 = 40. A repo with more jobs sets its own",
+    "source": "latest: the latest completed run of each workflow in params.workflows whose test jobs ran, on main where the workflow runs there, else its latest pull request run (newest 100 runs a workflow); GitHub bills each job by the whole minute",
+    "needs": "none",
+    "chart": "bar"
+  }
+]

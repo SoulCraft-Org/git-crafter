@@ -1,0 +1,46 @@
+{
+  "browser": "fixture",
+  "read_at": "2026-11-02T21:00:00.000Z",
+  "pages": {
+    "/rankings/": {
+      "fcp": 900,
+      "lcp": [
+        { "startTime": 1200, "size": 5000 },
+        { "startTime": 2300, "size": 90000 }
+      ],
+      "shifts": [
+        { "startTime": 100, "value": 0.01, "hadRecentInput": false },
+        { "startTime": 1000, "value": 0.01, "hadRecentInput": false },
+        { "startTime": 1900, "value": 0.01, "hadRecentInput": false },
+        { "startTime": 2800, "value": 0.01, "hadRecentInput": false },
+        { "startTime": 3700, "value": 0.01, "hadRecentInput": false },
+        { "startTime": 4600, "value": 0.01, "hadRecentInput": false },
+        { "startTime": 5500, "value": 0.01, "hadRecentInput": false },
+        { "startTime": 6400, "value": 0.01, "hadRecentInput": false }
+      ],
+      "tasks": [
+        { "startTime": 500, "duration": 200 },
+        { "startTime": 1000, "duration": 120 }
+      ],
+      "end": 12000
+    },
+    "/people/": {
+      "fcp": 1500,
+      "lcp": [
+        { "startTime": 1500, "size": 2000 },
+        { "startTime": 5200, "size": 160000 }
+      ],
+      "shifts": [
+        { "startTime": 200, "value": 0.02, "hadRecentInput": true },
+        { "startTime": 1000, "value": 0.1, "hadRecentInput": false },
+        { "startTime": 1500, "value": 0.1, "hadRecentInput": false },
+        { "startTime": 2200, "value": 0.1, "hadRecentInput": false },
+        { "startTime": 2300, "value": 0.5, "hadRecentInput": true },
+        { "startTime": 9000, "value": 0.05, "hadRecentInput": false }
+      ],
+      "tasks": [{ "startTime": 1200, "duration": 900 }],
+      "end": 15000
+    },
+    "/join/": { "error": "HTTP 503" }
+  }
+}

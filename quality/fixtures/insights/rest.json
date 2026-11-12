@@ -1,0 +1,77 @@
+{
+  "repos/fixture-org/fixture-repo/community/profile": {
+    "health_percentage": 71,
+    "description": "A fixture repo",
+    "documentation": null,
+    "files": {
+      "code_of_conduct": null,
+      "code_of_conduct_file": null,
+      "contributing": {
+        "url": "https://api.github.com/repos/fixture-org/fixture-repo/contents/CONTRIBUTING.md"
+      },
+      "issue_template": null,
+      "pull_request_template": null,
+      "license": {
+        "key": "mit"
+      },
+      "readme": {
+        "url": "https://api.github.com/repos/fixture-org/fixture-repo/contents/README.md"
+      }
+    }
+  },
+  "repos/fixture-org/fixture-repo/collaborators?per_page=100": [
+    {
+      "login": "dev-one",
+      "type": "User",
+      "permissions": {
+        "push": true,
+        "admin": true
+      }
+    },
+    {
+      "login": "dev-two",
+      "type": "User",
+      "permissions": {
+        "push": true,
+        "admin": false
+      }
+    },
+    {
+      "login": "reader",
+      "type": "User",
+      "permissions": {
+        "push": false,
+        "admin": false
+      }
+    },
+    {
+      "login": "dev-three",
+      "type": "User",
+      "permissions": {
+        "push": true,
+        "admin": false
+      }
+    }
+  ],
+  "repos/fixture-org/fixture-repo/commits?author=dev-one&per_page=1": [
+    {
+      "sha": "c5",
+      "commit": {
+        "committer": {
+          "date": "2026-11-01T00:00:00Z"
+        }
+      }
+    }
+  ],
+  "repos/fixture-org/fixture-repo/commits?author=dev-two&per_page=1": [
+    {
+      "sha": "a1",
+      "commit": {
+        "committer": {
+          "date": "2026-06-01T00:00:00Z"
+        }
+      }
+    }
+  ],
+  "repos/fixture-org/fixture-repo/commits?author=dev-three&per_page=1": []
+}

@@ -1,0 +1,261 @@
+/* Quality and Speed page. Colors, space and radii are the site's tokens
+   (site/src/styles/tokens.css, inlined before this file). The few values
+   that are not tokens are derived below, each with how it was checked. */
+
+:root {
+  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --gut: clamp(var(--s-4), 3vw, var(--s-6));
+  --bg: var(--c-ground);
+  /* Status zones behind bullets and meters: the status colors mixed into
+     the ground. The token washes (--c-pine-wash and the rest) sit too close
+     to the ground to read as zones at 10 px tall. */
+  --z-meets: color-mix(in oklab, var(--c-pine) 22%, var(--c-ground));
+  --z-near: color-mix(in oklab, var(--c-brass) 30%, var(--c-ground));
+  --z-misses: color-mix(in oklab, var(--c-danger) 18%, var(--c-ground));
+  /* Back range: 55% night into the ground (orchestrator design spec). */
+  --c-back-range: color-mix(in oklab, var(--c-night) 55%, var(--c-ground));
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-padding-top: 5.5rem; }
+body { margin: 0; background: var(--c-ground); color: var(--c-text); font: var(--t-step--1)/1.45 var(--font); -webkit-text-size-adjust: 100%; }
+a { color: var(--c-link); text-underline-offset: var(--line-edge); }
+:focus-visible { outline: var(--line-edge) solid var(--c-focus); outline-offset: 0.125rem; }
+button { font: inherit; }
+table { border-collapse: collapse; }
+p { margin: 0; }
+.vh { position: absolute; width: 0.0625rem; height: 0.0625rem; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+.ic { width: 1rem; height: 1rem; flex: none; }
+.g { width: 0.875rem; height: 0.875rem; flex: none; vertical-align: -0.125rem; }
+.small { font-size: 0.8125rem; color: var(--c-text-dim); }
+.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.scroll { overflow-x: auto; }
+.scroll:focus-visible { outline-offset: -0.125rem; }
+.empty { color: var(--c-text-dim); }
+
+/* ---- Header and nav ---- */
+.top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.375rem var(--s-5); padding: 1.25rem var(--gut) var(--s-3); }
+.top h1 { margin: 0; font-size: 1.625rem; font-weight: 700; letter-spacing: -0.01em; }
+.meta { display: flex; flex-wrap: wrap; gap: 0.125rem var(--s-4); font-size: 0.8125rem; color: var(--c-text-dim); }
+.key { display: flex; flex-wrap: wrap; gap: var(--s-1) 0.875rem; margin: 0 0 0 auto; padding: 0; list-style: none; font-size: 0.8125rem; color: var(--c-text-dim); }
+.key li { display: inline-flex; align-items: center; gap: 0.3125rem; }
+
+.tabnav { position: sticky; top: 0; z-index: 5; display: flex; gap: 0.125rem; padding: 0 var(--gut); background: var(--c-ground); border-bottom: var(--line-hair) solid var(--c-rule); overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: thin; }
+.tabnav a { flex: none; scroll-snap-align: start; display: flex; flex-direction: column; gap: 0.0625rem; min-height: var(--size-tap); padding: var(--s-2) 0.625rem 0.3125rem; color: var(--c-text); text-decoration: none; white-space: nowrap; border-bottom: var(--line-bold) solid transparent; }
+.tabnav a:hover { background: var(--c-surface); }
+.tabnav a[aria-current] { border-bottom-color: var(--c-night); }
+.tabnav a:focus-visible { outline-offset: -0.125rem; }
+.nl { display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.875rem; }
+.nl .ic { color: var(--c-text-dim); }
+.tabnav a[aria-current] .nl .ic { color: var(--c-text); }
+.pips { display: inline-flex; gap: var(--s-2); font-size: 0.8125rem; font-variant-numeric: tabular-nums; color: var(--c-text-dim); }
+.pip { display: inline-flex; align-items: center; gap: 0.1875rem; }
+.pip .g { width: 0.6875rem; height: 0.6875rem; }
+/* Below 1240 px a spacer after the last link lets any link, the last too, sit on the strip's left edge, so a link is never cut mid-word. */
+@media (max-width: 77.4375em) {
+  .tabnav::after { content: ""; flex: 0 0 100%; }
+}
+/* One row from 1240 px. The nav keeps its own sideways scroll at every width,
+   so a longer TABS list can never widen the page. */
+@media (min-width: 77.5em) {
+  .tabnav { scroll-snap-type: none; }
+  .tabnav a { flex: 1 1 auto; padding-inline: 0.3125rem; }
+  .pips { gap: 0.375rem; }
+}
+
+main { padding: var(--s-5) var(--gut) 4.5rem; }
+h3 { margin: 2.25rem 0 0.625rem; font-size: var(--t-step-0); font-weight: 650; }
+
+/* ---- The range ---- */
+.hero { --bg: var(--c-surface); background: var(--c-surface); border-radius: var(--r-card); padding: var(--s-4) 1.25rem 0.875rem; }
+.range-box { overflow-x: auto; }
+.range { display: block; width: 100%; min-width: 55rem; height: auto; }
+.r-q { fill: var(--c-night); stroke: var(--bg); stroke-width: 2; stroke-linejoin: round; }
+.r-s { fill: var(--c-back-range); }
+.r-snow { fill: var(--c-snow); }
+.r-mound { fill: var(--c-stone-edge); }
+.r-line { fill: none; stroke: var(--c-stone-edge); stroke-width: 1; }
+.r-base { fill: none; stroke: var(--c-border); stroke-width: 1; }
+.r-lab { font-size: 0.8125rem; fill: var(--c-text-dim); text-anchor: end; font-variant-numeric: tabular-nums; }
+.r-num { font-size: var(--t-step-0); font-weight: 650; fill: var(--c-text); paint-order: stroke; stroke: var(--bg); stroke-width: 0.25rem; stroke-linejoin: round; }
+.r-name { font-size: 1rem; fill: var(--c-text); text-anchor: middle; }
+.r-ic { color: var(--c-text-dim); }
+.massif .hit { fill: transparent; }
+.massif:hover .hit { fill: rgb(255 255 255 / 0.55); }
+.massif:focus { outline: none; }
+.massif:focus-visible .hit { stroke: var(--c-focus); stroke-width: 2; }
+.range-key { display: flex; flex-wrap: wrap; gap: 0.375rem 1.375rem; margin-top: var(--s-2); font-size: 0.8125rem; color: var(--c-text-dim); }
+.range-key span { display: inline-flex; align-items: center; gap: 0.375rem; }
+.range-key svg { width: 1.25rem; height: 0.875rem; overflow: visible; }
+@media (prefers-reduced-motion: no-preference) {
+  .rise .range .peaks { transform-box: fill-box; transform-origin: 50% 100%; animation: rise 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: calc(var(--i) * 30ms); }
+  .rise .range .nums { animation: fade 240ms ease-out both; animation-delay: calc(480ms + var(--i) * 30ms); }
+}
+@keyframes rise { from { transform: scaleY(0); } }
+@keyframes fade { from { opacity: 0; } }
+
+/* ---- Totals, meters, status stacks ---- */
+.totals { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem 2.5rem; margin-top: var(--s-5); align-items: end; }
+.totals .mix, .totals .master { grid-column: 1 / -1; }
+@media (min-width: 56.25em) {
+  .totals { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr); }
+  .totals .mix { grid-column: auto; }
+  .totals .master { grid-column: 1 / -1; }
+}
+.sb-l { font-size: var(--t-step--1); font-weight: 600; }
+.big { display: flex; align-items: center; gap: 0.625rem; font-size: 3.5rem; font-weight: 700; line-height: 1.05; letter-spacing: -0.02em; }
+.big .g { width: 1.5rem; height: 1.5rem; }
+.total .meter { max-width: 16.25rem; margin: var(--s-2) 0 0.375rem; }
+/* A meter is one span (charts.mjs meter()): the status zones are its
+   background, the score bar is ::before, and the 50 and 80 ticks are ::after,
+   drawn over the bar. */
+.meter { position: relative; display: block; width: 100%; height: 0.75rem; background: linear-gradient(to right, var(--z-misses) 0 50%, var(--z-near) 50% 80%, var(--z-meets) 80%); }
+.meter::before { content: ""; position: absolute; top: 0.1875rem; left: 0; width: var(--v, 0); height: 0.375rem; background: var(--c-text); }
+.meter::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to right, transparent calc(50% - 0.03125rem), var(--c-text-dim) 0 calc(50% + 0.03125rem), transparent 0 calc(80% - 0.03125rem), var(--c-text-dim) 0 calc(80% + 0.03125rem), transparent 0); }
+
+.sbar { display: flex; gap: 0.125rem; height: 1rem; margin: 0.625rem 0 var(--s-2); border-radius: var(--r-chisel); overflow: hidden; }
+.sbar > span { min-width: 0.125rem; }
+.sbar.mini { width: 7.5rem; height: 0.5rem; margin: 0; }
+.b-meets { background: var(--c-pine); }
+.b-near { background: var(--c-brass); }
+.b-misses { background: var(--c-danger); }
+.b-not-measured { background: var(--c-stone-edge); }
+.slegend { display: flex; flex-wrap: wrap; gap: var(--s-1) 1.125rem; font-size: 0.8125rem; color: var(--c-text-dim); }
+.sk { display: inline-flex; align-items: center; gap: 0.3125rem; }
+.sk b { color: var(--c-text); font-weight: 650; font-variant-numeric: tabular-nums; }
+
+/* ---- Scoreboard ---- */
+.board { width: 100%; min-width: 47.5rem; font-size: 0.875rem; }
+.board th, .board td { padding: var(--s-2) var(--s-4) var(--s-2) 0; border-bottom: var(--line-hair) solid var(--c-rule); text-align: left; vertical-align: middle; white-space: nowrap; }
+.board thead th { font-weight: 400; color: var(--c-text-dim); font-size: 0.8125rem; }
+.board thead button { padding: var(--s-1) 0; border: 0; background: none; color: inherit; cursor: pointer; }
+.board th[aria-sort] button { color: var(--c-text); font-weight: 650; }
+.board th[aria-sort="ascending"] button::after { content: " \25B4"; }
+.board th[aria-sort="descending"] button::after { content: " \25BE"; }
+.board tbody th a { display: inline-flex; align-items: center; gap: var(--s-2); color: var(--c-text); font-weight: 600; text-decoration: none; }
+.board tbody th a:hover { text-decoration: underline; }
+.board tbody th .ic { color: var(--c-text-dim); }
+.board td .meter { display: inline-block; width: 7.5rem; margin: 0 0.625rem; vertical-align: middle; }
+.bd-n { display: inline-block; min-width: 3ch; font-size: 1rem; font-weight: 650; text-align: right; font-variant-numeric: tabular-nums; }
+.bd-mix { display: inline-flex; align-items: center; gap: 0.625rem; font-variant-numeric: tabular-nums; }
+.board td.num { text-align: left; }
+
+/* ---- Fix first and not measured ---- */
+.tabchip { display: inline-flex; align-items: center; gap: 0.375rem; justify-self: start; padding: 0.125rem var(--s-2); border: var(--line-hair) solid var(--c-rule); border-radius: var(--r-chisel); color: var(--c-text); font-size: 0.8125rem; text-decoration: none; white-space: nowrap; }
+.tabchip .ic { width: 0.875rem; height: 0.875rem; color: var(--c-text-dim); }
+.tabchip:hover { background: var(--c-surface); }
+.fix { container-type: inline-size; margin: 0; padding: 0; list-style: none; }
+.fix li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "t l l" "v b o"; align-items: center; gap: 0.375rem 0.875rem; padding: 0.625rem 0; border-bottom: var(--line-hair) solid var(--c-rule); }
+.fix .tabchip { grid-area: t; }
+.fix .lbl { grid-area: l; color: var(--c-text); }
+.fix .val { grid-area: v; }
+.fix .bl { grid-area: b; }
+.fix .goal { grid-area: o; }
+@container (min-width: 47.5rem) {
+  .fix li { grid-template-columns: 7.5rem minmax(0, 1fr) auto 11.25rem 6.5rem; grid-template-areas: "t l v b o"; }
+}
+.nm { margin-top: 2.25rem; border-top: var(--line-hair) solid var(--c-rule); }
+.nm > summary { display: flex; align-items: baseline; gap: 0.625rem; padding: var(--s-3) 0; cursor: pointer; list-style: none; }
+.nm > summary::-webkit-details-marker { display: none; }
+.nm > summary h3 { margin: 0; }
+.nm > summary b { color: var(--c-text-dim); font-weight: 600; font-variant-numeric: tabular-nums; }
+.nm > summary::after { content: ""; width: 0.4375rem; height: 0.4375rem; border: solid var(--c-text-dim); border-width: 0 var(--line-edge) var(--line-edge) 0; transform: translateY(-0.125rem) rotate(45deg); }
+.nm[open] > summary::after { transform: rotate(-135deg); }
+.nm ul { margin: 0; padding: 0; list-style: none; }
+.nm li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--s-1) 0.875rem; align-items: baseline; padding: var(--s-2) 0; border-bottom: var(--line-hair) solid var(--c-rule); font-size: 0.875rem; }
+.nm li > a:not(.tabchip) { color: var(--c-text); }
+.nm .reason { grid-column: 1 / -1; font-size: 0.8125rem; color: var(--c-text-dim); overflow-wrap: anywhere; }
+@media (min-width: 56.25em) {
+  .nm li { grid-template-columns: 7.5rem minmax(0, 20rem) minmax(0, 1fr); }
+  .nm .reason { grid-column: auto; }
+}
+
+/* ---- Tab panel ---- */
+.tab-head { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--s-3) 2.25rem; padding-bottom: 1.25rem; border-bottom: var(--line-hair) solid var(--c-rule); }
+.th-name { display: flex; flex-wrap: wrap; flex-basis: 100%; align-items: flex-end; gap: var(--s-2) var(--s-5); min-width: 0; }
+.tab-head h2 { display: flex; align-items: center; gap: 0.625rem; margin: 0 0 var(--s-2); font-size: 1.75rem; font-weight: 700; }
+.tab-head h2 .ic { width: 1.625rem; height: 1.625rem; }
+.mini { flex: none; }
+.sb { min-width: 8.75rem; }
+.sb-n { display: flex; align-items: center; gap: var(--s-2); margin: 0.125rem 0 0.375rem; font-size: 2.5rem; font-weight: 700; line-height: 1.05; }
+.sb-n .g { width: 1.25rem; height: 1.25rem; }
+.sb .meter { max-width: 12.5rem; margin-bottom: var(--s-1); }
+.trend { margin: 0; }
+.trend figcaption { font-size: 0.75rem; color: var(--c-text-dim); }
+
+.chips { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: 1.75rem 0 var(--s-1); }
+.chips button { display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.25rem; padding: var(--s-1) var(--s-3); border: var(--line-hair) solid var(--c-border); border-radius: var(--r-chisel); background: var(--c-ground); color: var(--c-text); font-size: 0.875rem; cursor: pointer; }
+.chips b { font-weight: 650; font-variant-numeric: tabular-nums; }
+.chips button[aria-pressed="true"] { border-color: var(--c-night); background: var(--c-night); color: var(--c-on-night); }
+.chips button:disabled { opacity: 0.45; cursor: default; }
+.tab[data-filter="misses"] .metric:not(.s-misses),
+.tab[data-filter="near"] .metric:not(.s-near),
+.tab[data-filter="meets"] .metric:not(.s-meets),
+.tab[data-filter="not-measured"] .metric:not(.s-not-measured) { display: none; }
+/* Headings with no row left. Its own rule, because a browser without :has()
+   drops a whole rule, and the rows above must still filter there. */
+.tab[data-filter="misses"] :is(.kind, .group):not(:has(.metric.s-misses)),
+.tab[data-filter="near"] :is(.kind, .group):not(:has(.metric.s-near)),
+.tab[data-filter="meets"] :is(.kind, .group):not(:has(.metric.s-meets)),
+.tab[data-filter="not-measured"] :is(.kind, .group):not(:has(.metric.s-not-measured)) { display: none; }
+
+.kinds { display: grid; gap: var(--s-2) var(--s-7); }
+@media (min-width: 68.75em) { .kinds.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .kinds.three { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.kind { container-type: inline-size; min-width: 0; }
+.kind h3 { margin: 1.125rem 0 0.125rem; }
+.group h4 { display: flex; align-items: center; gap: var(--s-2); margin: 1.125rem 0 0.125rem; font-size: 0.8125rem; font-weight: 650; color: var(--c-text-dim); }
+.gchip { display: inline-flex; align-items: center; gap: var(--s-1); padding: 0.0625rem 0.375rem; border-radius: var(--r-chisel); background: var(--c-surface); color: var(--c-text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.gchip .g { width: 0.6875rem; height: 0.6875rem; }
+
+/* ---- Metric rows ---- */
+.metric { border-bottom: var(--line-hair) solid var(--c-rule); }
+.metric > summary { display: grid; grid-template-columns: 1rem minmax(0, 1fr) auto 0.75rem; grid-template-areas: "g l v c" ". b o ."; align-items: center; gap: var(--s-1) var(--s-3); padding: 0.625rem 0.375rem; cursor: pointer; list-style: none; }
+.metric > summary::-webkit-details-marker { display: none; }
+.metric > summary:hover { background: color-mix(in oklab, var(--c-surface) 55%, transparent); }
+.metric > summary > .g { grid-area: g; }
+.metric > summary::after { content: ""; grid-area: c; justify-self: center; width: 0.4375rem; height: 0.4375rem; border: solid var(--c-text-dim); border-width: 0 var(--line-edge) var(--line-edge) 0; transform: translateY(-0.125rem) rotate(45deg); }
+.metric[open] > summary::after { transform: rotate(-135deg); }
+.metric[open] { --bg: var(--c-surface); background: var(--c-surface); border-radius: var(--r-card); }
+.lbl { grid-area: l; }
+.val { grid-area: v; font-size: var(--t-step-0); font-weight: 650; white-space: nowrap; text-align: right; }
+/* A bullet is one span (charts.mjs bullet()): the zones are a 10 px band of
+   background, the value bar is ::before, and the goal tick is ::after, placed
+   by --a and --b (zone edges), --v (value) and --g (goal), all percentages.
+   An <i> inside draws the arrow cap of a value past the scale. */
+.bl { grid-area: b; position: relative; display: block; width: 100%; max-width: 11.25rem; height: 1.25rem; background: linear-gradient(to right, var(--z1) 0 var(--a), var(--z2) var(--a) var(--b), var(--z3) var(--b)) 0 0.3125rem / 100% 0.625rem no-repeat; }
+.bl.lo { --z1: var(--z-meets); --z2: var(--z-near); --z3: var(--z-misses); }
+.bl.hi { --z1: var(--z-misses); --z2: var(--z-near); --z3: var(--z-meets); }
+.bl::before { content: ""; position: absolute; top: 0.4375rem; left: 0; width: var(--v, 0); min-width: 0.125rem; height: 0.375rem; background: var(--c-text); }
+.bl.nv::before { content: none; }
+.bl.over::before { width: calc(100% - 0.375rem); }
+.bl > i { position: absolute; top: 0.28125rem; right: 0; border-left: 0.375rem solid var(--c-text); border-block: 0.34375rem solid transparent; }
+.bl::after { content: ""; position: absolute; top: 0.1875rem; left: clamp(0rem, calc(var(--g) - 0.0625rem), calc(100% - 0.125rem)); width: 0.125rem; height: 0.875rem; background: var(--c-text); }
+.goal { grid-area: o; justify-self: end; font-size: 0.8125rem; color: var(--c-text-dim); white-space: nowrap; }
+@container (min-width: 37.5rem) {
+  .metric > summary .goal { justify-self: start; }
+  .metric > summary { grid-template-columns: 1rem minmax(0, 1fr) auto 9.375rem 6rem 0.75rem; grid-template-areas: "g l v b o c"; }
+}
+
+.more { padding: 0.125rem 0.875rem var(--s-4) 2.125rem; }
+.means { margin-bottom: 0.625rem; }
+/* A tab's ideal state, above its sections, and each section's aim. */
+.ideal { margin-top: 1.25rem; max-width: 72ch; }
+.ideal h3 { margin: 0 0 var(--s-1); }
+.ideal h2 { margin: 0 0 var(--s-1); font-size: var(--t-step-0); font-weight: 650; }
+.ideal p { margin: 0; }
+.ideal-parts { margin-top: 0.625rem; min-width: 30rem; font-size: 0.875rem; }
+.ideal-parts th, .ideal-parts td { padding: 0.375rem var(--s-3) 0.375rem 0; text-align: left; vertical-align: top; border-bottom: var(--line-hair) solid var(--c-rule); }
+.ideal-parts thead th { font-size: 0.8125rem; font-weight: 400; color: var(--c-text-dim); }
+.ideal-parts tbody th { font-weight: 600; white-space: nowrap; }
+.refs-fold { margin-top: var(--s-2); font-size: 0.875rem; }
+.refs-fold > summary { cursor: pointer; color: var(--c-text-dim); width: fit-content; }
+.refs { margin: 0.375rem 0 0; padding-left: 1.5em; font-size: 0.875rem; }
+.refs li { overflow-wrap: anywhere; }
+.aim { margin: 0 0 0.625rem; font-size: 0.875rem; color: var(--c-text-dim); }
+.exact { margin-bottom: var(--s-2); font-size: 0.8125rem; color: var(--c-text-dim); }
+.reason { margin-bottom: var(--s-2); color: var(--c-text-dim); }
+.src { margin-top: 0.625rem; font-size: 0.8125rem; color: var(--c-text-dim); overflow-wrap: anywhere; }
+.read { white-space: nowrap; }
+

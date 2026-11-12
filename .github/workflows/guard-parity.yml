@@ -1,0 +1,43 @@
+name: guard-parity
+
+# The bash guard's engine reads every corpus case and every rule example the same way at the pull request's base and
+# at its head: the same rule ids in the same order, and the same error class (tools/tests/guard_parity.py, issue
+# #243). Its own job, not a line in tools/verify.sh: ci-standard.yml's short job checks out one commit with no
+# credentials, so it cannot see the base; this job fetches the full history. Only commands the base also lists compare. Only on a pull request that touches the
+# guard, its tests or this file. It parses commands and never runs one (rules/gates.md).
+# A pull request that changes a verdict on purpose lists it in its description, one "guard-parity: case 12 -> rule-id"
+# line each (tools/tests/guard_parity.py); editing the description reruns the check.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    paths:
+      - "tools/bash_guard*"
+      - "tools/tests/**"
+      - ".github/workflows/guard-parity.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: guard-parity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  guard-parity:
+    # A fixed GitHub-hosted label, never the raw CI_RUNNER variable (rules/compute.md).
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Compare the base's engine with the head's
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          # A starter-commit base skips the compare only when the pull request targets the default branch.
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          # The description reaches the script as data through the environment, never spliced into the shell.
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: python3 -I tools/tests/guard_parity.py --base "$BASE" --expected "$PR_BODY"

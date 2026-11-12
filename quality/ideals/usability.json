@@ -1,0 +1,90 @@
+{
+  "ideal": "Anyone can read and use the site on any device and with any ability, and finishes a main task in two clicks without waiting.",
+  "parts": [
+    {
+      "part": "Plain prose",
+      "ideal": "The hardest key page reads at grade 9 or lower, and no sentence runs past 30 words",
+      "setup": "Short sentences and common words; the tab names each page's grade and long sentences"
+    },
+    {
+      "part": "Accessibility",
+      "ideal": "No axe-core failure on any key page at desktop or phone width",
+      "setup": "Fix each element by the rule axe names; plain HTML elements before ARIA"
+    },
+    {
+      "part": "Tap targets",
+      "ideal": "Every target on a phone is at least 24 by 24 CSS px, or spaced to match",
+      "setup": "Pad small links and icons; space links that sit close together"
+    },
+    {
+      "part": "Forms",
+      "ideal": "Every form field has a label that says what to type",
+      "setup": "A label element or aria-label on each field; a placeholder alone is no label; list the form pages in params"
+    },
+    {
+      "part": "Links",
+      "ideal": "Every internal link answers",
+      "setup": "Fix or redirect a moved page in the change that moves it"
+    },
+    {
+      "part": "Keyboard",
+      "ideal": "Every main task finishes with Tab and Enter alone",
+      "setup": "Real links and buttons with visible focus; list the main tasks in params.tasks"
+    },
+    {
+      "part": "Task paths",
+      "ideal": "Each main task within two clicks of home, and a first action within 50 words",
+      "setup": "Link each task from home or the header; put the first link near the top of main"
+    },
+    {
+      "part": "Response and weight",
+      "ideal": "Taps answered at once: blocking time under 200 ms on a phone, and each form page under 1,600 KiB",
+      "setup": "Ship less script, split long tasks, keep form pages free of heavy media"
+    }
+  ],
+  "sources": [
+    {
+      "title": "Web Content Accessibility Guidelines (WCAG) 2.2, W3C Recommendation",
+      "url": "https://www.w3.org/TR/WCAG22/",
+      "date": "2024-12-12"
+    },
+    {
+      "title": "W3C: Understanding Success Criterion 3.1.5 Reading Level",
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/reading-level.html",
+      "date": "2026-06-28"
+    },
+    {
+      "title": "W3C: Understanding Success Criterion 2.5.8 Target Size (Minimum)",
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GOV.UK: Use clear language",
+      "url": "https://guidance.publishing.service.gov.uk/writing-to-gov-uk-standards/writing-guidelines/clear-language/",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Nielsen Norman Group: The 3-Click Rule for Navigation Is False",
+      "url": "https://www.nngroup.com/articles/3-click-rule/",
+      "date": "2019-08-11"
+    },
+    {
+      "title": "web.dev: Interaction to Next Paint (INP)",
+      "url": "https://web.dev/articles/inp",
+      "date": "2025-09-02"
+    },
+    {
+      "title": "web.dev: Total Blocking Time (TBT)",
+      "url": "https://web.dev/articles/tbt",
+      "date": "2024-11-04"
+    },
+    {
+      "title": "Avoid enormous network payloads (Lighthouse total byte weight)",
+      "url": "https://developer.chrome.com/docs/lighthouse/performance/total-byte-weight",
+      "date": "2019-05-02"
+    }
+  ],
+  "quality": "Plain prose a ninth grader reads, no WCAG 2.2 AA failure, labeled fields, tap targets of 24 px and no broken link.",
+  "speed": "Every main task within two clicks of home, an action within fifty words, and taps answered at once.",
+  "consumption": "Every form page, where tasks end, under 1,600 KiB to load."
+}

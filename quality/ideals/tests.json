@@ -1,0 +1,33 @@
+{
+  "ideal": "Tests at every pyramid layer: pages checked for accessibility, nothing skipped, red only on a real break, no test running a command it only checks.",
+  "sources": [
+    {
+      "title": "SonarQube Server 2026.5: Introduction to quality gates (Sonar way)",
+      "url": "https://docs.sonarsource.com/sonarqube-server/latest/quality-standards-administration/managing-quality-gates/introduction-to-quality-gates/",
+      "date": "2026-11-04"
+    },
+    {
+      "title": "GitHub Docs: GitHub-hosted runners (each one a new virtual machine, single-CPU runners aside)",
+      "url": "https://docs.github.com/en/actions/concepts/runners/github-hosted-runners",
+      "date": "2026-11-04"
+    },
+    {
+      "title": "Martin Fowler: Continuous Integration",
+      "url": "https://martinfowler.com/articles/continuousIntegration.html",
+      "date": "2024-01-18"
+    },
+    {
+      "title": "Web Content Accessibility Guidelines (WCAG) 2.2, W3C Recommendation",
+      "url": "https://www.w3.org/TR/WCAG22/",
+      "date": "2024-12-12"
+    },
+    {
+      "title": "Ham Vocke: The Practical Test Pyramid",
+      "url": "https://martinfowler.com/articles/practical-test-pyramid.html",
+      "date": "2018-02-26"
+    }
+  ],
+  "quality": "Line and branch coverage at 80% or more, every route opened by a spec and checked with axe, no skipped test, and main passing.",
+  "speed": "Each test job finishes within the ten-minute build.",
+  "consumption": "Billed test minutes no more than the jobs' speed goals add up to, and shell probes run on hosted CI, not a workstation."
+}

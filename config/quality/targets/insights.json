@@ -1,0 +1,20 @@
+[
+ {
+  "id": "insights.oldest_leftover_hours",
+  "params": {
+   "keep_branches": [
+    "cards",
+    "quality-history"
+   ]
+  }
+ },
+ {
+  "id": "insights.idle_access",
+  "drop": true
+ },
+ {
+  "id": "insights.leftover_branches",
+  "drop": true,
+  "goal_source": "Git Crafter drop, 2026-11-11: insights.oldest_leftover_hours reads the same leftover branches (quality/collectors/insights/insights-access.mjs readLeftover) and shows their count as its detail row. Both read 0 on 2026-11-10; on 2026-11-11 the count read 1 and the age 1.5 hours (data/quality/history). The age stays as the tab's one Speed metric"
+ }
+]

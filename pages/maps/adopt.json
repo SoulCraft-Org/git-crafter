@@ -1,0 +1,20 @@
+{
+ "id": "adopt",
+ "name": "Adopt Git Crafter",
+ "why": "A repo, from copying the starters to running Git Crafter's CI and pages and staying current",
+ "ideal": "A repo copies two starters and three CI files, pins Git Crafter to a full SHA, requires its check, and takes each release within days.",
+ "sources": [
+  {"title": "GitHub Actions: reuse workflows", "url": "https://docs.github.com/en/actions/sharing-automations/reusing-workflows", "date": "2026-11-05"},
+  {"title": "GitHub Actions: secure use reference", "url": "https://docs.github.com/en/actions/reference/security/secure-use", "date": "2026-11-05"},
+  {"title": "GitHub: about rulesets", "url": "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets", "date": "2026-11-05"},
+  {"title": "GitHub: Dependabot version updates", "url": "https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/about-dependabot-version-updates", "date": "2026-11-05"}
+ ],
+ "critical_path": ["copy", "require", "update", "check"],
+ "steps": [
+  {"id": "copy", "name": "Copy", "tools": ["templates/quality/config.json", "templates/process/config.json", "templates/ci/ci.yml", "templates/ci/pages.yml", "templates/ci/dependabot.yml"], "rule": "Copy the starters, CI and pages callers and Dependabot entry; pin Git Crafter to a full SHA with its version.", "rule_ref": "https://docs.github.com/en/actions/reference/security/secure-use", "metric": "actions.pinned_share"},
+  {"id": "require", "name": "Require", "tools": ["A ruleset on the default branch"], "rule": "The default branch requires ci / ci-ok, so every merge passes the standard.", "rule_ref": "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets", "metric": "settings.required_checks"},
+  {"id": "update", "name": "Update", "tools": ["Dependabot's github-actions entry"], "rule": "Dependabot opens a bump of the pin as each Git Crafter release lands, and none waits for weeks.", "rule_ref": "https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/about-dependabot-version-updates", "metric": "tools.oldest_update_wait_days"},
+  {"id": "check", "name": "Check", "tools": ["CI on the bump's pull request"], "rule": "CI checks a bump in minutes, so it can merge the same day.", "rule_ref": "https://docs.github.com/en/actions/sharing-automations/reusing-workflows", "metric": "tools.latest_dependency_pr_ci_minutes", "gates_from": "workflows"},
+  {"id": "current", "name": "Current", "tools": ["Dependabot", "Full-SHA pins"], "rule": "Every action, Git Crafter's included, stays on its latest allowed release.", "rule_ref": "https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/about-dependabot-version-updates", "metric": "tools.actions_latest_share"}
+ ]
+}

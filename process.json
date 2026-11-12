@@ -1,0 +1,98 @@
+{
+ "version": 1,
+ "comment_purpose": "The Git Crafter Process page's other tabs as data: CI, Testing, Claude, Tokens and Systems, and ideals: each tab's ideal state, keyed by tab id. The process maps are each repo's own: Git Crafter's are in maps.json, a repo names its own file in its config (docs.maps).",
+ "repo_url": "https://github.com/SoulCraft-Org/git-crafter/blob/main",
+ "ideals": {
+  "build": {
+   "ideal": "A process is a map of at most six steps where quality, speed and consumption are decided, each scored by one Quality metric.",
+   "sources": [
+    {"title": "Claude Code: best practices", "url": "https://code.claude.com/docs/en/best-practices", "date": "2026-11-04"},
+    {"title": "DORA's software delivery performance metrics", "url": "https://dora.dev/guides/dora-metrics/", "date": "2026-01-05"}
+   ]
+  },
+  "ci": {
+   "ideal": "Every repo runs one CI standard on hosted runners, pinned to a SHA, and skips unchanged work so included minutes last the month.",
+   "sources": [
+    {"title": "GitHub Actions: reuse workflows", "url": "https://docs.github.com/en/actions/sharing-automations/reusing-workflows", "date": "2026-11-04"},
+    {"title": "GitHub: about billing for GitHub Actions", "url": "https://docs.github.com/en/billing/managing-billing-for-your-products/managing-billing-for-github-actions/about-billing-for-github-actions", "date": "2026-11-04"}
+   ]
+  },
+  "testing": {
+   "ideal": "Many fast unit tests, fewer broad ones, few end-to-end; every suite runs in CI on every PR, and main stays green.",
+   "sources": [
+    {"title": "Martin Fowler: The Practical Test Pyramid", "url": "https://martinfowler.com/articles/practical-test-pyramid.html", "date": "2018-02-26"}
+   ]
+  },
+  "claude": {
+   "ideal": "One agent loop works with skills loaded on demand; a subagent must earn its place, and the cheapest passing model does each job.",
+   "sources": [
+    {"title": "Claude Code: best practices", "url": "https://code.claude.com/docs/en/best-practices", "date": "2026-11-04"},
+    {"title": "Claude docs: choosing the right model", "url": "https://platform.claude.com/docs/en/about-claude/models/choosing-a-model", "date": "2026-11-04"},
+    {"title": "Anthropic: when to fold subagents into your main agent loop", "url": "https://claude.com/resources/articles/building-agents-when-to-fold-subagents-into-your-main-agent-loop", "date": "2026-10-22"}
+   ]
+  },
+  "tokens": {
+   "ideal": "Each session keeps a stable prompt prefix so most input reads from cache, subagents return short results, and tokens per merged change fall.",
+   "sources": [
+    {"title": "Claude Code: how Claude Code uses prompt caching", "url": "https://code.claude.com/docs/en/prompt-caching", "date": "2026-11-04"},
+    {"title": "Anthropic: when to fold subagents into your main agent loop", "url": "https://claude.com/resources/articles/building-agents-when-to-fold-subagents-into-your-main-agent-loop", "date": "2026-10-22"}
+   ]
+  },
+  "systems": {
+   "ideal": "Each outside system is mapped with its limits, read live and dated; use stays under 80%, and a failed read is not measured.",
+   "sources": [
+    {"title": "GitHub: rate limits for the REST API", "url": "https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api", "date": "2026-11-04"},
+    {"title": "GitHub: about billing for GitHub Actions", "url": "https://docs.github.com/en/billing/managing-billing-for-your-products/managing-billing-for-github-actions/about-billing-for-github-actions", "date": "2026-11-04"}
+   ]
+  }
+ },
+ "claude": {
+  "comment": "The Claude tab: usage, model routes, which model, when to delegate, and who decides what, read from rules/delegation.md at build time.",
+  "usage": ["claude.tokens_per_merged_pr", "claude.cache_read_share", "claude.subagent_cost_share", "claude.context_per_call", "pr.latest_10_merges_hours"],
+  "routes": [
+   {"id": "opus", "label": "Claude Opus 5.5", "tip": "Orchestrator and worker sessions, each in its own worktree: plan, build, merge", "ref": "skills/merging/orchestrating.md, Delegating"},
+   {"id": "sonnet", "label": "Claude Sonnet 5.5", "tip": "One reviewer subagent per round with a shell, and well-specified work", "ref": "skills/merging/orchestrating.md, Delegating"},
+   {"id": "light", "label": "Claude Haiku 5.5", "tip": "Searches and CI logs through the built-in Explore agent with model haiku; Claude Code questions through claude-code-guide", "ref": "skills/merging/orchestrating.md, Delegating"},
+   {"id": "open", "label": "Open-weight models", "tip": "Bulk text on free models: OpenRouter, Ollama cloud", "ref": "rules/compute.md, Cheap bulk model work", "share": "models.third_party_share"}
+  ],
+  "routes_ref": "rules/compute.md",
+  "decisions_ref": "rules/delegation.md",
+  "models": {
+   "comment": "The Which model table: the work, the model and effort Anthropic's docs point to, each with its source. A row's tip carries the doc's words or figures; checked 2026-11-03.",
+   "rows": [
+    {"work": "Orchestrator and worker sessions", "model": "Opus 5.5", "effort": "medium", "source": "https://platform.claude.com/docs/en/about-claude/models/choosing-a-model#model-selection-matrix", "tip": "Most workloads start with Claude Opus 5.5 (model selection matrix); medium is its default effort"},
+    {"work": "Well-specified work", "model": "Sonnet 5.5", "effort": "medium", "source": "https://platform.claude.com/docs/en/build-with-claude/effort#recommended-effort-levels", "tip": "Sonnet 5.5 defaults to high; for agentic coding and multistep tool use, the effort doc says to start with medium for well-specified tasks"},
+    {"work": "Guard and security reviews", "model": "Opus 5.5", "effort": "medium or high", "source": "https://platform.claude.com/docs/en/build-with-claude/effort#effort-levels", "tip": "high suits complex reasoning and difficult coding problems (effort levels table); Opus for these reviews is the orchestrator's call, 2026-11-03"},
+    {"work": "Lookups, search, log reading", "model": "Haiku 5.5", "effort": "medium", "limit": "prompts under 100K tokens", "source": "https://platform.claude.com/docs/en/about-claude/pricing#long-context-pricing", "tip": "Haiku 5.5 is priced by prompt length: a prompt over 100,000 tokens pays $0.50 per million input tokens against $0.10 (pricing page)"},
+    {"work": "Coding and review", "model": "not Haiku 5.5", "effort": "", "source": "https://www.anthropic.com/claude-haiku-5-5", "tip": "Terminal-Bench 4.0: 39.2% for Haiku 5.5 against 70.6% for Sonnet 5.5 (anthropic.com); Sonnet 5.5 and Opus 5.5 remain the better choices for complex agentic coding"},
+    {"work": "When Opus 5.5 at xhigh misses", "model": "Fable 5.1", "effort": "high", "source": "https://platform.claude.com/docs/en/about-claude/models/choosing-a-model#option-2-start-capability-first", "tip": "If evals at xhigh or max effort still fall short on demanding reasoning or long-horizon agentic work, move to Fable 5.1; high is its default"}
+   ]
+  },
+  "delegate": {
+   "comment": "The When to delegate map: one loop by default, the conditions that earn a subagent or session, how to split, and the lighter model. Each node shows the first of its metrics from data/org.json, rated against that metric's own goal; a node with an empty list reads no metric yet. ref names the source when it is not the article.",
+   "source": "https://claude.com/resources/articles/building-agents-when-to-fold-subagents-into-your-main-agent-loop",
+   "source_label": "Anthropic: when to fold subagents into your main agent loop (2026-10-22)",
+   "start": {"label": "Work arrives", "icon": "mail"},
+   "default": {"label": "One loop", "icon": "plan", "tip": "The orchestrator does the work itself; skills and path-scoped rules load on demand", "metrics": ["claude.subagent_cost_share"]},
+   "when_word": "only when",
+   "branches": [
+    {"id": "parallel", "label": "Parallel work", "tip": "Tasks run in parallel, each in a fresh context it can discard: the app's sessions, each in its own worktree", "metrics": ["pr.latest_merge_hours"]},
+    {"id": "bloat", "label": "Context bloat", "tip": "One loop degrades measurably from context bloat: context per call over its goal; the Explore agent on Haiku reads, and returns the answer", "metrics": ["claude.context_per_call"]},
+    {"id": "tools", "label": "Tool or rule conflict", "tip": "One agent struggles to pick tools, or its instructions conflict", "metrics": ["claude.instruction_tokens"]},
+    {"id": "review", "label": "Independent read", "tip": "A security or guard review, read apart from the work: one reviewer subagent on Sonnet with a shell", "ref": "rules/delegation.md#pull-requests", "metrics": []}
+   ],
+   "how_label": "Then",
+   "how": [
+    {"id": "split", "label": "Split by context", "tip": "Not by problem type: each handoff loses detail", "metrics": []},
+    {"id": "compact", "label": "Compact result", "tip": "Work that needs little from the rest, and a short result back", "metrics": ["tokens.latest_subagent_return_tokens"]},
+    {"id": "budget", "label": "Turn and cost budgets", "tip": "The loop runs until it answers or hits a budget", "metrics": ["claude.tokens_per_merged_pr"]}
+   ],
+   "light": {"label": "Lighter model", "icon": "review", "word": "small, bounded", "tip": "A lighter Claude model takes small, bounded work: the Agent call names model haiku or sonnet, since built-in agents otherwise run on the session's model", "ref": "skills/merging/orchestrating.md, Delegating", "metrics": ["claude.cost_per_merged_pr_usd"]}
+  }
+ },
+ "ci": {
+  "comment": "The CI tab's standard: how much of the org's included Actions minutes are used and left (the Credits tab's credits.actions_pool_used). templates/ci/README.md holds the rules and the metric definitions.",
+  "source": "templates/ci/README.md",
+  "metrics": ["credits.actions_pool_used"]
+ }
+}

@@ -1,0 +1,60 @@
+{
+  "ideal": "Small changes reach production soon after they merge, automatically, rarely fail, and are restored within the hour when one does.",
+  "parts": [
+    {
+      "part": "Automatic deploy",
+      "ideal": "Each merge to main deploys with no hand step",
+      "setup": "Cloudflare Workers Builds on the production branch, or a GitHub Pages workflow on push to main"
+    },
+    {
+      "part": "Waiting merges",
+      "ideal": "No merge waits for production, and none waits a day",
+      "setup": "Deploy on every merge; fix a stuck build the day it sticks"
+    },
+    {
+      "part": "Lead time",
+      "ideal": "The latest deploy went live within a day of its earliest merge",
+      "setup": "Small pull requests that ship one at a time"
+    },
+    {
+      "part": "Change failures",
+      "ideal": "At most 5% of deploys roll back or ship a regression; the latest one holds",
+      "setup": "Checks gate each merge; name the culprit in a Regressed-by line on the regression issue"
+    },
+    {
+      "part": "Restore",
+      "ideal": "A failed deploy is restored within an hour",
+      "setup": "Roll back first and fix after: a Wrangler rollback, or a redeploy of the last good commit"
+    },
+    {
+      "part": "CI minutes",
+      "ideal": "The push behind a deploy bills under 20 Actions minutes",
+      "setup": "Path filters, caches and one shared workflow"
+    }
+  ],
+  "sources": [
+    {
+      "title": "DORA's software delivery performance metrics",
+      "url": "https://dora.dev/guides/dora-metrics-four-keys/",
+      "date": "2026-01-05"
+    },
+    {
+      "title": "DORA: 2024 Accelerate State of DevOps Report",
+      "url": "https://dora.dev/research/2024/dora-report/",
+      "date": "2026-04-13"
+    },
+    {
+      "title": "Builds (Cloudflare Workers)",
+      "url": "https://developers.cloudflare.com/workers/ci-cd/builds/",
+      "date": "2026-10-28"
+    },
+    {
+      "title": "GitHub Docs: Using custom workflows with GitHub Pages",
+      "url": "https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages",
+      "date": "2026-11-10"
+    }
+  ],
+  "quality": "The latest deploy holds, few of the last ten failed, and a failure is restored within an hour.",
+  "speed": "No merge waits long for production, and the latest deploy went live within a day of its merges.",
+  "consumption": "The CI behind each deploy bills few minutes."
+}

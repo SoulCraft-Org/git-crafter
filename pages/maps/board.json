@@ -1,0 +1,108 @@
+{
+ "id": "board",
+ "name": "Board",
+ "why": "A feature, from a card on the project board to Done with its merged pull request",
+ "ideal": "One fresh session takes one visual card to one merged pull request; open pull requests carry the limit, and nothing sits in progress unbuilt.",
+ "sources": [
+  {
+   "title": "GitHub Docs: Best practices for Projects",
+   "url": "https://docs.github.com/en/issues/planning-and-tracking-with-projects/learning-about-projects/best-practices-for-projects",
+   "date": "2026-11-10"
+  },
+  {
+   "title": "Claude Code Docs: Manage costs effectively",
+   "url": "https://code.claude.com/docs/en/costs",
+   "date": "2026-11-10"
+  },
+  {
+   "title": "Anthropic: How we built our multi-agent research system",
+   "url": "https://www.anthropic.com/research/multi-agent-research-system",
+   "date": "2026-11-10"
+  },
+  {
+   "title": "DORA: Work in process limits",
+   "url": "https://dora.dev/capabilities/wip-limits/",
+   "date": "2026-11-10"
+  },
+  {
+   "title": "DORA: Working in small batches",
+   "url": "https://dora.dev/capabilities/working-in-small-batches/",
+   "date": "2025-12-08"
+  }
+ ],
+ "critical_path": [
+  "card",
+  "split",
+  "start",
+  "finish",
+  "done"
+ ],
+ "steps": [
+  {
+   "id": "card",
+   "name": "Card",
+   "tools": [
+    "A draft card on the project board",
+    "quality/cards/picture.mjs"
+   ],
+   "rule": "A feature is one card: a picture of its metric and steps, a table, and a pass-or-fail check.",
+   "rule_ref": "https://code.claude.com/docs/en/best-practices",
+   "metric": "projects.cards_at_a_glance"
+  },
+  {
+   "id": "split",
+   "name": "Split",
+   "tools": [
+    "The Area field",
+    "Pull requests of 400 lines or fewer"
+   ],
+   "rule": "Cut the work so each card lands on its own and shares no file with another card in progress.",
+   "rule_ref": "https://www.anthropic.com/research/multi-agent-research-system",
+   "metric": "pull_requests.conflicting"
+  },
+  {
+   "id": "start",
+   "name": "Start",
+   "tools": [
+    "One app session per card, in its own worktree",
+    "Workflow: Pull request linked to issue"
+   ],
+   "rule": "A fresh session takes one card; the card is in progress only while its pull request is open.",
+   "rule_ref": "https://code.claude.com/docs/en/costs",
+   "metric": "projects.cards_by_column"
+  },
+  {
+   "id": "finish",
+   "name": "Finish",
+   "tools": [
+    "The app's PR monitor with Auto-fix",
+    "gh pr merge --match-head-commit"
+   ],
+   "rule": "Finish before starting: merge a green pull request before opening another.",
+   "rule_ref": "https://dora.dev/capabilities/wip-limits/",
+   "metric": "pull_requests.open_now"
+  },
+  {
+   "id": "done",
+   "name": "Done",
+   "tools": [
+    "Workflows: Pull request merged, Item closed",
+    "Auto-archive the session on merge"
+   ],
+   "rule": "The merge moves the card to Done with its pull request linked, within the CI minutes goal; the session ends.",
+   "rule_ref": "https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project/using-the-built-in-automations",
+   "metric": "projects.latest_card_ci_minutes"
+  },
+  {
+   "id": "watch",
+   "name": "Watch",
+   "tools": [
+    "The Stuck view",
+    "Insights charts"
+   ],
+   "rule": "No card sits in progress past a week; a waiting card returns to Todo and names what it waits on.",
+   "rule_ref": "https://dora.dev/capabilities/working-in-small-batches/",
+   "metric": "projects.oldest_doing_days"
+  }
+ ]
+}

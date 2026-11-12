@@ -1,0 +1,130 @@
+{
+  "ideal": "Each change is a small pull request, stacked when large, linked to its issue, reviewed at its green head, and merged within the hour.",
+  "parts": [
+    {
+      "part": "Pull requests list",
+      "ideal": "A short queue: each open pull request is under a day old, green and free of conflicts",
+      "setup": "Open one small pull request per change; the Claude app's monitor with Auto-fix repairs red checks and conflicts"
+    },
+    {
+      "part": "Description",
+      "ideal": "A table of facts, a diagram where a flow changed, a linked issue or card, and few prose words",
+      "setup": "Fill the pull request template; write Closes or Part of before the issue number"
+    },
+    {
+      "part": "Authored by me",
+      "ideal": "An author's list empties the same day; no change is over 400 reviewed lines",
+      "setup": "One change and its test per pull request; split a large one, or stack it, before review"
+    },
+    {
+      "part": "Review requests",
+      "ideal": "No request waits past an hour of green; the review reads the head commit that merges",
+      "setup": "Request a person or team; where one account authors and merges, post a verdict comment naming the head commit"
+    },
+    {
+      "part": "Assigned and Involves me",
+      "ideal": "Nothing sits assigned or mentioned without an answer; every review thread is resolved before the merge",
+      "setup": "Assign whoever merges; answer or resolve each comment; a blocked pull request names what it waits on"
+    },
+    {
+      "part": "Labels and Milestones",
+      "ideal": "Labels come from automation, such as dependencies and area; a milestone only where a release is planned",
+      "setup": "Let Dependabot label its pull requests; leave Milestones empty unless a release needs one"
+    },
+    {
+      "part": "Stacks",
+      "ideal": "A large change is a stack of small pull requests based on the default branch, merged bottom up, never into a side branch",
+      "setup": "Create it with gh stack or the stacks API; the base branch's rules and checks then apply to every layer"
+    },
+    {
+      "part": "Merge",
+      "ideal": "Squashed at the reviewed head within the hour of green, with every check passed and the branch deleted, never reverted",
+      "setup": "Allow squash only, delete head branches, and require the CI check in a ruleset; merge pinned to the reviewed commit"
+    }
+  ],
+  "sources": [
+    {
+      "title": "GitHub Docs: Helping others review your changes",
+      "url": "https://docs.github.com/en/pull-requests/concepts/helping-others-review-your-changes",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: About stacked pull requests",
+      "url": "https://docs.github.com/en/pull-requests/get-started/about-stacked-prs",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Linking a pull request to an issue",
+      "url": "https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue",
+      "date": "2026-11-04"
+    },
+    {
+      "title": "GitHub Docs: Merging stacked pull requests",
+      "url": "https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/merging-stacked-pull-requests",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Changelog: Stacked pull requests generally available",
+      "url": "https://github.blog/changelog/2026-10-06-stacked-pull-requests-generally-available/",
+      "date": "2026-10-06"
+    },
+    {
+      "title": "GitHub Changelog: Refreshed repository pull requests page generally available",
+      "url": "https://github.blog/changelog/2026-09-21-refreshed-repository-pull-requests-page-generally-available/",
+      "date": "2026-09-21"
+    },
+    {
+      "title": "GitHub Docs: Requesting a pull request review",
+      "url": "https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/requesting-a-pull-request-review",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Approving a pull request with required reviews",
+      "url": "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/approving-a-pull-request-with-required-reviews",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Available rules for rulesets",
+      "url": "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: About merge methods on GitHub",
+      "url": "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/about-merge-methods-on-github",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Searching issues and pull requests",
+      "url": "https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Microsoft Engineering Fundamentals Playbook: Pull Requests",
+      "url": "https://microsoft.github.io/code-with-engineering-playbook/code-reviews/pull-requests/",
+      "date": "2024-02-15"
+    },
+    {
+      "title": "Claude Code Docs: Best practices for Claude Code",
+      "url": "https://code.claude.com/docs/en/best-practices",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Claude Code Docs: Desktop application, monitoring pull request status",
+      "url": "https://code.claude.com/docs/en/desktop",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Google Engineering Practices: Small CLs",
+      "url": "https://google.github.io/eng-practices/review/developer/small-cls.html",
+      "date": "2026-11-03"
+    },
+    {
+      "title": "DORA: the four keys of software delivery performance",
+      "url": "https://dora.dev/guides/dora-metrics-four-keys/",
+      "date": "2026-01-05"
+    }
+  ],
+  "quality": "Green and reviewed at the merged head, right at first review, small or stacked, described in a table, linked to an issue, never reverted.",
+  "speed": "Reviewed and merged within the hour of going green, with a short queue, no conflicts and nothing left waiting.",
+  "consumption": "Each merged change uses little runner time: few pushes, cheap checks."
+}

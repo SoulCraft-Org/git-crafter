@@ -1,0 +1,7 @@
+# gitleaks fingerprints for findings ruled false positives. One line each, with why.
+# A list of Quality page metric ids in a collector test (claude.test.mjs), not a key;
+# gitleaks generic-api-key misreads it. Ruled 2026-11-03 by the orchestrator, for code-os#65.
+296fa9f55ff39f0714e3587255525745d6132360:quality/collectors/claude.test.mjs:generic-api-key:341
+# A fake HF_TOKEN value in a guard corpus case (abcdef1234567, made up), not a key; the case now uses x.
+# gitleaks generic-api-key misreads it. Ruled 2026-11-11 by the worker on code-os#621, for the orchestrator's review.
+98a1ff7297541cf8b61faf938d7d5c2a5c60ba89:tools/bash_guard_cases.json:generic-api-key:6546

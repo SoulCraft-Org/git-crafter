@@ -1,0 +1,4 @@
+{
+  "name": "fixture-bot",
+  "main": "src/index.ts"
+}

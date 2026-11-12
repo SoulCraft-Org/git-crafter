@@ -1,0 +1,13 @@
+{
+  "$comment": "Names a cloud-test dispatch may run (.github/workflows/cloud-test.yml). verify is tools/verify.sh, every check in this repo; each self-test:* entry is one of its steps on its own. Its prose step lints rules/*.md, a glob that no shell expands here, so it runs only inside verify.",
+  "version": 1,
+  "scripts": {
+    "verify": { "run": ["bash", "tools/verify.sh"], "timeout": 10 },
+    "self-test:bash-guard": { "run": ["python3", "-I", "tools/bash_guard.py", "--self-test"], "timeout": 10 },
+    "self-test:voice-lint": { "run": ["python3", "-I", "tools/voice_lint.py", "--self-test"], "timeout": 10 },
+    "self-test:sync-tool": { "run": ["python3", "-I", "tools/claude_os_sync.py", "--self-test"], "timeout": 10 },
+    "self-test:write-guard": { "run": ["python3", "-I", "tools/write_guard.py", "--self-test"], "timeout": 10 },
+    "self-test:comfy-guard": { "run": ["python3", "-I", "tools/comfy_guard.py", "--self-test"], "timeout": 10 },
+    "self-test:turn-check": { "run": ["python3", "-I", "tools/turn_check.py", "--self-test"], "timeout": 10 }
+  }
+}

@@ -1,0 +1,6 @@
+{"type":"user","timestamp":"2026-10-10T09:00:00.000Z","sessionId":"session-fixture-three","isSidechain":false,"message":{"role":"user","content":"DECOY-MESSAGE-TEXT"}}
+{"type":"assistant","timestamp":"2026-10-10T09:10:00.000Z","sessionId":"session-fixture-three","isSidechain":false,"requestId":"req-fixture-5","message":{"id":"msg-fixture-5","role":"assistant","content":[{"type":"text","text":"DECOY-MESSAGE-TEXT"}],"usage":{"input_tokens":100,"output_tokens":1000,"cache_creation_input_tokens":10000,"cache_read_input_tokens":90000},"model":"claude-opus-5-5"}}
+{"type":"system","subtype":"compact_boundary","timestamp":"2026-10-10T09:30:00.000Z","sessionId":"session-fixture-three","isSidechain":false,"content":"DECOY-COMPACT-SUMMARY","compactMetadata":{"trigger":"manual","preTokens":120000}}
+{"type":"pr-link","timestamp":"2026-10-10T09:55:00.000Z","sessionId":"session-fixture-three","prNumber":6,"prRepository":"acme/site","prUrl":"https://github.com/acme/site/pull/6"}
+{"type":"cost-state","sessionId":"session-fixture-three","totalLinesAdded":500,"totalLinesRemoved":100,"totalDuration":10800000,"totalCostUSD":30}
+{"type":"pr-link","timestamp":"2026-10-10T10:35:00.000Z","sessionId":"session-fixture-three","prNumber":11,"prRepository":"acme/site","prUrl":"https://github.com/acme/site/pull/11"}

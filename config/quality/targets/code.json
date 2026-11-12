@@ -1,0 +1,200 @@
+[
+ {
+  "id": "code.loc_change_pct",
+  "params": {
+   "areas": [
+    "tools",
+    "quality",
+    "quality/collectors/blockers",
+    "quality/collectors/ci",
+    "quality/collectors/claude",
+    "quality/collectors/code",
+    "quality/collectors/credits",
+    "quality/collectors/desktop-app",
+    "quality/collectors/docs",
+    "quality/collectors/github",
+    "quality/collectors/insights",
+    "quality/collectors/instructions",
+    "quality/collectors/lib",
+    "quality/collectors/settings",
+    "quality/collectors/simplicity",
+    "quality/collectors/site",
+    "quality/collectors/tests",
+    "quality/collectors/tokens",
+    "quality/collectors/tools",
+    "quality/render",
+    "pages",
+    "actions",
+    "config/quality/collectors"
+   ],
+   "test_suites": [
+    {
+     "label": "Pages",
+     "runner": "node",
+     "workflow": "verify.yml",
+     "job": "short",
+     "cover": [
+      "pages"
+     ]
+    },
+    {
+     "label": "Quality",
+     "runner": "node",
+     "workflow": "verify.yml",
+     "job": "short",
+     "cover": [
+      "quality",
+      "config/quality/collectors"
+     ]
+    }
+   ],
+   "check": {
+    "workflow": "verify.yml",
+    "job": "short"
+   },
+   "naming": [
+    {
+     "rule": "snake_case tools",
+     "path": "^tools/",
+     "cases": [
+      "snake"
+     ]
+    },
+    {
+     "rule": "kebab-case pages",
+     "path": "(^|/)pages/",
+     "cases": [
+      "kebab",
+      "route"
+     ]
+    },
+    {
+     "rule": "PascalCase components",
+     "path": "\\.astro$",
+     "cases": [
+      "pascal"
+     ]
+    },
+    {
+     "rule": "snake_case tools",
+     "path": "\\.(py|sh)$",
+     "cases": [
+      "snake"
+     ]
+    },
+    {
+     "rule": "kebab-case modules",
+     "path": "",
+     "cases": [
+      "kebab"
+     ]
+    }
+   ]
+  },
+  "drop": true
+ },
+ {
+  "id": "code.export_comments_pct",
+  "gate": true,
+  "goal": 100,
+  "near": 90,
+  "goal_source": "Git Crafter's own goal: every shared function says what it does, as all functions a module exports should have docstrings (PEP 257, peps.python.org/pep-0257, last modified 2024-04-17, read 2026-11-10); near is the template's goal"
+ },
+ {
+  "id": "code.worker_wall_max_ms",
+  "drop": true
+ },
+ {
+  "id": "code.worker_cpu_max_ms",
+  "drop": true
+ },
+ {
+  "id": "code.worker_bundle_kb",
+  "drop": true
+ },
+ {
+  "id": "code.build_seconds",
+  "drop": true
+ },
+ {
+  "id": "code.client_js_kb",
+  "drop": true
+ },
+ {
+  "id": "code.worker_startup_ms",
+  "drop": true
+ },
+ {
+  "id": "code.check_seconds",
+  "drop": true
+ },
+ {
+  "id": "code.duplicated_pct",
+  "drop": true,
+  "gate": true
+ },
+ {
+  "id": "code.drift_markers",
+  "drop": true,
+  "gate": true
+ },
+ {
+  "id": "code.commented_code",
+  "drop": true,
+  "gate": true
+ },
+ {
+  "id": "code.purpose_comments_pct",
+  "drop": true,
+  "gate": true
+ },
+ {
+  "id": "code.long_files",
+  "gate": true
+ },
+ {
+  "id": "code.long_functions",
+  "gate": true
+ },
+ {
+  "id": "code.complex_functions",
+  "gate": true
+ },
+ {
+  "id": "code.import_cycles",
+  "gate": true
+ },
+ {
+  "id": "code.naming_pct",
+  "gate": true
+ },
+ {
+  "id": "code.mapped_areas_pct",
+  "gate": true
+ },
+ {
+  "id": "code.largest_file_tokens",
+  "gate": true,
+  "params": {
+   "size_extra": [
+    "tests"
+   ]
+  }
+ },
+ {
+  "id": "code.dead_exports",
+  "gate": "warn"
+ },
+ {
+  "id": "code.dead_files",
+  "gate": "warn"
+ },
+ {
+  "id": "code.dead_dependencies",
+  "gate": "warn"
+ },
+ {
+  "id": "code.dead_functions",
+  "gate": "warn"
+ }
+]

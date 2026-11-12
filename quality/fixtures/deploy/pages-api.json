@@ -1,0 +1,16 @@
+{
+  "comment": "GitHub API responses for deploy-pages.test.mjs, read at 2026-11-03T12:00:00Z. Pages deploys of shas b, c, d (failed), e; a's is still in progress. Main holds f, not yet deployed.",
+  "repos/o/r": {"default_branch": "main"},
+  "repos/o/r/deployments?environment=github-pages&per_page=30": [{"id": 5, "sha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "created_at": "2026-11-03T10:00:00Z"}, {"id": 4, "sha": "dddddddddddddddddddddddddddddddddddddddd", "created_at": "2026-11-03T02:00:00Z"}, {"id": 3, "sha": "cccccccccccccccccccccccccccccccccccccccc", "created_at": "2026-11-02T16:00:00Z"}, {"id": 2, "sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "created_at": "2026-11-02T06:00:00Z"}, {"id": 1, "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "created_at": "2026-11-01T20:00:00Z"}],
+  "repos/o/r/deployments/5/statuses?per_page=10": [{"state": "success", "created_at": "2026-11-03T10:06:00Z"}, {"state": "in_progress", "created_at": "2026-11-03T10:01:00Z"}],
+  "repos/o/r/deployments/4/statuses?per_page=10": [{"state": "failure", "created_at": "2026-11-03T02:12:00Z"}],
+  "repos/o/r/deployments/3/statuses?per_page=10": [{"state": "success", "created_at": "2026-11-02T16:12:00Z"}],
+  "repos/o/r/deployments/2/statuses?per_page=10": [{"state": "success", "created_at": "2026-11-02T06:12:00Z"}],
+  "repos/o/r/deployments/1/statuses?per_page=10": [{"state": "in_progress", "created_at": "2026-11-01T20:01:00Z"}],
+  "repos/o/r/compare/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...cccccccccccccccccccccccccccccccccccccccc": {"commits": [{"sha": "c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1", "commit": {"committer": {"date": "2026-11-02T11:00:00Z"}}}, {"sha": "cccccccccccccccccccccccccccccccccccccccc", "commit": {"committer": {"date": "2026-11-02T15:00:00Z"}}}]},
+  "repos/o/r/compare/cccccccccccccccccccccccccccccccccccccccc...eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee": {"commits": [{"sha": "dddddddddddddddddddddddddddddddddddddddd", "commit": {"committer": {"date": "2026-11-03T01:00:00Z"}}}, {"sha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "commit": {"committer": {"date": "2026-11-03T09:00:00Z"}}}]},
+  "repos/o/r/compare/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee...main": {"commits": [{"sha": "ffffffffffffffffffffffffffffffffffffffff", "commit": {"committer": {"date": "2026-11-03T11:00:00Z"}}}]},
+  "repos/o/r/actions/runs/77/jobs?per_page=100": {"jobs": [{"name": "build", "started_at": "2026-11-03T09:30:00Z", "completed_at": "2026-11-03T09:32:10Z"}, {"name": "deploy", "started_at": "2026-11-03T09:33:00Z", "completed_at": "2026-11-03T09:33:30Z"}]},
+  "repos/o/r/actions/runs?head_sha=eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee&event=push&per_page=50": {"workflow_runs": [{"id": 77, "name": "pages"}, {"id": 78, "name": "verify"}]},
+  "repos/o/r/actions/runs/78/jobs?per_page=100": {"jobs": [{"name": "short", "started_at": "2026-11-03T09:30:00Z", "completed_at": "2026-11-03T09:35:01Z"}]}
+}

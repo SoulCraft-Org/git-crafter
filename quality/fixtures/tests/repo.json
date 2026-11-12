@@ -1,0 +1,24 @@
+{
+  "_README": "A small repo for quality/collectors/tests/tests.test.mjs, which writes these files into a temporary folder. Kept as JSON so no fixture .ts file is tracked where a type check or knip would read it.",
+  "files": {
+    "site/test/unit/math.test.ts": "import { describe, expect, it } from \"vitest\";\n\n// it(\"a commented-out case never counts\", () => {});\n/* test(\"nor one in a block comment\", () => {}); */\ndescribe(\"math\", () => {\n  it(\"adds\", () => expect(1 + 1).toBe(2));\n  it.each([1, 2])(\"doubles %i\", (x) => expect(x * 2).toBe(x + x));\n  it.todo(\"divides by zero\");\n});\n",
+    "site/test/unit/helper.ts": "export const one = 1;\n",
+    "site/test/unit/flags.test.ts": "import { describe, it } from \"vitest\";\n\nconst ready = Boolean(process.env.FLAG);\n\ndescribe.skip(\"waits for the flag (soon)\", () => {\n  it(\"reads the flag\", () => {});\n  it(\"writes the flag\", () => {});\n});\n\ndescribe.skipIf(!ready)(\"once the flag is ready\", () => {\n  it(\"shows the flag\", () => {});\n  it.todo(\"hides the flag\");\n});\n\nit.runIf(ready && Boolean(globalThis.fetch))(\"logs the flag\", () => {});\ndescribe.todo(\"flag history\");\n",
+    "site/test/dom/page.test.ts": "import { it, test } from \"vitest\";\n\nit.skip(\"waits for the build\", () => {});\ntest(\"reads the page\", (ctx) => {\n  if (!globalThis.document) return ctx.skip(\"no DOM\");\n});\n",
+    "site/test/worker/api.test.ts": "import { it } from \"vitest\";\n\nit(\"answers\", async () => {});\n",
+    "workers/bot/test/chat.test.ts": "import { test } from \"vitest\";\n\ntest.concurrent(\"signs\", async () => {});\ntest.for([1, 2])(\"retries %i\", async () => {});\n",
+    "site/e2e/home.spec.ts": "import AxeBuilder from \"@axe-core/playwright\";\nimport { expect, test } from \"@playwright/test\";\n\nconst PAGES = [\"/\", \"/about/?ref=nav\"];\n\nfor (const route of PAGES) {\n  test(`${route} passes axe`, async ({ page }) => {\n    await page.goto(route);\n    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);\n  });\n}\n\ntest(\"an unknown path shows the 404 page\", async ({ page }) => {\n  await page.goto(\"/no-such-page/\");\n});\n",
+    "site/e2e/seats.spec.ts": "import { test } from \"@playwright/test\";\n\n// test.describe.skip(\"a commented skip never counts\")\nconst SEATS = [\"lead\", \"connector\"];\n\nfor (const id of SEATS) {\n  test(`seat ${id} opens`, async ({ page }) => {\n    await page.goto(`/seats/${id}/`);\n  });\n}\n\ntest.fixme(\"the seat map draws\", async ({ page }) => {\n  await page.goto(\"/seats/\");\n});\n",
+    "site/e2e/helpers.ts": "export const CONTACT = \"/contact/\";\n",
+    "site/src/pages/index.astro": "<h1>Home</h1>\n",
+    "site/src/pages/about.astro": "<h1>About</h1>\n",
+    "site/src/pages/404.astro": "<h1>Not found</h1>\n",
+    "site/src/pages/contact/index.astro": "<h1>Contact</h1>\n",
+    "site/src/pages/seats/index.astro": "<h1>Seats</h1>\n",
+    "site/src/pages/seats/[seat].astro": "<h1>One seat</h1>\n",
+    "site/src/pages/feed.json.ts": "export const GET = () => new Response(\"[]\");\n",
+    "site/src/pages/_drafts/old.astro": "<h1>Draft</h1>\n",
+    ".github/workflows/site-tests.yml": "name: site-tests\non:\n  pull_request:\n  push:\n    branches: [main]\njobs:\n  changes:\n    name: \"site-tests: changes\"\n    runs-on: ubuntu-slim\n    steps:\n      - run: bash detect.sh\n  tests:\n    name: \"site-tests: tests\"\n    needs: changes\n    runs-on: ubuntu-latest\n    steps:\n      - run: npm ci\n      - name: Type check, unit, Worker and the bot Worker tests\n        run: npm run check:push\n      - run: npm run test:dom\n  site-tests:\n    name: site-tests\n    needs: [changes, tests]\n    runs-on: ubuntu-slim\n    steps:\n      - run: echo verdict\n",
+    ".github/workflows/e2e.yml": "name: e2e\non:\n  pull_request:\njobs:\n  changes:\n    name: \"e2e: changes\"\n    runs-on: ubuntu-slim\n    steps:\n      - run: bash detect.sh\n  shard:\n    name: \"e2e: shard ${{ matrix.shard }}/2\"\n    needs: changes\n    runs-on: ubuntu-latest\n    strategy:\n      matrix:\n        shard: [1, 2]\n    steps:\n      - run: npm run -w @cs/site e2e:install\n      - run: npm run test:e2e -- --shard=\"$SHARD/2\"\n  e2e:\n    name: e2e\n    needs: [changes, shard]\n    runs-on: ubuntu-slim\n    steps:\n      - run: echo verdict\n"
+  }
+}

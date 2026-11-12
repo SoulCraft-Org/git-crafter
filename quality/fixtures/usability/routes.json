@@ -1,0 +1,14 @@
+{
+  "_README": "Fake-site routing for the usability test: a redirect, a JSON file served as JSON, and off-site redirects. Every other path is site/<path>index.html, or a 404. Asked with redirect: 'manual', as the crawl asks, a redirect answers 301 or 302 with its Location. Asked with redirect: 'follow', an off-site path answers as the other host would: a 403, as a form host may give a robot, which must never count as a broken internal link.",
+  "redirects": {
+    "/privacy": "/privacy/"
+  },
+  "files": {
+    "/feed.json": "site/feed.json"
+  },
+  "offsite": {
+    "/chat/": "https://forms.example/chat-invite",
+    "/chat": "https://forms.example/chat-invite"
+  },
+  "offsite_status": 403
+}

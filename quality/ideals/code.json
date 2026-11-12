@@ -1,0 +1,68 @@
+{
+  "ideal": "The least code that does the job: every part small, used, named, explained and drawn, fast to run and cheap for an agent to read.",
+  "sources": [
+    {
+      "title": "Claude Code Docs: Tools reference",
+      "url": "https://code.claude.com/docs/en/tools-reference",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Claude Docs: Context windows",
+      "url": "https://platform.claude.com/docs/en/build-with-claude/context-windows",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Anthropic: Effective context engineering for AI agents",
+      "url": "https://www.anthropic.com/research/effective-context-engineering-for-ai-agents",
+      "date": "2025-09-29"
+    },
+    {
+      "title": "GitHub Docs: Code Quality metrics and scores reference",
+      "url": "https://docs.github.com/en/code-security/reference/code-quality/metrics-and-ratings",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Microsoft Learn: Code metrics, cyclomatic complexity",
+      "url": "https://learn.microsoft.com/en-us/visualstudio/code-quality/code-metrics-cyclomatic-complexity",
+      "date": "2026-10-20"
+    },
+    {
+      "title": "Microsoft Learn: Architecture strategies for optimizing code and infrastructure",
+      "url": "https://learn.microsoft.com/en-us/azure/well-architected/performance-efficiency/optimize-code-infrastructure",
+      "date": "2025-10-30"
+    },
+    {
+      "title": "PEP 257: Docstring Conventions",
+      "url": "https://peps.python.org/pep-0257/",
+      "date": "2024-04-17"
+    },
+    {
+      "title": "Google Engineering Practices: What to look for in a code review",
+      "url": "https://google.github.io/eng-practices/review/reviewer/looking-for.html",
+      "date": "2026-11-04"
+    },
+    {
+      "title": "Cloudflare Workers limits",
+      "url": "https://developers.cloudflare.com/workers/platform/limits/",
+      "date": "2026-10-29"
+    },
+    {
+      "title": "Alex Russell: The Performance Inequality Gap, 2026",
+      "url": "https://infrequently.org/2025/11/performance-inequality-gap-2026/",
+      "date": "2025-11-28"
+    },
+    {
+      "title": "Node.js v26 docs: Modules, CommonJS modules, Cycles",
+      "url": "https://nodejs.org/api/modules.html",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: About the repository README file",
+      "url": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes",
+      "date": "2026-11-10"
+    }
+  ],
+  "quality": "No function past complexity 10 or 50 lines, no file past 300, nothing unused, copied or in an import cycle, every area drawn in a README.",
+  "speed": "Requests served well inside a good time to first byte, and a bundle that builds in seconds.",
+  "consumption": "Server CPU inside the free plan limit, page scripts within 307 KiB, each file within one 25,000-token Read, each area within a 200K-token window."
+}

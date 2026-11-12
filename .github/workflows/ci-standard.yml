@@ -1,0 +1,1075 @@
+name: ci-standard
+
+# The Git Crafter CI standard: one reusable workflow every repo calls (templates/ci/README.md). A public Git Crafter, or an
+# org copy whose Actions access is "organization", is called with no token:
+#
+#   jobs:
+#     ci:
+#       uses: <owner>/code-os/.github/workflows/ci-standard.yml@<full sha> # v1
+#       with:
+#         paths: |
+#           src/**
+#         short: npm run lint
+#         standard: npm test
+#
+# The caller holds the triggers, permissions and concurrency (templates/ci/ci.yml); Dependabot bumps its pin.
+#
+# GitHub's pool only for now (owner, 2026-11-03): short commands on ubuntu-slim, which bills Linux 1-core at
+# $0.002 a minute against $0.006 for 2-core (docs.github.com/en/billing/reference/actions-runner-pricing, read
+# 2026-11-03); standard commands on ubuntu-latest. An org's $0 Actions budget with prevent_further_usage is the hard
+# stop, so nothing here can bill a card. Free tiers and included minutes only (owner, 2026-11-02).
+#
+# Jobs: changes (ubuntu-slim) applies the path filter and runs the conformance check; short and standard run the
+# caller's commands; ci-ok is the one verdict, the check a ruleset requires (the caller's job id, then ci-ok).
+#
+# The checks are tools/ci_standard.py and the two modules it imports, ci_standard_yaml.py and ci_standard_rules.py,
+# embedded below verbatim by `ci_standard.py embed --write`, because a called workflow cannot read private Git Crafter
+# files with the caller's token, and a ./ path here means the caller's repo. So every line that runs is at the
+# caller's pin, and no pull request in the caller can edit it. tools/verify.sh fails when any copy differs from its
+# file. The embed command and the self-test stay out of the workflow; there they exit 2.
+#
+# runner: the overflow switch (templates/ci/DECISIONS.md, 2026-11-11). Empty, the standard job runs on ubuntu-latest.
+# A caller that opts in passes ci-overflow.yml's label output here; a label that is no lane's in
+# .github/ci-overflow.json is ubuntu-latest too, so no caller input picks another runner. short stays on ubuntu-slim.
+on:
+  workflow_call:
+    inputs:
+      paths:
+        description: Path globs, one per line, whose change makes the jobs run. Empty runs on every change
+        type: string
+        default: ""
+      standard-paths:
+        description: Path globs, one per line, whose change makes the standard job run. Empty uses paths
+        type: string
+        default: ""
+      short:
+        description: Commands for ubuntu-slim, seconds of work under its 15-minute limit and with no Docker
+        type: string
+        default: ""
+      standard:
+        description: Commands for ubuntu-latest
+        type: string
+        default: ""
+      node-version:
+        description: Node for actions/setup-node. Empty uses .nvmrc when the repo has one. Give a version, not an alias such as lts/*, which setup-node resolves through the API and fails when the token's hourly limit is spent
+        type: string
+        default: ""
+      python-version:
+        description: Python for actions/setup-python. Empty keeps the runner's python3
+        type: string
+        default: ""
+      pip-requirements:
+        description: Requirement files to pip install, one per line. Needs python-version
+        type: string
+        default: ""
+      runner:
+        description: The standard job's runner, from ci-overflow.yml's label output. Empty, or no lane's label, is ubuntu-latest
+        type: string
+        default: ""
+      timeout:
+        description: Minutes for the standard job, 1 to 60
+        type: number
+        default: 20
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    outputs:
+      run: ${{ steps.changes.outputs.run }}
+      run_standard: ${{ steps.changes.outputs.run_standard }}
+      conform: ${{ steps.conform.outcome }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Write the standard's checks, tools/ci_standard.py and the two modules it imports, at this pin
+        run: |
+          cat > "$RUNNER_TEMP/ci_standard.py" <<'CI_STANDARD_PY'
+          #!/usr/bin/env python3
+          """ci_standard.py: the Git Crafter CI standard's checks, and whether a repo follows it.
+
+          The standard is one reusable workflow in Git Crafter, .github/workflows/ci-standard.yml (templates/ci/README.md). Each
+          repo calls it in about ten lines, pinned to a full Git Crafter commit SHA with a # v1 comment that Dependabot bumps.
+          GitHub's pool only for now: ubuntu-slim for short jobs, ubuntu-latest for standard ones, and the org's $0 Actions
+          budget with prevent_further_usage as the hard stop. Free tiers and included minutes only (owner, 2026-11-02).
+
+          This file, ci_standard_yaml.py (the parser) and ci_standard_rules.py (the rules) are the one definition. `embed`
+          writes the three, verbatim, into the workflow's run block, so a caller's run uses the copies at the caller's pin: a
+          called workflow cannot read private Git Crafter files with the caller's token, and a pull request in the caller cannot
+          edit them. tools/verify.sh runs `embed` to prove the copies are current. Actions evaluates an expression anywhere in a
+          workflow, so these sources never spell one (EXPR). The embed command (ci_standard_embed.py) and the self-test
+          (tests/test_ci_standard.py) stay outside the workflow; there both exit 2 with a pointer.
+
+              ci_standard.py check [--repo DIR] [--json] [--behind]
+                  every workflow in DIR/.github/workflows; --behind also asks gh how many commits the pin is behind
+                  Git Crafter main
+              ci_standard.py changes --paths=LINES [--base=SHA] [--output=NAME]
+                  NAME=true (default run) when the change since BASE touched a path glob or .github/workflows/; unknown means
+                  run. NAME is the step output, so one step can ask twice: the standard job's own paths, a docs-only change
+              ci_standard.py embed [--write]
+                  whether ci-standard.yml holds the three files verbatim; --write puts them there
+              ci_standard.py --self-test
+                  seeded known-good and known-bad repos, changes in a scratch git repo, the parser and the embed
+
+          Exit 0 the repo follows the standard, 1 it has findings, 2 usage error, 3 could not check (a workflow the parser
+          cannot read, a job that is not a mapping, or a malformed .github/ci-standard.json). Could not check is never
+          counted as following.
+
+          Rules, one id each; templates/ci/README.md explains each one:
+
+              caller       a pull_request workflow has a job that uses <owner>/git-crafter/.github/workflows/ci-standard.yml (or code-os, its old name)
+              pin          that uses: is at a full 40-character commit SHA, with a version comment such as # v1
+              dependabot   .github/dependabot.yml has a github-actions entry, which bumps the pin
+              permissions  every workflow has a top-level permissions mapping of read or none; no job has write-all
+              concurrency  a pull_request or push workflow has a concurrency group; it cancels superseded runs, and never a
+                           deploy (cancel-in-progress false, or an expression that is true only on pull requests)
+              timeout      every job that runs steps has timeout-minutes
+              runner       every job runs on ubuntu-slim or a standard GitHub-hosted label. A Blacksmith label, vars.CI_RUNNER,
+                           macOS, Windows, a larger, self-hosted or computed runner needs an exception
+              pinned       every remote uses:, on a step or a job, is pinned to a full commit SHA, or a step's is locked in actions.lock
+              cache        a job that runs npm ci or pip install uses setup-node or setup-python with cache
+              no-share     no per-repo minute guard (build_minutes_guard.py): the org pool replaces per-repo shares
+
+          Exceptions live in the repo's .github/ci-standard.json, each with a reason a reviewer reads:
+
+              {"version": 1, "exceptions": {"deploy.yml/deploy": {"rules": ["runner"], "why": "..."}},
+               "skip": {"dependabot.yml": "..."}}
+
+          A key is a workflow file name, or file/job for one job. Standard library only: the parser reads the block YAML
+          subset GitHub workflows use (mappings, sequences, flow lists, block scalars, an anchor on a value and an alias to it)
+          and refuses merge keys and tags, which GitHub does not read either.
+          """
+
+          from __future__ import annotations
+
+          import argparse
+          import json
+          import os
+          import re
+          import subprocess
+          import sys
+
+          # python3 -I leaves this folder off sys.path; the parser and the rules sit beside this file, in Git Crafter and in the
+          # workflow's $RUNNER_TEMP alike. Appended, so the standard library always wins a name.
+          HERE = os.path.dirname(os.path.abspath(__file__))
+          sys.path.append(HERE)
+
+          from ci_standard_rules import FULL_SHA, UsageError, check_repo  # noqa: E402
+
+
+          def glob_re(pattern: str) -> re.Pattern:
+              """A path glob: ** crosses folders, * and ? stay inside one, a trailing / means the whole folder."""
+              if pattern.endswith("/"):
+                  pattern += "**"
+              out, i = "", 0
+              while i < len(pattern):
+                  if pattern.startswith("**/", i):
+                      out, i = out + "(?:.*/)?", i + 3
+                  elif pattern.startswith("**", i):
+                      out, i = out + ".*", i + 2
+                  elif pattern[i] in "*?":
+                      out, i = out + ("[^/]*" if pattern[i] == "*" else "[^/]"), i + 1
+                  else:
+                      out, i = out + re.escape(pattern[i]), i + 1
+              return re.compile(out)
+
+
+          def known_base(base: str) -> bool:
+              """Whether base is a full commit SHA, and not the all-zero SHA of a first push."""
+              return bool(FULL_SHA.fullmatch(base or "")) and set(base) != {"0"}
+
+
+          def changed_files(base: str, cwd: str):
+              """The files changed since base, or why git could not list them."""
+              try:
+                  r = subprocess.run(["git", "diff", "--name-only", "-z", f"{base}...HEAD"], cwd=cwd, capture_output=True, timeout=60)
+              except (OSError, subprocess.TimeoutExpired):
+                  return "git did not run: run"
+              if r.returncode != 0:
+                  return "could not list the change: run"
+              return [f for f in r.stdout.decode("utf-8", "replace").split("\0") if f]
+
+
+          def patterns_of(paths: str) -> list:
+              """The path globs in paths, one per line; blank lines and # comments dropped."""
+              return [p.strip() for p in (paths or "").splitlines() if p.strip() and not p.strip().startswith("#")]
+
+
+          def changes(paths: str, base: str, cwd: str = ".") -> tuple:
+              """(run, reason): whether the change since BASE touched one of PATHS. A change to .github/workflows/ always runs,
+              and so does anything git cannot say (no base, a first push, a commit it lacks): unknown means run."""
+              patterns = patterns_of(paths)
+              if not patterns:
+                  return True, "no paths: every change runs"
+              if not known_base(base):
+                  return True, "no base commit: run"
+              files = changed_files(base, cwd)
+              if isinstance(files, str):
+                  return True, files
+              regexes = [glob_re(p) for p in patterns + [".github/workflows/**"]]
+              hit = any(g.fullmatch(f) for g in regexes for f in files)
+              return hit, f"{len(files)} files changed; {'at least one matches' if hit else 'none matches'} the paths"
+
+
+          def exit_code(result: dict) -> int:
+              """0 follows, 3 when unread files are the only reason it does not, 1 otherwise."""
+              if result["could_not_check"] and not result["findings"]:
+                  return 3
+              return 0 if result["follows"] else 1
+
+
+          def caller_line(c: dict, lag) -> str:
+              """The caller, its pin and, when known, how far behind Git Crafter main the pin is."""
+              pin = "a local path" if c["local"] else f"{c['pin']} ({c['version'] or 'no version comment'})"
+              lagged = "" if not lag else f", {lag['commits']} commits behind Git Crafter main" if "commits" in lag else f", behind: {lag['could_not_check']}"
+              return f"  caller: {c['file']}/{c['job']} at {pin}{lagged}"
+
+
+          def report(result: dict) -> int:
+              """Prints each finding, exception and unread file, the caller and a summary line; returns the exit code."""
+              for label, rows in (("FAIL", result["findings"]), ("EXCEPTED", result["excepted"])):
+                  for rule, where, why in rows:
+                      print(f"  {label:<9} {rule:<12} {where}  ({why})")
+              for where, why in result["could_not_check"]:
+                  print(f"  {'UNREAD':<9} {'':<12} {where}  ({why})")
+              if result["caller"]:
+                  print(caller_line(result["caller"], result["behind"]))
+              unread = f", {len(result['could_not_check'])} unread" if result["could_not_check"] else ""
+              state = "follows the standard" if result["follows"] else f"{len(result['findings'])} finding(s){unread}"
+              print(f"ci-standard: {result['workflows']} workflow(s), {len(result['excepted'])} exception(s), {state}")
+              return exit_code(result)
+
+
+          def as_json(result: dict) -> str:
+              """The result with each finding as an object, as check --json prints it."""
+              rows = {key: [dict(zip(names, f)) for f in result[key]] for key, names in
+                      (("findings", ("rule", "where", "why")), ("excepted", ("rule", "where", "why")), ("could_not_check", ("where", "why")))}
+              return json.dumps({**result, **rows}, indent=1)
+
+
+          def beside(name: str, what: str):
+              """The path of a Git Crafter file this one runs, or None after printing where it lives (absent in the workflow)."""
+              path = os.path.join(HERE, name)
+              if os.path.isfile(path):
+                  return path
+              print(f"ci-standard: usage: {what} needs tools/{name}, which only a Git Crafter checkout has")
+              return None
+
+
+          def self_test() -> int:
+              """Runs tools/tests/test_ci_standard.py; exit 2 where it is absent, as in the workflow's copy."""
+              if not beside(os.path.join("tests", "test_ci_standard.py"), "--self-test"):
+                  return 2
+              sys.path.append(os.path.join(HERE, "tests"))
+              import test_ci_standard
+              return test_ci_standard.run()
+
+
+          def run_embed(write: bool) -> int:
+              """The embed command, from ci_standard_embed.py; exit 2 where it is absent, as in the workflow's copy."""
+              if not beside("ci_standard_embed.py", "embed"):
+                  return 2
+              import ci_standard_embed
+              return ci_standard_embed.embed_all(write)
+
+
+          def run_changes(args) -> int:
+              """The changes command: prints NAME=true or false and the reason, and writes NAME to GITHUB_OUTPUT."""
+              if not re.fullmatch(r"[a-z][a-z0-9_]*", args.output):
+                  print(f"ci-standard: usage: --output {args.output!r} is not a step output name (a-z, 0-9, _)")
+                  return 2
+              run, reason = changes(args.paths, args.base)
+              line = f"{args.output}={'true' if run else 'false'}"
+              print(f"{line}\nreason={reason}")
+              if os.environ.get("GITHUB_OUTPUT"):
+                  with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+                      fh.write(line + "\n")
+              return 0
+
+
+          def run_check(args) -> int:
+              """The check command: the repo's findings, as a report or as JSON."""
+              if not os.path.isdir(args.repo):
+                  print(f"ci-standard: usage: {args.repo} is not a folder")
+                  return 2
+              try:
+                  result = check_repo(args.repo, ask_behind=args.behind)
+              except UsageError as exc:
+                  print(f"ci-standard: could not check: {exc}")
+                  return 3
+              if args.json:
+                  print(as_json(result))
+                  return exit_code(result)
+              return report(result)
+
+
+          def arg_parser() -> argparse.ArgumentParser:
+              """The check, changes and embed commands and their flags."""
+              parser = argparse.ArgumentParser(prog="ci_standard.py", description=__doc__.split("\n\n")[0])
+              sub = parser.add_subparsers(dest="command", required=True)
+              p = sub.add_parser("check")
+              p.add_argument("--repo", default=".")
+              p.add_argument("--json", action="store_true")
+              p.add_argument("--behind", action="store_true")
+              p = sub.add_parser("changes")
+              p.add_argument("--paths", default="")
+              p.add_argument("--base", default="")
+              p.add_argument("--output", default="run")
+              sub.add_parser("embed").add_argument("--write", action="store_true")
+              return parser
+
+
+          def main(argv: list) -> int:
+              """Runs one command; returns its exit code."""
+              if argv == ["--self-test"]:
+                  return self_test()
+              args = arg_parser().parse_args(argv)
+              if args.command == "embed":
+                  return run_embed(args.write)
+              if args.command == "changes":
+                  return run_changes(args)
+              return run_check(args)
+
+
+          if __name__ == "__main__":
+              sys.exit(main(sys.argv[1:]))
+          CI_STANDARD_PY
+          cat > "$RUNNER_TEMP/ci_standard_yaml.py" <<'CI_STANDARD_YAML_PY'
+          """ci_standard_yaml.py: the block-YAML subset GitHub workflows use, read with the standard library only.
+
+          Part of the CI standard's checks (ci_standard.py), embedded with it in ci-standard.yml. It reads mappings, sequences,
+          flow lists and mappings on one line, block scalars, and an anchor on a value with an alias to it. It refuses merge
+          keys and tags, which GitHub does not read either: a workflow it cannot read raises ParseError, exit 3.
+          """
+
+          from __future__ import annotations
+
+          import json
+          import re
+
+          # An Actions expression opens with these two characters. Actions evaluates them anywhere in a workflow, a run block
+          # included, and this file is embedded in one, so the source never spells them together.
+          EXPR = "$" + "{{"
+          BLOCK_RE = re.compile(r"[|>][+-]?[0-9]?")
+          KEY_END_RE = re.compile(r":(?= |\Z)")
+          ANCHOR_RE = re.compile(r"&([A-Za-z0-9_-]+)(?: (.*))?")
+          ALIAS_RE = re.compile(r"\*([A-Za-z0-9_-]+)")
+
+
+          class ParseError(Exception):
+              """A workflow this parser cannot read: could not check, exit 3."""
+
+
+          def strip_comment(line: str) -> str:
+              """The line without a # comment that starts outside quotes, and without trailing space."""
+              quote = None
+              for i, c in enumerate(line):
+                  if quote:
+                      if c == quote:
+                          quote = None
+                  elif c in "\"'":
+                      quote = c
+                  elif c == "#" and (i == 0 or line[i - 1] in " \t"):
+                      return line[:i].rstrip()
+              return line.rstrip()
+
+
+          def quoted(text: str) -> bool:
+              """Whether text is wrapped in one pair of matching quotes."""
+              return len(text) >= 2 and text[0] == text[-1] and text[0] in "\"'"
+
+
+          def key_end(text: str):
+              """Index of the colon that ends a key, or None. A quote opening the text hides its colons; { or [ opening it
+              makes it a flow collection, never a key."""
+              if text[:1] in ("{", "["):
+                  return None
+              start = 0
+              if text[:1] in ("\"", "'"):
+                  close = text.find(text[0], 1)
+                  if close < 0:
+                      return None
+                  start = close + 1
+              m = KEY_END_RE.search(text, start)
+              return m.start() if m else None
+
+
+          def split_key(text: str):
+              """(key, rest) for "key: rest" or "key:", or None for a plain scalar."""
+              i = key_end(text)
+              if i is None:
+                  return None
+              key = text[:i].strip()
+              if quoted(key):
+                  key = key[1:-1]
+              if not key or key.startswith(("{", "[")) or EXPR in key:
+                  return None
+              return key, text[i + 1:].strip()
+
+
+          def flow_list(inner: str) -> list:
+              """The items of a one-line flow list, its brackets already removed."""
+              return [scalar(x) for x in inner.split(",")] if inner else []
+
+
+          def flow_mapping(text: str) -> dict:
+              """A one-line flow mapping, {a: 1, b: 2}."""
+              inner = text[1:-1].strip()
+              out = {}
+              for part in inner.split(",") if inner else []:
+                  kv = split_key(part.strip())
+                  if not kv:
+                      raise ParseError(f"flow mapping this parser cannot read: {text[:60]!r}")
+                  out[kv[0]] = scalar(kv[1]) if kv[1] else None
+              return out
+
+
+          def scalar(text: str):
+              """A value on one line: a quoted or plain string, a flow list or a flow mapping."""
+              text = text.strip()
+              if text[:1] in "&*!" and text[:3] != EXPR:
+                  raise ParseError(f"anchors, aliases and tags are not read: {text[:40]!r}")
+              if quoted(text):
+                  return text[1:-1]
+              if text.startswith("[") and text.endswith("]"):
+                  return flow_list(text[1:-1].strip())
+              if text.startswith("{") and text.endswith("}"):
+                  return flow_mapping(text)
+              if text.startswith(("[", "{")):
+                  raise ParseError(f"multi-line flow collection: {text[:60]!r}")
+              return text
+
+
+          def dashes(line: str, out: list) -> tuple:
+              """(indent, body) after the sequence dashes opening line, appending one dash token to out for each."""
+              indent = len(line) - len(line.lstrip())
+              body = line.strip()
+              while body == "-" or body.startswith("- "):
+                  out.append((indent, "dash", ""))
+                  rest = body[1:]
+                  indent += 1 + len(rest) - len(rest.lstrip())
+                  body = rest.strip()
+              return indent, body
+
+
+          def block(raw: list, i: int, indent: int, out: list) -> int:
+              """Appends the block scalar starting at raw[i], deeper than indent, as one token; returns the line after it."""
+              lines = []
+              while i < len(raw) and (not raw[i].strip() or len(raw[i]) - len(raw[i].lstrip()) > indent):
+                  lines.append(raw[i].rstrip())
+                  i += 1
+              # Dedent by the first line's indent, as YAML does, so code in a block keeps its own indentation.
+              cut = min((len(x) - len(x.lstrip()) for x in lines if x.strip()), default=0)
+              out.append((indent + 1, "block", "\n".join(x[cut:] for x in lines).strip("\n")))
+              return i
+
+
+          def tokens(text: str) -> list:
+              """(indent, kind, text) with kind dash, line or block (a block scalar's text, already joined)."""
+              raw = text.replace("\t", "    ").splitlines()
+              out, i = [], 0
+              while i < len(raw):
+                  line = strip_comment(raw[i])
+                  i += 1
+                  if not line.strip() or line.strip() in ("---", "..."):
+                      continue
+                  indent, body = dashes(line, out)
+                  if not body:
+                      continue
+                  out.append((indent, "line", body))
+                  kv = split_key(body)
+                  if BLOCK_RE.fullmatch(kv[1] if kv else body):
+                      i = block(raw, i, indent, out)
+              return out
+
+
+          class Reader:
+              """A cursor over tokens(), and the anchors read so far."""
+
+              def __init__(self, toks: list):
+                  self.toks, self.pos, self.anchors = toks, 0, {}
+
+              def peek(self):
+                  """The next token, or None at the end."""
+                  return self.toks[self.pos] if self.pos < len(self.toks) else None
+
+              def at(self, indent: int, kind: str) -> bool:
+                  """Whether the next token is of kind at exactly indent."""
+                  t = self.peek()
+                  return bool(t) and t[0] == indent and t[1] == kind
+
+              def node(self, indent: int):
+                  """The value at indent or deeper: a sequence, a block scalar, a plain scalar or a mapping."""
+                  t = self.peek()
+                  if t is None or t[0] < indent:
+                      return None
+                  if t[1] == "dash":
+                      return self.seq(t[0])
+                  if t[1] == "block":
+                      self.pos += 1
+                      return t[2]
+                  if split_key(t[2]) is None:
+                      self.pos += 1
+                      return self.plain(scalar(t[2]), t[0] - 1)
+                  return self.mapping(t[0])
+
+              def plain(self, value, indent: int):
+                  """A plain scalar folded over deeper lines with no key."""
+                  while isinstance(value, str) and self.peek() and self.peek()[0] > indent and self.peek()[1] == "line" and split_key(self.peek()[2]) is None:
+                      value += " " + self.peek()[2]
+                      self.pos += 1
+                  return value
+
+              def seq(self, indent: int) -> list:
+                  """The sequence whose dashes sit at indent."""
+                  items = []
+                  while self.at(indent, "dash"):
+                      self.pos += 1
+                      nxt = self.peek()
+                      items.append(self.node(indent + 1) if nxt and nxt[0] > indent else None)
+                  if self.peek() and self.peek()[0] > indent:
+                      raise ParseError(f"unexpected indent near {self.peek()[2]!r}")
+                  return items
+
+              def key(self) -> tuple:
+                  """(key, rest) of the next line, which must hold a key."""
+                  kv = split_key(self.peek()[2])
+                  if kv is None:
+                      raise ParseError(f"expected a key near {self.peek()[2]!r}")
+                  self.pos += 1
+                  return kv
+
+              def mapping(self, indent: int) -> dict:
+                  """The mapping whose keys sit at indent; an anchor on a value is kept for later aliases."""
+                  out = {}
+                  while self.at(indent, "line"):
+                      key, rest = self.key()
+                      if key in out or key == "<<":
+                          raise ParseError(f"duplicate or merge key {key!r}")
+                      anchor = ANCHOR_RE.fullmatch(rest)
+                      if anchor:
+                          rest = anchor[2] or ""
+                      out[key] = self.value(rest, indent)
+                      if anchor:
+                          self.anchors[anchor[1]] = out[key]
+                  return out
+
+              def value(self, rest: str, indent: int):
+                  """A key's value: an alias, a scalar on the key's line, or what the following lines hold."""
+                  alias = ALIAS_RE.fullmatch(rest)
+                  if alias:
+                      if alias[1] not in self.anchors:
+                          raise ParseError(f"alias to an unknown anchor {alias[1]!r}")
+                      return json.loads(json.dumps(self.anchors[alias[1]]))
+                  if rest and not BLOCK_RE.fullmatch(rest):
+                      return self.plain(scalar(rest), indent)
+                  return self.nested(indent)
+
+              def nested(self, indent: int):
+                  """The value on the lines below a key at indent: a block scalar, a sequence, a deeper node, or None."""
+                  nxt = self.peek()
+                  if not nxt:
+                      return None
+                  if nxt[1] == "block" and nxt[0] > indent:
+                      self.pos += 1
+                      return nxt[2]
+                  if nxt[1] == "dash" and nxt[0] >= indent:
+                      return self.seq(nxt[0])
+                  return self.node(nxt[0]) if nxt[0] > indent else None
+
+
+          def parse(text: str) -> dict:
+              """A workflow's text as a mapping; ParseError when it is not one, or holds what this subset does not read."""
+              r = Reader(tokens(text))
+              doc = r.node(0)
+              if r.pos != len(r.toks):
+                  raise ParseError(f"could not read past {r.toks[r.pos][2]!r}")
+              if not isinstance(doc, dict):
+                  raise ParseError("a workflow is a mapping at the top")
+              return doc
+          CI_STANDARD_YAML_PY
+          cat > "$RUNNER_TEMP/ci_standard_rules.py" <<'CI_STANDARD_RULES_PY'
+          """ci_standard_rules.py: the CI standard's rules, and check_repo, which applies them to one checkout.
+
+          Part of the CI standard's checks (ci_standard.py), embedded with it in ci-standard.yml. Each rule's id, and what
+          passes it, is in ci_standard.py's docstring and templates/ci/README.md. Standard library only.
+          """
+
+          from __future__ import annotations
+
+          import json
+          import os
+          import re
+          import subprocess
+
+          from ci_standard_yaml import EXPR, ParseError, parse
+
+          RULES = ("caller", "pin", "dependabot", "permissions", "concurrency", "timeout", "runner", "pinned", "cache", "no-share")
+          STANDARD_LABELS = {"ubuntu-latest", "ubuntu-24.04", "ubuntu-22.04"}
+          SLIM = "ubuntu-slim"
+          # Any owner's Git Crafter: the public repo, or an org's own copy of it. code-os is its name before 2026-11-11.
+          REPO_NAMES = r"(?:git-crafter|code-os)"
+          STANDARD = "<owner>/git-crafter/.github/workflows/ci-standard.yml"
+          STANDARD_RE = re.compile(r"([A-Za-z0-9][\w.-]*)/(" + REPO_NAMES + r")/\.github/workflows/ci-standard\.yml@")
+          LOCAL_STANDARD = "./.github/workflows/ci-standard.yml"
+          SHA_RE = re.compile(r"[^@\s]+@[0-9a-f]{40}")
+          FULL_SHA = re.compile(r"[0-9a-f]{40}")
+          # This repo's own actions: ./ runs the checkout's copy, $/ the copy at the workflow's commit (gh actions-lock).
+          OWN = ("./", "$/")
+          LOCK_FILE = "actions.lock"
+          PIN_LINE_RE = re.compile(r"uses:\s*[\"']?[A-Za-z0-9][\w.-]*/" + REPO_NAMES + r"/\.github/workflows/ci-standard\.yml@([^\s\"'#]+)[\"']?\s*(#\s*(\S+))?")
+          NPM_RE = re.compile(r"\b(npm (ci|install)|pnpm install|yarn install)\b")
+          PIP_RE = re.compile(r"\bpip3? install\b")
+          SHARE_FILES = ("build_minutes_guard.py",)
+          CONFIG = os.path.join(".github", "ci-standard.json")
+          PUSH_TRIGGERS = {"pull_request", "push", "pull_request_target", "merge_group"}
+
+
+          class UsageError(Exception):
+              """A bad argument or config: exit 2 for arguments, 3 for a config that cannot be trusted."""
+
+
+          # ---- one workflow ------------------------------------------------------------------------------------------------
+
+
+          def triggers(doc: dict) -> dict:
+              """The workflow's on: as a mapping of event to its settings, whichever form it was written in."""
+              on = doc.get("on", doc.get("true"))
+              if isinstance(on, str):
+                  return {on: None}
+              if isinstance(on, list):
+                  return {str(x): None for x in on}
+              return on if isinstance(on, dict) else {}
+
+
+          def steps_of(job: dict) -> list:
+              """The job's steps that are mappings."""
+              return [s for s in job.get("steps") or [] if isinstance(s, dict)]
+
+
+          def deploy_step(step: dict) -> bool:
+              """Whether a step deploys: a Pages or Wrangler action, or a wrangler deploy command."""
+              uses, run = str(step.get("uses") or ""), str(step.get("run") or "")
+              return uses.startswith(("actions/deploy-pages@", "cloudflare/wrangler-action@")) or bool(re.search(r"wrangler\s+(pages\s+)?deploy", run))
+
+
+          def deploys(doc: dict) -> bool:
+              """Whether a workflow deploys: a job with an environment or deploy in its id, or a deploy step."""
+              for name, job in (doc.get("jobs") or {}).items():
+                  if isinstance(job, dict) and (job.get("environment") or "deploy" in str(name).lower() or any(map(deploy_step, steps_of(job)))):
+                      return True
+              return False
+
+
+          def shell_of(run: str) -> str:
+              """A run block without the bodies of its quoted heredocs (<<'END' ... END): those lines are data, not commands."""
+              out, end = [], None
+              for line in run.split("\n"):
+                  if end is not None:
+                      if line.strip() == end:
+                          end = None
+                      continue
+                  out.append(line)
+                  m = re.search(r"<<-?\s*'([A-Za-z_][A-Za-z0-9_]*)'\s*$", line)
+                  if m:
+                      end = m[1]
+              return "\n".join(out)
+
+
+          def standard_jobs(doc: dict) -> dict:
+              """{job id: the uses: string} for each job that calls the standard."""
+              jobs = doc.get("jobs") if isinstance(doc.get("jobs"), dict) else {}
+              return {jid: str(j["uses"]) for jid, j in jobs.items() if isinstance(j, dict) and
+                      (STANDARD_RE.match(str(j.get("uses") or "")) or str(j.get("uses") or "") == LOCAL_STANDARD)}
+
+
+          def permission_findings(name: str, doc: dict) -> list:
+              """The top-level permissions mapping: present, and only read or none."""
+              perms = doc.get("permissions")
+              if "permissions" not in doc:
+                  return [("permissions", name, "no top-level permissions block; add `permissions: contents: read`")]
+              if not isinstance(perms, dict) or any(str(v) not in ("read", "none") for v in perms.values()):
+                  return [("permissions", name, f"top-level permissions {perms!r}; grant only read or none here, and any write on the one job that needs it")]
+              return []
+
+
+          def cancel_of(conc) -> str:
+              """The concurrency group's cancel-in-progress, as text; empty when unset."""
+              return str(conc.get("cancel-in-progress", "")).strip() if isinstance(conc, dict) else ""
+
+
+          def concurrency_findings(name: str, doc: dict) -> list:
+              """For a push or pull request workflow: a concurrency group that cancels superseded runs, and never a deploy."""
+              if not set(triggers(doc)) & PUSH_TRIGGERS:
+                  return []
+              conc = doc.get("concurrency")
+              cancel = cancel_of(conc)
+              if not conc:
+                  return [("concurrency", name, "no concurrency group; a newer push should cancel the older run")]
+              if deploys(doc):
+                  if cancel not in ("", "false") and not ("pull_request" in cancel and EXPR in cancel):
+                      return [("concurrency", name, f"deploys, but cancel-in-progress is {cancel!r}; a deploy is never cancelled")]
+                  return []
+              if isinstance(conc, dict) and not cancel:
+                  return [("concurrency", name, "cancel-in-progress is not set; superseded runs keep spending minutes")]
+              return []
+
+
+          def runner_finding(runs_on) -> str | None:
+              """Why a job's runs-on breaks the runner rule, or None when it is a standard label."""
+              text = runs_on if isinstance(runs_on, str) else json.dumps(runs_on)
+              if text == SLIM or text in STANDARD_LABELS:
+                  return None
+              if "blacksmith-" in text:
+                  return "a Blacksmith label; the standard runs on GitHub's pool only (templates/ci/README.md)"
+              if "vars.CI_RUNNER" in text:
+                  return "reads vars.CI_RUNNER; the standard runs on fixed GitHub-hosted labels"
+              return f"runs-on {text}: computed, macOS, Windows, larger or self-hosted; use ubuntu-slim or ubuntu-latest, or add an exception"
+
+
+          def pin_findings(where: str, steps: list, locked=frozenset()) -> list:
+              """Each step's uses: pinned to a full SHA or locked in actions.lock, a docker:// image to a digest."""
+              found = []
+              for s in steps:
+                  uses = str(s.get("uses") or "")
+                  if uses and not uses.startswith(OWN + ("docker://",)) and not SHA_RE.fullmatch(uses) and uses not in locked:
+                      found.append(("pinned", where, f"{uses} is not pinned to a full commit SHA, and {LOCK_FILE} does not lock it"))
+                  if uses.startswith("docker://") and "@sha256:" not in uses:
+                      found.append(("pinned", where, f"{uses} is not pinned to a digest"))
+              return found
+
+
+          def cached(steps: list, prefix: str) -> bool:
+              """Whether a step uses the setup action named by prefix with a cache."""
+              return any(str(s.get("uses") or "").startswith(prefix) and isinstance(s.get("with"), dict) and s["with"].get("cache") for s in steps)
+
+
+          def cache_findings(where: str, steps: list) -> list:
+              """npm and pip installs, outside heredoc data, each with its setup action's download cache."""
+              runs = " ".join(shell_of(str(s.get("run") or "")) for s in steps)
+              found = []
+              if NPM_RE.search(runs) and not cached(steps, "actions/setup-node@"):
+                  found.append(("cache", where, "installs npm packages with no download cache; use setup-node with cache: npm, or move the job into the standard"))
+              if PIP_RE.search(runs) and not cached(steps, "actions/setup-python@"):
+                  found.append(("cache", where, "pip installs with no download cache; use setup-python with cache: pip, or move the job into the standard"))
+              return found
+
+
+          def job_findings(where: str, job: dict, locked=frozenset()) -> list:
+              """One job's permissions, pin, timeout, runner and steps; a reusable-workflow call is checked where it is defined. A lockfile covers steps only."""
+              found = []
+              if str(job.get("permissions", "")).strip() == "write-all":
+                  found.append(("permissions", where, "permissions: write-all; name the one scope this job writes"))
+              if job.get("uses"):
+                  uses = str(job["uses"])
+                  if not uses.startswith("./") and not SHA_RE.fullmatch(uses):
+                      found.append(("pinned", where, f"{uses} is not pinned to a full commit SHA"))
+                  return found
+              if not job.get("timeout-minutes"):
+                  found.append(("timeout", where, "no timeout-minutes; a hung job bills to GitHub's 6-hour limit"))
+              why = runner_finding(job.get("runs-on"))
+              if why:
+                  found.append(("runner", where, why))
+              steps = steps_of(job)
+              return found + pin_findings(where, steps, locked) + cache_findings(where, steps)
+
+
+          def check_workflow(name: str, doc: dict, locked=frozenset()) -> list:
+              """[(rule, where, why)] for the house rules every workflow keeps; locked is the uses: lines actions.lock records for it."""
+              jobs = doc.get("jobs")
+              if not isinstance(jobs, dict):
+                  raise ParseError("jobs is not a mapping")
+              for jid, job in jobs.items():
+                  if not isinstance(job, dict):
+                      raise ParseError(f"job {jid!r} is not a mapping")
+              found = permission_findings(name, doc) + concurrency_findings(name, doc)
+              for jid, job in jobs.items():
+                  found += job_findings(f"{name}/{jid}", job, locked)
+              return found
+
+
+          # ---- the repo ------------------------------------------------------------------------------------------------------
+
+
+          def dependabot_ecosystems(repo: str) -> list:
+              """The package-ecosystem of each entry in .github/dependabot.yml (or .yaml, which wins); [] when unreadable."""
+              text = ""
+              for fname in ("dependabot.yml", "dependabot.yaml"):
+                  path = os.path.join(repo, ".github", fname)
+                  if os.path.isfile(path) and not os.path.islink(path):
+                      with open(path, encoding="utf-8") as fh:
+                          text = fh.read()
+              try:
+                  return [str(u.get("package-ecosystem")) for u in (parse(text).get("updates") or []) if isinstance(u, dict)] if text else []
+              except ParseError:
+                  return []
+
+
+          def remote_caller(repo: str, caller: dict, uses: str, text: str) -> list:
+              """Fills in the pin, owner and version of a caller at <owner>/git-crafter (or code-os), and finds the pin and dependabot rules."""
+              pin = uses.split("@", 1)[1]
+              caller["pin"] = pin
+              caller["owner"], caller["repo"] = STANDARD_RE.match(uses).groups()
+              line = next((m for m in PIN_LINE_RE.finditer(text) if m[1] == pin), None)
+              caller["version"] = line[3] if line and line[3] else None
+              where, found = f"{caller['file']}/{caller['job']}", []
+              if not FULL_SHA.fullmatch(pin):
+                  found.append(("pin", where, f"pinned to {pin!r}; pin a full commit SHA of Git Crafter main, with a # v1 comment"))
+              elif not caller["version"] or not re.fullmatch(r"v\d+(\.\d+)*", caller["version"]):
+                  found.append(("pin", where, "no version comment; add # v1 after the SHA so a reader and Dependabot see the version"))
+              if "github-actions" not in dependabot_ecosystems(repo):
+                  found.append(("dependabot", ".github/dependabot.yml", "no github-actions entry; Dependabot must bump the standard's pin"))
+              return found
+
+
+          def check_caller(repo: str, docs: dict, texts: dict) -> tuple:
+              """([(rule, where, why)], caller) where caller is {"file", "job", "pin", "version", "local"} or None."""
+              callers = [(name, jid, uses) for name, doc in docs.items() if "pull_request" in triggers(doc) for jid, uses in standard_jobs(doc).items()]
+              if not callers:
+                  return [("caller", ".github/workflows", f"no pull_request workflow calls {STANDARD}; copy Git Crafter templates/ci/ci.yml")], None
+              name, jid, uses = callers[0]
+              caller = {"file": name, "job": jid, "pin": None, "version": None, "local": uses == LOCAL_STANDARD}
+              if caller["local"]:
+                  return [], caller
+              return remote_caller(repo, caller, uses, texts[name]), caller
+
+
+          def behind(pin: str, owner: str, repo: str = "git-crafter") -> dict:
+              """How many commits owner's Git Crafter main is ahead of the pin, read with gh. could_not_check when gh cannot say."""
+              if not pin or not FULL_SHA.fullmatch(pin):
+                  return {"could_not_check": "no full SHA pin"}
+              try:
+                  r = subprocess.run(["gh", "api", f"repos/{owner}/{repo}/compare/{pin}...main", "--jq", "[.status, .ahead_by] | @json"],
+                                     capture_output=True, text=True, timeout=30)
+              except (OSError, subprocess.TimeoutExpired) as exc:
+                  return {"could_not_check": f"gh did not run: {type(exc).__name__}"}
+              if r.returncode != 0:
+                  return {"could_not_check": f"gh api compare failed: {r.stderr.strip()[:120]}"}
+              try:
+                  status, ahead = json.loads(r.stdout)
+              except ValueError:
+                  return {"could_not_check": "gh gave no comparison"}
+              if status not in ("ahead", "identical"):
+                  return {"could_not_check": f"the pin is {status} of Git Crafter main, not on it"}
+              return {"commits": int(ahead)}
+
+
+          def read_config(path: str) -> dict:
+              """The parsed .github/ci-standard.json, with only its known top-level keys; UsageError otherwise."""
+              try:
+                  with open(path, encoding="utf-8") as fh:
+                      doc = json.load(fh)
+              except (OSError, ValueError) as exc:
+                  raise UsageError(f"{CONFIG}: {exc}") from None
+              if not isinstance(doc, dict) or doc.get("version") != 1 or set(doc) - {"version", "exceptions", "skip", "$comment"}:
+                  raise UsageError(f"{CONFIG}: want version 1 with only exceptions and skip")
+              return doc
+
+
+          def check_exception(key: str, e) -> None:
+              """UsageError unless the exception names known rules, none of caller, pin or dependabot, and gives a why."""
+              if not isinstance(e, dict) or not str(e.get("why") or "").strip() or not isinstance(e.get("rules"), list) or not set(e["rules"]) <= set(RULES):
+                  raise UsageError(f"{CONFIG}: exception {key!r} needs known rules and a why")
+              if set(e["rules"]) & {"caller", "pin", "dependabot"}:
+                  raise UsageError(f"{CONFIG}: exception {key!r}: caller, pin and dependabot take no exception")
+
+
+          def check_skip(skip: dict) -> None:
+              """UsageError unless every skipped file gives a why."""
+              for key, why in skip.items():
+                  if not str(why or "").strip():
+                      raise UsageError(f"{CONFIG}: skip {key!r} needs a why")
+
+
+          def load_config(repo: str) -> dict:
+              """{"exceptions", "skip"} from the repo's .github/ci-standard.json; both empty when it has none."""
+              path = os.path.join(repo, CONFIG)
+              if not os.path.exists(path):
+                  return {"exceptions": {}, "skip": {}}
+              doc = read_config(path)
+              exc, skip = doc.get("exceptions") or {}, doc.get("skip") or {}
+              if not isinstance(exc, dict) or not isinstance(skip, dict):
+                  raise UsageError(f"{CONFIG}: exceptions and skip are objects")
+              for key, e in exc.items():
+                  check_exception(key, e)
+              check_skip(skip)
+              return {"exceptions": exc, "skip": skip}
+
+
+          def read_workflows(folder: str, names: list) -> tuple:
+              """(docs, texts, unread) for the named workflow files; a link is never read."""
+              docs, texts, unread = {}, {}, []
+              for name in names:
+                  path = os.path.join(folder, name)
+                  if os.path.islink(path):
+                      unread.append((name, "a link; never read"))
+                      continue
+                  try:
+                      with open(path, encoding="utf-8") as fh:
+                          texts[name] = fh.read()
+                      docs[name] = parse(texts[name])
+                  except (OSError, UnicodeDecodeError, ParseError) as exc:
+                      unread.append((name, str(exc)))
+              return docs, texts, unread
+
+
+          def read_lock(folder: str) -> dict:
+              """{workflow file: its locked uses: lines} from gh actions-lock's actions.lock; {} when absent, a link or unreadable."""
+              path = os.path.join(folder, LOCK_FILE)
+              if os.path.islink(path) or not os.path.isfile(path):
+                  return {}
+              try:
+                  with open(path, encoding="utf-8") as fh:
+                      flows = parse(fh.read()).get("workflows")
+              except (OSError, UnicodeDecodeError, ParseError, AttributeError):
+                  return {}
+              if not isinstance(flows, dict):
+                  return {}
+              return {os.path.basename(str(name)): frozenset(str(u) for u in uses) for name, uses in flows.items() if isinstance(uses, list)}
+
+
+          def house_findings(docs: dict, exceptions: dict, unread: list, lock=None) -> tuple:
+              """(findings, excepted) for the house rules; a workflow check_workflow cannot read moves from docs to unread."""
+              house, excepted = [], []
+              for name, doc in list(docs.items()):
+                  try:
+                      results = check_workflow(name, doc, (lock or {}).get(name, frozenset()))
+                  except ParseError as exc:
+                      unread.append((name, str(exc)))
+                      del docs[name]
+                      continue
+                  for rule, where, why in results:
+                      e = exceptions.get(where) or exceptions.get(where.split("/", 1)[0])
+                      if e and rule in e["rules"]:
+                          excepted.append((rule, where, e["why"]))
+                      else:
+                          house.append((rule, where, why))
+              return house, excepted
+
+
+          def share_findings(repo: str) -> list:
+              """A per-repo minute guard anywhere under .github."""
+              return [("no-share", os.path.relpath(os.path.join(root, n), repo), "a per-repo minute guard; the org pool replaces per-repo shares")
+                      for root, _dirs, names in os.walk(os.path.join(repo, ".github")) for n in names if n in SHARE_FILES]
+
+
+          def lag_of(caller, ask_behind: bool):
+              """How far the caller's pin is behind Git Crafter main: 0 for Git Crafter's local caller, gh's answer when asked."""
+              if caller and caller["local"]:
+                  return {"commits": 0, "note": "Git Crafter calls the standard by local path"}
+              if ask_behind and caller:
+                  return behind(caller["pin"], caller["owner"], caller.get("repo") or "git-crafter")
+              return None
+
+
+          def check_repo(repo: str, ask_behind: bool = False) -> dict:
+              """{"follows", "workflows", "caller", "behind", "findings", "excepted", "could_not_check"} for one checkout."""
+              config = load_config(repo)
+              folder = os.path.join(repo, ".github", "workflows")
+              files = sorted(f for f in os.listdir(folder) if f.endswith((".yml", ".yaml"))) if os.path.isdir(folder) else []
+              docs, texts, unread = read_workflows(folder, [f for f in files if f not in config["skip"]])
+              house, excepted = house_findings(docs, config["exceptions"], unread, read_lock(folder))
+              caller_found, caller = check_caller(repo, docs, texts)
+              findings = caller_found + house + share_findings(repo)
+              return {"follows": not findings and not unread, "workflows": len(files), "caller": caller, "behind": lag_of(caller, ask_behind),
+                      "findings": findings, "excepted": excepted, "could_not_check": unread}
+          CI_STANDARD_RULES_PY
+      - id: changes
+        env:
+          PATHS: ${{ inputs.paths }}
+          STANDARD_PATHS: ${{ inputs.standard-paths || inputs.paths }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          python3 -I "$RUNNER_TEMP/ci_standard.py" changes --paths="$PATHS" --base="$BASE"
+          python3 -I "$RUNNER_TEMP/ci_standard.py" changes --paths="$STANDARD_PATHS" --base="$BASE" --output=run_standard
+      # The conformance check, from Git Crafter at this pin, on the caller's own files. ci-ok fails when it does.
+      - id: conform
+        continue-on-error: true
+        run: python3 -I "$RUNNER_TEMP/ci_standard.py" check --repo .
+
+  short:
+    needs: changes
+    if: inputs.short != '' && needs.changes.outputs.run == 'true'
+    runs-on: ubuntu-slim
+    timeout-minutes: 15
+    steps: &steps
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - id: detect
+        run: |
+          if [ -f .nvmrc ]; then echo nvmrc=true; else echo nvmrc=false; fi >> "$GITHUB_OUTPUT"
+          if [ -f package-lock.json ]; then echo lockfile=true; else echo lockfile=false; fi >> "$GITHUB_OUTPUT"
+      # npm's download cache through setup-node, and npm ci on every run: no job restores a node_modules tree.
+      - if: inputs.node-version != '' || steps.detect.outputs.nvmrc == 'true' || steps.detect.outputs.lockfile == 'true'
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          node-version-file: ${{ inputs.node-version == '' && steps.detect.outputs.nvmrc == 'true' && '.nvmrc' || '' }}
+          cache: ${{ steps.detect.outputs.lockfile == 'true' && 'npm' || '' }}
+      - if: steps.detect.outputs.lockfile == 'true'
+        run: npm ci
+      - if: inputs.python-version != ''
+        uses: actions/setup-python@v7.1.0
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: ${{ inputs.pip-requirements != '' && 'pip' || '' }}
+          cache-dependency-path: ${{ inputs.pip-requirements }}
+      - if: inputs.pip-requirements != ''
+        env:
+          PIP_REQUIREMENTS: ${{ inputs.pip-requirements }}
+        run: |
+          set -euo pipefail
+          args=()
+          while IFS= read -r file; do
+            if [ -n "$file" ]; then args+=(--requirement "$file"); fi
+          done <<< "$PIP_REQUIREMENTS"
+          python -m pip install --quiet "${args[@]}"
+      # The caller's own commands, from its own reviewed workflow file, through env and never an expression in
+      # the script.
+      - name: Run the commands
+        env:
+          COMMANDS: ${{ github.job == 'short' && inputs.short || inputs.standard }}
+        run: bash -euo pipefail -c "$COMMANDS"
+
+  standard:
+    needs: changes
+    if: inputs.standard != '' && needs.changes.outputs.run_standard == 'true'
+    # The lane labels are .github/ci-overflow.json's (tools/tests/test_ci_overflow.py holds them equal).
+    runs-on: ${{ contains(fromJSON('["blacksmith-2vcpu-ubuntu-2404"]'), inputs.runner) && inputs.runner || 'ubuntu-latest' }}
+    timeout-minutes: ${{ inputs.timeout }}
+    steps: *steps
+
+  # Fails when a job failed or was cancelled, when changes failed, when the conformance check failed, or when a job
+  # with commands was skipped although the change touched its paths (standard-paths for the standard job).
+  ci-ok:
+    needs: [changes, short, standard]
+    if: always()
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    steps:
+      - env:
+          NEEDS: ${{ toJSON(needs) }}
+          HAS_SHORT: ${{ inputs.short != '' }}
+          HAS_STANDARD: ${{ inputs.standard != '' }}
+        run: |
+          python3 -I -c '
+          import json, os, sys
+          needs = json.loads(os.environ["NEEDS"])
+          bad = [n for n, j in needs.items() if j["result"] in ("failure", "cancelled")]
+          if needs["changes"]["result"] != "success":
+              bad.append("changes")
+          else:
+              out = needs["changes"]["outputs"]
+              if out.get("conform") != "success":
+                  bad.append("conformance (the changes job log says which rule)")
+              for job, flag, run in (("short", "HAS_SHORT", "run"), ("standard", "HAS_STANDARD", "run_standard")):
+                  if out.get(run) == "true" and os.environ[flag] == "true" and needs[job]["result"] != "success":
+                      bad.append(job)
+          print("ci-ok:", "FAIL " + ", ".join(sorted(set(bad))) if bad else "PASS")
+          sys.exit(1 if bad else 0)'

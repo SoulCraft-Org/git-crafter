@@ -1,0 +1,165 @@
+{
+  "ideal": "Settings hold their documented best values: rules no one can bypass, least access, no unused credential, no wait for a person, nothing billed unasked.",
+  "sources": [
+    {
+      "title": "GitHub docs: About rulesets",
+      "url": "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: Available rules for rulesets",
+      "url": "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: REST API endpoints for rules",
+      "url": "https://docs.github.com/en/rest/repos/rules",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: REST API endpoints for repositories, Get a repository",
+      "url": "https://docs.github.com/en/rest/repos/repos#get-a-repository",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: About merge methods on GitHub",
+      "url": "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/about-merge-methods-on-github",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: Managing the automatic deletion of branches",
+      "url": "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-the-automatic-deletion-of-branches",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: Setting base permissions for an organization",
+      "url": "https://docs.github.com/en/organizations/managing-user-access-to-your-organizations-repositories/managing-repository-roles/setting-base-permissions-for-an-organization",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: Requiring two-factor authentication in your organization",
+      "url": "https://docs.github.com/en/organizations/keeping-your-organization-secure/managing-two-factor-authentication-for-your-organization/requiring-two-factor-authentication-in-your-organization",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: Managing custom properties for repositories in your organization",
+      "url": "https://docs.github.com/en/organizations/managing-organization-settings/managing-custom-properties-for-repositories-in-your-organization",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: Managing GitHub Actions settings for a repository",
+      "url": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: Secure use reference, audit and rotate registered secrets",
+      "url": "https://docs.github.com/en/actions/reference/security/secure-use",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: Deployments and environments",
+      "url": "https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: Best practices for using webhooks",
+      "url": "https://docs.github.com/en/webhooks/using-webhooks/best-practices-for-using-webhooks",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: Managing deploy keys",
+      "url": "https://docs.github.com/en/authentication/connecting-to-github-with-ssh/managing-deploy-keys",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: About GitHub Advanced Security, what a private repo pays for",
+      "url": "https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: GitHub Actions billing",
+      "url": "https://docs.github.com/en/billing/concepts/product-billing/github-actions",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub changelog: Copilot code review will start consuming GitHub Actions minutes",
+      "url": "https://github.blog/changelog/2026-04-27-github-copilot-code-review-will-start-consuming-github-actions-minutes-on-june-1-2026/",
+      "date": "2026-04-27"
+    },
+    {
+      "title": "Microsoft Learn: Secure the developer environment for Zero Trust",
+      "url": "https://learn.microsoft.com/en-us/security/zero-trust/develop/secure-dev-environment-zero-trust",
+      "date": "2026-03-26"
+    },
+    {
+      "title": "Microsoft Azure Verified Modules: TFNFR3, GitHub repo branch protection",
+      "url": "https://azure.github.io/Azure-Verified-Modules/spec/TFNFR3/",
+      "date": "2025-11-19"
+    },
+    {
+      "title": "Anthropic: Claude Code GitHub Actions, the Claude GitHub App and its permissions",
+      "url": "https://code.claude.com/docs/en/github-actions",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Anthropic: Claude Code, Code Review",
+      "url": "https://code.claude.com/docs/en/code-review",
+      "date": "2026-10-24"
+    },
+    {
+      "title": "Anthropic: Use Claude Code in the cloud",
+      "url": "https://code.claude.com/docs/en/claude-code-on-the-web",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "OpenSSF Scorecard: checks",
+      "url": "https://github.com/ossf/scorecard/blob/main/docs/checks.md",
+      "date": "2026-10-28"
+    }
+  ],
+  "quality": "Branch, tags and deploys are protected with no bypass, secret files cannot be pushed, access stays inside the organization, and every secret is used.",
+  "speed": "No rule waits for a person or a timer, and dependency updates arrive grouped.",
+  "consumption": "No setting bills past what the plan includes unless it was bought on purpose.",
+  "parts": [
+    {
+      "part": "General",
+      "ideal": "One merge method, auto-merge off, merged branches deleted, no wiki, forking off for a private repo",
+      "setup": "Set them once on the General page, then name the values in the repo's targets so drift is counted"
+    },
+    {
+      "part": "Access",
+      "ideal": "Members only, through the organization: no outside collaborator, no open invitation, no custom role until a team needs one",
+      "setup": "Organization base permission read, two-factor required; invite people to the organization, not the repo"
+    },
+    {
+      "part": "Rules, branches and tags",
+      "ideal": "Rulesets: a pull request and a passing check to merge, no force push, deletion or bypass, tags fixed; custom properties only to target rulesets",
+      "setup": "An organization ruleset for every default branch; repo rulesets for checks, tags and secret file names"
+    },
+    {
+      "part": "Actions and webhooks",
+      "ideal": "Only selected actions, pinned to a commit, a read-only token, no fork runs; each webhook has a secret and checks SSL",
+      "setup": "Actions page: policies and workflow permissions, scored on the Security and Actions tabs; add a webhook only with a secret"
+    },
+    {
+      "part": "Copilot, Planning, Codespaces",
+      "ideal": "Copilot review and Codespaces off unless bought: both bill by use; issue types and fields set once for the organization",
+      "setup": "Leave both off; planning lives in organization settings and is scored on the Issues and Projects tabs"
+    },
+    {
+      "part": "Environments and Pages",
+      "ideal": "Each environment deploys from named branches only, with no reviewer or timer; Pages is private, built by a workflow, over HTTPS",
+      "setup": "Environment page: selected branches and tags; Pages page: source GitHub Actions, visibility private"
+    },
+    {
+      "part": "Security and secrets",
+      "ideal": "Free features on: dependency graph, Dependabot alerts and security updates; no deploy key; every stored secret read by a workflow",
+      "setup": "One organization security configuration; paid scanning only when bought; delete a secret when its workflow goes"
+    },
+    {
+      "part": "Apps and autolinks",
+      "ideal": "Only apps the organization uses, each with the permissions it needs; autolinks only for a tracker outside GitHub",
+      "setup": "Review installed apps on the organization's GitHub Apps page; add one autolink per outside ticket prefix"
+    }
+  ]
+}
