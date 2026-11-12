@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { FULL_RUN_GUESS, fullRunNeed, quotaGate, quotaLine, recordLocal, reserveFloor, reserveShort } from './collect-quota.mjs';
-import { collectorFiles, gateFailures, parseArgs, POOL, repoEnv, runCollectors, slowestLine } from './collect.mjs';
+import { collectorFiles, gateFailures, parseArgs, POOL, remoteRepo, repoEnv, runCollectors, slowestLine } from './collect.mjs';
 import { loadDefs } from './score.mjs';
 
 test('repoEnv: a --local run hands collectors the config repo; a repo the environment names wins (#230)', () => {
@@ -17,6 +17,25 @@ test('repoEnv: a --local run hands collectors the config repo; a repo the enviro
   const ci = { GITHUB_REPOSITORY: 'acme/other' };
   assert.equal(repoEnv({ repo: 'acme/site' }, ci), 'acme/other');
   assert.equal(repoEnv({ repo: null }, {}), null);
+});
+
+test('repoEnv: a --local run with no repo set reads the origin remote; a CI run never does', () => {
+  const origin = () => 'acme/site';
+  const env = {};
+  assert.equal(repoEnv({ repo: null }, env, { mode: 'local', origin }), 'acme/site');
+  assert.equal(env.GITHUB_REPOSITORY, 'acme/site');
+  assert.equal(repoEnv({ repo: 'acme/conf' }, {}, { mode: 'local', origin }), 'acme/conf');
+  assert.equal(repoEnv({ repo: null }, { GITHUB_REPOSITORY: 'acme/env' }, { mode: 'local', origin }), 'acme/env');
+  assert.equal(repoEnv({ repo: null }, {}, { mode: 'ci', origin }), null);
+  assert.equal(repoEnv({ repo: null }, {}, { mode: 'local', origin: () => null }), null);
+});
+
+test('remoteRepo: owner/name from https, ssh and scp remotes; null for anything else', () => {
+  for (const url of ['https://github.com/acme/site.git', 'https://github.com/acme/site', 'git@github.com:acme/site.git', 'ssh://git@github.com/acme/site.git\n'])
+    assert.equal(remoteRepo(url), 'acme/site', url);
+  assert.equal(remoteRepo('https://gitlab.com/acme/site.git'), null);
+  assert.equal(remoteRepo(''), null);
+  assert.equal(remoteRepo(undefined), null);
 });
 
 test('collectorFiles: a collector in a tab subfolder runs, and a name in two subfolders is an error', () => {
