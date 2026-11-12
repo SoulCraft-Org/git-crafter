@@ -379,6 +379,8 @@ jobs:
       pull-requests: read
       # Dependabot's open alerts, read live on every run (security.dependabot_open, security.malware_open).
       vulnerability-alerts: read
+    env:
+      BOARD_APP_KEY_SET: ${{ secrets.BOARD_APP_KEY != '' }}
     steps:
       # Full history: the docs collector dates each doc against its area's
       # last commit.
@@ -423,8 +425,27 @@ jobs:
           node pages/build.mjs | tee build.log
           { echo "### Page sizes"; echo; sed 's/^wrote /- /' build.log; } >> "$GITHUB_STEP_SUMMARY"
 
-      # admin-read-token (#837): the ADMIN_READ_TOKEN secret, a fine-grained read-only token, on main only, so a
-      # branch's code never runs with it. Unset, the needs: github-admin metrics stay not measured.
+      # The git-crafter-bot App's installation token, read-only and one hour long, minted on main only: it reads
+      # the needs: github-admin metrics (settings, alerts) and the needs: project-scope ones (the board).
+      # No App key skips it.
+      - id: admin-app
+        if: github.ref == 'refs/heads/main' && env.BOARD_APP_KEY_SET == 'true'
+        uses: actions/create-github-app-token@v3.3.0
+        with:
+          client-id: ${{ vars.BOARD_APP_CLIENT_ID }}
+          private-key: ${{ secrets.BOARD_APP_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-administration: read
+          permission-secret-scanning-alerts: read
+          permission-security-events: read
+          permission-vulnerability-alerts: read
+          permission-organization-administration: read
+          permission-members: read
+          permission-organization-projects: read
+
+      # admin-read-token (#837): the ADMIN_READ_TOKEN secret, a fine-grained read-only token, else the App token
+      # above, on main only, so a branch's code never runs with it. Neither, those metrics stay not measured.
       # hf-token and openrouter-api-key (#836): the HF_TOKEN and OPENROUTER_API_KEY usage keys, on main only the
       # same way, for the Credits provider readers. Unset, those stay not read in CI.
       - name: Git Crafter's own Quality, Speed and Consumption page
@@ -432,7 +453,7 @@ jobs:
         with:
           pages: quality
           quality-config: config/quality.json
-          admin-read-token: ${{ github.ref == 'refs/heads/main' && secrets.ADMIN_READ_TOKEN || '' }}
+          admin-read-token: ${{ github.ref == 'refs/heads/main' && (secrets.ADMIN_READ_TOKEN || steps.admin-app.outputs.token) || '' }}
           hf-token: ${{ github.ref == 'refs/heads/main' && secrets.HF_TOKEN || '' }}
           openrouter-api-key: ${{ github.ref == 'refs/heads/main' && secrets.OPENROUTER_API_KEY || '' }}
 

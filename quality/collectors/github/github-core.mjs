@@ -110,11 +110,13 @@ export function adminGh(env = process.env) {
   return token ? ghClient(token) : null;
 }
 
-// The client one metric reads with. A CI run's github-admin metric reads with `admin`, or is
-// { skip } with its reason when there is none. Every other metric reads with `gh`.
+// The client one metric reads with. A CI run's github-admin and project-scope metrics read with `admin`
+// (ADMIN_READ_TOKEN: a read-only token, or a GitHub App's installation token with projects read), or are
+// { skip } with their reason when there is none. Every other metric reads with `gh`.
 export function clientFor({ mode, needs, gh, admin }) {
-  if (mode !== "ci" || needs !== "github-admin") return { gh };
-  return admin ? { gh: admin } : { skip: NEEDS["github-admin"] };
+  if (mode !== "ci" || (needs !== "github-admin" && needs !== "project-scope")) return { gh };
+  if (admin) return { gh: admin };
+  return { skip: needs === "github-admin" ? NEEDS["github-admin"] : `${NEEDS["project-scope"]}; ${LOCAL_REFRESH}` };
 }
 
 // Rounds to one decimal.

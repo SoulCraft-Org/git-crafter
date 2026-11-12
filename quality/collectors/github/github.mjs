@@ -74,7 +74,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import YAML from "yaml";
-import { TARGETS_FILE, LOCAL_REFRESH, NEEDS, repoOf, ConfigError, refusingGh, GhError, ghClient, adminGh, clientFor, pct, skip, measured, count, flag, tally } from "./github-core.mjs";
+import { TARGETS_FILE, repoOf, ConfigError, refusingGh, GhError, ghClient, adminGh, clientFor, pct, skip, measured, count, flag, tally } from "./github-core.mjs";
 
 import { settings } from "./github-settings.mjs";
 
@@ -313,7 +313,7 @@ export async function collect({
   const needsById = new Map(targets.map((t) => [t.id, t.needs]));
   const ctx = { root, mode, now: Number(now), repo: slug, sleep, cfg, fetchImpl };
   const L = loaders({ gh, repo: slug, root, cfg, fetchImpl });
-  // A CI run reads its github-admin metrics with ADMIN_READ_TOKEN's loaders, or not at all.
+  // A CI run reads its github-admin and project-scope metrics with ADMIN_READ_TOKEN's loaders, or not at all.
   const LA = admin ? loaders({ gh: admin, repo: slug, root, cfg, fetchImpl }) : null;
   const fill = (text) => text.replaceAll("{repo}", slug ?? "owner/name").replaceAll("{project}", cfg.projectTitle).replaceAll("{site}", cfg.siteUrl || "params.site_url");
   const entries = await Promise.all(
@@ -322,7 +322,6 @@ export async function collect({
       const needs = needsById.get(id);
       const client = clientFor({ mode, needs, gh: L, admin: LA });
       if (client.skip) return [id, { could_not_check: client.skip, source }];
-      if (mode === "ci" && needs === "project-scope") return [id, { could_not_check: `${NEEDS["project-scope"]}; ${LOCAL_REFRESH}`, source }];
       try {
         const { note, ...result } = await metric.run(client.gh, ctx);
         if (result.could_not_check) return [id, { could_not_check: result.could_not_check, source }];
