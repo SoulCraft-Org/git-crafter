@@ -35,6 +35,9 @@ jobs:
       - name: Compare the base's engine with the head's
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
+          # A starter-commit base skips the compare only when the pull request targets the default branch.
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           # The description reaches the script as data through the environment, never spliced into the shell.
           PR_BODY: ${{ github.event.pull_request.body }}
         run: python3 -I tools/tests/guard_parity.py --base "$BASE" --expected "$PR_BODY"

@@ -158,6 +158,18 @@ def checkout_tools(sha, dest):
     return os.path.join(dest, "tools")
 
 
+def starter(sha):
+    """True when sha is a new repo's starter commit: the pull request targets the default branch
+    (BASE_REF and DEFAULT_BRANCH, set by guard-parity.yml), and sha has no parent and three files at
+    most, as pr-body.yml reads it. Only then is a base with no guard engine a pass."""
+    ref, default = os.environ.get("BASE_REF", ""), os.environ.get("DEFAULT_BRANCH", "")
+    if not default or ref != default:
+        return False
+    git = lambda *a: subprocess.run(["git", "-C", ROOT, *a], capture_output=True, text=True, check=True).stdout
+    return len(git("rev-list", "--parents", "-n", "1", sha).split()) == 1 \
+        and len(git("ls-tree", "-r", "--name-only", sha).split("\n")) - 1 <= 3
+
+
 def same_commit(sha):
     """True when sha is the checkout's HEAD, so nothing would be compared."""
     out = subprocess.run(["git", "-C", ROOT, "rev-parse", sha + "^{commit}", "HEAD"],
@@ -177,6 +189,10 @@ def compare(sha, text=""):
     if same_commit(sha):
         print(f"guard parity: FAIL, the base {sha[:12]} is HEAD, so nothing is compared")
         return 1
+    if starter(sha):
+        print(f"guard parity: ok, the base {sha[:12]} is a new repo's starter commit with no guard engine, "
+              "so the head's engine is left to the self-test")
+        return 0
     with tempfile.TemporaryDirectory() as tmp:
         base_tools = checkout_tools(sha, os.path.join(tmp, "base"))
         labelled, new = shared(commands(), commands(base_tools))

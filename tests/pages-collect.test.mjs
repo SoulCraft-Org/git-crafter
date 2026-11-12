@@ -219,6 +219,8 @@ test("own tokens: Git Crafter's row of each tokens.* split, with the site's goal
 });
 
 test("goals that rate a copied site metric use the site's own goal", (t) => {
+  // A public copy commits no data/ (tools/export_public.sh), so it has nothing to compare.
+  if (!existsSync(join(ROOT, "data/org.json"))) return t.skip("this checkout commits no data/org.json");
   const data = readJson("data/org.json");
   // Could not verify is not a failure: a run that could not read the site's data has no targets to compare.
   const unread = data.errors?.find((e) => e.startsWith("site quality data"));

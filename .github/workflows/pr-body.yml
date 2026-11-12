@@ -43,6 +43,8 @@ jobs:
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           if ! PR_BODY="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.body // ""')"; then
             echo "::warning::pr-body: could not read the description, so nothing was checked"
@@ -51,8 +53,14 @@ jobs:
           export PR_BODY
           # The change as git's patch, every line of it, reaches the script through a file it names; when git
           # cannot reach the base, PR_DIFF stays unset and the script skips only the size check, with a warning.
+          # A new repo's first import sits on GitHub's starter commit (a root commit of three files at most, on
+          # the default branch): it is compared with its export, not read, so the size is not checked.
           diff="$RUNNER_TEMP/pr.diff"
-          if git diff --no-color --unified=0 "$BASE_SHA...$HEAD_SHA" > "$diff"; then
+          if [ -n "$DEFAULT_BRANCH" ] && [ "$BASE_REF" = "$DEFAULT_BRANCH" ] \
+            && [ -z "$(git rev-list --parents -n 1 "$BASE_SHA" | cut -s -d' ' -f2)" ] \
+            && [ "$(git ls-tree -r --name-only "$BASE_SHA" | wc -l)" -le 3 ]; then
+            echo "::warning::pr-body: the base is a new repo's starter commit, so the first import's size was not checked"
+          elif git diff --no-color --unified=0 "$BASE_SHA...$HEAD_SHA" > "$diff"; then
             export PR_DIFF="$diff"
           else
             echo "::warning::pr-body: git could not diff the base and the head, so the size was not checked"
