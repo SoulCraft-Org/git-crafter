@@ -72,11 +72,10 @@ check "a commit production holds is a skip" 0 "$c1" "$c0"
 check "a commit not on main is refused" 1 "$c1" "$f1"
 check "no gate ran yet waits" 0 "$c1" "$c2" STUB_RUNS="$(runs - - - -)"
 check "a gate with no run is not waited for" 0 "$c2" "$c2" STUB_RUNS="$(runs completed success - -)"
-check "an outside commit soaks first" 0 "$c2" "$c3" STUB_PULLS="$outside" SOAK_MINUTES=30
+check "an outside commit soaks from its push run, though its committer time is years old" 0 "$c2" "$c3" STUB_PULLS="$outside" SOAK_MINUTES=30
 check "a member PR holding another PR's outside commit soaks" 0 "$c2" "$c3" STUB_PULLS="$both" SOAK_MINUTES=30
 check "a commit its PR's opener did not write soaks" 0 "$c2" "$c3" STUB_COMMIT='{"author":{"login":"x"}}' SOAK_MINUTES=30
 check "a commit with no PR soaks" 0 "$c2" "$c3" STUB_PULLS='[]' SOAK_MINUTES=30
-check "a backdated commit soaks from its push run, not its committer time" 0 "$c2" "$c3" STUB_PULLS="$outside" SOAK_MINUTES=30
 check "a soaked outside commit waits for staging" 0 "$c2" "$c3" STUB_PULLS="$outside" SOAK_MINUTES=0 STAGING_CHECK=staging
 check "a soaked outside commit with staging green advances" 0 "$c3" "$c3" STUB_PULLS="$outside" SOAK_MINUTES=0 \
   STAGING_CHECK=staging STUB_CHECKS='{"check_runs":[{"name":"staging","conclusion":"success"}]}'
