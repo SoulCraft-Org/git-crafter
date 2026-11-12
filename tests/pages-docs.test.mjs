@@ -286,7 +286,7 @@ const templateKinds = () => Object.fromEntries(readTargetFiles(join(ROOT, "quali
 
 test("the library: every map has its ideal and dated sources, at most MAX_STEPS steps, each step one template metric, and a step of each kind", () => {
   const library = loadLibrary();
-  assert.deepEqual(Object.keys(library).sort(), ["adopt", "board", "code", "decide", "delivery", "deploy", "document", "guard", "measure", "secure", "triage"]);
+  assert.deepEqual(Object.keys(library).sort(), ["adopt", "board", "code", "contribute", "decide", "delivery", "deploy", "document", "guard", "measure", "secure", "triage"]);
   // Decide is a fork: a question goes to Claude's call or the owner's queue, and both meet at clear.
   assert.deepEqual(library.decide.steps.map((s) => [s.id, s.at]), [["arise", [0, 0]], ["decide", [1, 0]], ["queue", [1, 1]], ["clear", [2, 0]]]);
   assert.equal(library.decide.steps.find((s) => s.id === "queue").metric, "claude_settings.prompts_per_100_calls", "a prompt reaching the owner is what the queue step counts");
