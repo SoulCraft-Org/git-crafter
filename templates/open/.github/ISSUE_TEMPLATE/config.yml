@@ -1,9 +1,0 @@
-# Blank issues are off, so every issue goes through a form. Ideas start in Discussions.
-blank_issues_enabled: false
-contact_links:
-  - name: An idea
-    url: https://github.com/<owner>/<repo>/discussions/categories/ideas
-    about: Start in Discussions; an accepted idea becomes an issue.
-  - name: Security vulnerability
-    url: https://github.com/<owner>/<repo>/security/advisories/new
-    about: Report it privately. Do not open a public issue.
