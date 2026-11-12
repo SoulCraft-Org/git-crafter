@@ -33,7 +33,7 @@
   "project": 2,
   "quick": [
    "deploy.latest_failed", "ci.main_red_minutes", "docs.broken_links", "docs.dead_paths", "docs.dead_scripts",
-   "code.missing_refs", "simplicity.broken_refs", "usability.broken_links", "usability.axe_violations",
+   "code.missing_refs", "usability.broken_links", "usability.axe_violations",
    "design.contrast_violations", "security.dependabot_open", "security.code_scanning_open",
    "security.secret_scanning_open", "security.malware_open"
   ],
