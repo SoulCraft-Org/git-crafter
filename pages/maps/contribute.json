@@ -1,0 +1,127 @@
+{
+ "id": "contribute",
+ "name": "Contribute",
+ "why": "An outside contribution, from idea to production, with AI agents reviewing, merging and deploying it",
+ "ideal": "An outside idea becomes a merged change within a day, no fork code runs with a secret, and no person waits in the loop.",
+ "sources": [
+  {
+   "title": "GitHub Docs: About discussions",
+   "url": "https://docs.github.com/en/discussions/collaborating-with-your-community-using-discussions/about-discussions",
+   "date": "2026-11-12"
+  },
+  {
+   "title": "GitHub Docs: Approving workflow runs from forks",
+   "url": "https://docs.github.com/en/actions/how-tos/manage-workflow-runs/approve-runs-from-forks",
+   "date": "2026-11-12"
+  },
+  {
+   "title": "GitHub Docs: Events that trigger workflows",
+   "url": "https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows",
+   "date": "2026-11-12"
+  },
+  {
+   "title": "Cloudflare Docs: Rollbacks",
+   "url": "https://developers.cloudflare.com/workers/configuration/versions-and-deployments/rollbacks/",
+   "date": "2026-11-12"
+  }
+ ],
+ "critical_path": [
+  "idea",
+  "approve",
+  "review",
+  "merge",
+  "deploy"
+ ],
+ "steps": [
+  {
+   "id": "idea",
+   "name": "Idea",
+   "tools": [
+    "GitHub Discussions",
+    "Issue forms"
+   ],
+   "rule": "An idea starts in Discussions; an accepted one becomes a typed issue through a form.",
+   "rule_ref": "https://docs.github.com/en/discussions/collaborating-with-your-community-using-discussions/about-discussions",
+   "metric": "issues.intake_ready",
+   "at": [
+    0,
+    0
+   ]
+  },
+  {
+   "id": "approve",
+   "name": "Approve run",
+   "tools": [
+    "Fork run approval",
+    "gh pr diff"
+   ],
+   "rule": "Every outside contributor's run waits until the orchestrator reads the diff and approves it.",
+   "rule_ref": "https://docs.github.com/en/actions/how-tos/manage-workflow-runs/approve-runs-from-forks",
+   "metric": "settings.open_repo_missing",
+   "at": [
+    1,
+    0
+   ]
+  },
+  {
+   "id": "review",
+   "name": "Review",
+   "tools": [
+    "Two reviewer subagents",
+    "gh pr view and gh pr diff only"
+   ],
+   "rule": "Two AI reviews read the diff as data; fork code never runs on the owner's machine.",
+   "rule_ref": "https://github.com/SoulCraft-Org/git-crafter/blob/main/skills/merging/outside.md#safety",
+   "metric": "blockers.review_tokens_per_pr",
+   "at": [
+    2,
+    0
+   ]
+  },
+  {
+   "id": "merge",
+   "name": "Merge",
+   "tools": [
+    "merge_policy.py --pr N --sha",
+    "gh pr merge --match-head-commit"
+   ],
+   "rule": "Content paths merge at the checked head SHA; agents never approve a pull request.",
+   "rule_ref": "https://github.com/SoulCraft-Org/git-crafter/blob/main/skills/merging/outside.md#merge",
+   "metric": "pull_requests.green_to_merge_minutes",
+   "at": [
+    3,
+    0
+   ]
+  },
+  {
+   "id": "rebuild",
+   "name": "Rebuild",
+   "tools": [
+    "The orchestrator's own branch",
+    "Co-authored-by trailer"
+   ],
+   "rule": "A build, CI or gate change is rebuilt as the orchestrator's pull request, crediting the contributor.",
+   "rule_ref": "https://github.com/SoulCraft-Org/git-crafter/blob/main/skills/merging/outside.md#rebuild-with-credit",
+   "metric": "pull_requests.latest_merge_hours",
+   "at": [
+    3,
+    1
+   ]
+  },
+  {
+   "id": "deploy",
+   "name": "Deploy",
+   "tools": [
+    "deploy-gate.yml",
+    "Rollback"
+   ],
+   "rule": "An outside commit soaks on staging, then deploys; a failed live check rolls back.",
+   "rule_ref": "https://github.com/SoulCraft-Org/git-crafter/blob/main/templates/ci/deploy-gate.yml",
+   "metric": "deploy.failure_rate_last10",
+   "at": [
+    4,
+    0
+   ]
+  }
+ ]
+}

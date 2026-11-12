@@ -23,6 +23,7 @@ flowchart LR
 | [secure.json](secure.json) | keys, scan, model, report, alerts |
 | [decide.json](decide.json) | arise, decide, queue, clear (a fork: Claude decides or the owner's queue) |
 | [document.json](document.json) | write, lint, map, publish, read, load |
+| [contribute.json](contribute.json) | idea, approve, review, merge, rebuild, deploy (a fork: merge or rebuild) |
 
 Git Crafter's own [`maps.json`](../../maps.json) adds Spend (free first, read, stay under, drop idle); it reads a local credits registry an adopter's CI lacks, so it is not in the library.
 
