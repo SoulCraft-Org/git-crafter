@@ -26,6 +26,7 @@ echo "== sync tool";    python3 -I tools/claude_os_sync.py --self-test
 echo "== ci standard";  python3 -I tools/ci_standard.py --self-test
 echo "== ci embed";     python3 -I tools/ci_standard.py embed
 echo "== ci overflow";  python3 -I tools/ci_overflow.py --self-test
+echo "== deploy gate";  bash tools/deploy_gate.sh --self-test
 echo "== public scan";  python3 -I tools/public_scan.py --self-test
 echo "== write guard";  python3 -I tools/write_guard.py --self-test
 echo "== comfy guard";  python3 -I tools/comfy_guard.py --self-test
