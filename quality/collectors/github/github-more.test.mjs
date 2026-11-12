@@ -372,6 +372,8 @@ describe("collect() fails open", () => {
     const out = await run({ gh: fakeGh({ graphql }) });
     assert.match(out["projects.workflows_on"].could_not_check, /You do not have permission to access workflows/);
     assert.equal(typeof out["projects.cards_by_column"].value, "number", "the cards still read");
+    const none = await run({ gh: fakeGh({ graphql: { ...GRAPHQL, ProjectWorkflows: { node: null } } }) });
+    assert.match(none["projects.workflows_on"].could_not_check, /answered no workflows/, "a missing board is not every workflow off");
   });
 });
 

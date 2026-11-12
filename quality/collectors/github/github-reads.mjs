@@ -53,7 +53,10 @@ export async function readProject(gh, repo, owner, name, cfg) {
   const numbers = new Set(items.flatMap((it) => (it.content?.__typename === "DraftIssue" ? [...(it.content.body ?? "").matchAll(urlPattern)].map((m) => Number(m[1])) : [])));
   const drafts = await draftLinks(gh, owner, name, numbers);
   // The board's built-in workflows ride on the cards list. A refused read keeps its error for projects.workflows_on alone.
-  const workflows = await gh.graphql(PROJECT_WORKFLOWS, { id: project.id }).then((d) => d.node?.workflows?.nodes ?? [], (error) => ({ error }));
+  const workflows = await gh.graphql(PROJECT_WORKFLOWS, { id: project.id }).then(
+    (d) => (d.node ? (d.node.workflows?.nodes ?? []) : { error: new Error(`the board ${cfg.projectTitle} answered no workflows`) }),
+    (error) => ({ error }),
+  );
   return Object.assign(items.map((it) => cardOf(it, urlPattern, drafts)), { workflows });
 }
 
