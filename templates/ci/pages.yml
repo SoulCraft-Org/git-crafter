@@ -47,7 +47,7 @@ jobs:
         with:
           node-version: 26
 
-      - uses: SoulCraft-Org/git-crafter/actions/pages@dd03762898c5cbd816b7a093307c643dcc80a5c3 # v4.0.0
+      - uses: SoulCraft-Org/git-crafter/actions/pages@48dfa90244df995ed774c0b0579ecba0566994cd # v4.0.1
         with:
           pages: process quality
           config: quality/process/config.json
