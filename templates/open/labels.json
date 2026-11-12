@@ -1,0 +1,27 @@
+[
+  {
+    "name": "good first issue",
+    "color": "7057ff",
+    "description": "Small, clear, and a good first contribution"
+  },
+  {
+    "name": "help wanted",
+    "color": "008672",
+    "description": "Open for any contributor"
+  },
+  {
+    "name": "idea",
+    "color": "fbca04",
+    "description": "Started in Discussions"
+  },
+  {
+    "name": "idea: accepted",
+    "color": "0e8a16",
+    "description": "An accepted idea, ready to build"
+  },
+  {
+    "name": "rebuilt",
+    "color": "5319e7",
+    "description": "Rebuilt by the orchestrator with the contributor credited"
+  }
+]

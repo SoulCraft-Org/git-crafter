@@ -1,0 +1,20 @@
+name: Bug
+description: "Something does not work as written. An improvement goes on the project board, not here."
+title: "Area: what breaks"
+type: Bug
+body:
+  - type: textarea
+    id: table
+    attributes:
+      label: Finding
+      description: "A table with these rows: Where, Expected, Actual, How to reproduce. Add a screenshot, chart or diagram where it shows the fault faster. No paragraphs."
+      placeholder: |
+        | Field | Value |
+        |---|---|
+        | Where | file or metric id |
+        | Expected | |
+        | Actual | |
+        | Reproduce | |
+        | Evidence | screenshot, chart or diagram |
+    validations:
+      required: true
