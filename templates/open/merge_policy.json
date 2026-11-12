@@ -1,8 +1,10 @@
 {
   "_README": [
     "Starter AI merge policy for tools/merge_policy.py (skills/merging/outside.md).",
-    "Copy it beside your copy of merge_policy.py, then narrow ai_mergeable to the",
-    "paths an outside PR may change with no maintainer: content, docs, pages.",
+    "Copy it beside your copy of merge_policy.py, then set ai_mergeable to the",
+    "paths an outside PR may change with no maintainer. The starter grants content",
+    "by extension only (Markdown, JSON, YAML, images), never code: a test, a script",
+    "or a page with code runs in CI or at build time.",
     "Default deny: a path on neither list is not AI-mergeable. maintainer_only wins",
     "over ai_mergeable. Every path that runs at build or install time, defines a",
     "gate, or states the rules belongs in maintainer_only.",
@@ -49,15 +51,26 @@
     "GOVERNANCE.md",
     "MAINTAINERS.md",
     "SECURITY.md",
-    "CONTRIBUTING.md"
+    "CONTRIBUTING.md",
+    "**/_worker.js",
+    "**/_headers",
+    "**/_redirects",
+    "tests/**",
+    "**/*.test.*",
+    "**/conftest.py",
+    "**/*.svg"
   ],
   "ai_mergeable": [
-    "content/**",
-    "docs/**",
-    "data/**",
-    "public/**",
-    "src/**",
-    "tests/**"
+    "content/**/*.md",
+    "content/**/*.json",
+    "content/**/*.yaml",
+    "docs/**/*.md",
+    "data/**/*.json",
+    "data/**/*.yaml",
+    "src/content/**/*.md",
+    "public/images/**/*.webp",
+    "public/images/**/*.png",
+    "public/images/**/*.jpg"
   ],
   "samples": {
     "ai_mergeable": [
@@ -66,10 +79,10 @@
         "docs/guide.md"
       ],
       [
-        "src/pages/about.md"
+        "data/regions/denver.json"
       ],
       [
-        "tests/pages.test.mjs"
+        "public/images/team/a.webp"
       ]
     ],
     "maintainer_only": [
@@ -88,6 +101,18 @@
       ],
       [
         "CLAUDE.md"
+      ],
+      [
+        "tests/pages.test.mjs"
+      ],
+      [
+        "public/_worker.js"
+      ],
+      [
+        "src/content/x.test.md"
+      ],
+      [
+        "public/images/logo.svg"
       ]
     ],
     "default_deny": [
@@ -96,6 +121,12 @@
       ],
       [
         "vendor/lib.js"
+      ],
+      [
+        "src/pages/about.astro"
+      ],
+      [
+        "docs/run.sh"
       ]
     ],
     "refused": [
