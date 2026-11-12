@@ -2,7 +2,7 @@
  {
   "id": "tools.deps_latest_share",
   "params": {
-   "adopters": ["Colorado-Startups/coloradostartups-site"]
+   "adopters": ["Colorado-Startups/coloradostartups-site", "Colorado-Startups/startup-credits", "SoulCraft-Org/compute-crafter"]
   }
  }
 ]
