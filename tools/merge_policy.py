@@ -33,7 +33,7 @@ class InfraError(Exception):
     """Could not check. Never reported as mergeable."""
 
 
-def glob_to_regex(pattern):
+def glob_to_regex(pattern, flags=0):
     """A path glob as an anchored regex: '**/' any folders, '*' and '?' within one segment."""
     out, i = [], 0
     while i < len(pattern):
@@ -45,12 +45,12 @@ def glob_to_regex(pattern):
         else:
             out.append(re.escape(pattern[i]))
             i += 1
-    return re.compile("^" + "".join(out) + "$")
+    return re.compile("^" + "".join(out) + "$", flags)
 
 
-def glob_match(pattern, path):
+def glob_match(pattern, path, flags=0):
     """True when the path matches the glob."""
-    return bool(glob_to_regex(pattern).match(path))
+    return bool(glob_to_regex(pattern, flags).match(path))
 
 
 def _string_list(value, where):
@@ -103,11 +103,11 @@ def refused(path):
 
 
 def why_blocked(policy, path):
-    """Why a path is not AI-mergeable, or None when an agent may merge it."""
+    """Why a path is not AI-mergeable, or None; maintainer_only is case-blind, as a macOS checkout is."""
     bad = refused(path)
     if bad:
         return "refused: %s" % bad
-    hit = next((g for g in policy["maintainer_only"] if glob_match(g, path)), None)
+    hit = next((g for g in policy["maintainer_only"] if glob_match(g, path, re.IGNORECASE)), None)
     if hit:
         return "maintainer-only (%s)" % hit
     if not any(glob_match(g, path) for g in policy["ai_mergeable"]):
