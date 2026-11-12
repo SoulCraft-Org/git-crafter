@@ -194,7 +194,11 @@ def load_rules(path, max_words=None):
     if path is None:
         return Rules(None, max_words)
     with open(path, encoding="utf-8") as fh:
-        data = json.load(fh)
+        return load_rules_from_obj(json.load(fh), max_words)
+
+
+def load_rules_from_obj(data, max_words=None):
+    """Rules from a parsed rules object, checked as load_rules checks a file. A repo's own lint calls it."""
     if not isinstance(data, dict):
         raise ValueError("rules file must contain a JSON object")
     for check in data.get("severity", {}):
@@ -460,6 +464,8 @@ def rules_checks():
         ("severity off suppresses a built-in check", not _graded(off, "hedge-word")),
         ("project rules do not replace the built-ins", bool(_graded(off, "em-dash"))),
         ("unknown check name rejected", _rejected({"severity": {"no-such-check": "off"}})),
+        ("an in-memory rules object loads like a file",
+         _graded(lint_text(SELF_TEST_PROJECT, load_rules_from_obj(SELF_TEST_RULES)), "banned-term") == {"FAIL"}),
         # The run's last line is the summary docs.lint_warn reads: every file,
         # and the findings of all of them.
         ("summary line closes the run", code == 1 and last == want),
