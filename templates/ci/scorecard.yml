@@ -1,0 +1,43 @@
+name: scorecard
+
+# OPTIONAL, for public adopters: copy to .github/workflows/scorecard.yml.
+# OpenSSF Scorecard grades the repo's supply-chain practices, 0 to 10, and
+# publishes the score to api.scorecard.dev, where the Quality page can read
+# it (github.com/ossf/scorecard-action, read 2026-11-12). Free for public
+# repos; on a private one it spends minutes and publishes nothing, so skip it.
+#
+# ADVISORY: no ruleset requires this check. It runs on the default branch
+# only, never on a pull request, so no fork's code runs with id-token.
+# Each action is pinned to a commit at least two weeks old.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 6 * * 1"
+  branch_protection_rule:
+
+permissions: read-all
+
+jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      security-events: write
+      id-token: write
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ossf/scorecard-action@fa7117db83c52d787ae5a89f350999701505d78e # v2.5.0
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          sarif_file: results.sarif
