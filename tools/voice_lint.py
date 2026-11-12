@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """voice_lint.py: the generic half of a prose voice check.
 
-Canonical source: Claude-OS/tools/voice_lint.py. Synced into each repo,
-where it is the one definition behind every call site:
+Canonical source: SoulCraft-Org/git-crafter tools/voice_lint.py. Each repo
+vendors a copy whose first lines name that path and the commit SHA. The
+copy is the one definition behind every call site:
 
   1. The agent surface, either a tool-use hook that fires on each edit
      or a slash command someone runs. These are not the same thing and
@@ -193,7 +194,11 @@ def load_rules(path, max_words=None):
     if path is None:
         return Rules(None, max_words)
     with open(path, encoding="utf-8") as fh:
-        data = json.load(fh)
+        return load_rules_from_obj(json.load(fh), max_words)
+
+
+def load_rules_from_obj(data, max_words=None):
+    """Rules from a parsed rules object, checked as load_rules checks a file. A repo's own lint calls it."""
     if not isinstance(data, dict):
         raise ValueError("rules file must contain a JSON object")
     for check in data.get("severity", {}):
@@ -459,6 +464,8 @@ def rules_checks():
         ("severity off suppresses a built-in check", not _graded(off, "hedge-word")),
         ("project rules do not replace the built-ins", bool(_graded(off, "em-dash"))),
         ("unknown check name rejected", _rejected({"severity": {"no-such-check": "off"}})),
+        ("an in-memory rules object loads like a file",
+         _graded(lint_text(SELF_TEST_PROJECT, load_rules_from_obj(SELF_TEST_RULES)), "banned-term") == {"FAIL"}),
         # The run's last line is the summary docs.lint_warn reads: every file,
         # and the findings of all of them.
         ("summary line closes the run", code == 1 and last == want),

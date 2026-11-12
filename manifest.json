@@ -1,6 +1,6 @@
 {
  "version": 1,
- "comment_purpose": "What Git Crafter publishes, and where. Keys under files are paths relative to the Git Crafter root. Values are paths relative to the target. Declaring a target here writes nothing. Only claude_os_sync.py apply --yes writes, and only to the paths listed. An org's own repo entries go in a manifest of its own, read with --manifest (config/example.json shows an org's config).",
+ "comment_purpose": "What Git Crafter publishes, and where. Keys under files are paths relative to the Git Crafter root. Values are paths relative to the target. Declaring a target here writes nothing. Only claude_os_sync.py apply --yes writes, and only to the paths listed. It lists only user-claude. Another repo vendors a copy of the file it needs, with first lines naming its Git Crafter path and commit SHA.",
  "comment_path": "Each path is the repo's main checkout, so apply writes into whatever branch that checkout has out. To target a git worktree instead, such as <repo>/.claude/worktrees/<name>, pass --repo-path PATH with one repo name, for status, diff, plan or apply. The record file goes there too. Apply prints the target branch, and refuses a checkout with staged or unstaged changes to tracked files unless --force-target. Sources always come from the Git Crafter root, wherever this manifest lives.",
  "record_file": ".claude-os-managed.json",
  "repos": {
