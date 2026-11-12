@@ -175,7 +175,7 @@ export const SECURITY_REVIEW_METRICS = {
     },
   },
   "security.oldest_open_alert_days": {
-    source: "gh api dependabot/alerts, and code-scanning/alerts, secret-scanning/alerts and code-quality/findings while those features are on: the oldest open one's age at read time",
+    source: "gh api dependabot/alerts, and code-scanning/alerts and secret-scanning/alerts while those features are on, and code-quality/findings unless it answers that code quality is off: the oldest open one's age at read time",
     async run(L, { now }) {
       const open = await openAlerts(L);
       if (!open.length) return measured(0, [count("open alerts", 0)]);

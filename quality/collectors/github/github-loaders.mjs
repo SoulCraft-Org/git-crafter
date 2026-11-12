@@ -145,7 +145,7 @@ function securityLoaders(L, { gh, repo }) {
     // hide_secret=true: GitHub sends each alert's secret value unless told not
     // to; none may reach this process. Any secret field is dropped as well.
     secretScanningAlerts: once(async () => (await gh.restAll(`repos/${repo}/secret-scanning/alerts?per_page=100&hide_secret=true`)).map(({ secret, ...alert }) => alert)),
-    codeQualityFindings: once(() => gh.restAll(`repos/${repo}/code-quality/findings?state=open&per_page=100`)),
+    codeQualityFindings: once(async () => (await L.codeQualityOpen()) ?? []),
     // The open findings, or null while code quality is off: the findings read says so itself, so an
     // App's read-only token, which code-quality/setup refuses (it needs Administration write), still reads them.
     codeQualityOpen: once(() => offWhenDisabled(() => gh.restAll(`repos/${repo}/code-quality/findings?state=open&per_page=100`))),
