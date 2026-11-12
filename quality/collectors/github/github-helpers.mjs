@@ -133,7 +133,7 @@ export async function fixedAlerts(L) {
 export async function openAlerts(L) {
   const open = [];
   for (const [kind, alerts] of await alertSources(L)) for (const a of alerts) if (a.state === "open" && a.created_at) open.push({ kind, createdAt: a.created_at });
-  if (await L.codeQualityOn()) for (const f of await L.codeQualityFindings()) if (f.created_at) open.push({ kind: "code quality", createdAt: f.created_at });
+  for (const f of (await L.codeQualityOpen()) ?? []) if (f.created_at) open.push({ kind: "code quality", createdAt: f.created_at });
   return open;
 }
 
