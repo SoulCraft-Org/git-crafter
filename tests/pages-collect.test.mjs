@@ -619,6 +619,20 @@ test("the pages action's Credits keys are optional and reach the Quality collect
   }
 });
 
+test("the pages action pins each remote step by full SHA with its version comment, and the lockfile keys it that way", () => {
+  // A caller whose Actions policy requires SHA pins refuses a tag at job setup. gh actions-lock's fix mode rewrites
+  // these to tags; this test fails if a relock does.
+  const yml = readFileSync(join(ROOT, "actions", "pages", "action.yml"), "utf8");
+  const lock = readFileSync(join(ROOT, ".github", "workflows", "actions.lock"), "utf8");
+  const remote = [...yml.matchAll(/^\s*uses:\s*([^\s#]+)(.*)$/gm)].filter(([, ref]) => !ref.startsWith("./") && !ref.startsWith("$/"));
+  assert.ok(remote.length >= 2, "the upload and download steps");
+  for (const [, ref, rest] of remote) {
+    assert.match(ref, /^[\w.-]+\/[\w.-]+@[0-9a-f]{40}$/, `${ref}: a full commit SHA`);
+    assert.match(rest, /^ # v\d+\.\d+\.\d+$/, `${ref}: a # vX.Y.Z comment for Dependabot`);
+    assert.ok(lock.includes(`'${ref}':`), `${ref}: keyed in actions.lock, or the runner refuses it`);
+  }
+});
+
 test("under --config a doc the repo does not name is Git Crafter's own, except the maps; one it names is the repo's", () => {
   const s = configScope({ repos: ["one"], docs: { maps: "quality/process/maps.json", tokens: null } });
   assert.equal(s.docs.goals, join(ROOT, "goals.json"));
