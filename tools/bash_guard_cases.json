@@ -6163,59 +6163,59 @@
   ],
   [
    "allow",
-   "python3 -I ~/Developer/Code-OS/tools/claude_os_sync.py apply user-claude --yes"
+   "python3 -I ~/Developer/SoulCraft-Org/Git-Crafter/tools/claude_os_sync.py apply user-claude --yes"
   ],
   [
    "allow",
-   "git -C ~/Developer/Code-OS pull --ff-only && python3 -I ~/Developer/Code-OS/tools/claude_os_sync.py apply user-claude --yes"
+   "git -C ~/Developer/SoulCraft-Org/Git-Crafter pull --ff-only && python3 -I ~/Developer/SoulCraft-Org/Git-Crafter/tools/claude_os_sync.py apply user-claude --yes"
   ],
   [
    "allow",
-   "python3.12 -I ~/Developer/Code-OS/tools/claude_os_sync.py apply user-claude --yes"
+   "python3.12 -I ~/Developer/SoulCraft-Org/Git-Crafter/tools/claude_os_sync.py apply user-claude --yes"
   ],
   [
    "allow",
-   "python3 -I /Users/someone/Developer/Code-OS/tools/claude_os_sync.py apply user-claude --yes"
+   "python3 -I /Users/someone/Developer/SoulCraft-Org/Git-Crafter/tools/claude_os_sync.py apply user-claude --yes"
   ],
   [
    "allow",
-   "python3 -I \"$HOME/Developer/Code-OS/tools/claude_os_sync.py\" apply user-claude --yes"
+   "python3 -I \"$HOME/Developer/SoulCraft-Org/Git-Crafter/tools/claude_os_sync.py\" apply user-claude --yes"
   ],
   [
    "allow",
-   "cd ~/Developer/Code-OS && python3 -I ~/Developer/Code-OS/tools/claude_os_sync.py plan user-claude"
+   "cd ~/Developer/SoulCraft-Org/Git-Crafter && python3 -I ~/Developer/SoulCraft-Org/Git-Crafter/tools/claude_os_sync.py plan user-claude"
   ],
   [
    "allow",
-   "python3 -I ~/Developer/Code-OS/tools/claude_os_sync.py apply site --yes --repo-path ~/Developer/site/.claude/worktrees/x"
+   "python3 -I ~/Developer/SoulCraft-Org/Git-Crafter/tools/claude_os_sync.py apply site --yes --repo-path ~/Developer/site/.claude/worktrees/x"
   ],
   [
    "block",
-   "python3 -I ~/Developer/Code-OS/tools/claude_os_sync.py apply user-claude --yes --manifest /tmp/m.json"
+   "python3 -I ~/Developer/SoulCraft-Org/Git-Crafter/tools/claude_os_sync.py apply user-claude --yes --manifest /tmp/m.json"
   ],
   [
    "block",
-   "python3 -I ~/Developer/Code-OS/tools/claude_os_sync.py apply user-claude --yes --manifest=0"
+   "python3 -I ~/Developer/SoulCraft-Org/Git-Crafter/tools/claude_os_sync.py apply user-claude --yes --manifest=0"
   ],
   [
    "block",
-   "python3 -I ~/Developer/Code-OS/tools/claude_os_sync.py --manifest=/tmp/m.json apply user-claude --yes"
+   "python3 -I ~/Developer/SoulCraft-Org/Git-Crafter/tools/claude_os_sync.py --manifest=/tmp/m.json apply user-claude --yes"
   ],
   [
    "block",
-   "python3 -I ~/Developer/Code-OS/tools/claude_os_sync.py apply site --yes --repo-path ~/.claude"
+   "python3 -I ~/Developer/SoulCraft-Org/Git-Crafter/tools/claude_os_sync.py apply site --yes --repo-path ~/.claude"
   ],
   [
    "block",
-   "python3 -I ~/Developer/Code-OS/tools/claude_os_sync.py apply docs --yes --repo-path \"$HOME/.claude/\""
+   "python3 -I ~/Developer/SoulCraft-Org/Git-Crafter/tools/claude_os_sync.py apply docs --yes --repo-path \"$HOME/.claude/\""
   ],
   [
    "block",
-   "python3 -I ~/Developer/Code-OS/tools/claude_os_sync.py apply docs --yes --repo-path ~/.claude/../.claude"
+   "python3 -I ~/Developer/SoulCraft-Org/Git-Crafter/tools/claude_os_sync.py apply docs --yes --repo-path ~/.claude/../.claude"
   ],
   [
    "block",
-   "python3 -I ~/Developer/Code-OS/tools/claude_os_sync.py apply docs --yes --repo-path=/Users/someone/.claude/code-os"
+   "python3 -I ~/Developer/SoulCraft-Org/Git-Crafter/tools/claude_os_sync.py apply docs --yes --repo-path=/Users/someone/.claude/code-os"
   ],
   [
    "allow",
