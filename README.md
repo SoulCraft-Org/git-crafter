@@ -57,7 +57,6 @@ Each map's steps: [pages/maps](pages/maps/README.md).
 | [writing-and-gates](rules/writing-and-gates.md) | Every turn | Visual docs, plain prose |
 | [compute-detail](rules/compute-detail.md), [comfy](rules/comfy.md), [gates](rules/gates.md), [keys-detail](rules/keys-detail.md) | Matching files | CI pool, GPU tiers, how to build a gate |
 | [merging](skills/merging/SKILL.md) | Reviewing and merging | Merge conditions and review depth |
-| [outside PRs](skills/merging/outside.md) | A pull request from outside the org | Fork safety, the path check, rebuild with credit |
 
 What loads when: the [memory](https://code.claude.com/docs/en/memory) and [skills](https://code.claude.com/docs/en/skills) docs, read 2026-11-03. `tools/claude_os_sync.py` copies the rules and guards into `~/.claude` with `apply`, from the public [manifest.json](manifest.json); [CONTRIBUTING](CONTRIBUTING.md#releases) says when.
 
