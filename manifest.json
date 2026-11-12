@@ -17,6 +17,7 @@
     "rules/writing-and-gates.md": "rules/writing-and-gates.md",
     "skills/merging/SKILL.md": "skills/merging/SKILL.md",
     "skills/merging/orchestrating.md": "skills/merging/orchestrating.md",
+    "skills/merging/outside.md": "skills/merging/outside.md",
     "skills/merging/reviewing.md": "skills/merging/reviewing.md",
     "tools/bash_guard.py": "code-os/bash_guard.py",
     "tools/bash_guard_args.py": "code-os/bash_guard_args.py",
