@@ -139,7 +139,7 @@
     {
       "part": "Access",
       "ideal": "Members only via the org: no outside collaborator, invite or custom role. A public repo gates fork runs, takes private reports, blocks secrets, has Discussions",
-      "setup": "Org base permission read, two-factor on; invite to the org, not the repo; a public repo's four settings are one gh api call each (templates/open/README.md)"
+      "setup": "Org base permission read, two-factor on; invite to the org, not a repo; public repo settings: templates/open/README.md"
     },
     {
       "part": "Rules, branches and tags",
