@@ -1,6 +1,6 @@
 # Governance
 
-<Owner> owns the project. AI agents run its day-to-day work under [`AGENTS.md`](AGENTS.md); people hold the seats in [`MAINTAINERS.md`](MAINTAINERS.md).
+<Owner> owns the project. AI agents run its day-to-day work under `AGENTS.md`; people hold the seats in [`MAINTAINERS.md`](MAINTAINERS.md).
 
 | Decision | Who decides |
 |---|---|

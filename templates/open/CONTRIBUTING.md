@@ -43,7 +43,7 @@ cd <repo>
 
 | Your PR changes | What happens |
 |---|---|
-| Only paths on `ai_mergeable` in [`tools/merge_policy.json`](tools/merge_policy.json) | An AI agent squash-merges it once the checks and both reviews pass |
+| Only paths on `ai_mergeable` in `tools/merge_policy.json` | An AI agent squash-merges it once the checks and both reviews pass |
 | Any other path: dependencies, build config, CI, hooks, gates, these docs | The orchestrator rebuilds it as its own PR with you as `Co-authored-by`. It links the new PR from yours |
 
 Check your paths first: `python3 -I tools/merge_policy.py --base origin/main`. Agents never approve a PR. A fork's run waits for approval and gets no secrets.

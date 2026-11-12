@@ -16,6 +16,7 @@ flowchart LR
 | File | To | Set |
 |---|---|---|
 | `CONTRIBUTING.md`, `GOVERNANCE.md`, `MAINTAINERS.md`, `SECURITY.md` | the repo root | `<owner>/<repo>`, the run commands, the maintainer row |
+| A `LICENSE` file, such as MIT or Apache-2.0 | the repo root | the year and holder |
 | Git Crafter's [`CODE_OF_CONDUCT.md`](../../CODE_OF_CONDUCT.md), [`SUPPORT.md`](../../SUPPORT.md) | the repo root | the project name |
 | [`templates/agents/`](../agents/) | the repo root | as that folder says |
 | `.github/PULL_REQUEST_TEMPLATE.md`, `.github/ISSUE_TEMPLATE/`, `.github/DISCUSSION_TEMPLATE/`, `.github/CODEOWNERS`, `.github/dco.yml` | the same paths | the owner login in `CODEOWNERS` |
