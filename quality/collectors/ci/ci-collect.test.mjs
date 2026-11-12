@@ -403,8 +403,11 @@ describe("repo settings", () => {
     assert.match((await withBoard(board, {}))["projects.latest_card_ci_minutes"].could_not_check, /needs at least two columns/);
     const lost = (await withBoard([CARD("Done", T("12:00:00"), [99])]))["projects.latest_card_ci_minutes"];
     assert.match(lost.could_not_check, /#99, linked from the latest Done card, is not among the merged pull requests read/);
-    const ci = await collect({ root: ROOT, mode: "ci", params: FULL_PARAMS, gh: fakeGh({ board }), now: NOW, repo: REPO, allParams: { "github.json": BOARD.github } });
+    const ci = await collect({ root: ROOT, mode: "ci", params: FULL_PARAMS, gh: fakeGh({ board }), admin: null, now: NOW, repo: REPO, allParams: { "github.json": BOARD.github } });
     assert.match(ci["projects.latest_card_ci_minutes"].could_not_check, /needs the project scope/);
+    // With an admin client (ADMIN_READ_TOKEN or the App token), a CI run reads the board through it.
+    const viaAdmin = await collect({ root: ROOT, mode: "ci", params: FULL_PARAMS, gh: fakeGh({ board: null }), admin: fakeGh({ board }), now: NOW, repo: REPO, allParams: { "github.json": BOARD.github } });
+    assert.equal(viaAdmin["projects.latest_card_ci_minutes"].value, 11.5);
   });
 });
 
