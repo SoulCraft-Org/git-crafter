@@ -86,7 +86,6 @@ test("the public export leaves out data/ but data/quality/ less local.json, hist
       "config/acme.json": '{\n "org": "Acme"\n}',
       "config/accounts/a.json": "{}",
       "config/private-terms.txt": "Acme",
-      "config/manifest.json": '{ "repos": ["acme-private"] }',
     };
     for (const [rel, text] of Object.entries(files)) {
       mkdirSync(join(repo, rel, ".."), { recursive: true });

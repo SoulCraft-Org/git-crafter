@@ -5,7 +5,7 @@
 #
 # Left out: data/ but data/quality/ less local.json, history/ and plan-usage.json (this account's machine and plan data); tools/bash_guard_{cases,rules}.json ship with
 # the account after "sudo -u" replaced by "someone" (home paths there already read /Users/someone), the same in both so the guard's self-test still passes,
-# config/accounts/, config/private-terms.txt, config/manifest.json (the org's own repo list),
+# config/accounts/, config/private-terms.txt,
 # and each config/*.json that names an "org" (the org config, tools/org_base.mjs findOrgConfig).
 #
 # Usage:  bash tools/export_public.sh OUT      OUT must be missing or empty
@@ -31,7 +31,7 @@ private() {
     # Generated machine data of this Mac.
     data/quality/local.json | data/quality/history/* | data/quality/plan-usage.json) return 0 ;;
     data/quality/*) return 1 ;;
-    data/* | config/accounts/* | config/private-terms.txt | config/manifest.json) return 0 ;;
+    data/* | config/accounts/* | config/private-terms.txt) return 0 ;;
     config/*/*) return 1 ;;
     config/*.json) grep -Eq '^[[:space:]]*"org"[[:space:]]*:' "$1" ;;
     *) return 1 ;;

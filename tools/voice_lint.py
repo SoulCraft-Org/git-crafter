@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """voice_lint.py: the generic half of a prose voice check.
 
-Canonical source: Claude-OS/tools/voice_lint.py. Synced into each repo,
-where it is the one definition behind every call site:
+Canonical source: SoulCraft-Org/git-crafter tools/voice_lint.py. Each repo
+vendors a copy whose first lines name that path and the commit SHA. The
+copy is the one definition behind every call site:
 
   1. The agent surface, either a tool-use hook that fires on each edit
      or a slash command someone runs. These are not the same thing and

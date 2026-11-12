@@ -19,7 +19,7 @@ flowchart LR
 | One account's machine, keys tool, checkout or naming | its private overlay, from [config/account.example.json](config/account.example.json); never here | `claude_os_sync.py --self-test` |
 | Goal or process-map step | `goals.json`, `maps.json` | `tests/pages-docs.test.mjs` |
 | Files installed into `~/.claude` | `manifest.json` | `claude_os_sync.py --self-test` |
-| Which org repos take which files | the org's own manifest (`--manifest`), never `manifest.json` | `claude_os_sync.py --self-test` |
+| A Git Crafter file another repo needs | a vendored copy in that repo, its first lines naming the path and commit SHA | that repo's CI |
 | Collector | `quality/collectors/<tab>/`, helpers in `quality/collectors/lib/`, goals in `quality/targets/` | the `*.test.mjs` beside it |
 | Adopter starter | `templates/quality/`, `templates/process/`, `templates/ci/` | `tests/pages-build.test.mjs` |
 
