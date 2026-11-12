@@ -46,19 +46,20 @@
     "LICENSE",
     "NOTICE",
     "CODEOWNERS",
-    "AGENTS.md",
-    "CLAUDE.md",
-    "GOVERNANCE.md",
-    "MAINTAINERS.md",
-    "SECURITY.md",
-    "CONTRIBUTING.md",
+    "**/AGENTS.md",
+    "**/CLAUDE.md",
+    "**/GOVERNANCE.md",
+    "**/MAINTAINERS.md",
+    "**/SECURITY.md",
+    "**/CONTRIBUTING.md",
     "**/_worker.js",
     "**/_headers",
     "**/_redirects",
     "tests/**",
     "**/*.test.*",
     "**/conftest.py",
-    "**/*.svg"
+    "**/*.svg",
+    "**/.claude/**"
   ],
   "ai_mergeable": [
     "content/**/*.md",
@@ -113,6 +114,12 @@
       ],
       [
         "public/images/logo.svg"
+      ],
+      [
+        "docs/team/CLAUDE.md"
+      ],
+      [
+        "content/x/.claude/settings.json"
       ]
     ],
     "default_deny": [
