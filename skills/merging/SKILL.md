@@ -11,8 +11,8 @@ Canonical: Git Crafter `skills/merging/SKILL.md`, installed in
 
 ## Who merges
 
-The orchestrator that started a worker reviews its PR, fixes what is wrong,
-and merges when, at the head commit:
+The orchestrator that started a worker reviews its PR, fixes it, and
+merges when, at the head commit:
 
 | # | Condition |
 |---|---|
@@ -26,7 +26,7 @@ case, and a new guard rule needs a real incident.
 
 | Merge | Rule |
 |---|---|
-| Order | Post each verdict, then merge the passes in order. |
+| Order | Post each verdict, then merge passes in order. |
 | Checks | Wait once (`gh pr checks N --watch --interval 60`; the 10 s default spends the shared API allowance, #707), then merge, never asking the owner (2026-11-10). |
 | Pace | Merges a day stay under included Actions money left ÷ days to reset ÷ cost per merge, read each wave (#648). |
 | Waiting | A green PR with no verdict for 20 minutes is any orchestrator's (`pull_requests.green_waiting_minutes`; the owner, 2026-11-10). |
@@ -42,4 +42,5 @@ case, and a new guard rule needs a real incident.
 | When | Read next |
 |---|---|
 | Before any review | [Reviewing](reviewing.md) |
-| Orchestrating sessions, or delegating to a subagent or worker | [Orchestrating and delegating](orchestrating.md) |
+| Orchestrating or delegating | [Orchestrating](orchestrating.md) |
+| Outside PR | [Outside](outside.md) |
