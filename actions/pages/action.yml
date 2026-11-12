@@ -171,10 +171,10 @@ runs:
         API: ${{ runner.temp }}/code-os-pages/api.json
       run: node "$GITHUB_ACTION_PATH/../../tools/collect_org.mjs" --config "$CONFIG" --phase api --api "$API"
 
-    # Tags, as gh actions-lock writes them: the runner matches the lockfile by this text. A caller locks them in its own lockfile.
+    # Full SHAs: a caller whose Actions policy requires SHA pins refuses a tag at job setup, even on a skipped step.
     - name: Upload the collected half
       if: inputs.mode == 'collect'
-      uses: actions/upload-artifact@v7.0.2
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: ${{ inputs.artifact }}
         path: ${{ runner.temp }}/code-os-pages/
@@ -183,7 +183,7 @@ runs:
 
     - name: Download the collected half
       if: inputs.mode == 'render'
-      uses: actions/download-artifact@v8.0.2
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
       with:
         name: ${{ inputs.artifact }}
         path: ${{ runner.temp }}/code-os-pages
