@@ -1,6 +1,6 @@
 # Git Crafter
 
-Quality, speed and consumption for any repo built with Claude Code or OpenCode. Git Crafter is licensed under [Apache-2.0](LICENSE) and published by SoulCraft. It began as Code-OS by Colorado Startups ([NOTICE](NOTICE)).
+Templates for AI agents to run an open-source or open-weight repo with Claude Code or OpenCode. Git Crafter is licensed under [Apache-2.0](LICENSE) and published by SoulCraft. It began as Code-OS by Colorado Startups ([NOTICE](NOTICE)).
 
 ![Diagram of the two pages: scores by tab with a work queue, and process maps of steps](.github/assets/pages.svg)
 
@@ -59,14 +59,14 @@ Each map's steps: [pages/maps](pages/maps/README.md).
 | [merging](skills/merging/SKILL.md) | Reviewing and merging | Merge conditions and review depth |
 | [outside PRs](skills/merging/outside.md) | A pull request from outside the org | Fork safety, the path check, rebuild with credit |
 
-What loads when: the [memory](https://code.claude.com/docs/en/memory) and [skills](https://code.claude.com/docs/en/skills) docs, read 2026-11-03. `tools/claude_os_sync.py` copies the rules and guards into `~/.claude` with `apply`, from the public [manifest.json](manifest.json); [CONTRIBUTING](CONTRIBUTING.md#releases) says when. Formerly Claude-OS.
+What loads when: the [memory](https://code.claude.com/docs/en/memory) and [skills](https://code.claude.com/docs/en/skills) docs, read 2026-11-03. `tools/claude_os_sync.py` copies the rules and guards into `~/.claude` with `apply`, from the public [manifest.json](manifest.json); [CONTRIBUTING](CONTRIBUTING.md#releases) says when.
 
 ## Folder map
 
 | Folder | Holds |
 |---|---|
 | `actions/` | The `pages` action adopters pin |
-| `config/` | Git Crafter's own Quality config, with its collector in `config/quality/collectors/`. Also an org's example config and [account.example.json](config/account.example.json), which an account fills in a private overlay (`apply --overlay DIR`) |
+| `config/` | Git Crafter's own Quality config, its collector in `config/quality/collectors/`, an org's example config, and [account.example.json](config/account.example.json) for a private overlay (`apply --overlay DIR`) |
 | `data/` | Snapshots Git Crafter's pages read |
 | `pages/` | The Process and Metrics builder and the map library, `pages/maps/` |
 | `quality/` | The Quality engine and its collectors ([README](quality/README.md)) |
@@ -81,6 +81,6 @@ What loads when: the [memory](https://code.claude.com/docs/en/memory) and [skill
 | Need | Go to |
 |---|---|
 | Help, bugs and ideas | [SUPPORT.md](SUPPORT.md) |
-| Changes | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Changes, and template fixes from adopters | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Security problems | [SECURITY.md](SECURITY.md) |
-| Maintainer | Colorado Startups, the publisher |
+| Maintainer | SoulCraft, the publisher |
