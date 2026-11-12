@@ -1,0 +1,14 @@
+title: "Question: "
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: About running it locally, the code or how contributions work.
+    validations:
+      required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: What you tried
+      description: Commands and their output. Never paste a token or a key.

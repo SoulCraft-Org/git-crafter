@@ -1,0 +1,9 @@
+title: "Show and tell: "
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What you built or found
+      description: A screenshot, a link to your fork or a pull request.
+    validations:
+      required: true

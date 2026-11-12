@@ -1,0 +1,30 @@
+title: "Idea: "
+labels: ["idea"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One idea per discussion. A maintainer turns an accepted idea into an issue labeled `idea: accepted`.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would this make better, and for whom?
+      description: Say who it helps and what they do today.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: A sketch, a screenshot or a page link beats a long description.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you post
+      options:
+        - label: I searched Discussions and issues for this idea.
+          required: true
+        - label: It names no private person and holds no contact data.
+          required: true
