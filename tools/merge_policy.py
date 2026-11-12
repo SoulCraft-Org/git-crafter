@@ -6,11 +6,13 @@ ai_mergeable and none matches maintainer_only (skills/merging/outside.md). It
 answers the path question only, and never checks out or runs the PR's code.
 
   python3 -I tools/merge_policy.py PATH [PATH ...]
+  python3 -I tools/merge_policy.py --pr N --sha HEAD_SHA [--repo OWNER/NAME]
   python3 -I tools/merge_policy.py --base REF [--head REF]
   python3 -I tools/merge_policy.py --self-test [--policy FILE]
 
-Exit (rules/gates.md): 0 AI-mergeable; 1 not; 2 usage; 3 could not check,
-never read as mergeable. Python 3.9 or later, standard library only.
+Exit (rules/gates.md): 0 AI-mergeable; 1 not, or the PR's head is not --sha
+or its base not the default branch; 2 usage; 3 could not check, never read as
+mergeable. Python 3.9 or later, standard library only.
 """
 
 import argparse
@@ -25,6 +27,8 @@ sys.dont_write_bytecode = True
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 POLICY = os.path.join(HERE, "merge_policy.json")
+DEFAULT_REPO = "{owner}/{repo}"  # gh api fills both from the checkout (gh help api)
+GITHUB_FILES_CAP = 3000  # REST docs, "List pull requests files"
 GRANT_ALL = {"**", "*", "**/*"}
 EXIT_MERGEABLE, EXIT_WAITS, EXIT_USAGE, EXIT_INFRA = 0, 1, 2, 3
 
@@ -134,6 +138,35 @@ def run(cmd):
     return proc.stdout
 
 
+def pr_facts(number, repo, gh=run):
+    """(head SHA, base, default branch, every path, both names of a rename), whole or could not check."""
+    try:
+        pull = json.loads(gh(["gh", "api", "repos/%s/pulls/%d" % (repo, number)]))
+        pages = json.loads(gh(["gh", "api", "--paginate", "--slurp", "repos/%s/pulls/%d/files" % (repo, number)]))
+        changed, head = int(pull["changed_files"]), pull["head"]["sha"]
+        base, default = pull["base"]["ref"], pull["base"]["repo"]["default_branch"]
+        entries = [f for page in pages for f in page]
+        paths = {f["filename"] for f in entries} | {f["previous_filename"] for f in entries if f.get("previous_filename")}
+    except (KeyError, TypeError, ValueError) as exc:
+        raise InfraError("gh api returned an unexpected answer (%s)" % exc)
+    if changed > GITHUB_FILES_CAP:
+        raise InfraError("the PR changes %d files; GitHub lists at most %d" % (changed, GITHUB_FILES_CAP))
+    if len(entries) != changed:
+        raise InfraError("read %d files, but the PR says it changes %d" % (len(entries), changed))
+    return head, base, default, sorted(paths)
+
+
+def check_pr(policy, number, repo, sha, gh=run):
+    """(exit code, lines to print, paths read, paths blocked) for one PR at one head SHA."""
+    head, base, default, paths = pr_facts(number, repo, gh)
+    if head != sha:
+        return EXIT_WAITS, ["not AI-mergeable: head is %s, not --sha %s" % (head, sha)], len(paths), 0
+    if base != default:
+        return EXIT_WAITS, ["not AI-mergeable: base is %s, not %s" % (base, default)], len(paths), 0
+    code, blocked = verdict(policy, paths)
+    return code, ["not AI-mergeable: %r: %s" % b for b in blocked] + ["checked head %s" % head], len(paths), len(blocked)
+
+
 class _Parser(argparse.ArgumentParser):
     """Usage errors exit 2, the contract's code."""
 
@@ -148,18 +181,27 @@ def parse(argv):
     """The checked arguments."""
     p = _Parser(description="AI merge policy for outside pull requests")
     p.add_argument("paths", nargs="*", help="changed paths")
+    p.add_argument("--pr", type=int, help="read this PR through gh api; needs --sha")
+    p.add_argument("--sha", help="the head SHA the merge will name in --match-head-commit")
+    p.add_argument("--repo", default=DEFAULT_REPO, help="OWNER/NAME for --pr (default: the checkout's repo)")
     p.add_argument("--base", help="git ref: paths changed since its merge base with --head")
     p.add_argument("--head", default="HEAD", help="git ref for --base (default HEAD)")
     p.add_argument("--policy", default=POLICY, help="policy file (default merge_policy.json beside this script)")
     p.add_argument("--self-test", action="store_true", help="run the policy's samples and the bad fixtures")
     args = p.parse_args(argv)
-    if args.paths and args.base:
-        p.error("give paths or --base, not both")
+    if sum(bool(x) for x in (args.paths, args.pr, args.base)) > 1:
+        p.error("give paths, --pr or --base, not more than one")
+    if bool(args.pr) != bool(args.sha):
+        p.error("--pr and --sha go together: the head SHA the merge will name")
     return args
 
 
 def check(args, policy):
     """(exit code, paths read, paths blocked), printing each blocked path."""
+    if args.pr:
+        code, lines, n, nblocked = check_pr(policy, args.pr, args.repo, args.sha)
+        print("\n".join(lines))
+        return code, n, nblocked
     paths = args.paths
     if args.base:
         out = run(["git", "diff", "--name-only", "--no-renames", "%s...%s" % (args.base, args.head)])
