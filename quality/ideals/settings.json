@@ -115,6 +115,16 @@
       "title": "OpenSSF Scorecard: checks",
       "url": "https://github.com/ossf/scorecard/blob/main/docs/checks.md",
       "date": "2026-10-28"
+    },
+    {
+      "title": "GitHub Docs: Approving workflow runs from forks",
+      "url": "https://docs.github.com/en/actions/how-tos/manage-workflow-runs/approve-runs-from-forks",
+      "date": "2026-11-12"
+    },
+    {
+      "title": "GitHub Docs: Configuring private vulnerability reporting for a repository",
+      "url": "https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/configure-vulnerability-reporting/configuring-private-vulnerability-reporting-for-a-repository",
+      "date": "2026-11-12"
     }
   ],
   "quality": "Branch, tags and deploys are protected with no bypass, secret files cannot be pushed, access stays inside the organization, and every secret is used.",
@@ -160,6 +170,11 @@
       "part": "Apps and autolinks",
       "ideal": "Only apps the organization uses, each with the permissions it needs; autolinks only for a tracker outside GitHub",
       "setup": "Review installed apps on the organization's GitHub Apps page; add one autolink per outside ticket prefix"
+    },
+    {
+      "part": "Open to outside contributors",
+      "ideal": "A public repo approves every outside contributor's run, takes private vulnerability reports, blocks pushed secrets and opens Discussions for ideas before issues",
+      "setup": "One gh api call each, as templates/open/README.md lists"
     }
   ]
 }

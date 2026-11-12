@@ -24,6 +24,8 @@ export function reads({ gh, repo, root }) {
     invitations: once(() => gh.restAll(`repos/${repo}/invitations?per_page=100`)),
     secretNames: once(() => secretNames(R, gh, repo)),
     cacheLimit: once(() => orNull(() => gh.rest(`repos/${repo}/actions/cache/storage-limit`))),
+    forkApproval: once(() => orNull(() => gh.rest(`repos/${repo}/actions/permissions/fork-pr-contributor-approval`))),
+    vulnReporting: once(() => orNull(() => gh.rest(`repos/${repo}/private-vulnerability-reporting`))),
     workflows: once(async () => readWorkflows(root) ?? []),
   };
   return R;

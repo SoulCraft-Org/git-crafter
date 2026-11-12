@@ -58,6 +58,7 @@ test("a repo at its ideal reads 0 everywhere but its one unread secret", async (
     "settings.unused_secrets": 1,
     "settings.person_waits": 0,
     "settings.metered_on": 0,
+    "settings.open_repo_missing": "a private repo takes no outside contributions, so no open-repo setting applies",
     "settings.admin_read_age_hours": "this run is the refresh; the next CI run reads its age",
   });
   assert.equal(Object.keys(rows(got["settings.protections_missing"])).length, 4);
@@ -153,6 +154,24 @@ test("metered: a raised cache limit and a Copilot review rule count; no cache se
   assert.deepEqual(Object.keys(rows(noSetting[id])), ["rulesets that ask for a Copilot review"]);
 });
 
+test("open repo: on a public repo each missing setting counts once; a private one is not measured", async () => {
+  const id = "settings.open_repo_missing";
+  const open = (repo, fork, vuln) => ({
+    [R("")]: { ...REST[R("")], private: false, has_discussions: true, security_and_analysis: { secret_scanning_push_protection: { status: "enabled" } }, ...repo },
+    [R("/actions/permissions/fork-pr-contributor-approval")]: { approval_policy: "all_external_contributors", ...fork },
+    [R("/private-vulnerability-reporting")]: { enabled: true, ...vuln },
+  });
+  assert.equal((await run(open()))[id].value, 0);
+  const weak = (await run(open({ has_discussions: false, security_and_analysis: { secret_scanning_push_protection: { status: "disabled" } } }, { approval_policy: "first_time_contributors" }, { enabled: false })))[id];
+  assert.equal(weak.value, 4);
+  assert.equal(Object.values(rows(weak)).filter((v) => v === 0).length, 4);
+  const hidden = await run({ [R("")]: { ...REST[R("")], private: false } });
+  assert.equal(hidden[id].could_not_check, `gh api repos answered without security_and_analysis: ${NEEDS["github-admin"]}`);
+  const noSetting = { ...open() };
+  delete noSetting[R("/actions/permissions/fork-pr-contributor-approval")];
+  assert.equal((await run(noSetting))[id].value, 1, "an unread fork policy counts as missing, never as set");
+});
+
 test("reaches: the default branch, every ref, a pattern and an exclusion", () => {
   const set = (include, exclude = []) => ({ conditions: { ref_name: { include, exclude } } });
   assert.ok(reaches(set(["~DEFAULT_BRANCH"]), "refs/heads/main", "refs/heads/main"));
@@ -180,7 +199,8 @@ test("admin token in CI: each admin metric reads as a local run does; a refused 
   const spy = fakeGh();
   const workflow = { rest: async (r) => (calls.push(r), spy.rest(r)), restAll: async (r) => (calls.push(r), spy.restAll(r)) };
   const ci = await collect({ root: path.join(FIXTURES, "repo"), mode: "ci", params: { expected: EXPECTED }, gh: workflow, admin: fakeGh(), repo: REPO });
-  for (const id of METRIC_IDS.filter((m) => m !== AGE)) assert.equal(ci[id].value, local[id], id);
+  const fromCi = values(ci);
+  for (const id of METRIC_IDS.filter((m) => m !== AGE)) assert.equal(fromCi[id], local[id], id);
   assert.equal(calls.length, 0, "every Settings metric needs github-admin, so the workflow token reads none");
   const refused = { __error: { message: "Must have admin rights to Repository.", status: 403 } };
   const denied = await run({}, { mode: "ci", admin: fakeGh({ [R("/collaborators?affiliation=outside&per_page=100")]: refused }) });
