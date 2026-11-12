@@ -261,7 +261,7 @@ async function main() {
   const mode = args.local ? "local" : "ci";
   const config = await orExit(() => loadConfig({ file: args.config }));
   const loaded = await orExit(() => {
-    repoEnv(config);
+    repoEnv(config, process.env, { mode });
     if (args.from) return copyRun(args, config);
     return loadDefs({ templateDir: join(QUALITY, "targets"), repoDir: config.targets, tabs: config.tabs });
   });
@@ -303,17 +303,36 @@ async function main() {
   if (gateFailures(loaded.gated, metrics)) process.exitCode = 3;
 }
 
-// A workflow command's message, escaped as GitHub's toolkit escapes one, so a
-// label holding %, CR or LF cannot end it early or start another command.
+// "owner/name" from a GitHub remote URL (https, ssh or scp form), else null.
+export function remoteRepo(url) {
+  const m = /github\.com[:/]([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/.exec(String(url ?? "").trim());
+  return m ? `${m[1]}/${m[2]}` : null;
+}
+
+// The repo `git remote get-url origin` names in root, else null.
+export function originRepo(root) {
+  try {
+    return remoteRepo(execFileSync("git", ["remote", "get-url", "origin"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }));
+  } catch {
+    return null;
+  }
+}
+
 // The config's repo reaches every collector as GITHUB_REPOSITORY, the repo
 // each reads when params.repo is unset; Actions sets it, a --local run on a
 // local machine does not (#230). A repo the environment already names wins.
-export function repoEnv(config, env = process.env) {
-  if (config?.repo && !env.GITHUB_REPOSITORY) env.GITHUB_REPOSITORY = config.repo;
+// A --local run with neither falls back to the origin remote, since the
+// config names no repo since #871.
+export function repoEnv(config, env = process.env, { mode = "ci", origin = () => originRepo(config?.root) } = {}) {
+  if (!env.GITHUB_REPOSITORY) {
+    const repo = config?.repo ?? (mode === "local" ? origin() : null);
+    if (repo) env.GITHUB_REPOSITORY = repo;
+  }
   return env.GITHUB_REPOSITORY ?? null;
 }
 
-// Escapes text for a GitHub Actions ::error or ::warning annotation (%, CR and LF).
+// A workflow command's message, escaped as GitHub's toolkit escapes one, so a
+// label holding %, CR or LF cannot end it early or start another command.
 export function annotation(text) {
   return String(text).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
 }
