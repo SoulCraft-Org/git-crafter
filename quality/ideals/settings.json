@@ -138,8 +138,8 @@
     },
     {
       "part": "Access",
-      "ideal": "Members only, through the organization: no outside collaborator, no open invitation, no custom role until a team needs one",
-      "setup": "Organization base permission read, two-factor required; invite people to the organization, not the repo"
+      "ideal": "Members only, through the organization: no outside collaborator, no open invitation, no custom role until a team needs one. A public repo approves every outside contributor's run, takes private vulnerability reports, blocks pushed secrets and opens Discussions",
+      "setup": "Organization base permission read, two-factor required; invite people to the organization, not the repo; a public repo's four settings are one gh api call each (templates/open/README.md)"
     },
     {
       "part": "Rules, branches and tags",
@@ -170,11 +170,6 @@
       "part": "Apps and autolinks",
       "ideal": "Only apps the organization uses, each with the permissions it needs; autolinks only for a tracker outside GitHub",
       "setup": "Review installed apps on the organization's GitHub Apps page; add one autolink per outside ticket prefix"
-    },
-    {
-      "part": "Open to outside contributors",
-      "ideal": "A public repo approves every outside contributor's run, takes private vulnerability reports, blocks pushed secrets and opens Discussions for ideas before issues",
-      "setup": "One gh api call each, as templates/open/README.md lists"
     }
   ]
 }
