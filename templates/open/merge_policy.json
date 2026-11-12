@@ -1,0 +1,154 @@
+{
+  "_README": [
+    "Starter AI merge policy for tools/merge_policy.py (skills/merging/outside.md).",
+    "Copy it beside your copy of merge_policy.py, then set ai_mergeable to the",
+    "paths an outside PR may change with no maintainer. The starter grants content",
+    "by extension only (Markdown, JSON, YAML, images), never code: a test, a script",
+    "or a page with code runs in CI or at build time.",
+    "Default deny: a path on neither list is not AI-mergeable. maintainer_only wins",
+    "over ai_mergeable. Every path that runs at build or install time, defines a",
+    "gate, or states the rules belongs in maintainer_only.",
+    "samples: each group is a list of PR path lists; --self-test checks them, and",
+    "a policy with an empty group fails it."
+  ],
+  "maintainer_only": [
+    ".github/**",
+    ".githooks/**",
+    ".husky/**",
+    ".claude/**",
+    ".devcontainer/**",
+    "tools/**",
+    "scripts/**",
+    "**/migrations/**",
+    "**/package.json",
+    "**/package-lock.json",
+    "**/npm-shrinkwrap.json",
+    "**/pnpm-lock.yaml",
+    "**/yarn.lock",
+    "**/pyproject.toml",
+    "**/uv.lock",
+    "**/requirements*.txt",
+    "**/Pipfile*",
+    "**/Dockerfile*",
+    "**/*.config.js",
+    "**/*.config.cjs",
+    "**/*.config.mjs",
+    "**/*.config.ts",
+    "**/wrangler.toml",
+    "**/wrangler.json",
+    "**/wrangler.jsonc",
+    "**/.npmrc",
+    "**/.nvmrc",
+    "**/.gitignore",
+    "**/.gitattributes",
+    "**/.env*",
+    "merge_policy.json",
+    "LICENSE",
+    "NOTICE",
+    "CODEOWNERS",
+    "**/AGENTS.md",
+    "**/CLAUDE.md",
+    "GOVERNANCE.md",
+    "MAINTAINERS.md",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+    "**/_worker.js",
+    "**/_headers",
+    "**/_redirects",
+    "tests/**",
+    "**/*.test.*",
+    "**/conftest.py",
+    "**/*.svg",
+    "**/.claude/**"
+  ],
+  "ai_mergeable": [
+    "content/**/*.md",
+    "content/**/*.json",
+    "content/**/*.yaml",
+    "docs/**/*.md",
+    "data/**/*.json",
+    "data/**/*.yaml",
+    "src/content/**/*.md",
+    "public/images/**/*.webp",
+    "public/images/**/*.png",
+    "public/images/**/*.jpg"
+  ],
+  "samples": {
+    "ai_mergeable": [
+      [
+        "content/events/2026-12.md",
+        "docs/guide.md"
+      ],
+      [
+        "data/regions/denver.json"
+      ],
+      [
+        "public/images/team/a.webp"
+      ]
+    ],
+    "maintainer_only": [
+      [
+        ".github/workflows/ci.yml"
+      ],
+      [
+        "src/package.json"
+      ],
+      [
+        "src/app/vite.config.ts"
+      ],
+      [
+        "docs/guide.md",
+        "package-lock.json"
+      ],
+      [
+        "CLAUDE.md"
+      ],
+      [
+        "tests/pages.test.mjs"
+      ],
+      [
+        "public/_worker.js"
+      ],
+      [
+        "src/content/x.test.md"
+      ],
+      [
+        "public/images/logo.svg"
+      ],
+      [
+        "docs/team/CLAUDE.md"
+      ],
+      [
+        "content/x/.claude/settings.json"
+      ]
+    ],
+    "default_deny": [
+      [
+        "README.md"
+      ],
+      [
+        "vendor/lib.js"
+      ],
+      [
+        "src/pages/about.astro"
+      ],
+      [
+        "docs/run.sh"
+      ]
+    ],
+    "refused": [
+      [
+        "src/../.github/workflows/ci.yml"
+      ],
+      [
+        "/etc/hosts"
+      ],
+      [
+        "src//pages/x.md"
+      ],
+      [
+        "src\\pages\\x.md"
+      ]
+    ]
+  }
+}
