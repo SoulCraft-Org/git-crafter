@@ -426,7 +426,7 @@ jobs:
           { echo "### Page sizes"; echo; sed 's/^wrote /- /' build.log; } >> "$GITHUB_STEP_SUMMARY"
 
       # The git-crafter-bot App's installation token, read-only and one hour long, minted on main only: it reads
-      # the needs: github-admin metrics (settings, alerts) and the needs: project-scope ones (the board).
+      # the needs: github-admin metrics (settings, alerts, secret names, never values) and the needs: project-scope ones (the board).
       # No App key skips it.
       - id: admin-app
         if: github.ref == 'refs/heads/main' && env.BOARD_APP_KEY_SET == 'true'
@@ -437,6 +437,8 @@ jobs:
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.event.repository.name }}
           permission-administration: read
+          permission-code-quality: read
+          permission-secrets: read
           permission-secret-scanning-alerts: read
           permission-security-events: read
           permission-vulnerability-alerts: read
