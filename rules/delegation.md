@@ -33,6 +33,7 @@ wholesale, or turn on GitHub auto-merge.
 |---|---|
 | A worker | stops at an open PR; only the orchestrator reviews and merges, after loading the `merging` skill. |
 | A subagent brief | says: "You are a subagent: never call update_plan or wrap_up." |
+| An outside pull request | merges only as the `merging` skill's [outside.md](../skills/merging/outside.md) says; agents never approve one. |
 
 ## Owner's queue
 

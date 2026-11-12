@@ -43,3 +43,4 @@ case, and a new guard rule needs a real incident.
 |---|---|
 | Before any review | [Reviewing](reviewing.md) |
 | Orchestrating sessions, or delegating to a subagent or worker | [Orchestrating and delegating](orchestrating.md) |
+| A pull request from outside the org | [Outside pull requests](outside.md) |
