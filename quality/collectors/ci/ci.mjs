@@ -54,7 +54,7 @@ import { execFile } from "node:child_process";
 import { readFileSync } from "node:fs";
 
 import { ConfigError, GhError, ghClient, projectSettings, readProject, refusingGh, repoOf } from "../github/github.mjs";
-import { gated } from "../github/github-core.mjs";
+import { adminGh, gated } from "../github/github-core.mjs";
 import { once } from "../github/github-loaders.mjs";
 import { runsOnPush } from "./ci-workflows.mjs";
 import { TARGETS_FILE, RUNS_PER_WORKFLOW, LAST_RUNS, LAST_PRS, QUEUE_SAMPLE, LOG_SAMPLE, LAST, round1, pct, skip, measured, ms, completed, newest, groupBy, mapLimit } from "./ci-core.mjs";
@@ -335,7 +335,7 @@ export const METRIC_IDS = Object.keys(METRICS);
  * gh CLI, the clock, and params.repo or GITHUB_REPOSITORY. No metric reads the
  * clock: each counts the last N events or a state.
  */
-export async function collect({ root = process.cwd(), mode = "local", params = OWN_PARAMS, targets = OWN_TARGETS, gh = ciClient(), now = Date.now(), repo, allParams = {}, selfRun = process.env.GITHUB_RUN_ID ?? null } = {}) {
+export async function collect({ root = process.cwd(), mode = "local", params = OWN_PARAMS, targets = OWN_TARGETS, gh = ciClient(), admin = adminGh(), now = Date.now(), repo, allParams = {}, selfRun = process.env.GITHUB_RUN_ID ?? null } = {}) {
   // Only the metrics the engine keeps: a dropped one is never read.
   const active = Object.entries(METRICS).filter(([id]) => targets.some((t) => t.id === id));
   const slug = repoOf(repo, params);
@@ -347,7 +347,9 @@ export async function collect({ root = process.cwd(), mode = "local", params = O
     return Object.fromEntries(active.map(([id]) => [id, { could_not_check: err.message, source: TARGETS_FILE }]));
   }
   if (!slug) gh = refusingGh(`no repo to read: params.repo in ${TARGETS_FILE} is not owner/name, and GITHUB_REPOSITORY is unset`);
-  const ctx = { root, mode, gh, repo: slug, now: Number(now), cfg, selfRun };
+  // A CI run reads the board with the admin client (ADMIN_READ_TOKEN or the App token), as github.mjs does.
+  const LA = admin && slug ? loaders({ gh: admin, repo: slug, cfg }) : null;
+  const ctx = { root, mode, gh, repo: slug, now: Number(now), cfg, selfRun, LA };
   const L = loaders({ gh, repo: slug, cfg });
   const entries = await Promise.all(
     active.map(async ([id, metric]) => {

@@ -1,5 +1,6 @@
 // The CI collector's Consumption metrics that price one event's own runs from their REST jobs: the latest merge (Pull requests tab), fix (Issues), Done card (Projects), security scans (Security) and push to the default branch (Actions).
 import { projectSettings } from "../github/github.mjs";
+import { clientFor } from "../github/github-core.mjs";
 import { LAST, LAST_PRS, QUEUE_SAMPLE, TARGETS_FILE, completed, groupBy, mapLimit, measured, ms, newest, round1, round3, skip } from "./ci-core.mjs";
 import { latestPriced, pricedCard, priceRuns } from "./ci-runs.mjs";
 
@@ -75,11 +76,12 @@ export const SPEND_METRICS = {
     source: "latest: the board named by github.json's params.project_title (gh api graphql, projectsV2): of the five cards most recently moved to the done column that link merged pull requests, the newest whose runs can be priced; their runs (gh api actions/workflows/{id}/runs) and REST jobs' billed runner minutes (one call per run at most, each read once), summed and divided by those pull requests",
     async run(L, ctx) {
       const { mode, cfg } = ctx;
-      if (mode === "ci") return skip("needs the project scope: gh auth refresh -s project; refreshed by a --local collect run");
+      const reader = clientFor({ mode, needs: "project-scope", gh: L, admin: ctx.LA });
+      if (reader.skip) return skip(reader.skip);
       const { start, runs } = await L.covered();
       const board = projectSettings(cfg.boardParams, ctx.repo);
       if (board.columns.length < 2) return skip("params.project_columns in targets/github.json needs at least two columns: the last is done");
-      const items = await L.board();
+      const items = await reader.gh.board();
       if (!items) return skip(`no project named ${board.projectTitle} yet; set params.project_title in targets/github.json`);
       const done = board.columns.at(-1);
       const cards = items.filter((i) => i.status === done && i.statusAt && i.pulls.some((p) => p.merged && p.number)).sort((a, b) => ms(b.statusAt) - ms(a.statusAt)).slice(0, CARDS_TRIED);
