@@ -2,7 +2,7 @@
  {
   "id": "credits.idle_replaceable",
   "params": {
-   "comment": "Git Crafter draws on six allowances: GitHub Actions' included $300 a month, a pool every org repo shares, and the Claude plan these sessions run on (#195); Modal's monthly credit, Hugging Face's ZeroGPU minutes, Groq's and OpenRouter's free requests a day (#836). Limits come from systems.json; each reader runs in a --local collect, and a provider's reads its key from that run's environment. CI reads Hugging Face and OpenRouter too, with the HF_TOKEN and OPENROUTER_API_KEY repo secrets pages.yml passes on main.",
+   "comment": "Git Crafter draws on six allowances: GitHub Actions' included minutes, a pool every org repo shares, and the Claude plan these sessions run on (#195); Modal's monthly credit, Hugging Face's ZeroGPU minutes, Groq's and OpenRouter's free requests a day (#836). Limits come from systems.json. The credits tab is off in this public repo (config/quality.json): an adopter's private overlay turns it on, adds a github_billing reader for its own org, and passes its provider keys there, never here.",
    "systems_file": "systems.json",
    "allowances": [
     {
@@ -13,10 +13,6 @@
      "resets": "the 1st of each month",
      "status_override": {
       "org_status": "use"
-     },
-     "reader": {
-      "github_billing": "Colorado-Startups",
-      "product": "Actions"
      },
      "could_take_over": "every org repo's CI on standard runners"
     },
