@@ -1,6 +1,6 @@
 # Git Crafter
 
-Quality, speed and consumption for any repo built with Claude Code or OpenCode. Git Crafter is licensed under [Apache-2.0](LICENSE) and published by SoulCraft. It began as Code-OS by Colorado Startups ([NOTICE](NOTICE)).
+Templates that let AI agents run an open-source or open-weight repo: Quality, Speed and Consumption pages, plus process maps of every step. Built for repos run with Claude Code or OpenCode. Git Crafter is licensed under [Apache-2.0](LICENSE) and published by SoulCraft. It began as Code-OS by Colorado Startups ([NOTICE](NOTICE)).
 
 ![Diagram of the two pages: scores by tab with a work queue, and process maps of steps](.github/assets/pages.svg)
 
@@ -23,6 +23,8 @@ Both pages are public.
 | 1 | `<repo>/.github/dependabot.yml`, which bumps the Git Crafter pin | [templates/ci/dependabot.yml](templates/ci/dependabot.yml) |
 | 2 | A ruleset on `main` requiring `ci / ci-ok` | [templates/ci](templates/ci/README.md) |
 | 3 | Settings, Pages: source "GitHub Actions" | [templates/ci](templates/ci/README.md) |
+
+Improve a template in your repo? Open a pull request here, so every adopter gets it at its next pin bump.
 
 ## The 21 categories
 
