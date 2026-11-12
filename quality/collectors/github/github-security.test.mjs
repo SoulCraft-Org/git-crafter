@@ -429,6 +429,8 @@ describe("Security and quality: Actions hardening, supply chain and Claude Code"
     const admin = {};
     assert.equal(clientFor({ mode: "ci", needs: "github-admin", gh, admin }).gh, admin);
     assert.equal(clientFor({ mode: "ci", needs: "github-admin", gh, admin: null }).skip, "needs an admin token; refreshed by a --local collect run");
+    assert.equal(clientFor({ mode: "ci", needs: "project-scope", gh, admin }).gh, admin, "an App token with projects read reads the board in CI");
+    assert.equal(clientFor({ mode: "ci", needs: "project-scope", gh, admin: null }).skip, "needs the project scope: gh auth refresh -s project; refreshed by a --local collect run");
     assert.equal(clientFor({ mode: "ci", needs: "none", gh, admin }).gh, gh);
     assert.equal(clientFor({ mode: "local", needs: "github-admin", gh, admin }).gh, gh, "a local run reads with the session's own login");
   });

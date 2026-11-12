@@ -602,7 +602,9 @@ test("the pages action's admin-read-token is optional and reaches the Quality co
   const wf = readFileSync(join(ROOT, ".github", "workflows", "pages.yml"), "utf8");
   const passed = [...wf.matchAll(/secrets\.ADMIN_READ_TOKEN/g)];
   assert.equal(passed.length, 1, "pages.yml names the secret once");
-  assert.match(wf, /admin-read-token: \$\{\{ github\.ref == 'refs\/heads\/main' && secrets\.ADMIN_READ_TOKEN \|\| '' \}\}/, "a branch's code never runs with it");
+  assert.ok(wf.includes("admin-read-token: ${{ github.ref == 'refs/heads/main' && (secrets.ADMIN_READ_TOKEN || steps.admin-app.outputs.token) || '' }}"), "a branch's code never runs with it");
+  assert.match(wf, /- id: admin-app\n {8}if: github\.ref == 'refs\/heads\/main' && env\.BOARD_APP_KEY_SET == 'true'\n/, "the App token is minted on main only");
+  assert.doesNotMatch(wf.slice(wf.indexOf("- id: admin-app"), wf.indexOf("- name:", wf.indexOf("- id: admin-app"))), /: write$/m, "the App token reads only");
 });
 
 test("the pages action's Credits keys are optional and reach the Quality collect step's env alone; pages.yml passes them on main only", () => {
