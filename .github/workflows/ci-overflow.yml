@@ -7,13 +7,13 @@ name: ci-overflow
 #   jobs:
 #     runner:
 #       if: vars.CI_OVERFLOW_RUNNER != ''
-#       uses: <owner>/code-os/.github/workflows/ci-overflow.yml@<full sha> # v1
+#       uses: SoulCraft-Org/git-crafter/.github/workflows/ci-overflow.yml@<full sha> # v4.0.0
 #       permissions:
 #         actions: read
 #     ci:
 #       needs: runner
 #       if: ${{ !cancelled() }}
-#       uses: <owner>/code-os/.github/workflows/ci-standard.yml@<full sha> # v1
+#       uses: SoulCraft-Org/git-crafter/.github/workflows/ci-standard.yml@<full sha> # v4.0.0
 #       with:
 #         runner: ${{ needs.runner.outputs.label }}
 #

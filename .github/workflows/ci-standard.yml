@@ -5,7 +5,7 @@ name: ci-standard
 #
 #   jobs:
 #     ci:
-#       uses: <owner>/code-os/.github/workflows/ci-standard.yml@<full sha> # v1
+#       uses: SoulCraft-Org/git-crafter/.github/workflows/ci-standard.yml@<full sha> # v4.0.0
 #       with:
 #         paths: |
 #           src/**
