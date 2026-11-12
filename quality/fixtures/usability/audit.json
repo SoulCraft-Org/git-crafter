@@ -1,0 +1,188 @@
+{
+  "read_at": "2026-11-02T20:00:00.000Z",
+  "pages": {
+    "/@1280": {
+      "bytes": {
+        "image": 0,
+        "font": 0,
+        "total": 0
+      },
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "targets": [
+            "header",
+            ".promo"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "targets": [
+            ".x"
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "targets": [
+            "a.icon"
+          ]
+        }
+      ],
+      "facts": {
+        "rootPx": 16,
+        "fontSizes": {},
+        "colors": {},
+        "hasMain": true,
+        "mainText": "Welcome\nFounders build companies in America. Investors fund them.\nJoin",
+        "wordsBeforeAction": 12,
+        "firstAction": "a \"Join\""
+      }
+    },
+    "/@375": {
+      "bytes": {
+        "image": 0,
+        "font": 0,
+        "total": 0
+      },
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "targets": [
+            "header"
+          ]
+        },
+        {
+          "id": "target-size",
+          "impact": "serious",
+          "targets": [
+            "a.tiny",
+            "button.x",
+            "a.tiny"
+          ]
+        }
+      ],
+      "facts": {
+        "rootPx": 16,
+        "fontSizes": {},
+        "colors": {},
+        "hasMain": true,
+        "mainText": "",
+        "wordsBeforeAction": 12,
+        "firstAction": "a \"Join\""
+      }
+    },
+    "/places/@1280": {
+      "bytes": {
+        "image": 0,
+        "font": 0,
+        "total": 0
+      },
+      "violations": [],
+      "facts": {
+        "rootPx": 16,
+        "fontSizes": {},
+        "colors": {},
+        "hasMain": true,
+        "mainText": "Regions\nWe see the hall and the fire and the gold and the light and the stone and the sky and the road and the town and the folk who come here.",
+        "wordsBeforeAction": 31,
+        "firstAction": "a \"Go\""
+      }
+    },
+    "/people/@1280": {
+      "bytes": {
+        "image": 0,
+        "font": 0,
+        "total": 0
+      },
+      "violations": [
+        {
+          "id": "image-alt",
+          "impact": "critical",
+          "targets": [
+            "img.a"
+          ]
+        }
+      ],
+      "facts": {
+        "rootPx": 16,
+        "fontSizes": {},
+        "colors": {},
+        "hasMain": true,
+        "mainText": "Team\nThe keepers\nNo prose here",
+        "wordsBeforeAction": 140,
+        "firstAction": null
+      }
+    },
+    "/people/@375": {
+      "bytes": {
+        "image": 0,
+        "font": 0,
+        "total": 0
+      },
+      "violations": [
+        {
+          "id": "target-size",
+          "impact": "serious",
+          "targets": [
+            "a.tiny"
+          ]
+        }
+      ],
+      "facts": {
+        "rootPx": 16,
+        "fontSizes": {},
+        "colors": {},
+        "hasMain": true,
+        "mainText": "",
+        "wordsBeforeAction": 140,
+        "firstAction": null
+      }
+    }
+  },
+  "forms": {
+    "/join/apply/": {
+      "fields": [
+        {
+          "field": "name",
+          "labeled": true
+        },
+        {
+          "field": "email",
+          "labeled": false
+        }
+      ],
+      "bytes": {
+        "total": 2048000
+      }
+    },
+    "/rankings/nominate/": {
+      "fields": [
+        {
+          "field": "company",
+          "labeled": true
+        }
+      ],
+      "bytes": {
+        "total": 512000
+      }
+    },
+    "/directory/suggest/": {
+      "error": "HTTP 503"
+    },
+    "/newsletter/": {
+      "fields": [
+        {
+          "field": "email",
+          "labeled": false
+        }
+      ],
+      "bytes": {
+        "total": 1843200
+      }
+    }
+  }
+}

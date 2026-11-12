@@ -1,0 +1,32 @@
+{
+  "issues": [
+    {
+      "file": "scripts/orphan.mjs",
+      "files": [{ "name": "scripts/orphan.mjs" }],
+      "exports": [],
+      "types": [],
+      "dependencies": [],
+      "devDependencies": []
+    },
+    {
+      "file": "site/src/lib/math.ts",
+      "files": [],
+      "exports": [{ "name": "double", "line": 9, "col": 14 }],
+      "types": [{ "name": "Grade", "line": 1, "col": 1 }],
+      "dependencies": [],
+      "devDependencies": []
+    },
+    {
+      "file": "art/tools/outside.mjs",
+      "files": [{ "name": "art/tools/outside.mjs" }],
+      "exports": [{ "name": "unusedOutsideTheAreas", "line": 1, "col": 1 }]
+    },
+    {
+      "file": "package.json",
+      "files": [],
+      "exports": [],
+      "dependencies": [],
+      "devDependencies": [{ "name": "left-pad", "line": 7, "col": 5 }]
+    }
+  ]
+}

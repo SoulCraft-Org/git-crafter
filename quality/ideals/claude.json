@@ -1,0 +1,18 @@
+{
+  "ideal": "Each session takes one scoped task, verifies its work before pushing, and opens a pull request that merges on first review and holds up.",
+  "sources": [
+    {
+      "title": "Best practices for Claude Code",
+      "url": "https://code.claude.com/docs/en/best-practices",
+      "date": "2026-11-04"
+    },
+    {
+      "title": "DORA's software delivery performance metrics",
+      "url": "https://dora.dev/guides/dora-metrics-four-keys/",
+      "date": "2026-01-05"
+    }
+  ],
+  "quality": "PRs merge rather than close, pass every check on the first push, change a test with the code, and draw no bug report after merge.",
+  "speed": "A session opens its pull request within a couple of hours of starting.",
+  "consumption": "Each merged pull request costs little at API prices and needs few review-fix rounds."
+}

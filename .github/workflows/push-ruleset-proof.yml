@@ -1,0 +1,83 @@
+name: push-ruleset-proof
+
+# Proves by real pushes that the push ruleset "Block secret files" (id 26972270)
+# refuses a file of each restricted kind: a dotenv file at the root, a PEM file
+# and a key file in subfolders. Run it by hand: gh workflow run push-ruleset-proof.yml
+#
+# It passes only when GitHub refuses all three pushes with a repository-rule error
+# (GH013). Any accepted push fails the run and its branch is deleted. Any other
+# push failure (network, permission) also fails: it proves nothing.
+# The probe file names are built from parts at run time, so no file with such a
+# name exists in the repo. Each file is empty. No schedule, no pull_request trigger.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: push-ruleset-proof
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    name: probe
+    # A fixed GitHub-hosted label (rules/compute.md). A run of about 20 s bills 1 minute.
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    permissions:
+      contents: write # pushes the probe branches, and deletes any a push left behind
+    steps:
+      # The checkout keeps its token: the probe pushes with it.
+      - uses: actions/checkout@v7.0.1
+
+      - name: Push one empty file of each restricted kind
+        env:
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -u
+          base=$(git rev-parse HEAD)
+          git config user.name "push-ruleset-proof"
+          git config user.email "push-ruleset-proof@users.noreply.github.com"
+          # Names from parts, so this file holds none of them whole.
+          dot=.; e=e; n=nv; p=p; m=em; k=k; y=ey
+          kinds=("$dot$e$n" "probe-dir/a$dot$p$m" "probe-dir/deep/a$dot$k$y")
+          accepted=0; refused=0; other=0
+          cleanup() {
+            for b in $(git ls-remote --heads origin "refs/heads/probe/ruleset-${RUN_ID}-*" | sed 's|.*refs/heads/||'); do
+              echo "::error::probe branch $b exists on the remote; deleting it"
+              git push origin --delete "$b" || true
+            done
+          }
+          trap cleanup EXIT
+          i=0
+          for f in "${kinds[@]}"; do
+            i=$((i+1))
+            branch="probe/ruleset-${RUN_ID}-${i}"
+            git switch -q --detach "$base"
+            mkdir -p "$(dirname "$f")"
+            : > "$f"
+            git add -f -- "$f"
+            git commit -q -m "probe $i: empty file of a restricted kind"
+            echo "::group::push $i of ${#kinds[@]} (${f##*.})"
+            if out=$(git push origin "HEAD:refs/heads/${branch}" 2>&1); then
+              echo "$out"
+              echo "::error::push $i ACCEPTED: the ruleset did not refuse a restricted file"
+              accepted=$((accepted+1))
+            elif grep -q "GH013" <<<"$out"; then
+              echo "$out"
+              echo "push $i refused by a repository rule (GH013)"
+              refused=$((refused+1))
+            else
+              echo "$out"
+              echo "::error::push $i failed, but not with a repository-rule error (GH013)"
+              other=$((other+1))
+            fi
+            echo "::endgroup::"
+          done
+          echo "refused=$refused accepted=$accepted other=$other of ${#kinds[@]}"
+          if [ "$refused" -ne "${#kinds[@]}" ]; then
+            echo "::error::FAIL: the push ruleset did not refuse all ${#kinds[@]} probes"
+            exit 1
+          fi
+          echo "PASS: GitHub refused all ${#kinds[@]} pushes (dotenv, PEM, key)"

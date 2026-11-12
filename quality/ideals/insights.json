@@ -1,0 +1,130 @@
+{
+  "ideal": "A healthy repo shows it in Insights: every health file present, no finished branch left behind, and few runner minutes wasted.",
+  "parts": [
+    {
+      "part": "Pulse, Commits, Code frequency",
+      "ideal": "Work lands as small merged pull requests, few stay open, and issues close as fast as they open",
+      "setup": "Scored on the Pull requests, Issues and Code tabs; the code frequency API refuses a repo of 10,000 commits"
+    },
+    {
+      "part": "Contributors",
+      "ideal": "Every default-branch commit is credited to an account; a count of activity is no measure of a person",
+      "setup": "Link each commit email to an account; Claude Code contribution metrics credit agent work once turned on. Not scored: it rarely moves"
+    },
+    {
+      "part": "Community",
+      "ideal": "The health checklist is complete",
+      "setup": "Add a README, license, contributing guide, code of conduct, issue forms and a pull request template"
+    },
+    {
+      "part": "Traffic and Forks",
+      "ideal": "Not scored: no documented practice sets a goal for views, clones or forks",
+      "setup": "Traffic keeps 14 days and needs an admin token; its clones mostly count workflow checkouts"
+    },
+    {
+      "part": "Dependency graph",
+      "ideal": "Every manifest parses, so every dependency is known",
+      "setup": "Keep the graph on and commit lock files in a format it reads. Not scored: it rarely moves, and Security scores the alerts"
+    },
+    {
+      "part": "Network",
+      "ideal": "Only the default branch and live work remain; a leftover branch is gone within a day",
+      "setup": "Turn on automatic branch deletion; delete the branch of a pull request closed without merging; open a pull request within a day"
+    },
+    {
+      "part": "People",
+      "ideal": "Everyone with write access has committed within 90 days",
+      "setup": "Review the people list each quarter and remove access nobody uses"
+    },
+    {
+      "part": "Actions metrics",
+      "ideal": "Under a tenth of billed minutes buys nothing; a check failing a pull request is not waste",
+      "setup": "GitHub offers no API for these two views; both are computed from workflow runs and jobs"
+    }
+  ],
+  "sources": [
+    {
+      "title": "GitHub Docs: About repository graphs",
+      "url": "https://docs.github.com/en/repositories/viewing-activity-and-data-for-your-repository/about-repository-graphs",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: About community profiles for public repositories",
+      "url": "https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/about-community-profiles-for-public-repositories",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Viewing a project's contributors",
+      "url": "https://docs.github.com/en/repositories/viewing-activity-and-data-for-your-repository/viewing-a-projects-contributors",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Dependency graph",
+      "url": "https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/about-the-dependency-graph",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Managing the automatic deletion of branches",
+      "url": "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-the-automatic-deletion-of-branches",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Viewing people with access to your repository",
+      "url": "https://docs.github.com/en/organizations/managing-user-access-to-your-organizations-repositories/managing-repository-roles/viewing-people-with-access-to-your-repository",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Microsoft Learn: Microsoft cloud security benchmark, Privileged Access (PA-4)",
+      "url": "https://learn.microsoft.com/security/benchmark/azure/mcsb-v2-privileged-access",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: About GitHub Actions metrics",
+      "url": "https://docs.github.com/en/actions/concepts/metrics",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: REST API endpoints for repository traffic",
+      "url": "https://docs.github.com/en/rest/metrics/traffic",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "DORA: DORA's software delivery performance metrics",
+      "url": "https://dora.dev/guides/dora-metrics/",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Claude Code Docs: Claude Code GitHub Actions",
+      "url": "https://code.claude.com/docs/en/github-actions",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Anthropic: Measuring AI agent autonomy in practice",
+      "url": "https://www.anthropic.com/research/measuring-agent-autonomy",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Microsoft Research: The SPACE of Developer Productivity: There's more to it than you think",
+      "url": "https://www.microsoft.com/en-us/research/publication/the-space-of-developer-productivity-theres-more-to-it-than-you-think/",
+      "date": "2021-02-01"
+    },
+    {
+      "title": "GitHub Docs: REST API endpoints for repository statistics",
+      "url": "https://docs.github.com/en/rest/metrics/statistics",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Claude Code Docs: Track team usage with analytics",
+      "url": "https://code.claude.com/docs/en/analytics",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub: Engineering System Success Playbook",
+      "url": "https://github.com/resources/insights/engineering-system-success-playbook",
+      "date": "2025-05-01"
+    }
+  ],
+  "quality": "The health checklist is complete, no branch outlives its pull request, and access nobody uses is removed.",
+  "speed": "A leftover branch is gone within a day of its pull request closing.",
+  "consumption": "At most a tenth of billed runner minutes goes to runs that are cancelled, time out or fail after merge."
+}

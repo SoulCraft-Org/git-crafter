@@ -1,0 +1,81 @@
+name: cloud-test
+
+# ADVISORY. No ruleset requires this check, so it reports and never blocks a merge.
+#
+# Runs a name from .github/cloud-test.json on a GitHub-hosted runner. Cloud first, the local machine last and small
+# (rules/compute.md): suites and builds run here, so a session dispatches them instead:
+#
+#   gh workflow run cloud-test.yml --ref <branch> -f script=<name>
+#   gh run list --workflow cloud-test.yml --limit 1, then gh run view <id>
+#
+# The allowlist is read from the commit under test: only a name it lists runs, with its argument list and its
+# timeout in minutes, never a shell string. A `ref` input tests another commit. A pull request that changes this
+# file or the allowlist runs the default script once, which proves the wiring; the path filter keeps every other
+# pull request from spending minutes. Self-contained, so a fork or a public copy runs it with no other repo.
+on:
+  pull_request:
+    paths:
+      - .github/workflows/cloud-test.yml
+      - .github/cloud-test.json
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Commit SHA or branch to test. Empty tests the branch you dispatch from
+        required: false
+        default: ""
+        type: string
+      script:
+        description: A name from .github/cloud-test.json
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+# A pull request's newer push cancels its older run. Each dispatch gets a group of its own, so two sessions
+# testing different refs never cancel each other.
+concurrency:
+  group: cloud-test-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  cloud-test:
+    # Every allowlisted script is a suite with no browser and a timeout of 10 minutes at most, so it runs on the
+    # 1-core runner, at a third of the 2-core rate, under that runner's 15-minute job limit. Browsers and renders
+    # go to visual-check.yml and the e2e job (rules/compute.md).
+    runs-on: ubuntu-slim
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install Git Crafter's packages
+        run: npm ci --ignore-scripts --no-audit --no-fund --loglevel=error
+
+      # The script name reaches the run only through the environment, and only as a key of the allowlist.
+      - name: Run the allowlisted script
+        env:
+          SCRIPT: ${{ inputs.script || 'verify' }}
+        run: |
+          python3 -I - <<'PY'
+          import json, os, subprocess, sys
+          scripts = json.load(open(".github/cloud-test.json", encoding="utf-8"))["scripts"]
+          name = os.environ["SCRIPT"]
+          if name not in scripts:
+              sys.exit(f"cloud-test: {name!r} is not in .github/cloud-test.json; it lists {', '.join(sorted(scripts))}")
+          entry = scripts[name]
+          if entry.get("timeout", 10) > 14:
+              sys.exit(f"cloud-test: {name} has a timeout over 14 minutes; ubuntu-slim ends a job at 15")
+          print(f"cloud-test: {name}: {' '.join(entry['run'])}", flush=True)
+          try:
+              sys.exit(subprocess.run(entry["run"], timeout=60 * entry.get("timeout", 10)).returncode)
+          except subprocess.TimeoutExpired:
+              sys.exit(f"cloud-test: {name} ran past {entry.get('timeout', 10)} minutes")
+          PY

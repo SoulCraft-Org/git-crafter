@@ -1,0 +1,4 @@
+/* 99px and #123456 in a comment do not count. */
+.a { margin: 4px 8px; border: 1px solid var(--c-border); }
+.b { color: #fff; inset: -2px; width: 1.5px; }
+@media (min-width: 768px) { .c { padding: var(--s-2); } }

@@ -1,0 +1,48 @@
+{
+  "ideal": "Each session loads only the plugins, skills and connectors it uses, plans its work, delegates independent pieces in parallel, and gets short summaries back.",
+  "sources": [
+    {
+      "title": "Desktop application",
+      "url": "https://code.claude.com/docs/en/desktop",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Measure plugin cost and usage",
+      "url": "https://code.claude.com/docs/en/plugins/measure",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Plugin loading reference",
+      "url": "https://code.claude.com/docs/en/plugins/loading",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Connect Claude Code to tools via MCP",
+      "url": "https://code.claude.com/docs/en/mcp",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Extend Claude with skills",
+      "url": "https://code.claude.com/docs/en/skills",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Create custom subagents",
+      "url": "https://code.claude.com/docs/en/sub-agents",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Best practices for Claude Code",
+      "url": "https://code.claude.com/docs/en/best-practices",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Claude Code changelog",
+      "url": "https://code.claude.com/docs/en/changelog",
+      "date": "2026-11-10"
+    }
+  ],
+  "quality": "Every connector works, every plugin and connector loaded gets used, and each work turn keeps a task list and ends with a recap.",
+  "speed": "Independent subagents start together, and no tool is still connecting when work begins.",
+  "consumption": "Listings of skills, agents and tools stay small, and a subagent starts with only the tools its task needs."
+}

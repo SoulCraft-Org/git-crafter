@@ -1,0 +1,66 @@
+[
+  {
+    "id": "docs.over_read_goal",
+    "params": {
+      "doc_set": ["README.md", "CONTRIBUTING.md", "SECURITY.md", "guide/*.md", "missing/**/*.md"],
+      "words_per_minute": 10,
+      "minutes_goal": 2
+    }
+  },
+  {
+    "id": "docs.oldest_lag_days",
+    "params": {
+      "areas": [
+        { "doc": "guide/setup.md", "area": ["src/"] },
+        { "doc": "guide/*.md", "area": [] },
+        { "doc": "facts/dated.md", "area": ["src/"] },
+        { "doc": "facts/run.md", "area": ["src/"] },
+        { "doc": "facts/*.md", "area": [] },
+        { "doc": "README.md", "area": ["src/", "package.json"] },
+        { "doc": "CONTRIBUTING.md", "area": ["{dir}/tools/"] }
+      ]
+    }
+  },
+  {
+    "id": "docs.stale_markers",
+    "params": {
+      "markers": [
+        { "term": "TODO", "match_case": true },
+        { "term": "TBD", "match_case": true },
+        { "term": "not yet", "match_case": false },
+        { "term": "waits for", "match_case": false },
+        { "term": "upcoming", "match_case": false }
+      ]
+    }
+  },
+  {
+    "id": "docs.stale_dates",
+    "params": { "as_of": ["current as of", "last verified"] }
+  },
+  {
+    "id": "docs.folder_coverage",
+    "params": { "folder_map": { "doc": "FOLDERS.md", "heading": "Folder map" } }
+  },
+  {
+    "id": "docs.runbooks_verified",
+    "params": { "runbooks": ["facts/runbooks/*.md"], "verified": "last verified" }
+  },
+  {
+    "id": "docs.interactive_share",
+    "params": { "mermaid_charts": ["pie", "xychart-beta"] }
+  },
+  {
+    "id": "docs.community_files",
+    "params": {
+      "community_files": [
+        { "name": "README", "globs": ["README.md"] },
+        { "name": "Contributing guide", "globs": ["docs/CONTRIBUTING.md", "CONTRIBUTING.md"] },
+        { "name": "License", "globs": ["LICENSE"] },
+        { "name": "Code of conduct", "globs": ["CODE_OF_CONDUCT.md", ".github/CODE_OF_CONDUCT.md"] }
+      ]
+    }
+  },
+  { "id": "docs.markup_faults", "params": { "alt_max_chars": 5 } },
+  { "id": "docs.text_only", "params": { "text_only_below": 20 } },
+  { "id": "docs.lint_warn", "params": { "lint": { "interpreter": "python3", "script": "tools/lint.py", "args": ["--root", "{root}"] } } }
+]

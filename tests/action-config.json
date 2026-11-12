@@ -1,0 +1,14 @@
+{
+ "comment": "pages.yml's action jobs: actions/pages run on Git Crafter itself, as any repo would call it. It names its own maps (maps.json) and its own Quality config (config/quality.json), and nothing else. Its own_repo defaults to its first repo. Its map steps read that Quality page's data/quality/latest.json, else local.json, never another repo's. A job that builds no Quality page first reads none, and its map steps say so.",
+ "repos": ["code-os"],
+ "docs": { "maps": "maps.json" },
+ "quality_config": "config/quality.json",
+ "data": "pages/dist/action/org.json",
+ "history": null,
+ "out": "pages/dist/action",
+ "pages": { "process": "process.html" },
+ "tabs": ["build", "ci", "testing", "claude", "tokens"],
+ "heading": "code-os",
+ "collector": "Git Crafter actions/pages",
+ "nav": [{ "page": "process", "label": "Process", "icon": "plan" }]
+}

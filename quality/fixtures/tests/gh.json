@@ -1,0 +1,69 @@
+{
+  "_README": "GitHub's answers for quality/collectors/tests/tests.test.mjs: the runs of site-tests.yml and e2e.yml, all on 2026-11-03 but run 10 in October, and the check runs (jobs) GraphQL returns per run id. Runs 10, 11 and 20 predate their workflow's test job names, run 12 never started a job, and run 13's change job failed, which skipped its test job. The test file's comments give the arithmetic.",
+  "now": "2026-11-03T12:00:00Z",
+  "runs": {
+    "site-tests.yml": [
+      { "id": 1, "event": "push", "head_branch": "main", "head_sha": "m1", "status": "completed", "conclusion": "success", "run_attempt": 1, "created_at": "2026-11-03T08:00:00Z" },
+      { "id": 2, "event": "push", "head_branch": "main", "head_sha": "m2", "status": "completed", "conclusion": "failure", "run_attempt": 1, "created_at": "2026-11-03T08:10:00Z" },
+      { "id": 3, "event": "push", "head_branch": "main", "head_sha": "m3", "status": "completed", "conclusion": "cancelled", "run_attempt": 1, "created_at": "2026-11-03T08:20:00Z" },
+      { "id": 4, "event": "push", "head_branch": "main", "head_sha": "m4", "status": "completed", "conclusion": "success", "run_attempt": 1, "created_at": "2026-11-03T08:30:00Z" },
+      { "id": 5, "event": "pull_request", "head_branch": "feature-a", "head_sha": "s5", "status": "completed", "conclusion": "success", "run_attempt": 1, "created_at": "2026-11-03T09:00:00Z" },
+      { "id": 6, "event": "pull_request", "head_branch": "feature-b", "head_sha": "s6", "status": "completed", "conclusion": "success", "run_attempt": 2, "created_at": "2026-11-03T09:10:00Z" },
+      { "id": 7, "event": "pull_request", "head_branch": "feature-c", "head_sha": "s7", "status": "completed", "conclusion": "failure", "run_attempt": 1, "created_at": "2026-11-03T09:30:00Z" },
+      { "id": 8, "event": "pull_request", "head_branch": "feature-c", "head_sha": "s7", "status": "completed", "conclusion": "success", "run_attempt": 1, "created_at": "2026-11-03T09:40:00Z" },
+      { "id": 9, "event": "pull_request", "head_branch": "feature-d", "head_sha": "s9", "status": "in_progress", "conclusion": null, "run_attempt": 1, "created_at": "2026-11-03T11:50:00Z" },
+      { "id": 10, "event": "pull_request", "head_branch": "feature-old", "head_sha": "s0", "status": "completed", "conclusion": "success", "run_attempt": 1, "created_at": "2026-10-01T09:00:00Z" },
+      { "id": 11, "event": "push", "head_branch": "main", "head_sha": "m0", "status": "completed", "conclusion": "success", "run_attempt": 1, "created_at": "2026-11-03T07:00:00Z" },
+      { "id": 12, "event": "push", "head_branch": "main", "head_sha": "m12", "status": "completed", "conclusion": "startup_failure", "run_attempt": 1, "created_at": "2026-11-03T08:40:00Z" },
+      { "id": 13, "event": "push", "head_branch": "main", "head_sha": "m13", "status": "completed", "conclusion": "failure", "run_attempt": 1, "created_at": "2026-11-03T08:50:00Z" }
+    ],
+    "e2e.yml": [
+      { "id": 20, "event": "pull_request", "head_branch": "feature-a", "head_sha": "s5", "status": "completed", "conclusion": "success", "run_attempt": 1, "created_at": "2026-11-03T08:30:00Z" },
+      { "id": 21, "event": "pull_request", "head_branch": "feature-a", "head_sha": "s5", "status": "completed", "conclusion": "success", "run_attempt": 1, "created_at": "2026-11-03T09:00:00Z" },
+      { "id": 22, "event": "pull_request", "head_branch": "feature-b", "head_sha": "s6", "status": "completed", "conclusion": "success", "run_attempt": 1, "created_at": "2026-11-03T09:10:00Z" },
+      { "id": 23, "event": "pull_request", "head_branch": "feature-c", "head_sha": "s7", "status": "completed", "conclusion": "failure", "run_attempt": 1, "created_at": "2026-11-03T09:30:00Z" },
+      { "id": 24, "event": "pull_request", "head_branch": "feature-e", "head_sha": "s8", "status": "completed", "conclusion": "cancelled", "run_attempt": 1, "created_at": "2026-11-03T09:50:00Z" },
+      { "id": 25, "event": "pull_request", "head_branch": "feature-d", "head_sha": "s9", "status": "completed", "conclusion": "success", "run_attempt": 1, "created_at": "2026-11-03T10:00:00Z" }
+    ]
+  },
+  "checks": {
+    "1": [
+      { "databaseId": 101, "name": "site-tests: changes", "conclusion": "SUCCESS", "startedAt": "2026-11-03T08:00:10Z", "completedAt": "2026-11-03T08:00:20Z" },
+      { "databaseId": 102, "name": "site-tests: tests", "conclusion": "SUCCESS", "startedAt": "2026-11-03T08:00:30Z", "completedAt": "2026-11-03T08:01:10Z" },
+      { "databaseId": 103, "name": "site-tests", "conclusion": "SUCCESS", "startedAt": "2026-11-03T08:01:15Z", "completedAt": "2026-11-03T08:01:20Z" }
+    ],
+    "2": [{ "databaseId": 201, "name": "site-tests: tests", "conclusion": "FAILURE", "startedAt": "2026-11-03T08:10:30Z", "completedAt": "2026-11-03T08:11:30Z" }],
+    "4": [
+      { "databaseId": 401, "name": "site-tests: changes", "conclusion": "SUCCESS", "startedAt": "2026-11-03T08:30:10Z", "completedAt": "2026-11-03T08:30:20Z" },
+      { "databaseId": 402, "name": "site-tests: tests", "conclusion": "SKIPPED", "startedAt": "2026-11-03T08:30:21Z", "completedAt": "2026-11-03T08:30:21Z" }
+    ],
+    "5": [{ "databaseId": 501, "name": "site-tests: tests", "conclusion": "SUCCESS", "startedAt": "2026-11-03T09:00:30Z", "completedAt": "2026-11-03T09:01:30Z" }],
+    "6": [{ "databaseId": 601, "name": "site-tests: tests", "conclusion": "SUCCESS", "startedAt": "2026-11-03T09:20:00Z", "completedAt": "2026-11-03T09:20:50Z" }],
+    "7": [{ "databaseId": 701, "name": "site-tests: tests", "conclusion": "FAILURE", "startedAt": "2026-11-03T09:30:30Z", "completedAt": "2026-11-03T09:31:00Z" }],
+    "8": [{ "databaseId": 801, "name": "site-tests: tests", "conclusion": "SUCCESS", "startedAt": "2026-11-03T09:40:30Z", "completedAt": "2026-11-03T09:41:00Z" }],
+    "10": [{ "databaseId": 1001, "name": "site-tests", "conclusion": "SUCCESS", "startedAt": "2026-10-01T09:00:10Z", "completedAt": "2026-10-01T09:02:10Z" }],
+    "11": [{ "databaseId": 1101, "name": "site-tests", "conclusion": "SUCCESS", "startedAt": "2026-11-03T07:00:10Z", "completedAt": "2026-11-03T07:03:10Z" }],
+    "12": [],
+    "13": [
+      { "databaseId": 1301, "name": "site-tests: changes", "conclusion": "FAILURE", "startedAt": "2026-11-03T08:50:10Z", "completedAt": "2026-11-03T08:50:20Z" },
+      { "databaseId": 1302, "name": "site-tests: tests", "conclusion": "SKIPPED", "startedAt": "2026-11-03T08:50:21Z", "completedAt": "2026-11-03T08:50:21Z" }
+    ],
+    "20": [{ "databaseId": 2001, "name": "e2e: shard 1/4", "conclusion": "SUCCESS", "startedAt": "2026-11-03T08:30:30Z", "completedAt": "2026-11-03T08:32:00Z" }],
+    "21": [
+      { "databaseId": 2101, "name": "e2e: shard 1/2", "conclusion": "SUCCESS", "startedAt": "2026-11-03T09:00:30Z", "completedAt": "2026-11-03T09:02:30Z" },
+      { "databaseId": 2102, "name": "e2e: shard 2/2", "conclusion": "SUCCESS", "startedAt": "2026-11-03T09:00:30Z", "completedAt": "2026-11-03T09:02:00Z" }
+    ],
+    "22": [
+      { "databaseId": 2201, "name": "e2e: shard 1/2", "conclusion": "SUCCESS", "startedAt": "2026-11-03T09:10:30Z", "completedAt": "2026-11-03T09:13:30Z" },
+      { "databaseId": 2202, "name": "e2e: shard 2/2", "conclusion": "SUCCESS", "startedAt": "2026-11-03T09:10:30Z", "completedAt": "2026-11-03T09:13:00Z" }
+    ],
+    "23": [
+      { "databaseId": 2301, "name": "e2e: shard 1/2", "conclusion": "FAILURE", "startedAt": "2026-11-03T09:30:30Z", "completedAt": "2026-11-03T09:31:30Z" },
+      { "databaseId": 2302, "name": "e2e: shard 2/2", "conclusion": "SUCCESS", "startedAt": "2026-11-03T09:30:30Z", "completedAt": "2026-11-03T09:31:30Z" }
+    ],
+    "25": [
+      { "databaseId": 2501, "name": "e2e: changes", "conclusion": "SUCCESS", "startedAt": "2026-11-03T10:00:10Z", "completedAt": "2026-11-03T10:00:20Z" },
+      { "databaseId": 2502, "name": "e2e: shard ${{ matrix.shard }}/2", "conclusion": "SKIPPED", "startedAt": "2026-11-03T10:00:21Z", "completedAt": "2026-11-03T10:00:21Z" }
+    ]
+  }
+}

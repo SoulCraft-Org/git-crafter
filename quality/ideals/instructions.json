@@ -1,0 +1,18 @@
+{
+  "ideal": "Claude loads only what every session needs: short CLAUDE.md files, path-scoped rules, a memory index of one line per entry, brief skill descriptions.",
+  "sources": [
+    {
+      "title": "How Claude remembers your project",
+      "url": "https://code.claude.com/docs/en/memory",
+      "date": "2026-11-03"
+    },
+    {
+      "title": "Extend Claude with skills",
+      "url": "https://code.claude.com/docs/en/skills",
+      "date": "2026-11-03"
+    }
+  ],
+  "quality": "No rule said twice, no broken or stale reference, installed copies match their source, and every rule, skill and agent gets used.",
+  "speed": "A session reads few lines before its first action.",
+  "consumption": "Always-loaded files, the memory index and skill listings stay small."
+}

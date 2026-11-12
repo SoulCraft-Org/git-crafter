@@ -1,0 +1,60 @@
+name: pr-body
+
+# Fails a pull request whose description would miss a description goal of the Pull requests tab: no linked issue
+# or card, no table, or more prose words than this repo's goal, or a change over its reviewed-lines goal
+# (quality/pr-gate.mjs, with the metrics' own functions, so the gate and the metrics cannot drift). Dependabot's
+# pull requests pass.
+# One run per head commit, on open and on push, never on an edit: a second run on the same commit leaves the first
+# one there, cancelled or failed, and the status rollup then reads that commit as not green (#702). After fixing a
+# description, re-run the failed job: it reads the description as it is now (one API call) and replaces its own
+# result. Not a required check; the merging skill merges only when every check passed.
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: pr-body-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pr-body:
+    name: pr-body
+    # A checkout, one API read and one node script, 13 s at most: the 1-core runner at a third of the rate.
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+          # The whole history, so git diff reaches the base and the head: git never leaves a patch out, where
+          # the REST files call drops a large file's.
+          fetch-depth: 0
+
+      # The description is read as it is now, so a re-run after an edit sees the edit. It reaches the script
+      # through the environment, never through the shell line. An API failure checks nothing and passes.
+      - name: The description links its issue or card, and the change is within the lines goal
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if ! PR_BODY="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.body // ""')"; then
+            echo "::warning::pr-body: could not read the description, so nothing was checked"
+            exit 0
+          fi
+          export PR_BODY
+          # The change as git's patch, every line of it, reaches the script through a file it names; when git
+          # cannot reach the base, PR_DIFF stays unset and the script skips only the size check, with a warning.
+          diff="$RUNNER_TEMP/pr.diff"
+          if git diff --no-color --unified=0 "$BASE_SHA...$HEAD_SHA" > "$diff"; then
+            export PR_DIFF="$diff"
+          else
+            echo "::warning::pr-body: git could not diff the base and the head, so the size was not checked"
+          fi
+          node quality/pr-gate.mjs --config config/quality.json

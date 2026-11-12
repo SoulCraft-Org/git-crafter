@@ -1,0 +1,414 @@
+name: ci-overflow
+
+# The overflow switch for any caller of ci-standard.yml (templates/ci/README.md#overflow-switch): one job that names
+# the runner label for the standard job. A caller opts in with a job that grants actions: read, which ci-standard.yml
+# cannot ask for itself, since a called workflow never gets more than its caller grants:
+#
+#   jobs:
+#     runner:
+#       if: vars.CI_OVERFLOW_RUNNER != ''
+#       uses: <owner>/code-os/.github/workflows/ci-overflow.yml@<full sha> # v1
+#       permissions:
+#         actions: read
+#     ci:
+#       needs: runner
+#       if: ${{ !cancelled() }}
+#       uses: <owner>/code-os/.github/workflows/ci-standard.yml@<full sha> # v1
+#       with:
+#         runner: ${{ needs.runner.outputs.label }}
+#
+# Off, the repo variable CI_OVERFLOW_RUNNER is unset, runner is skipped, and ci runs on ubuntu-latest as before. On,
+# it holds a lane's label: tools/ci_overflow.py sums this cycle's minutes on that lane from the caller's run and job
+# data and names the label until the lane's stop, then ubuntu-latest. Anything it cannot read is ubuntu-latest too.
+# The meter and .github/ci-overflow.json are embedded below verbatim by `ci_standard.py embed --write`, as
+# ci-standard.yml embeds its checks, so the lanes and the stop are Git Crafter's at the caller's pin and no pull request
+# in the caller can edit them. templates/ci/DECISIONS.md, 2026-11-11.
+on:
+  workflow_call:
+    inputs:
+      workflows:
+        description: The caller's workflow files whose jobs take the lane, comma-separated. Empty meters the calling workflow alone
+        type: string
+        default: ""
+    outputs:
+      label:
+        description: The runner label for ci-standard.yml's runner input; ubuntu-latest whenever the lane is off, full or unread
+        value: ${{ jobs.runner.outputs.label }}
+
+# Nothing at the top: a called workflow may not ask for more than its caller's job grants, and the opt-in grants only
+# actions: read. contents: read here was a startup failure (#771). The job checks nothing out.
+permissions: {}
+
+jobs:
+  runner:
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    outputs:
+      label: ${{ steps.choose.outputs.label }}
+    steps:
+      - name: Write the meter, tools/ci_overflow.py, and its lanes, .github/ci-overflow.json, at this pin
+        run: |
+          cat > "$RUNNER_TEMP/ci_overflow.py" <<'CI_OVERFLOW_PY'
+          #!/usr/bin/env python3
+          """ci_overflow.py: the runner label for a workflow's heavy jobs, with a meter that stops an overflow lane at its free amount.
+
+          Usage:
+              ci_overflow.py choose [--config FILE] [--state-out FILE]
+                  Reads CI_OVERFLOW_RUNNER (a lane's runner label; empty is off), GITHUB_REPOSITORY, GITHUB_TOKEN (actions: read),
+                  GITHUB_API_URL, CI_OVERFLOW_SAVE ("true" on the trusted branch) and CI_OVERFLOW_WORKFLOWS (the workflow files
+                  to meter, comma- or space-separated, each a name or a workflow ref; empty is the config's workflows). Writes
+                  label, minutes, reason and artifact to GITHUB_OUTPUT (stdout when unset). With CI_OVERFLOW_SAVE, writes the
+                  meter's state to FILE for upload-artifact.
+              ci_overflow.py --self-test
+                  Runs tools/tests/test_ci_overflow.py: under, at and over the stop, an unreadable API, off, a backlog, a repo
+                  off the lane, a workflow list, and ci-standard.yml's lane labels against the config.
+
+          The meter sums this period's minutes of this repo's jobs whose labels match the lane, from GitHub's run and job data:
+          each job rounded up to the minute and weighted by its vCPUs. The newest state artifact from the trusted branch carries
+          the runs already summed, so a run reads only the runs since. Exit 0 always: anything it cannot read is the fallback
+          label, GitHub's own runner (rules/gates.md, fail open). The lanes live in .github/ci-overflow.json. A lane serves only
+          the repos its `repos` names, since its free minutes are per organization and this meter reads one repo.
+          .github/workflows/ci-overflow.yml embeds this file and that config, so any repo that calls ci-standard.yml can meter.
+          """
+
+          from __future__ import annotations
+
+          import io
+          import json
+          import math
+          import os
+          import re
+          import sys
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          import zipfile
+          from datetime import datetime, timedelta, timezone
+
+          HERE = os.path.dirname(os.path.realpath(__file__))
+          CONFIG = os.path.join(".github", "ci-overflow.json")
+          SETTLE = timedelta(seconds=60)  # runs created in the last minute wait for the next meter run
+          SAFE = re.compile(r"[A-Za-z0-9 _.:;,()'-]*")  # one output value: no line break, no = or other control
+          STOCK = {"label": "ubuntu-latest", "minutes": "", "artifact": ""}
+          WORKFLOW_FILE = re.compile(r"[A-Za-z0-9_.-]+\.ya?ml")  # one workflow file name, safe in an API path
+
+
+          def iso(t: datetime) -> str:
+              """A UTC time as GitHub writes it, to the second."""
+              return t.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+          def when(text: str) -> datetime:
+              """A GitHub timestamp as an aware datetime."""
+              return datetime.fromisoformat(text.replace("Z", "+00:00"))
+
+
+          def period_start(now: datetime, day: int) -> datetime:
+              """The start of the lane's monthly cycle that holds now, at 00:00 UTC on its cycle day."""
+              start = now.astimezone(timezone.utc).replace(day=day, hour=0, minute=0, second=0, microsecond=0)
+              if start <= now:
+                  return start
+              year, month = (start.year, start.month - 1) if start.month > 1 else (start.year - 1, 12)
+              return start.replace(year=year, month=month)
+
+
+          def workflows_of(raw: str, cfg: dict):
+              """The workflow files to meter: raw's names (a workflow ref keeps its file name), else the config's; None if bad."""
+              names = [os.path.basename(x.split("@", 1)[0]) for x in re.split(r"[\s,]+", raw.strip()) if x]
+              if not all(WORKFLOW_FILE.fullmatch(n) for n in names):
+                  return None
+              return sorted(set(names)) or cfg["workflows"]
+
+
+          def lane_for(cfg: dict, label: str):
+              """(name, lane) whose labels hold label, or None."""
+              for name, lane in cfg["lanes"].items():
+                  if label in lane["labels"]:
+                      return name, lane
+              return None
+
+
+          def job_minutes(job: dict, lane: dict, now: datetime) -> float:
+              """A job's minutes on the lane: whole minutes, up, times its vCPUs over the lane's unit; 0 off the lane."""
+              hits = [m for m in (re.match(lane["match"], str(lab)) for lab in job.get("labels") or []) if m]
+              if not hits or not job.get("started_at"):
+                  return 0
+              end = when(job["completed_at"]) if job.get("completed_at") else now
+              seconds = max(0.0, (end - when(job["started_at"])).total_seconds())
+              vcpus = int(hits[0].group(1)) if hits[0].groups() else lane["unit_vcpus"]
+              return math.ceil(seconds / 60) * vcpus / lane["unit_vcpus"]
+
+
+          class Api:
+              """GitHub's REST API with the workflow token; counts its calls."""
+
+              def __init__(self, env: dict):
+                  """The repo's API root and headers from the workflow's environment."""
+                  self.base = f"{env.get('GITHUB_API_URL', 'https://api.github.com')}/repos/{env['GITHUB_REPOSITORY']}/"
+                  self.headers = {"Authorization": f"Bearer {env['GITHUB_TOKEN']}", "Accept": "application/vnd.github+json",
+                                  "X-GitHub-Api-Version": "2022-11-28"}
+                  self.calls = 0
+
+              def get(self, path: str, **params) -> dict:
+                  """One GET under the repo, as parsed JSON."""
+                  self.calls += 1
+                  url = self.base + path + ("?" + urllib.parse.urlencode(params) if params else "")
+                  with urllib.request.urlopen(urllib.request.Request(url, headers=self.headers), timeout=20) as resp:
+                      return json.load(resp)
+
+              def download(self, artifact_id: int) -> bytes:
+                  """An artifact's zip: the API answers with a signed link, fetched with no token."""
+                  self.calls += 1
+                  opener = urllib.request.build_opener(NoRedirect)
+                  req = urllib.request.Request(f"{self.base}actions/artifacts/{artifact_id}/zip", headers=self.headers)
+                  try:
+                      opener.open(req, timeout=20)
+                      raise OSError("no redirect to the artifact")
+                  except urllib.error.HTTPError as exc:
+                      if exc.code not in (301, 302, 307) or not exc.headers.get("Location"):
+                          raise
+                      with urllib.request.urlopen(exc.headers["Location"], timeout=20) as resp:
+                          return resp.read()
+
+
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              """Stops at a redirect, so the signed link is fetched without the token."""
+              def redirect_request(self, *args, **kwargs):
+                  """No new request: urllib raises the redirect as an HTTPError."""
+                  return None
+
+
+          def fresh(name: str, start: datetime) -> dict:
+              """An empty state for a lane's cycle: nothing settled, the frontier at the cycle start."""
+              return {"version": 1, "lane": name, "period": iso(start), "through": iso(start), "base": 0, "settled": {}}
+
+
+          def read_state(api, cfg: dict, name: str, start: datetime) -> dict:
+              """The newest state the trusted branch saved for this lane and period, or a fresh one."""
+              artifact = f"ci-overflow-{name}-{iso(start)[:10]}"
+              for a in api.get("actions/artifacts", name=artifact, per_page=20).get("artifacts", []):
+                  run = a.get("workflow_run") or {}
+                  if a.get("expired") or run.get("head_branch") != cfg["trusted_branch"]:
+                      continue
+                  if run.get("head_repository_id") != run.get("repository_id"):
+                      continue
+                  with zipfile.ZipFile(io.BytesIO(api.download(a["id"]))) as z:
+                      state = json.loads(z.read("state.json"))
+                  if state.get("version") == 1 and state.get("lane") == name and state.get("period") == iso(start):
+                      return state
+              return fresh(name, start)
+
+
+          def total(state: dict) -> float:
+              """The settled minutes: base plus the runs still held by run id."""
+              return state["base"] + sum(m for _created, m in state["settled"].values())
+
+
+          def run_minutes(api, run_id, lane: dict, now: datetime) -> float:
+              """Every attempt's jobs of one run, summed on the lane."""
+              found, page = 0.0, 1
+              while True:
+                  data = api.get(f"actions/runs/{run_id}/jobs", filter="all", per_page=100, page=page)
+                  jobs = data.get("jobs") or []
+                  found += sum(job_minutes(j, lane, now) for j in jobs)
+                  if not jobs or page * 100 >= data.get("total_count", 0):
+                      return found
+                  page += 1
+
+
+          def backlog(api, cfg: dict, since: str) -> dict:
+              """{workflow: runs created since the state's frontier}, an upper bound on what runs_between returns."""
+              return {wf: api.get(f"actions/workflows/{wf}/runs", created=f">={since}", per_page=1).get("total_count", 0)
+                      for wf in cfg["workflows"]}
+
+
+          def runs_between(api, wf: str, since: str, cut: datetime, count: int) -> list:
+              """The runs created in [since, cut). Created before cut is a fixed set, so its newest-first pages hold still."""
+              found = []
+              for page in range(math.ceil(count / 100), 0, -1):
+                  rows = api.get(f"actions/workflows/{wf}/runs", created=f"<{iso(cut)}", per_page=100, page=page)
+                  found += [r for r in rows.get("workflow_runs", []) if when(r["created_at"]) >= when(since)]
+              return found
+
+
+          def compact(state: dict, through: str) -> None:
+              """Fold the runs settled before the frontier into base, so the state stays small."""
+              state["through"] = through
+              for rid, (created, m) in list(state["settled"].items()):
+                  if when(created) < when(through):
+                      state["base"] += m
+                      del state["settled"][rid]
+
+
+          def meter(api, cfg: dict, lane: dict, state: dict, now: datetime, budget: int, partial: bool):
+              """(minutes, complete, state): the settled minutes, plus the live ones of runs still going.
+
+              Runs go oldest first, so the frontier (state["through"]) only passes runs that are settled. partial, on the
+              trusted branch, settles what the budget allows and saves it; elsewhere a backlog over the budget reads nothing.
+              """
+              if total(state) >= lane["stop"]:
+                  return total(state), True, state
+              counts = backlog(api, cfg, state["through"])
+              if not partial and api.calls + sum(n + math.ceil(n / 100) for n in counts.values()) > budget:
+                  return total(state), False, state
+              cut = now - SETTLE
+              runs = [r for wf, n in counts.items() for r in runs_between(api, wf, state["through"], cut, n)]
+              live, frontier, complete = settle(api, runs, state, lane, now, budget)
+              compact(state, frontier or iso(cut))
+              return total(state) + live, complete, state
+
+
+          def settle(api, runs: list, state: dict, lane: dict, now: datetime, budget: int) -> tuple:
+              """(live minutes, frontier or None, complete): each new run, oldest first, settled when it has completed."""
+              live, frontier = 0.0, None
+              for run in sorted({r["id"]: r for r in runs}.values(), key=lambda r: (r["created_at"], r["id"])):
+                  if str(run["id"]) in state["settled"]:
+                      continue
+                  if api.calls >= budget:
+                      return live, frontier or run["created_at"], False
+                  m = run_minutes(api, run["id"], lane, now)
+                  if run.get("status") == "completed":
+                      state["settled"][str(run["id"])] = [run["created_at"], m]
+                  else:
+                      live, frontier = live + m, frontier or run["created_at"]
+              return live, frontier, True
+
+
+          def admit(env: dict, cfg: dict):
+              """(lane name, lane, label, cfg with the caller's workflows), or the reason the lane is off as a string."""
+              raw = env.get("CI_OVERFLOW_RUNNER", "")
+              label = raw.strip()
+              if "\n" in raw or "\r" in raw:
+                  return "CI_OVERFLOW_RUNNER holds a line break"
+              if not label:
+                  return "off: CI_OVERFLOW_RUNNER is unset"
+              found = lane_for(cfg, label)
+              if not found:
+                  return "CI_OVERFLOW_RUNNER is no lane's label"
+              name, lane = found
+              if env.get("GITHUB_REPOSITORY", "").lower() not in {r.lower() for r in lane["repos"]}:
+                  return "this repo is not on the lane's meter (repos in .github/ci-overflow.json)"
+              workflows = workflows_of(env.get("CI_OVERFLOW_WORKFLOWS", ""), cfg)
+              if workflows is None:
+                  return "CI_OVERFLOW_WORKFLOWS names a file that is not a workflow"
+              return name, lane, label, {**cfg, "workflows": workflows}
+
+
+          def decide(env: dict, cfg: dict, api, now: datetime) -> tuple:
+              """(outputs, state or None). Off, an unknown label, a backlog, the stop or an unreadable API: the fallback."""
+              fallback = cfg["fallback"]
+              off = {"label": fallback, "minutes": "", "artifact": ""}
+              admitted = admit(env, cfg)
+              if isinstance(admitted, str):
+                  return {**off, "reason": admitted}, None
+              name, lane, label, cfg = admitted
+              start = period_start(now, lane["cycle_day"])
+              trusted = env.get("CI_OVERFLOW_SAVE") == "true"
+              budget = cfg["budget_calls"]["main" if trusted else "pull_request"]
+              try:
+                  minutes, complete, state = meter(api, cfg, lane, read_state(api, cfg, name, start), now, budget, trusted)
+              except Exception as exc:  # fail open: GitHub's runner, never the lane, when the data cannot be read
+                  return {**off, "reason": f"could not read GitHub's run data ({type(exc).__name__}); {fallback}"}, None
+              out = {"minutes": f"{minutes:g}", "artifact": f"ci-overflow-{name}-{iso(start)[:10]}"}
+              if not complete:
+                  return {**out, "label": fallback, "reason": f"backlog over {budget} API calls; {fallback}"}, state
+              if minutes >= lane["stop"]:
+                  return {**out, "label": fallback, "reason": f"{minutes:g} of {lane['stop']} {name} minutes; {fallback}"}, state
+              return {**out, "label": label, "reason": f"{minutes:g} of {lane['stop']} {name} minutes; {label}"}, state
+
+
+          def safe(out: dict) -> dict:
+              """out, or the stock outputs when any value is off SAFE: no value can add a GITHUB_OUTPUT line."""
+              if all(SAFE.fullmatch(str(v)) for v in out.values()):
+                  return out
+              return {**STOCK, "reason": "an output held an unsafe character"}
+
+
+          def choose(argv: list, env: dict, now: datetime | None = None, api=None) -> int:
+              """The choose command: outputs to GITHUB_OUTPUT, and the state to --state-out on the trusted branch."""
+              args = dict(zip(argv[::2], argv[1::2]))
+              try:
+                  with open(args.get("--config", CONFIG), encoding="utf-8") as fh:
+                      cfg = json.load(fh)
+                  out, state = decide(env, cfg, api or Api(env), now or datetime.now(timezone.utc))
+              except Exception as exc:  # an unreadable config or environment is the stock runner too
+                  out, state = {**STOCK, "reason": f"could not start ({type(exc).__name__})"}, None
+              out = safe(out)
+              lines = "".join(f"{k}={v}\n" for k, v in out.items())
+              if env.get("GITHUB_OUTPUT"):
+                  with open(env["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+                      fh.write(lines)
+              print(f"ci-overflow: {out['reason']}\n{lines}", end="")
+              if state is not None and env.get("CI_OVERFLOW_SAVE") == "true" and args.get("--state-out"):
+                  os.makedirs(os.path.dirname(os.path.abspath(args["--state-out"])), exist_ok=True)
+                  with open(args["--state-out"], "w", encoding="utf-8") as fh:
+                      json.dump(state, fh)
+              return 0
+
+
+          def self_test() -> int:
+              """Runs tools/tests/test_ci_overflow.py; exit 2 where it is absent."""
+              tests = os.path.join(HERE, "tests")
+              if not os.path.isfile(os.path.join(tests, "test_ci_overflow.py")):
+                  sys.stderr.write("ci_overflow: no self-test here; run it from a Git Crafter checkout\n")
+                  return 2
+              sys.path.append(tests)
+              import test_ci_overflow
+              return test_ci_overflow.run(sys.modules[__name__])
+
+
+          def main(argv: list) -> int:
+              """Routes --self-test and choose; anything else prints the usage and exits 2."""
+              if argv == ["--self-test"]:
+                  return self_test()
+              if argv[:1] == ["choose"] and len(argv) % 2 == 1:
+                  return choose(argv[1:], dict(os.environ))
+              sys.stderr.write(__doc__)
+              return 2
+
+
+          if __name__ == "__main__":
+              sys.exit(main(sys.argv[1:]))
+          CI_OVERFLOW_PY
+          cat > "$RUNNER_TEMP/ci-overflow.json" <<'CI_OVERFLOW_JSON'
+          {
+            "version": 1,
+            "$comment": "The overflow lanes tools/ci_overflow.py meters. The repo variable CI_OVERFLOW_RUNNER names one lane's label; unset is off, and every job runs on fallback. A second lane is one more entry here. workflows are the files whose heavy jobs take the chosen label; a caller of ci-overflow.yml names its own. A lane's repos are the only repos it serves: its free minutes are per organization and the meter reads one repo, so a second repo waits for an org-wide meter. Empty repos: the lane is off, as in Git Crafter, whose public repo runs free on GitHub's runners. budget_calls caps the GitHub API calls one meter run spends; a backlog over it means GitHub's runner. templates/ci/DECISIONS.md, 2026-11-10 and 2026-11-11.",
+            "fallback": "ubuntu-latest",
+            "workflows": ["pages.yml", "verify.yml"],
+            "trusted_branch": "main",
+            "budget_calls": {"main": 400, "pull_request": 80},
+            "lanes": {
+              "blacksmith": {
+                "labels": ["blacksmith-2vcpu-ubuntu-2404"],
+                "repos": [],
+                "match": "^blacksmith-(\\d+)vcpu-",
+                "unit_vcpus": 2,
+                "free": 3000,
+                "stop": 2700,
+                "cycle_day": 1,
+                "source": "docs.blacksmith.sh/blacksmith-runners/overview, read 2026-11-10: 3000 x64 2vCPU minutes a month per organization; a 4vCPU minute counts 2. Labels from the same page. No card on file, so the stop is this meter (the owner, 2026-11-04)"
+              }
+            }
+          }
+          CI_OVERFLOW_JSON
+      # Exits 0 and names a label whatever it reads; continue-on-error keeps a crash on ubuntu-latest as well.
+      - id: choose
+        continue-on-error: true
+        env:
+          CI_OVERFLOW_RUNNER: ${{ vars.CI_OVERFLOW_RUNNER }}
+          CI_OVERFLOW_WORKFLOWS: ${{ inputs.workflows || github.workflow_ref }}
+          CI_OVERFLOW_SAVE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 -I "$RUNNER_TEMP/ci_overflow.py" choose --config "$RUNNER_TEMP/ci-overflow.json" --state-out "$RUNNER_TEMP/ci-overflow/state.json"
+      # The meter's state for the next run; only main's is read back.
+      - uses: actions/upload-artifact@v7.0.2
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.choose.outputs.artifact != ''
+        continue-on-error: true
+        with:
+          name: ${{ steps.choose.outputs.artifact }}
+          path: ${{ runner.temp }}/ci-overflow/state.json
+          retention-days: 35
+          if-no-files-found: ignore

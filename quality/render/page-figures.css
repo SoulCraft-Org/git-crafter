@@ -1,0 +1,190 @@
+/* ---- Breakdowns: bars, funnel, stack, spark ---- */
+.bars { width: 100%; margin-top: 0.375rem; font-size: 0.8125rem; }
+.bars th { width: 45%; max-width: 0; padding: var(--s-1) var(--s-3) var(--s-1) 0; text-align: left; font-weight: 400; vertical-align: middle; }
+.bars.plain th { width: 75%; }
+.bars td { padding: var(--s-1) 0; vertical-align: middle; }
+.bars td.bar { width: 40%; }
+.bars td.bar span { display: block; height: 0.5rem; min-width: 0.125rem; border-radius: 0 var(--r-chisel) var(--r-chisel) 0; background: var(--c-community); }
+.bars td.num { width: 1%; padding-left: var(--s-3); }
+.share { color: var(--c-text-dim); }
+.base { display: block; font-weight: 600; overflow-wrap: break-word; }
+.dir { display: block; overflow: hidden; color: var(--c-text-dim); font-size: 0.75rem; white-space: nowrap; text-overflow: ellipsis; direction: rtl; text-align: left; }
+.trim { margin-top: var(--s-1); font-size: 0.75rem; color: var(--c-text-dim); }
+
+.pbar { display: flex; gap: 0.125rem; height: 1rem; margin: 0.375rem 0 0.625rem; border-radius: var(--r-chisel); overflow: hidden; }
+.pbar > span { min-width: 0.125rem; }
+/* A labelled stack: each part's color on top, its label and value in text color under it. */
+.pbar.lab { height: auto; border-radius: 0; }
+.pbar.lab > span { display: flex; flex-direction: column; flex-basis: 0; gap: var(--s-1); }
+.pbar.lab i { display: block; height: 1rem; }
+.pbar.lab b { overflow: hidden; color: var(--c-text); font-size: 0.75rem; font-weight: 400; white-space: nowrap; text-overflow: ellipsis; }
+.p1 { background: var(--p1); }
+.p2 { background: var(--p2); }
+.p3 { background: var(--p3); }
+.p4 { background: var(--p4); }
+.p5 { background: var(--p5); }
+.parts { width: 100%; font-size: 0.8125rem; }
+.parts th, .parts td { padding: var(--s-1) 0; vertical-align: middle; }
+.parts th { width: 70%; max-width: 0; padding-left: var(--s-2); text-align: left; font-weight: 400; }
+.parts .sw { width: 0.75rem; }
+.parts .sw i { display: block; width: 0.75rem; height: 0.75rem; border-radius: 0.1875rem; }
+.parts .num { padding-left: var(--s-3); }
+
+.spark { display: block; max-width: 100%; height: auto; margin: 0.375rem 0; overflow: visible; }
+.spark polyline { fill: none; stroke: var(--c-community); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.spark .tail { stroke: color-mix(in oklab, var(--c-community) 40%, var(--c-ground)); }
+.spark .dot { fill: var(--c-community); stroke: var(--bg); stroke-width: 2; }
+.spark .dot.hollow { fill: var(--bg); stroke: var(--c-community); }
+.spark text { font-size: 0.75rem; fill: var(--c-text); font-variant-numeric: tabular-nums; }
+.tile .t-trend { max-width: 15rem; margin: 0.5rem 0 0; }
+.tile .t-trend figcaption { color: var(--c-text-dim); }
+
+/* ---- Review: histogram, heatmap, drill-down ---- */
+.flow { margin-top: var(--s-5); overflow-x: auto; }
+.flow h3 { margin-top: 0; }
+/* ---- Worst gaps and week-by-week lines (the Blockers tab) ---- */
+.gaps { margin-top: var(--s-5); }
+.gaps h3 { margin-top: 0; }
+.gaps .rank { grid-area: t; font-weight: 650; color: var(--c-text-dim); font-variant-numeric: tabular-nums; }
+@container (min-width: 47.5rem) { .gaps .fix li { grid-template-columns: 2rem minmax(0, 1fr) auto 11.25rem 12rem; } }
+.gap { margin-top: 0.375rem; font-weight: 600; }
+.wk { margin-top: var(--s-2); }
+
+/* ---- Tokens by repo (render/repos.mjs): the ledger's table, plus a bar ---- */
+.rp-bar { margin: 0 0 var(--s-4); }
+.rp-bar figcaption { font-size: 0.8125rem; color: var(--c-text-dim); }
+.lg.rp td.num, .lg.dp td.num, .lg.cr td.num, .lg.tl td.num { text-align: right; }
+.lg.cr td:nth-last-child(-n+2) { min-width: 14em; }
+
+/* ---- Blockers ledger (render/ledger.mjs) ----
+   Two ranked bar charts side by side when they fit, then one table of every
+   blocker, grouped, its numbers in tabular figures. */
+.lg-ranks { display: grid; gap: var(--s-1) var(--s-6); margin-bottom: var(--s-4); }
+@media (min-width: 56.25em) { .lg-ranks { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.lg-rank { margin: 0; }
+.lg-rank figcaption { font-size: 0.8125rem; color: var(--c-text-dim); }
+.lg { width: 100%; min-width: 42.5rem; font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+.lg th, .lg td { padding: 0.375rem var(--s-4) 0.375rem 0; border-bottom: var(--line-hair) solid var(--c-rule); text-align: left; vertical-align: middle; }
+.lg thead th { font-weight: 400; font-size: 0.8125rem; color: var(--c-text-dim); white-space: nowrap; }
+.lg tbody th { font-weight: 400; overflow-wrap: anywhere; }
+.lg .lg-g th { padding-top: var(--s-4); font-weight: 650; border-bottom-color: var(--c-text-dim); }
+.lg td.num { white-space: nowrap; }
+.lg td.vd span { display: inline-flex; align-items: center; gap: 0.375rem; white-space: nowrap; }
+/* ---- CI pipeline (render/ci-flow.mjs) ----
+   The rail: in every stage the slowest step sits on top, and a night line
+   joins those steps across the gaps, so the critical path reads straight. */
+.cf { --cf-col: 9rem; --cf-gap: 1rem; --cf-rail: var(--c-night); --cf-row: 1.4rem; margin: 0 0 var(--s-5); }
+.cf-key { display: flex; flex-wrap: wrap; gap: var(--s-1) 1.125rem; margin: 0 0 var(--s-3); font-size: 0.8125rem; color: var(--c-text-dim); }
+.cf-key span { display: inline-flex; align-items: center; gap: 0.375rem; }
+.cf-rail { display: inline-block; width: 1.5rem; height: 0.1875rem; border-radius: 0.125rem; background: var(--cf-rail); }
+.cf-dash { display: inline-block; width: 1.25rem; height: 0.75rem; border: var(--line-hair) dashed var(--c-text-dim); border-radius: var(--r-chisel); }
+.cf-dot { display: inline-block; width: 1.25rem; height: 0.75rem; border: var(--line-edge) dotted var(--c-text-dim); border-radius: var(--r-chisel); }
+.cf-scroll { overflow-x: auto; padding: var(--s-1) 0.125rem var(--s-2); }
+.cf-scroll:focus-visible { outline: var(--line-edge) solid var(--c-focus); outline-offset: 0.125rem; }
+.cf-stages { list-style: none; margin: 0; padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(var(--cf-col), 1fr); column-gap: var(--cf-gap); }
+.cf-sh { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-2); margin: 0 0 var(--s-2); font-size: 0.8125rem; font-weight: 600; color: var(--c-text-dim); }
+.cf-st { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cf-nodes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-2); }
+.cf-node { position: relative; }
+.cf-stage+.cf-stage .cf-node.crit::before { content: ""; position: absolute; top: var(--cf-row); right: 100%; width: var(--cf-gap); height: 0.1875rem; margin-top: -0.0625rem; background: var(--cf-rail); }
+.cf-btn { display: grid; gap: 0.375rem; width: 100%; margin: 0; padding: var(--s-2) 0.625rem; text-align: left; font: inherit; color: var(--c-text); background: var(--c-ground); border: var(--line-hair) solid var(--c-rule); border-radius: var(--r-chisel); cursor: pointer; }
+.cf-btn:hover { background: var(--c-surface); }
+.cf-btn:focus-visible { outline: var(--line-edge) solid var(--c-focus); outline-offset: 0.125rem; }
+.cf-node.crit .cf-btn { border: var(--line-edge) solid var(--cf-rail); padding: 0.4375rem 0.5625rem; }
+.cf-node[data-kind="hook"] .cf-btn { border-style: dashed; }
+.cf-node[data-kind="manual"] .cf-btn { border-style: dotted; border-width: var(--line-edge); padding: 0.4375rem 0.5625rem; }
+.cf-l1 { display: flex; gap: 0.375rem; align-items: flex-start; font-size: var(--t-step--1); font-weight: 600; line-height: 1.25; }
+.cf-l1 .g { margin-top: 0.125rem; }
+.cf-name { overflow-wrap: anywhere; }
+.cf-min { font-size: 0.8125rem; color: var(--c-text-dim); font-variant-numeric: tabular-nums; }
+.cf-node.crit .cf-min { color: var(--c-text); font-weight: 650; }
+.cf-track { display: block; height: 0.25rem; border-radius: 0.125rem; background: color-mix(in oklab, var(--c-rule) 55%, transparent); }
+.cf-bar { display: block; height: 0.25rem; min-width: 0.125rem; border-radius: 0.125rem; background: var(--c-community); }
+.cf-pop { max-width: min(30rem, calc(100vw - 2rem)); margin: auto; padding: var(--s-4); color: var(--c-text); background: var(--c-ground); border: var(--line-hair) solid var(--c-rule); border-radius: var(--r-card); box-shadow: 0 0.75rem 2rem color-mix(in oklab, var(--c-night) 22%, transparent); }
+.cf-pop::backdrop { background: color-mix(in oklab, var(--c-night) 18%, transparent); }
+.cf-pop h5 { margin: 0 0 var(--s-2); font-size: var(--t-step--1); }
+.cf-pop dl { display: grid; grid-template-columns: auto 1fr; gap: 0.375rem 0.875rem; margin: 0 0 var(--s-3); font-size: 0.875rem; }
+.cf-pop dt { color: var(--c-text-dim); }
+.cf-pop dd { margin: 0; overflow-wrap: anywhere; }
+.cf-pop .cf-close { font: inherit; font-size: 0.875rem; padding: 0.375rem var(--s-3); color: var(--c-text); background: var(--c-surface); border: var(--line-hair) solid var(--c-rule); border-radius: var(--r-chisel); cursor: pointer; }
+.cf-table { margin-top: var(--s-3); font-size: 0.875rem; }
+.cf-table summary { cursor: pointer; color: var(--c-text-dim); }
+.cf-table table { margin-top: var(--s-2); min-width: 30rem; }
+.cf-table th, .cf-table td { padding: 0.375rem 0.625rem; text-align: left; vertical-align: top; border-bottom: var(--line-hair) solid var(--c-rule); }
+.cf-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.review { margin-top: 1.75rem; }
+.rv-head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--s-3) 2.25rem; }
+.rv-head h3 { width: 100%; margin: 0; }
+.rv-head .small { flex-basis: 100%; }
+@media (min-width: 56.25em) { .rv-head .small { flex-basis: auto; } }
+.hist { display: inline-flex; align-items: flex-end; gap: var(--s-1); }
+.hc { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 0.125rem; width: 1.75rem; font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+.hc b { font-weight: 600; }
+.hc i { font-style: normal; color: var(--c-text-dim); }
+.hb { display: block; width: 100%; border-radius: 0.1875rem 0.1875rem 0 0; }
+.k1 { background: var(--k1); color: var(--c-on-night); }
+.k2 { background: var(--k2); color: var(--c-on-night); }
+.k3 { background: var(--k3); color: var(--c-text); }
+.k4 { background: var(--k4); color: var(--c-text); }
+.k5 { background: var(--k5); color: var(--c-text); }
+/* The drill-down sits beside the heatmap when both fit, under it when not. */
+.rv-body { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0 2.5rem; }
+.rv-map { flex: 0 1 auto; min-width: 0; max-width: 100%; }
+.rv-body .drill { flex: 1 1 22.5rem; }
+@media (min-width: 68.75em) { .rv-body .drill { margin-top: 1.125rem; } }
+.hm-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) 1.25rem; margin: 1.125rem 0 var(--s-2); }
+.seg { display: inline-flex; border: var(--line-hair) solid var(--c-border); border-radius: var(--r-chisel); overflow: hidden; }
+.seg button { min-height: 2rem; padding: var(--s-1) var(--s-3); border: 0; background: var(--c-ground); color: var(--c-text); font-size: 0.8125rem; cursor: pointer; }
+.seg button + button { border-left: var(--line-hair) solid var(--c-border); }
+.seg button[aria-pressed="true"] { background: var(--c-night); color: var(--c-on-night); }
+.seg button:focus-visible { outline-offset: calc(-1 * var(--size-ring-offset)); }
+.ramp-key { display: inline-flex; align-items: center; gap: 0.1875rem; font-size: 0.75rem; color: var(--c-text-dim); }
+.ramp-key i { width: 0.875rem; height: 0.625rem; border-radius: 0.125rem; }
+.ramp-key i:first-child { margin-left: var(--s-1); }
+.ramp-key i:last-child { margin-right: var(--s-1); }
+
+.heatmap { border-collapse: separate; border-spacing: var(--line-edge); font-size: 0.8125rem; }
+.heatmap thead th { min-width: 3.125rem; max-width: 4.75rem; padding: var(--s-1) 0.125rem; font-size: 0.75rem; font-weight: 400; line-height: 1.2; color: var(--c-text-dim); text-align: center; vertical-align: bottom; }
+.heatmap thead th.pg { text-align: left; }
+.heatmap tbody th { position: sticky; left: 0; z-index: 1; max-width: 16.25rem; padding: 0 var(--s-3) 0 0; overflow: hidden; background: var(--c-ground); font-weight: 400; text-align: left; white-space: nowrap; text-overflow: ellipsis; }
+@media (max-width: 40em) { .heatmap tbody th { max-width: 8.25rem; } }
+.heatmap td { padding: 0; }
+.cell { display: block; width: 100%; min-width: 3.125rem; height: 1.875rem; padding: 0; border: 0; border-radius: 0.1875rem; font-size: 0.8125rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; cursor: pointer; }
+.cell:hover { box-shadow: inset 0 0 0 0.125rem rgb(255 255 255 / 0.6); }
+.cell.sel { outline: var(--line-edge) solid var(--c-text); outline-offset: 0.0625rem; }
+.cell:focus-visible { outline: var(--line-edge) solid var(--c-focus); outline-offset: 0.0625rem; }
+.heatmap:not(.all) tr.extra { display: none; }
+.more-rows { margin-top: var(--s-2); min-height: 2rem; padding: var(--s-1) var(--s-3); border: var(--line-hair) solid var(--c-border); border-radius: var(--r-chisel); background: var(--c-ground); color: var(--c-text); font-size: 0.8125rem; cursor: pointer; }
+
+.drill { max-width: 84ch; margin-top: var(--s-4); padding-top: var(--s-3); border-top: var(--line-hair) solid var(--c-rule); }
+.drill-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s-1) var(--s-3); margin-bottom: var(--s-1); }
+.drill-h span { color: var(--c-text-dim); }
+.finding { padding: 0.625rem 0; border-bottom: var(--line-hair) solid var(--c-rule); }
+.fh { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem var(--s-3); margin-bottom: 0.375rem; font-size: 0.8125rem; }
+.where { color: var(--c-text-dim); overflow-wrap: anywhere; }
+.sc { display: inline-grid; place-items: center; min-width: 1.75rem; height: 1.375rem; padding: 0 var(--s-1); border-radius: 0.1875rem; font-size: 0.8125rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+.finding dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--s-1) var(--s-3); margin: 0; font-size: 0.875rem; }
+.finding dt { font-size: 0.8125rem; color: var(--c-text-dim); }
+.finding dd { margin: 0; overflow-wrap: anywhere; }
+.findings { margin-top: var(--s-4); }
+.findings > summary { padding: var(--s-2) 0; font-weight: 600; cursor: pointer; }
+.findings ol { margin: 0; padding: 0; list-style: none; }
+.findings li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-1) 0.625rem; padding: var(--s-2) 0; border-bottom: var(--line-hair) solid var(--c-rule); font-size: 0.8125rem; }
+.findings li p { flex-basis: 100%; font-size: 0.875rem; }
+.fp { font-weight: 600; overflow-wrap: anywhere; }
+.crit { color: var(--c-text-dim); }
+
+/* ---- Tooltip ---- */
+#tip { position: fixed; z-index: 20; max-width: min(20rem, calc(100vw - 1rem)); padding: 0.375rem 0.625rem; border-radius: var(--r-chisel); background: var(--c-night); color: var(--c-on-night); font-size: 0.8125rem; line-height: 1.35; pointer-events: none; box-shadow: 0 0.25rem 0.875rem rgb(20 34 63 / 0.18); }
+
+@media (max-width: 40em) {
+  .top h1 { font-size: 1.375rem; }
+  .key { margin-left: 0; }
+  .big { font-size: var(--t-step-4); }
+  .sb-n { font-size: 2.125rem; }
+  .tab-head { gap: var(--s-3) var(--s-5); }
+  .tab-head h2 { font-size: var(--t-step-2); }
+  .th-name { gap: var(--s-2) var(--s-4); }
+  .mini { width: 6rem; height: 4rem; }
+  .more { padding-left: 0.875rem; }
+}

@@ -1,0 +1,26 @@
+[
+ {
+  "id": "engine.page_seconds",
+  "tab": "code",
+  "kind": "speed",
+  "group": "Engine",
+  "label": "Quality page collect and build in CI",
+  "means": "Seconds the engine takes to collect and build this Quality page on a push to main, as every adopter waits.",
+  "unit": "s",
+  "goal": 45,
+  "near": 90,
+  "direction": "lower",
+  "goal_source": "Git Crafter goal (2026-11-11), set from readings: every third successful pages.yml push to main, 74 runs 2026-11-04 to 2026-11-11 (gh api actions/runs/{id}/jobs, read 2026-11-11), timed this step at 21 to 78 s, median 41 s, and its daily median rose from 26 s to 54 s. A 45 s goal holds the week's median; the median of 5 runs passed it in 28 of 70 windows. Near is twice the goal. No first-party source sets a number for this step",
+  "source": "last 5 successful pushes to main: median seconds of the pages.yml build job's step \"Git Crafter's own Quality, Speed and Consumption page\" (gh api actions/runs/{id}/jobs); the run collecting now is still in progress, so it is not one of them",
+  "needs": "none",
+  "chart": "bar",
+  "defined": "2026-11-11",
+  "params": {
+   "workflow": "pages.yml",
+   "job": "build",
+   "step": "Git Crafter's own Quality, Speed and Consumption page",
+   "branch": "main",
+   "runs": 5
+  }
+ }
+]

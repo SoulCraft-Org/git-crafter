@@ -1,0 +1,68 @@
+[
+ {
+  "id": "design.raw_hex",
+  "params": {
+   "comment": "Git Crafter ships the Process and Metrics pages, built into pages/dist before the Quality collect (pages.yml build job). Its styles are pages/site.css and the template's quality/render/page.css, on the tokens in quality/render/tokens.css. The token files define the colors, so they are left out of the raw scans. Off-scale type and off-token color need a JSON or YAML token file, which Git Crafter does not keep, so both are off Git Crafter's score, as is usability.unlabeled_fields: its pages have no form. usability.form_page_kib stays, unread, as the tab's only consumption metric.",
+   "site_dir": "pages/dist",
+   "key_pages": [
+    "/",
+    "/metrics.html"
+   ],
+   "widths": [
+    1280,
+    375
+   ],
+   "src_dirs": [
+    "pages",
+    "quality/render"
+   ],
+   "scan_extensions": [
+    ".css"
+   ],
+   "raw_scan_exempt": [
+    {
+     "file": "quality/render/tokens.css",
+     "why": "the token file that defines every color"
+    }
+   ]
+  }
+ },
+ {
+  "id": "usability.reading_grade",
+  "params": {
+   "site_dir": "pages/dist",
+   "key_pages": [
+    "/",
+    "/metrics.html"
+   ],
+   "widths": [
+    1280,
+    375
+   ],
+   "tasks": [
+    {
+     "label": "Read the metrics and goals",
+     "path": "/metrics.html"
+    }
+   ],
+   "crawl_skip": [
+    "/api/",
+    "/cdn-cgi/",
+    "/quality/"
+   ],
+   "comment": "The crawl reads pages/dist before the Quality page is built into pages/dist/quality, so /quality/ is skipped: its link from the Process pages is a measurement artifact, not a broken link."
+  }
+ },
+ {
+  "id": "design.font_sizes_off_scale",
+  "drop": true
+ },
+ {
+  "id": "design.text_colors_off_token",
+  "drop": true
+ },
+ {
+  "id": "usability.unlabeled_fields",
+  "drop": true
+ }
+]

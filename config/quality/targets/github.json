@@ -1,0 +1,137 @@
+[
+ {
+  "id": "issues.open_bugs",
+  "params": {
+   "area_labels": [
+    "quality",
+    "pages",
+    "guard",
+    "ci",
+    "documentation",
+    "security",
+    "accessibility"
+   ],
+   "project_title": "code-os",
+   "project_columns": [
+    "Later",
+    "Waiting on data",
+    "Todo",
+    "In Progress",
+    "Done"
+   ]
+  }
+ },
+ {
+  "id": "security.secret_scanning_on",
+  "drop": true
+ },
+ {
+  "id": "security.secret_scanning_open",
+  "drop": true
+ },
+ {
+  "id": "security.code_scanning_on",
+  "drop": true
+ },
+ {
+  "id": "security.code_scanning_open",
+  "drop": true
+ },
+ {
+  "id": "security.code_quality_on",
+  "drop": true
+ },
+ {
+  "id": "security.code_quality_open",
+  "drop": true
+ },
+ {
+  "id": "security.headers",
+  "drop": true
+ },
+ {
+  "id": "security.latest_fix_days",
+  "drop": true,
+  "goal_source": "Claude, 2026-11-10: Git Crafter has never had an alert fixed (gh api dependabot/alerts, 0 fixed or dismissed), so the metric has no reading; a metric with no reading stays off the page (the owner, 2026-11-10). security.oldest_open_alert_days measures speed here. Restore it once an alert has been fixed"
+ },
+ {
+  "id": "security.threat_model_current",
+  "goal_source": "Microsoft SDL practices and its threat modeling page (read 2026-11-10): threat modeling is part of the routine development lifecycle; Git Crafter (Claude, 2026-11-10): the model may trail its code by 7 days, the tab's fix-within-a-week goal. About 25 pull requests changed a covered path on 2026-11-10, and making each edit one 476-word file had them colliding on it",
+  "params": {
+   "threat_model": [
+    "THREAT-MODEL.md",
+    "tools/THREAT-MODEL.md"
+   ],
+   "threat_model_grace_days": 7,
+   "threat_model_covers": [
+    "tools/bash_guard.py",
+    "tools/bash_guard_*.py",
+    "tools/bash_guard_rules.json",
+    "tools/comfy_guard.py",
+    "templates/",
+    ".claude/settings.json",
+    "tools/write_guard.py",
+    "tools/claude_os_sync.py",
+    "manifest.json",
+    "actions/pages/",
+    ".github/workflows/"
+   ]
+  }
+ },
+ {
+  "id": "security.claude_review_share",
+  "drop": true,
+  "goal_source": "the owner, 2026-11-05: Git Crafter's own repo runs no CI Claude review (it spends subscription tokens on every PR; the merge review covers review). #838 (2026-11-11) adds one on sensitive paths only; it comments as github-actions, which review_authors does not list",
+  "params": {
+   "review_paths": [
+    "**/*.mjs",
+    "**/*.js",
+    "**/*.ts",
+    "**/*.py",
+    "**/*.sh",
+    "tools/**",
+    "actions/**",
+    ".github/workflows/**",
+    ".claude/settings.json",
+    "manifest.json",
+    "package.json",
+    "package-lock.json"
+   ]
+  }
+ },
+ {
+  "id": "pull_requests.green_to_merge_minutes",
+  "goal": 30,
+  "near": 120,
+  "goal_source": "Git Crafter goal, no public benchmark (the orchestrator, 2026-11-05): a PR merges within 30 minutes of all checks going green, since the merge waits only on the head-pinned review; near is 2 hours. Google's review-speed guide (google.github.io/eng-practices/review/reviewer/speed.html, read 2026-11-04) sets one business day as the slowest response, which this goal sits well inside"
+ },
+ {
+  "id": "pull_requests.green_waiting_minutes",
+  "goal": 30,
+  "near": 120,
+  "goal_source": "Git Crafter goal, no public benchmark (2026-11-10): the same 30 minutes, near 2 hours, as pull_requests.green_to_merge_minutes, which it reads on open pull requests instead of merged ones"
+ },
+ {
+  "id": "pull_requests.latest_merge_hours",
+  "goal": 4,
+  "near": 24,
+  "goal_source": "Git Crafter goal (2026-11-10): the org's open-merge goal in goals.json, 4 hours and near 24, in place of the template's DORA day and week, so this metric has one goal. Under the template's goal a 92.3 hour merge rated near (the live page, 2026-11-10)"
+ },
+ {
+  "id": "pull_requests.oldest_open_days",
+  "goal": 1,
+  "near": 3,
+  "goal_source": "Git Crafter goal (2026-11-10): the latest merge takes at most 4 hours, near 24 (goals.json open-merge), so no pull request stays open past a day; near is 3 days. Under the template's week a pull request open 3.8 days still met the goal"
+ },
+ {
+  "id": "pull_requests.commits_via_pr",
+  "drop": true,
+  "goal_source": "Git Crafter, 2026-11-10: the org ruleset Protect default branches requires a pull request on the default branch and has no bypass actors (gh api repos/<repo>/rulesets, read 2026-11-10; Git Crafter's repo ruleset has the same rule), so this share cannot move from 100; settings.main_protected watches the rule itself"
+ },
+ {
+  "id": "pull_requests.latest_body_words",
+  "goal": 50,
+  "near": 150,
+  "goal_source": "Git Crafter goal (the owner, 2026-11-10): everything in a pull request is as visual as possible, with as few words as possible. 50 prose words is about three short lines beside the tables and diagrams, which this count leaves out; near is the template's 150. The latest description read 136 words (the live page, 2026-11-10)"
+ }
+]

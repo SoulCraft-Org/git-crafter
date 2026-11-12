@@ -1,0 +1,28 @@
+{
+ "ideal": "Trusted node:test suites: a test file per collector, engine module and tool, no unexplained skip, one CI test job green on main in minutes.",
+ "sources": [
+  {
+   "title": "GitHub Docs: GitHub-hosted runners",
+   "url": "https://docs.github.com/en/actions/concepts/runners/github-hosted-runners",
+   "date": "2026-11-04"
+  },
+  {
+   "title": "Node.js Docs: Test runner (skip and todo)",
+   "url": "https://nodejs.org/api/test.html",
+   "date": "2026-11-04"
+  },
+  {
+   "title": "Martin Fowler: Continuous Integration",
+   "url": "https://martinfowler.com/articles/continuousIntegration.html",
+   "date": "2024-01-18"
+  },
+  {
+   "title": "Ham Vocke: The Practical Test Pyramid",
+   "url": "https://martinfowler.com/articles/practical-test-pyramid.html",
+   "date": "2018-02-26"
+  }
+ ],
+ "quality": "No test skipped or left todo, and the test job passing on main in 95% of runs or more.",
+ "speed": "The test job finishes within the ten-minute build.",
+ "consumption": "Billed test minutes no more than the one test job's speed goal."
+}

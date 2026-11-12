@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 432" width="960" height="432" role="img" aria-labelledby="t d" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#0b0b0b">
+<title id="t">Diagram of the two pages Git Crafter builds for a repo</title>
+<desc id="d">A schematic with sample numbers, not real data. Left, the Quality, Speed and Consumption page: a header with commit and build time, a strip of tabs with small scores, a master score out of 100, three category scores with bars, a bar of metrics that meet, near or miss their goal, and a work queue. Right, the Process page: its maps drawn as trails of steps, and one open step listing its tool, its rule and its metric, which is read from the Quality page.</desc>
+<rect width="960" height="432" fill="#fcfcfb"/>
+<g fill="#ffffff" stroke="#898781"><rect x="12" y="12" width="584" height="408" rx="8"/><rect x="608" y="12" width="340" height="408" rx="8"/></g>
+<text x="28" y="38" font-size="15" font-weight="600">Quality, Speed and Consumption</text>
+<text x="580" y="38" text-anchor="end" font-size="11" fill="#52514e">commit · build time</text>
+<rect x="28" y="50" width="76" height="30" rx="4"/><text x="36" y="69" font-size="11" fill="#fff">Overview</text>
+<rect x="423" y="84" width="76" height="30" rx="4" fill="none" stroke="#898781" stroke-dasharray="3 3"/><text x="431" y="103" font-size="11">+7 more</text>
+<g fill="none" stroke="#898781"><rect x="107" y="50" width="76" height="30" rx="4"/><rect x="186" y="50" width="76" height="30" rx="4"/><rect x="265" y="50" width="76" height="30" rx="4"/><rect x="344" y="50" width="76" height="30" rx="4"/><rect x="423" y="50" width="76" height="30" rx="4"/><rect x="502" y="50" width="76" height="30" rx="4"/><rect x="28" y="84" width="76" height="30" rx="4"/><rect x="107" y="84" width="76" height="30" rx="4"/><rect x="186" y="84" width="76" height="30" rx="4"/><rect x="265" y="84" width="76" height="30" rx="4"/><rect x="344" y="84" width="76" height="30" rx="4"/></g>
+<g font-size="11"><text x="115" y="63">Code</text><text x="194" y="63">Docs</text><text x="273" y="63">Issues</text><text x="352" y="63">Projects</text><text x="431" y="63">PRs</text><text x="510" y="63">Actions</text><text x="36" y="97">Tests</text><text x="115" y="97">Security</text><text x="194" y="97">Design</text><text x="273" y="97">Usability</text><text x="352" y="97">Claude</text></g>
+<path d="M115 70h52M115 75h34M194 70h40M194 75h56M273 70h58M273 75h44M352 70h30M352 75h48M431 70h46M431 75h28M510 70h36M510 75h52M36 104h56M36 109h40M115 104h44M115 109h58M194 104h50M194 109h32M273 104h34M273 109h46M352 104h48M352 109h54" stroke="#52514e" stroke-width="3"/>
+<g fill="none" stroke="#898781"><rect x="28" y="126" width="168" height="104" rx="6"/><rect x="208" y="126" width="120" height="104" rx="6"/><rect x="334" y="126" width="120" height="104" rx="6"/><rect x="460" y="126" width="120" height="104" rx="6"/></g>
+<g font-size="11" fill="#52514e"><text x="40" y="146">Master score</text><text x="220" y="146">Quality</text><text x="346" y="146">Speed</text><text x="472" y="146">Consumption</text></g>
+<text x="40" y="192" font-size="40" font-weight="700">72</text><text x="90" y="192" font-size="13" fill="#52514e">/ 100</text>
+<g font-size="28" font-weight="700"><text x="220" y="190">81</text><text x="346" y="190">64</text><text x="472" y="190">70</text></g>
+<g font-size="11" font-style="italic" fill="#52514e"><text x="132" y="192">sample</text><text x="260" y="190">sample</text><text x="386" y="190">sample</text><text x="512" y="190">sample</text></g>
+<g fill="#e3e2dd"><rect x="40" y="208" width="144" height="8" rx="4"/><rect x="220" y="208" width="96" height="8" rx="4"/><rect x="346" y="208" width="96" height="8" rx="4"/><rect x="472" y="208" width="96" height="8" rx="4"/></g>
+<g fill="#0969da"><rect x="40" y="208" width="104" height="8" rx="4"/><rect x="220" y="208" width="78" height="8" rx="4"/><rect x="346" y="208" width="61" height="8" rx="4"/><rect x="472" y="208" width="67" height="8" rx="4"/></g>
+<text x="28" y="256" font-size="11" fill="#52514e">Metrics against their goals</text>
+<rect x="28" y="264" width="330" height="12" fill="#1a7f37"/><rect x="360" y="264" width="120" height="12" fill="#bf8700"/><rect x="482" y="264" width="98" height="12" fill="#a40e26"/>
+<g font-size="11"><text x="28" y="292">meets</text><text x="360" y="292">near</text><text x="482" y="292">misses</text></g>
+<text x="28" y="320" font-weight="600">Work queue</text><text x="580" y="320" text-anchor="end" font-size="11" fill="#52514e">ranked by points gained</text>
+<g fill="none" stroke="#898781"><rect x="28" y="330" width="552" height="24" rx="4"/><rect x="28" y="358" width="552" height="24" rx="4"/><rect x="28" y="386" width="552" height="24" rx="4"/></g>
+<g font-size="11"><text x="38" y="346">Docs</text><text x="570" y="346" text-anchor="end">+ points</text><text x="38" y="374">Actions</text><text x="570" y="374" text-anchor="end">+ points</text><text x="38" y="402">Tests</text><text x="570" y="402" text-anchor="end">+ points</text></g>
+<path d="M96 342h250M96 370h310M96 398h200" stroke="#e3e2dd" stroke-width="6"/>
+<text x="624" y="38" font-size="15" font-weight="600">Process</text>
+<text x="932" y="38" text-anchor="end" font-size="11" fill="#52514e">maps of steps</text>
+<text x="624" y="64">Delivery</text><text x="624" y="86">Deploy</text><text x="624" y="108">Guard</text><text x="624" y="130">Adopt</text><text x="624" y="152">Measure</text><text x="624" y="174">Code</text>
+<path d="M700 60h176M700 82h132M700 104h176M700 126h176M700 148h176M700 170h220" stroke="#898781" stroke-width="2"/>
+<path d="M700 60h0M744 60h0M788 60h0M832 60h0M876 60h0M700 82h0M744 82h0M788 82h0M832 82h0M700 104h0M744 104h0M788 104h0M832 104h0M876 104h0M700 126h0M744 126h0M788 126h0M832 126h0M876 126h0M700 148h0M744 148h0M788 148h0M832 148h0M876 148h0M700 170h0M744 170h0M788 170h0M832 170h0M876 170h0M920 170h0" stroke="#52514e" stroke-width="12" stroke-linecap="round"/>
+<circle cx="744" cy="170" r="8" fill="#0969da"/><path d="M744 178v22" stroke="#0969da" stroke-width="2"/>
+<rect x="624" y="200" width="308" height="204" rx="6" fill="none" stroke="#0969da" stroke-width="2"/>
+<text x="636" y="222" font-weight="600">One step</text>
+<path d="M636 234h284M636 276h284M636 318h284" stroke="#e3e2dd"/>
+<g font-size="11" fill="#52514e"><text x="636" y="259">Tool</text><text x="636" y="301">Rule</text><text x="636" y="343">Metric</text></g>
+<text x="696" y="259">what runs the step</text><text x="696" y="301">what the step must follow</text><text x="696" y="343">one, read from the Quality page</text>
+<rect x="696" y="362" width="224" height="8" rx="4" fill="#e3e2dd"/><rect x="696" y="362" width="150" height="8" rx="4" fill="#0969da"/><path d="M880 356v20" stroke="#0b0b0b" stroke-width="2"/>
+<text x="696" y="392" font-size="11" fill="#52514e">value against its goal</text>
+<path d="M598 339h18" stroke="#0969da" stroke-width="2"/><path d="M624 339l-9-5v10z" fill="#0969da"/>
+</svg>

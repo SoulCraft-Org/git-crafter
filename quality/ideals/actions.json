@@ -1,0 +1,150 @@
+{
+  "ideal": "Every push gets a trusted result within ten minutes from locked workflows, and included minutes last the cycle, free lanes first, no unneeded runs.",
+  "parts": [
+    {
+      "part": "Workflows",
+      "ideal": "Each workflow starts only when a file it checks changed, holds a read-only token, and a newer push cancels its older run",
+      "setup": "Add paths filters or a changes job, permissions contents: read at the top, concurrency with cancel-in-progress, and a timeout on each job"
+    },
+    {
+      "part": "Caches",
+      "ideal": "Every install restores a cache keyed on its lockfile, and storage stays under the repo's 10 GB so nothing is evicted early",
+      "setup": "setup-node with cache: npm, or actions/cache keyed on hashFiles of the lockfile; entries unused for 7 days are removed"
+    },
+    {
+      "part": "Lockfile",
+      "ideal": "Every workflow runs the action commits its lockfile records, and a workflow outside the lockfile cannot run",
+      "setup": "Run gh actions-lock, commit .github/workflows/actions.lock, check it in CI, then turn on the Require lockfile policy"
+    },
+    {
+      "part": "Runners",
+      "ideal": "Light jobs run on ubuntu-slim at a third of the 2-core price, and free third-party minutes are used before included ones",
+      "setup": "ubuntu-slim for one-core jobs under 15 minutes; Blacksmith gives 3,000 and Ubicloud 1,250 free minutes a month; public repos run free"
+    },
+    {
+      "part": "Deployments",
+      "ideal": "Only the default branch deploys, through an environment, with OIDC in place of a stored secret",
+      "setup": "Create the environment and limit its deployment branches to the default branch; required reviewers on a private repo need Enterprise"
+    },
+    {
+      "part": "Usage metrics",
+      "ideal": "Included usage lasts the whole billing cycle, and the workflows and jobs that bill the most are trimmed first",
+      "setup": "Insights, Actions Usage Metrics by workflow, job and runner; a budget stops Actions at the included amount, which resets each cycle"
+    },
+    {
+      "part": "Performance metrics",
+      "ideal": "Jobs start within 30 seconds, few fail, and the pipeline goes green within ten minutes",
+      "setup": "Insights, Actions Performance Metrics: run time, queue time and failures by workflow and job; this tab scores job wait and failed runs"
+    },
+    {
+      "part": "Attestations",
+      "ideal": "Every release, binary or package people download carries signed build provenance; test builds carry none",
+      "setup": "actions/attest with id-token: write, attestations: write and contents: read; consumers run gh attestation verify"
+    }
+  ],
+  "sources": [
+    {
+      "title": "GitHub docs: Secure use reference, lockfiles, pinning and least privilege",
+      "url": "https://docs.github.com/en/actions/reference/security/secure-use",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: Workflow dependency lockfiles",
+      "url": "https://docs.github.com/en/actions/concepts/security/workflow-dependency-lockfiles",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: Locking action dependencies in a repository's workflows",
+      "url": "https://docs.github.com/en/actions/how-tos/secure-your-work/lock-workflow-dependencies",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: Governing execution of GitHub Actions workflows",
+      "url": "https://docs.github.com/en/actions/how-tos/administer/control-workflow-execution",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: Dependency caching reference, limits and eviction",
+      "url": "https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: About GitHub Actions metrics, usage and performance",
+      "url": "https://docs.github.com/en/actions/concepts/metrics",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: Artifact attestations",
+      "url": "https://docs.github.com/en/actions/concepts/security/artifact-attestations",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: GitHub Actions billing, included usage and runner rates",
+      "url": "https://docs.github.com/en/billing/concepts/product-billing/github-actions",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: Actions runner pricing",
+      "url": "https://docs.github.com/en/billing/reference/actions-runner-pricing",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: GitHub-hosted runners reference, ubuntu-slim",
+      "url": "https://docs.github.com/en/actions/reference/runners/github-hosted-runners",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: Deployments and environments",
+      "url": "https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: Using artifact attestations",
+      "url": "https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Microsoft Learn: Security considerations for DevOps platforms",
+      "url": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/considerations/security-considerations-overview",
+      "date": "2026-01-15"
+    },
+    {
+      "title": "Claude Code docs: Claude Code GitHub Actions, permissions and cost",
+      "url": "https://code.claude.com/docs/en/github-actions",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub docs: Workflow syntax, paths filters, concurrency and permissions",
+      "url": "https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "DORA: Capabilities, continuous integration",
+      "url": "https://dora.dev/capabilities/continuous-integration/",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub changelog: Actions workflow lockfiles are generally available",
+      "url": "https://github.blog/changelog/2026-10-28-github-actions-workflow-lockfiles-are-generally-available/",
+      "date": "2026-10-28"
+    },
+    {
+      "title": "Martin Fowler: Continuous Integration",
+      "url": "https://martinfowler.com/articles/continuousIntegration.html",
+      "date": "2024-01-18"
+    },
+    {
+      "title": "Blacksmith: Pricing, 3,000 free minutes a month",
+      "url": "https://www.blacksmith.sh/pricing",
+      "date": "2026-11-11"
+    },
+    {
+      "title": "Ubicloud: GitHub Actions runners, 1,250 free minutes a month",
+      "url": "https://www.ubicloud.com/use-cases/github-actions",
+      "date": "2026-11-11"
+    }
+  ],
+  "quality": "No flaky reruns, installs restore their cache, and every workflow runs the commits its lockfile records.",
+  "speed": "Push to all green within ten minutes; a red default branch fixed within ten minutes.",
+  "consumption": "Included minutes last the cycle: free lanes first, light jobs on the cheapest runner, no idle runner, and a newer push cancels the older run."
+}

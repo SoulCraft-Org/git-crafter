@@ -1,0 +1,20 @@
+{
+  "area_labels": [
+    "code",
+    "documentation",
+    "design",
+    "usability",
+    "security",
+    "ci"
+  ],
+  "project_columns": [
+    "Ideas",
+    "Next",
+    "Doing",
+    "Done"
+  ],
+  "site_url": "https://fixture.example/",
+  "not_reviewed": [
+    "^fixtures/snapshots/"
+  ]
+}

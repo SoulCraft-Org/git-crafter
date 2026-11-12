@@ -1,0 +1,47 @@
+{
+ "comment_purpose": "Git Crafter's own process maps, an instance of the template's library (pages/maps). Every repo keeps its own maps file, separate from every other repo's (the owner, 2026-11-03). A repo's Process page shows only the maps its config names, never these.",
+ "comment_format": "An entry uses a library map by id ({\"use\": \"delivery\"}) and changes only what differs, by step id. Or it is a map of the repo's own, written out in full. A library map takes name, why, ideal, sources, critical_path, time_bar and steps; each step takes name, short, tools, rule, rule_ref, metric, icon, gates, gates_from, or drop: true (pages/library.mjs). A map of its own: id, name, why, steps, and optionally critical_path, time_bar (one metric whose detail rows are its step hours, drawn as one stacked bar), ideal and sources. Each step: id, name, tools, rule, rule_ref (a path under repo_url, or an https link), exactly one metric, and optionally short, icon, gates and gates_from. The metric is an id on this repo's Quality page, rated by that page's goal. Six steps at most (pages/build.mjs MAX_STEPS). pages/maps/README.md has the format.",
+ "comment_gates": "gates are the rules a step passes through. gates_from adds what each repo's files say: hooks (its git hooks), workflows (its CI workflows) or deploys (its deploy jobs).",
+ "repo_url": "https://github.com/SoulCraft-Org/git-crafter/blob/main",
+ "maps": [
+  {
+   "use": "delivery",
+   "why": "A change to Git Crafter, from the plan the owner approves to merged on main",
+   "steps": {
+    "plan": {"tools": ["Plan mode", "the owner approves in chat", "App sessions, each in its own worktree"], "rule": "The session where the owner approves the plan orchestrates and starts every session it can foresee in that turn.", "rule_ref": "skills/merging/orchestrating.md#orchestrating"},
+    "build": {"tools": ["Claude Code", "Explore agent on Haiku for wide reads", "OpenRouter free models", "Ollama cloud"], "rule": "Claude builds and reviews; open-weight models do the cheap bulk work.", "rule_ref": "rules/compute.md", "gates": ["pre-push runs no tests; CI runs them (site decision 93)"]},
+    "ci": {"tools": ["GitHub Actions, standard runners, ubuntu-slim for light jobs", "Included Actions usage, 300 USD, a budget that stops at it", "Free lanes: Blacksmith and Ubicloud free minutes, public repos", "Pinned actions", "The app's PR monitor with Auto-fix"], "rule": "CI, test suites and builds run on GitHub Actions; the Mac runs only rare, small, quick things.", "rule_ref": "rules/compute.md"},
+    "review": {"tools": ["One reviewer subagent per PR", "Head SHA pin", "gh pr checks"], "metric": "pull_requests.fixed_after_review", "rule": "A reviewer runs the checks on the head commit and reports no blocking finding; a fix needs a new review.", "rule_ref": "skills/merging/reviewing.md#reviewing", "gates": ["A review pinned to the reviewed head SHA, clean or blocking (site decision 95)", "Guard test payloads go only to bash_guard.py --check; shell probes run in CI (rules/gates.md)"]},
+    "merge": {"tools": ["gh pr merge with --match-head-commit", "Dependabot bumps each caller's pin"], "metric": "pull_requests.latest_merge_hours", "rule": "The orchestrator merges the reviewed head SHA when every check is green; never --auto or --admin.", "rule_ref": "skills/merging/SKILL.md#who-merges", "gates": ["Merge with the literal reviewed SHA, typed, never read at merge time"]}
+   }
+  },
+  {"use": "deploy", "why": "A merged change to Git Crafter, from the Pages build to live, and back when it fails", "steps": {"build": {"tools": ["pages.yml on every push to main"], "rule": "Every merge to main builds and publishes the pages on its own; nobody deploys by hand."}, "ship": {"tools": ["GitHub Pages"], "rule": "A merged change is live once its push goes green, within minutes.", "metric": "ci.latest_flow"}, "verify": {"tools": ["pages.yml build checks", "visual-check screenshots"], "rule": "A publish whose checks fail, or pass only on a rerun, counts as a failed change.", "metric": "deploy.failure_rate_last10"}, "restore": {"tools": ["Re-run pages.yml on the last good commit"], "rule": "A failed publish re-runs on the last good commit before anyone debugs it, so main stays red for minutes.", "metric": "ci.main_red_minutes"}}},
+  {"use": "board"},
+  {"use": "guard"},
+  {"use": "adopt"},
+  {"use": "measure"},
+  {"use": "code", "why": "Git Crafter's own code, from measured to simplified, deleted, explained, checked and held small"},
+  {"use": "triage", "why": "A finding in Git Crafter, from intake to the issue or card a merged pull request closes", "steps": {"intake": {"rule_ref": "SUPPORT.md"}, "issue": {"rule_ref": "CONTRIBUTING.md"}, "card": {"rule_ref": "CONTRIBUTING.md"}, "link": {"rule_ref": "CONTRIBUTING.md"}}},
+  {"use": "decide", "why": "A question or blocker in Git Crafter, from where it arises to Claude's call or the owner's queue", "steps": {"arise": {"rule_ref": "rules/delegation.md"}, "decide": {"rule_ref": "rules/delegation.md#decide-without-asking"}, "queue": {"rule_ref": "rules/delegation.md#owners-queue"}, "clear": {"rule_ref": "rules/delegation.md"}}},
+  {"use": "document"},
+  {"use": "secure", "why": "Git Crafter's security, from keys no session reads to alerts closed within a week", "steps": {"keys": {"rule_ref": "rules/keys.md"}, "scan": {"rule_ref": "SECURITY.md"}, "model": {"rule_ref": "THREAT-MODEL.md"}, "report": {"rule_ref": "SECURITY.md"}, "alerts": {"rule_ref": "SECURITY.md"}}},
+  {
+   "id": "spend",
+   "name": "Spend",
+   "why": "Git Crafter's compute and credits, from free allowances first to idle capacity dropped",
+   "ideal": "Use free and included allowances before anything that bills, read their use the same day, and never idle free capacity in a lane over budget.",
+   "sources": [
+    {"title": "GitHub Actions billing", "url": "https://docs.github.com/en/billing/concepts/product-billing/github-actions", "date": "2026-11-04"},
+    {"title": "REST API endpoints for billing usage", "url": "https://docs.github.com/en/rest/billing/usage", "date": "2026-11-04"},
+    {"title": "What is the Ultra plan?", "url": "https://support.claude.com/en/articles/17728952-what-is-the-ultra-plan", "date": "2026-11-04"}
+   ],
+   "critical_path": ["free", "read", "pool", "idle"],
+   "steps": [
+    {"id": "free", "name": "Free first", "tools": ["Free tiers", "Subscription credits"], "rule": "Claim every free allowance before anything that bills.", "rule_ref": "rules/compute.md", "metric": "credits.unclaimed_free"},
+    {"id": "read", "name": "Read", "tools": ["Usage reports", "The credits registry"], "rule": "Each allowance's use is read the same day.", "rule_ref": "rules/compute.md", "metric": "credits.usage_read_share"},
+    {"id": "pool", "name": "Stay under", "tools": ["GitHub Actions included minutes"], "rule": "CI stays under the included minutes; no overage, no larger runners.", "rule_ref": "rules/compute.md", "metric": "credits.actions_pool_used", "gates": ["Spend past the included amount waits for the owner's yes (rules/compute.md)"]},
+    {"id": "idle", "name": "Drop idle", "tools": ["The credits registry"], "rule": "Free capacity in a lane over budget never sits idle; swap in a cheaper lane.", "rule_ref": "rules/compute.md", "metric": "credits.idle_replaceable"}
+   ]
+  }
+ ]
+}

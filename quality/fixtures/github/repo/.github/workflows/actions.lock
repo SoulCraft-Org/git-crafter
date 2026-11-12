@@ -1,0 +1,7 @@
+# Fixture for quality/collectors/github/github.test.mjs: good.yml is locked, loose.yml is not.
+version: 'v0.0.3'
+workflows:
+    '.github/workflows/good.yml':
+        - 'actions/checkout@1111111111111111111111111111111111111111'
+        - 'actions/setup-node@2222222222222222222222222222222222222222'
+dependencies: {}

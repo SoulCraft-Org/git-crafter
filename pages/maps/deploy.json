@@ -1,0 +1,17 @@
+{
+ "id": "deploy",
+ "name": "Deploy",
+ "why": "A merged change, from build to live, and back when it fails",
+ "ideal": "Merges deploy in minutes from a CI build, rarely fail, roll back within the hour, read per service for lead time, failure and recovery.",
+ "sources": [
+  {"title": "Cloudflare Workers: rollbacks", "url": "https://developers.cloudflare.com/workers/configuration/versions-and-deployments/rollbacks/", "date": "2026-07-15"},
+  {"title": "DORA's software delivery performance metrics", "url": "https://dora.dev/guides/dora-metrics/", "date": "2026-01-05"}
+ ],
+ "critical_path": ["build", "ship", "verify"],
+ "steps": [
+  {"id": "build", "name": "Build", "tools": ["The deploy platform's build on merge"], "rule": "Every merge builds and deploys on its own; nobody deploys by hand.", "rule_ref": "https://dora.dev/guides/dora-metrics/", "metric": "deploy.latest_build_minutes"},
+  {"id": "ship", "name": "Ship", "tools": ["Versioned deploys"], "rule": "A merged change is live within hours, not batched for later.", "rule_ref": "https://dora.dev/guides/dora-metrics/", "metric": "deploy.latest_lead_hours"},
+  {"id": "verify", "name": "Verify", "tools": ["Deploy checks", "The live page's text, read in the app's browser", "Error tracking"], "rule": "A deploy that fails its checks counts as a failed change.", "rule_ref": "https://dora.dev/guides/dora-metrics/", "metric": "deploy.failure_rate_last10"},
+  {"id": "restore", "name": "Restore", "tools": ["Rollback to the last good version"], "rule": "A failed deploy rolls back to the last good version before anyone debugs it.", "rule_ref": "https://developers.cloudflare.com/workers/configuration/versions-and-deployments/rollbacks/", "metric": "deploy.latest_restore_hours"}
+ ]
+}

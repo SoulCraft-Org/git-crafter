@@ -1,0 +1,5 @@
+tools/bash_guard.log
+__pycache__/
+pages/dist/
+node_modules/
+data/quality/latest.json

@@ -1,0 +1,124 @@
+{
+  "acme/site#1": {
+    "number": 1,
+    "title": "Add widget",
+    "state": "MERGED",
+    "createdAt": "2026-10-30T10:55:00Z",
+    "mergedAt": "2026-10-30T11:55:00Z",
+    "additions": 120,
+    "deletions": 30,
+    "headRefOid": "1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b",
+    "author": { "__typename": "User" },
+    "files": { "nodes": [
+      { "path": "src/widget.ts", "additions": 100, "deletions": 20 },
+      { "path": "src/widget.test.ts", "additions": 15, "deletions": 5 },
+      { "path": "package-lock.json", "additions": 5, "deletions": 5 }
+    ] },
+    "reviews": { "nodes": [
+      { "submittedAt": "2026-10-30T11:10:00Z", "commit": { "oid": "1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a" }, "author": { "__typename": "User" } },
+      { "submittedAt": "2026-10-30T11:40:00Z", "commit": { "oid": "1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b" }, "author": { "__typename": "User" } }
+    ] },
+    "commits": { "nodes": [
+      { "commit": { "oid": "1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a", "committedDate": "2026-10-30T10:50:00Z" } },
+      { "commit": { "oid": "1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b", "committedDate": "2026-10-30T11:20:00Z" } }
+    ] },
+    "headCommit": { "nodes": [{ "commit": { "statusCheckRollup": { "contexts": { "nodes": [{ "__typename": "CheckRun", "name": "site-tests", "conclusion": "SUCCESS", "status": "COMPLETED" }, { "__typename": "CheckRun", "name": "content-gates", "conclusion": "SUCCESS", "status": "COMPLETED" }] } } } }] }
+  },
+  "acme/site#2": {
+    "number": 2,
+    "title": "Fix footer",
+    "state": "MERGED",
+    "createdAt": "2026-10-30T13:00:00Z",
+    "mergedAt": "2026-10-30T16:00:00Z",
+    "additions": 450,
+    "deletions": 50,
+    "headRefOid": "2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c",
+    "author": { "__typename": "User" },
+    "files": { "nodes": [
+      { "path": "site/src/components/Footer.astro", "additions": 40, "deletions": 10 },
+      { "path": "quality/data/local.json", "additions": 400, "deletions": 30 },
+      { "path": "data/events/upcoming.json", "additions": 10, "deletions": 10 }
+    ] },
+    "reviews": { "nodes": [
+      { "submittedAt": "2026-10-30T13:05:00Z", "commit": { "oid": "2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b" }, "author": { "__typename": "Bot" } },
+      { "submittedAt": "2026-10-30T15:30:00Z", "commit": { "oid": "2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c" }, "author": { "__typename": "User" } }
+    ] },
+    "commits": { "nodes": [{ "commit": { "oid": "2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c", "committedDate": "2026-10-30T12:58:00Z" } }] },
+    "headCommit": { "nodes": [{ "commit": { "statusCheckRollup": { "contexts": { "nodes": [{ "__typename": "CheckRun", "name": "content-gates", "conclusion": "SUCCESS", "status": "COMPLETED" }, { "__typename": "StatusContext", "context": "DCO", "state": "SUCCESS" }] } } } }] }
+  },
+  "acme/site#3": {
+    "number": 3,
+    "title": "Try a new header",
+    "state": "CLOSED",
+    "createdAt": "2026-10-20T11:00:00Z",
+    "mergedAt": null,
+    "additions": 5,
+    "deletions": 0,
+    "headRefOid": "3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d",
+    "author": { "__typename": "User" },
+    "files": { "nodes": [{ "path": "README.md", "additions": 5, "deletions": 0 }] },
+    "reviews": { "nodes": [{ "submittedAt": "2026-10-20T12:00:00Z", "commit": null, "author": { "__typename": "User" } }] },
+    "commits": { "nodes": [{ "commit": { "oid": "3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d", "committedDate": "2026-10-20T10:59:00Z" } }] },
+    "headCommit": { "nodes": [{ "commit": { "statusCheckRollup": null } }] }
+  },
+  "acme/site#4": {
+    "number": 4,
+    "title": "Opened before the session started",
+    "state": "MERGED",
+    "createdAt": "2026-10-19T08:00:00Z",
+    "mergedAt": "2026-10-20T12:00:00Z",
+    "additions": 1,
+    "deletions": 1,
+    "headRefOid": "4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e",
+    "author": { "__typename": "User" },
+    "files": { "nodes": [{ "path": "src/early.ts", "additions": 1, "deletions": 1 }] },
+    "reviews": { "nodes": [] },
+    "commits": { "nodes": [{ "commit": { "oid": "4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e", "committedDate": "2026-10-19T07:59:00Z" } }] },
+    "headCommit": { "nodes": [{ "commit": { "statusCheckRollup": null } }] }
+  },
+  "acme/site#5": {
+    "number": 5,
+    "title": "Bump a dependency",
+    "state": "MERGED",
+    "createdAt": "2026-10-20T12:00:00Z",
+    "mergedAt": "2026-10-20T13:00:00Z",
+    "additions": 900,
+    "deletions": 900,
+    "headRefOid": "5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f",
+    "author": { "__typename": "Bot" },
+    "files": { "nodes": [{ "path": "package-lock.json", "additions": 900, "deletions": 900 }] },
+    "reviews": { "nodes": [] },
+    "commits": { "nodes": [{ "commit": { "oid": "5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f", "committedDate": "2026-10-20T11:59:00Z" } }] },
+    "headCommit": { "nodes": [{ "commit": { "statusCheckRollup": null } }] }
+  },
+  "acme/site#6": {
+    "number": 6,
+    "title": "Add old thing",
+    "state": "MERGED",
+    "createdAt": "2026-10-10T09:50:00Z",
+    "mergedAt": "2026-10-10T12:00:00Z",
+    "additions": 300,
+    "deletions": 20,
+    "headRefOid": "6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a",
+    "author": { "__typename": "User" },
+    "files": { "nodes": [{ "path": "src/old.ts", "additions": 300, "deletions": 20 }] },
+    "reviews": { "nodes": [{ "submittedAt": "2026-10-10T12:30:00Z", "commit": { "oid": "6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a" }, "author": { "__typename": "User" } }] },
+    "commits": { "nodes": [{ "commit": { "oid": "6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a", "committedDate": "2026-10-10T09:45:00Z" } }] },
+    "headCommit": { "nodes": [{ "commit": { "statusCheckRollup": { "contexts": { "nodes": [{ "__typename": "CheckRun", "name": "site-tests", "conclusion": "SUCCESS", "status": "COMPLETED" }] } } } }] }
+  },
+  "acme/site#11": {
+    "number": 11,
+    "title": "Try an old idea",
+    "state": "CLOSED",
+    "createdAt": "2026-10-10T10:30:00Z",
+    "mergedAt": null,
+    "additions": 4,
+    "deletions": 0,
+    "headRefOid": "7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b",
+    "author": { "__typename": "User" },
+    "files": { "nodes": [{ "path": "src/idea.ts", "additions": 4, "deletions": 0 }] },
+    "reviews": { "nodes": [] },
+    "commits": { "nodes": [{ "commit": { "oid": "7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b", "committedDate": "2026-10-10T10:25:00Z" } }] },
+    "headCommit": { "nodes": [{ "commit": { "statusCheckRollup": null } }] }
+  }
+}

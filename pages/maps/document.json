@@ -1,0 +1,22 @@
+{
+ "id": "document",
+ "name": "Document",
+ "why": "A doc, from written visual first to linted, mapped to its files, published, read and loaded",
+ "ideal": "Every fact a reader needs is present, correct and current, in short, visual docs a person finishes in two minutes and Claude loads cheaply.",
+ "sources": [
+  {"title": "GitHub Docs: Creating diagrams", "url": "https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-diagrams", "date": "2026-11-10"},
+  {"title": "GitHub Docs: Style guide", "url": "https://docs.github.com/en/contributing/style-guide-and-content-model/style-guide", "date": "2026-11-10"},
+  {"title": "GitHub Docs: About the repository README file", "url": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes", "date": "2026-11-10"},
+  {"title": "Microsoft Style Guide: Scannable content", "url": "https://learn.microsoft.com/en-us/style-guide/scannable-content/", "date": "2023-06-20"},
+  {"title": "Claude Code Docs: Best practices", "url": "https://code.claude.com/docs/en/best-practices", "date": "2026-11-10"}
+ ],
+ "critical_path": ["write", "lint", "map", "publish"],
+ "steps": [
+  {"id": "write", "name": "Write", "tools": ["Mermaid diagrams", "Tables"], "rule": "Visual first: a diagram or table carries the facts; text only labels and captions them.", "rule_ref": "https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-diagrams", "metric": "docs.text_only"},
+  {"id": "lint", "name": "Lint", "tools": ["The repo's content lint (docs params.lint)", "Git Crafter: tools/voice_lint.py"], "rule": "Every doc passes the content lint before it merges.", "rule_ref": "https://docs.github.com/en/contributing/style-guide-and-content-model/style-guide", "metric": "docs.lint_warn"},
+  {"id": "map", "name": "Map", "tools": ["Each doc's area (docs params.areas)", "The README's folder map"], "rule": "Each doc names the files it covers, so a change to them flags the doc.", "rule_ref": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes", "metric": "docs.unmapped"},
+  {"id": "publish", "name": "Publish", "tools": ["GitHub rendering", "The Pages build"], "rule": "A published doc has no broken link or anchor.", "rule_ref": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes", "metric": "docs.broken_links"},
+  {"id": "read", "name": "Read", "tools": ["Reading time at 238 words a minute"], "rule": "A person finishes each doc in two minutes.", "rule_ref": "https://learn.microsoft.com/en-us/style-guide/scannable-content/", "metric": "docs.over_read_goal"},
+  {"id": "load", "name": "Load", "tools": ["Agent docs: CLAUDE.md, skills and rules"], "rule": "Claude loads no tokens past a doc's reading goal.", "rule_ref": "https://code.claude.com/docs/en/best-practices", "metric": "docs.tokens_past_read_goal"}
+ ]
+}

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "$comment": "Git Crafter's written exceptions to the CI standard (tools/ci_standard.py, templates/ci/README.md).",
+  "exceptions": {
+    "pages.yml/action": {"rules": ["runner"], "why": "The overflow switch: the runner job's label, ubuntu-latest unless CI_OVERFLOW_RUNNER names a lane in .github/ci-overflow.json and tools/ci_overflow.py reads it under its stop (the owner, 2026-11-04; templates/ci/DECISIONS.md, 2026-11-10)"},
+    "pages.yml/action-collect": {"rules": ["runner"], "why": "The overflow switch, as pages.yml/action"},
+    "pages.yml/action-render": {"rules": ["runner"], "why": "The overflow switch, as pages.yml/action"},
+    "pages.yml/build": {"rules": ["runner"], "why": "The overflow switch, as pages.yml/action"},
+    "ci-standard.yml/standard": {"rules": ["runner"], "why": "The overflow switch for every caller: the runner input, from ci-overflow.yml's label, when it is a lane label in .github/ci-overflow.json, else ubuntu-latest (templates/ci/DECISIONS.md, 2026-11-11)"}
+  }
+}

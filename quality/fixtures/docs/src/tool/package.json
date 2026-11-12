@@ -1,0 +1,5 @@
+{
+  "name": "@fx/tool",
+  "private": true,
+  "scripts": { "lint:docs": "true" }
+}

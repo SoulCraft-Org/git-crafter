@@ -1,0 +1,45 @@
+[
+ {
+  "id": "tests.skipped",
+  "params": {
+   "suites": [
+    {
+     "label": "Pages and tools",
+     "dir": "tests/",
+     "file": "\\.test\\.mjs$"
+    },
+    {
+     "label": "Quality engine and collectors",
+     "dir": "quality/",
+     "file": "\\.test\\.mjs$"
+    }
+   ],
+   "pages_dir": "",
+   "workflows": [
+    {
+     "file": "verify.yml",
+     "job": "ci / short",
+     "role": "suite"
+    }
+   ]
+  }
+ },
+ {
+  "id": "tests.e2e_routes",
+  "drop": true
+ },
+ {
+  "id": "tests.axe_routes",
+  "drop": true
+ },
+ {
+  "id": "tests.e2e_shard_p50",
+  "drop": true
+ },
+ {
+  "id": "tests.ci_minutes_latest_main",
+  "goal": 10,
+  "near": 20,
+  "goal_source": "Git Crafter goal: its one test job, verify.yml's ci / short, at its speed goal of 10 minutes; near the same at its near band, 20. Git Crafter runs no e2e job, so the template's second 10 minutes does not apply"
+ }
+]

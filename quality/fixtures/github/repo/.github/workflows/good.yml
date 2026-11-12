@@ -1,0 +1,12 @@
+# Fixture for quality/collectors/github/github.test.mjs: every action pinned, top-level permissions.
+name: good
+on: [push]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@1111111111111111111111111111111111111111 # v1
+      - name: Set up node
+        uses: "actions/setup-node@2222222222222222222222222222222222222222"

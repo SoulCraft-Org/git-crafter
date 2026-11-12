@@ -1,0 +1,6 @@
+{
+  "_comment": "Response headers for the HEAD request in quality/collectors/github/github.test.mjs. Referrer-Policy is missing on purpose.",
+  "content-security-policy": "default-src 'self'",
+  "strict-transport-security": "max-age=31536000",
+  "x-content-type-options": "nosniff"
+}

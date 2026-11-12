@@ -1,0 +1,21 @@
+{
+ "id": "triage",
+ "name": "Triage",
+ "why": "A finding, from intake to the issue or card that a merged pull request closes",
+ "ideal": "A finding becomes a typed issue closed within a day, or a card on the board; each closes through its merged pull request.",
+ "sources": [
+  {"title": "GitHub Actions billing", "url": "https://docs.github.com/en/billing/concepts/product-billing/github-actions", "date": "2026-11-04"},
+  {"title": "GitHub Docs: About issues", "url": "https://docs.github.com/en/issues/tracking-your-work-with-issues/learning-about-issues/about-issues", "date": "2026-11-10"},
+  {"title": "GitHub Docs: Linking a pull request to an issue", "url": "https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue", "date": "2026-11-10"},
+  {"title": "GitHub Docs: Best practices for Projects", "url": "https://docs.github.com/en/issues/planning-and-tracking-with-projects/learning-about-projects/best-practices-for-projects", "date": "2026-11-10"},
+  {"title": "GitHub Docs: Using the built-in automations", "url": "https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project/using-the-built-in-automations", "date": "2026-11-10"}
+ ],
+ "critical_path": ["intake", "issue", "card", "fix", "link"],
+ "steps": [
+  {"id": "intake", "name": "Intake", "tools": ["Issue forms", "Issue types"], "rule": "Every finding arrives through an issue form with a type, so it is ready to act on.", "rule_ref": "https://docs.github.com/en/issues/tracking-your-work-with-issues/learning-about-issues/about-issues", "metric": "issues.intake_ready", "at": [0, 0]},
+  {"id": "issue", "name": "Issue", "tools": ["Typed issue", "One small pull request"], "rule": "A bug or quick fix one small pull request can close in a day is a typed issue.", "rule_ref": "https://docs.github.com/en/issues/tracking-your-work-with-issues/learning-about-issues/about-issues", "metric": "issues.latest_close_hours", "at": [1, 0]},
+  {"id": "card", "name": "Card", "tools": ["Project board", "Built-in automations"], "rule": "A feature is a card on the board, moved by the board's automations.", "rule_ref": "https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project/using-the-built-in-automations", "metric": "projects.latest_cycle_hours", "at": [1, 1]},
+  {"id": "fix", "name": "Fix", "tools": ["One small pull request", "CI on that pull request"], "rule": "A fix costs few runner minutes: one small pull request, checked once.", "rule_ref": "https://docs.github.com/en/billing/concepts/product-billing/github-actions", "metric": "issues.latest_fix_ci_minutes", "at": [2, 0]},
+  {"id": "link", "name": "Link", "tools": ["Closing keyword in the pull request"], "rule": "Each issue or card closes through its merged pull request, so every fix is traced.", "rule_ref": "https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue", "metric": "issues.closed_by_pr", "at": [3, 0]}
+ ]
+}

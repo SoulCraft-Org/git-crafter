@@ -1,0 +1,12 @@
+---
+import Card from "../components/Card.astro";
+---
+
+<Card title="Home" />
+<script>
+  // Counts clicks.
+  let clicks = 0;
+  document.addEventListener("click", () => {
+    clicks += 1;
+  });
+</script>

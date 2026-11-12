@@ -1,0 +1,8 @@
+{
+  "acme/site": [
+    { "number": 7, "title": "Revert \"Fix footer\"", "body": "Reverts acme/site#2", "mergedAt": "2026-11-01T10:00:00Z" },
+    { "number": 8, "title": "Revert \"Add widget\"", "body": "Reverts acme/site#1", "mergedAt": "2026-11-20T10:00:00Z" },
+    { "number": 9, "title": "Revert #12 typo", "body": "", "mergedAt": "2026-10-31T10:00:00Z" },
+    { "number": 10, "title": "Revert \"Add old thing\"", "body": "Reverts acme/site#6", "mergedAt": "2026-10-12T10:00:00Z" }
+  ]
+}

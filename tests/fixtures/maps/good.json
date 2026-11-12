@@ -1,0 +1,38 @@
+{
+ "comment": "A known-good maps file for tests/pages-build.test.mjs: three maps (the last a fork), each step scored by one metric on Git Crafter's Quality page.",
+ "repo_url": "https://github.com/example/repo/blob/main",
+ "maps": [
+  {
+   "id": "delivery",
+   "name": "Delivery",
+   "why": "A change, from plan to merged",
+   "critical_path": ["plan", "review"],
+   "steps": [
+    { "id": "plan", "name": "Plan", "tools": ["Plan mode"], "rule": "Plan first.", "rule_ref": "CONTRIBUTING.md", "metric": "claude.hours_session_to_pr" },
+    { "id": "review", "name": "Review", "tools": ["gh pr checks"], "rule": "Review the head.", "rule_ref": "https://example.com/review", "metric": "pull_requests.fixed_after_review", "gates_from": "workflows" },
+    { "id": "learn", "name": "Learn", "short": "Learn", "icon": "measure", "tools": ["The Quality page"], "rule": "Read the numbers.", "rule_ref": "README.md", "metric": "docs.broken_links" }
+   ]
+  },
+  {
+   "id": "deploy",
+   "name": "Deploy",
+   "why": "A merge, to live",
+   "steps": [
+    { "id": "build", "name": "Build", "tools": ["Workers Builds"], "rule": "Build on merge.", "rule_ref": "README.md", "metric": "deploy.latest_build_minutes", "gates_from": "deploys" },
+    { "id": "live", "name": "Live", "icon": "production", "tools": ["The live page"], "rule": "Load the live page.", "rule_ref": "README.md", "metric": "deploy.failure_rate_last10" }
+   ]
+  },
+  {
+   "id": "triage",
+   "name": "Triage",
+   "why": "A finding, to fixed or deferred",
+   "critical_path": ["intake", "fix", "close"],
+   "steps": [
+    { "id": "intake", "name": "Intake", "at": [0, 0], "tools": ["gh issue"], "rule": "Read it once.", "rule_ref": "README.md", "metric": "docs.broken_links" },
+    { "id": "fix", "name": "Fix", "at": [1, 0], "tools": ["Claude Code"], "rule": "Fix it now.", "rule_ref": "README.md", "metric": "claude.hours_session_to_pr" },
+    { "id": "defer", "name": "Defer", "at": [1, 1], "tools": ["The board"], "rule": "Park it with a date.", "rule_ref": "README.md", "metric": "pull_requests.fixed_after_review" },
+    { "id": "close", "name": "Close", "at": [2, 0], "tools": ["gh"], "rule": "Close with a link.", "rule_ref": "README.md", "metric": "deploy.failure_rate_last10" }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,115 @@
+/* The template's color tokens, which page.css and the Process page's site.css
+   draw with. A repo names its own with tokens_css in its Quality config. */
+:root {
+  color-scheme: light;
+  --c-ground: #FFFBF3;
+  --c-surface: #FDF1D8;
+  --c-surface-2: #F8E3B8;
+  --c-rule: #E6D3AE;
+  --c-border: #8A7152;
+  --c-text: #2B1D12;
+  --c-text-dim: #5A4632;
+  --c-accent: #F0A92B;
+  --c-accent-deep: #D9921A;
+  --c-on-accent: #2B1D12;
+  --c-link: #A3400F;
+  --c-community: #1A5CA8;
+  --c-fire: #E2561C;
+  --c-focus: #1A5CA8;
+  --c-danger: #B42318;
+  --c-night: #14223F;
+  --c-on-night: #FFFBF3;
+  --c-on-night-dim: #E9DCC0;
+  --c-gold-on-night: #F0A92B;
+  --c-brand-teal: #02718D;
+  --c-brand-purple: #5D4276;
+  --c-stone: #EFE3CC;
+  --c-stone-edge: #C9AD7F;
+  --c-bronze: #7A4B24;
+  --c-bronze-deep: #5A3416;
+  --c-on-bronze: #FFFBF3;
+  --c-accent-ledge: #B0701A;
+  --c-molten: #FFD66E;
+  --c-brass: #B8862F;
+  --c-focus-on-night: #F0A92B;
+  --c-danger-on-night: #FF8A7A;
+  --c-night-ceiling: #1E2E50;
+  --c-sky-wash: #E4EEF9;
+  --c-copper-wash: #FBE5D6;
+  --c-pine: #3E5A4A;
+  --c-pine-wash: #E3EEE6;
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+  --s-9: 96px;
+  --r-chisel: 4px;
+  --r-card: 10px;
+  --r-none: 0;
+  --r-bevel: 14px;
+  --r-bevel-sm: 8px;
+  --line-hair: 1px;
+  --line-edge: 2px;
+  --line-bold: 3px;
+  --size-ledge: 4px;
+  --size-ring-offset: 3px;
+  --size-tap: 44px;
+  --size-control: 48px;
+  --size-control-lg: 56px;
+  --size-check: 1.25rem;
+  --size-wrap: 1180px;
+  --sh-glow: 0 10px 30px rgb(240 169 43 / 0.22);
+  --sh-edge: inset 0 1px 0 rgb(255 255 255 / 0.6);
+  --sh-ledge: 0 var(--size-ledge) 0 var(--c-stone-edge);
+  --sh-ledge-gold: 0 var(--size-ledge) 0 var(--c-accent-ledge);
+  --sh-ledge-bronze: 0 var(--size-ledge) 0 var(--c-bronze-deep);
+  --t-step--1: 0.9375rem;
+  --t-step-0: 1.125rem;
+  --t-step-1: 1.3125rem;
+  --t-step-2: 1.5rem;
+  --t-step-3: 2.25rem;
+  --t-step-4: 3rem;
+  --t-step-5: 3.75rem;
+  --t-step-6: 4.5rem;
+  --t-measure: 68ch;
+  --c-deepstone: var(--c-ground);
+  --c-granite: var(--c-surface);
+  --c-granite-2: var(--c-surface-2);
+  --c-strata: var(--c-rule);
+  --c-border-strong: var(--c-border);
+  --c-quartz: var(--c-text);
+  --c-quartz-dim: var(--c-text-dim);
+  --c-gold: var(--c-accent);
+  --c-gold-deep: var(--c-accent-deep);
+  --c-ember: var(--c-fire);
+  --c-glacier: var(--c-community);
+  --c-twilight: var(--c-brand-purple);
+  /* Review ramp, one copper hue around --c-link and --c-fire; score 5 is the
+     lightest, 1 the darkest. dataviz validate_palette.js --ordinal on
+     #FFFBF3: lightness monotone, every step 0.06 or more apart, light end
+     2.07:1, hue spread 3 degrees. Cell text: --c-text on steps 5 to 3
+     (7.64, 6.05, 4.72 to 1), --c-on-night on 2 and 1 (5.10, 8.38 to 1). */
+  --k1: #8b2a00;
+  --k2: #b14e26;
+  --k3: #d46d46;
+  --k4: #ea815a;
+  --k5: #ff966e;
+  /* Stack parts, a categorical set in this order: community blue, fire,
+     purple, accent gold, teal. Purple and teal are --c-brand-purple and
+     --c-brand-teal stepped into the light band (OKLCH L 0.52 and 0.58,
+     chroma 0.115 and 0.105). validate_palette.js on #FFFBF3 passes every
+     check: worst adjacent CVD 20.2, normal vision 25.0, and every 2 to 4
+     part prefix passes too. Gold sits at 2.52:1, so each part's value and
+     share is also text in the legend rows. */
+  --p1: var(--c-community);
+  --p2: var(--c-fire);
+  --p3: #7a559c;
+  --p4: var(--c-accent-deep);
+  --p5: #0388a5;
+  /* The snow on a peak above 80 (Quality page range chart). */
+  --c-snow: #FFFFFF;
+}

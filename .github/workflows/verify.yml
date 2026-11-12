@@ -1,0 +1,44 @@
+name: verify
+
+# Git Crafter on its own CI standard: this file is a caller of .github/workflows/ci-standard.yml, as every org repo's
+# ci.yml is (templates/ci/ci.yml), but by local path, so a pull request here tests the standard it changes.
+# short runs tools/verify.sh, every Git Crafter check in one file, on ubuntu-slim, on every change. standard checks on
+# ubuntu-latest that ci-standard.yml embeds tools/ci_standard.py and its modules verbatim, only when the standard
+# itself changes (standard-paths, plus any workflow file, which always runs), so that change exercises both job kinds.
+# verify.sh already runs the self-test and the embed check, so on any other change the standard job only spent 2-core
+# minutes (#189). No workflow-level path filter: ci / ci-ok is a required check, and a skipped workflow blocks every PR.
+# runner is the overflow switch's opt-in (ci-overflow.yml): skipped while CI_OVERFLOW_RUNNER is unset, and ci runs
+# anyway (!cancelled()), so the required check never waits on it. It meters pages.yml too, which takes the same lane.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  runner:
+    if: vars.CI_OVERFLOW_RUNNER != ''
+    uses: ./.github/workflows/ci-overflow.yml
+    permissions:
+      actions: read
+    with:
+      workflows: pages.yml, verify.yml
+
+  ci:
+    needs: runner
+    if: ${{ !cancelled() }}
+    uses: ./.github/workflows/ci-standard.yml
+    with:
+      runner: ${{ needs.runner.outputs.label }}
+      short: bash tools/verify.sh
+      standard: python3 -I tools/ci_standard.py embed
+      standard-paths: |
+        tools/ci_standard*.py
+        tools/ci_overflow.py
+        .github/ci-overflow.json

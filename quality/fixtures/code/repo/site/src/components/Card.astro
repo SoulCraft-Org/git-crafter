@@ -1,0 +1,12 @@
+---
+// A card. Props: title.
+const { title } = Astro.props;
+---
+
+<!-- the card body -->
+<div class="card">{title}</div>
+
+<style>
+  /* spacing comes from tokens */
+  .card { padding: 1rem; }
+</style>

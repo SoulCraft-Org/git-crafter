@@ -1,0 +1,6 @@
+{
+  "name": "docs-fixture",
+  "private": true,
+  "workspaces": ["src/*"],
+  "scripts": { "test": "node --test", "build": "true" }
+}

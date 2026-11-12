@@ -1,0 +1,21 @@
+{
+ "id": "delivery",
+ "name": "Delivery",
+ "why": "A change, from the approved plan to merged on the default branch",
+ "ideal": "Small changes, planned first, green on first push, reviewed at the head and merged within a day, judged by lead time and failure, not volume.",
+ "sources": [
+  {"title": "Claude Code: best practices", "url": "https://code.claude.com/docs/en/best-practices", "date": "2026-11-04"},
+  {"title": "Google engineering practices: speed of code reviews", "url": "https://google.github.io/eng-practices/review/reviewer/speed.html", "date": "2026-11-04"},
+  {"title": "Trunk Based Development: short-lived feature branches", "url": "https://trunkbaseddevelopment.com/short-lived-feature-branches/", "date": "2026-11-04"},
+  {"title": "DORA's software delivery performance metrics", "url": "https://dora.dev/guides/dora-metrics/", "date": "2026-01-05"}
+ ],
+ "critical_path": ["plan", "build", "ci", "review", "merge"],
+ "time_bar": "lead_time.hours",
+ "steps": [
+  {"id": "plan", "name": "Plan", "tools": ["Plan mode", "App sessions, each in its own worktree"], "rule": "Plan before code, and split the work into changes that each land on their own.", "rule_ref": "https://code.claude.com/docs/en/best-practices", "metric": "claude.hours_session_to_pr"},
+  {"id": "build", "name": "Build", "tools": ["Claude Code", "Explore agent on Haiku for wide reads", "Open-weight models for bulk work"], "rule": "Build in small changes; the cheapest model that can do the work does it.", "rule_ref": "https://code.claude.com/docs/en/best-practices", "metric": "claude.tokens_per_merged_pr", "gates_from": "hooks"},
+  {"id": "ci", "name": "Check", "tools": ["GitHub Actions standard runners, ubuntu-slim for light jobs", "Included Actions usage, a budget that stops at it", "Free lanes: public repos, third-party free minutes", "Pinned actions", "The app's PR monitor with Auto-fix"], "rule": "CI checks every pull request on the cheapest runner that fits, green on first push, within included minutes.", "rule_ref": "https://dora.dev/guides/dora-metrics/", "metric": "claude.first_push_green_share", "gates_from": "workflows"},
+  {"id": "review", "name": "Review", "tools": ["Parallel reviewer subagents, one per PR (Haiku or Sonnet by risk)", "Head SHA pin"], "rule": "A reviewer runs the checks on the head commit within a day; a fix needs a new review.", "rule_ref": "https://google.github.io/eng-practices/review/reviewer/speed.html", "metric": "blockers.review_tokens_per_pr"},
+  {"id": "merge", "name": "Merge", "tools": ["gh pr merge --match-head-commit"], "rule": "Merge the reviewed head SHA within minutes of every check going green.", "rule_ref": "https://trunkbaseddevelopment.com/short-lived-feature-branches/", "metric": "pull_requests.green_to_merge_minutes", "gates_from": "deploys"}
+ ]
+}

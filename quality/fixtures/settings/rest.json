@@ -1,0 +1,55 @@
+{
+  "_comment": "Fake gh api answers for repo-settings.test.mjs, keyed by route. A private repo at its ideal: one bypass-free branch ruleset, a tag ruleset, a push ruleset on the template's blocked_paths, one environment limited to named branches, no outside access, and two secrets of which the fixture workflow reads one. Ruleset 4 is disabled, so it is never read.",
+  "repos/fixture-org/fixture-repo": {
+    "default_branch": "main",
+    "private": true,
+    "visibility": "private",
+    "allow_squash_merge": true,
+    "allow_merge_commit": false,
+    "allow_auto_merge": false
+  },
+  "repos/fixture-org/fixture-repo/rulesets?includes_parents=true&targets=branch,tag,push&per_page=100": [
+    { "id": 1, "target": "branch", "enforcement": "active" },
+    { "id": 2, "target": "tag", "enforcement": "active" },
+    { "id": 3, "target": "push", "enforcement": "active" },
+    { "id": 4, "target": "branch", "enforcement": "disabled" }
+  ],
+  "repos/fixture-org/fixture-repo/rulesets/1": {
+    "id": 1,
+    "target": "branch",
+    "enforcement": "active",
+    "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] } },
+    "bypass_actors": [],
+    "rules": [
+      { "type": "deletion" },
+      { "type": "non_fast_forward" },
+      { "type": "pull_request", "parameters": { "required_approving_review_count": 0, "require_code_owner_review": false, "require_last_push_approval": false, "required_reviewers": [] } }
+    ]
+  },
+  "repos/fixture-org/fixture-repo/rulesets/2": {
+    "id": 2,
+    "target": "tag",
+    "enforcement": "active",
+    "conditions": { "ref_name": { "include": ["refs/tags/v*"], "exclude": [] } },
+    "bypass_actors": [],
+    "rules": [{ "type": "deletion" }, { "type": "update" }]
+  },
+  "repos/fixture-org/fixture-repo/rulesets/3": {
+    "id": 3,
+    "target": "push",
+    "enforcement": "active",
+    "bypass_actors": [],
+    "rules": [{ "type": "file_path_restriction", "parameters": { "restricted_file_paths": [".env", "**/.env", "*.pem", "**/*.pem", "*.key", "**/*.key"] } }]
+  },
+  "repos/fixture-org/fixture-repo/branches/main/protection": { "__error": { "message": "Branch not protected", "status": 404 } },
+  "repos/fixture-org/fixture-repo/environments?per_page=100": {
+    "total_count": 1,
+    "environments": [{ "name": "production", "protection_rules": [{ "type": "branch_policy" }], "deployment_branch_policy": { "protected_branches": false, "custom_branch_policies": true } }]
+  },
+  "repos/fixture-org/fixture-repo/tags?per_page=1": [{ "name": "v1.2.0" }],
+  "repos/fixture-org/fixture-repo/collaborators?affiliation=outside&per_page=100": [],
+  "repos/fixture-org/fixture-repo/invitations?per_page=100": [],
+  "repos/fixture-org/fixture-repo/actions/secrets?per_page=100": { "total_count": 2, "secrets": [{ "name": "DEPLOY_TOKEN" }, { "name": "OLD_TOKEN" }] },
+  "repos/fixture-org/fixture-repo/environments/production/secrets?per_page=100": { "total_count": 0, "secrets": [] },
+  "repos/fixture-org/fixture-repo/actions/cache/storage-limit": { "max_cache_size_gb": 10 }
+}

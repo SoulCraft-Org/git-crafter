@@ -1,0 +1,11 @@
+# Copy to .github/dependabot.yml, or add the github-actions entry to the one the repo has. It bumps the CI standard's
+# pin (and every other action pin) once a week, in one pull request.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]

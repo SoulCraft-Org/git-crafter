@@ -1,0 +1,21 @@
+# Fixture for quality/collectors/github/github.test.mjs: one tag-pinned action, a local
+# action (left out of the count), a job without permissions, and a uses: line
+# inside a run: script, which is text and never counted.
+name: loose
+on: [pull_request]
+jobs:
+  a:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3333333333333333333333333333333333333333
+      - uses: ./.github/actions/local
+  b:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/cache@v4
+      - run: |
+          cat > ci.yml <<'YAML'
+          - uses: some/action@v1
+          YAML

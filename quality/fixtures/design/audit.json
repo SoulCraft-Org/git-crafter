@@ -1,0 +1,33 @@
+{
+  "read_at": "2026-11-02T20:00:00.000Z",
+  "pages": {
+    "/@1280": {
+      "bytes": { "total": 512000 },
+      "violations": [
+        { "id": "color-contrast", "impact": "serious", "targets": [".hero p", ".badge"] },
+        { "id": "region", "impact": "moderate", "targets": ["header"] }
+      ],
+      "facts": {
+        "rootPx": 16,
+        "fontSizes": { "18px": 40, "24px": 5, "17px": 2 },
+        "colors": { "rgb(43, 29, 18)": 30, "rgba(163, 64, 15, 0.5)": 4, "rgb(0, 0, 0)": 1, "rgba(0, 0, 0, 0)": 3 }
+      }
+    },
+    "/@375": {
+      "bytes": { "total": 307200 },
+      "violations": [{ "id": "color-contrast", "impact": "serious", "targets": [".hero p", ".nav a"] }],
+      "facts": {
+        "rootPx": 16,
+        "fontSizes": { "18px": 30, "15px": 4, "13px": 1 },
+        "colors": { "rgb(43, 29, 18)": 25, "color(srgb 0.5 0.5 0.5)": 2 }
+      }
+    },
+    "/people/@1280": {
+      "bytes": { "total": 1572864 },
+      "violations": [],
+      "facts": { "rootPx": 16, "fontSizes": { "18px": 12, "17px": 1 }, "colors": { "rgb(255, 251, 243)": 3 } }
+    },
+    "/people/@375": { "error": "HTTP 503" }
+  },
+  "forms": {}
+}

@@ -1,0 +1,150 @@
+{
+ "ideal": "The least code that does the job: every part small, used, named, explained and drawn, fast to run and cheap for an agent to read.",
+ "sources": [
+  {
+   "title": "Claude Code Docs: Tools reference",
+   "url": "https://code.claude.com/docs/en/tools-reference",
+   "date": "2026-11-10"
+  },
+  {
+   "title": "Claude Code Docs: Best practices for Claude Code",
+   "url": "https://code.claude.com/docs/en/best-practices",
+   "date": "2026-11-10"
+  },
+  {
+   "title": "Claude Code Docs: Manage costs effectively",
+   "url": "https://code.claude.com/docs/en/costs",
+   "date": "2026-11-10"
+  },
+  {
+   "title": "Claude Docs: Context windows",
+   "url": "https://platform.claude.com/docs/en/build-with-claude/context-windows",
+   "date": "2026-11-10"
+  },
+  {
+   "title": "Anthropic: Effective context engineering for AI agents",
+   "url": "https://www.anthropic.com/research/effective-context-engineering-for-ai-agents",
+   "date": "2025-09-29"
+  },
+  {
+   "title": "GitHub Docs: Code Quality metrics and scores reference",
+   "url": "https://docs.github.com/en/code-security/reference/code-quality/metrics-and-ratings",
+   "date": "2026-11-10"
+  },
+  {
+   "title": "GitHub Docs: Best practices for repositories",
+   "url": "https://docs.github.com/en/repositories/creating-and-managing-repositories/best-practices-for-repositories",
+   "date": "2026-11-10"
+  },
+  {
+   "title": "Microsoft Learn: Code metrics, cyclomatic complexity",
+   "url": "https://learn.microsoft.com/en-us/visualstudio/code-quality/code-metrics-cyclomatic-complexity",
+   "date": "2026-10-20"
+  },
+  {
+   "title": "Microsoft Learn: Architecture strategies for optimizing code and infrastructure",
+   "url": "https://learn.microsoft.com/en-us/azure/well-architected/performance-efficiency/optimize-code-infrastructure",
+   "date": "2025-10-30"
+  },
+  {
+   "title": "Microsoft Engineering Fundamentals Playbook: Code Reviews",
+   "url": "https://microsoft.github.io/code-with-engineering-playbook/code-reviews/",
+   "date": "2024-08-26"
+  },
+  {
+   "title": "PEP 257: Docstring Conventions",
+   "url": "https://peps.python.org/pep-0257/",
+   "date": "2024-04-17"
+  },
+  {
+   "title": "PEP 8: Style Guide for Python Code",
+   "url": "https://peps.python.org/pep-0008/",
+   "date": "2025-04-04"
+  },
+  {
+   "title": "ESLint: max-lines",
+   "url": "https://eslint.org/docs/latest/rules/max-lines",
+   "date": "2026-11-10"
+  },
+  {
+   "title": "ESLint: max-lines-per-function",
+   "url": "https://eslint.org/docs/latest/rules/max-lines-per-function",
+   "date": "2026-11-10"
+  },
+  {
+   "title": "Google Engineering Practices: What to look for in a code review",
+   "url": "https://google.github.io/eng-practices/review/reviewer/looking-for.html",
+   "date": "2026-11-04"
+  },
+  {
+   "title": "Nielsen Norman Group: Response Times, The 3 Important Limits",
+   "url": "https://www.nngroup.com/articles/response-times-3-important-limits/",
+   "date": "1993-01-01"
+  },
+  {
+   "title": "Node.js v26 docs: Modules, CommonJS modules, Cycles",
+   "url": "https://nodejs.org/api/modules.html",
+   "date": "2026-11-10"
+  },
+  {
+   "title": "Microsoft Learn: How code metrics help identify risks",
+   "url": "https://learn.microsoft.com/en-us/visualstudio/code-quality/code-metrics-values",
+   "date": "2026-10-20"
+  },
+  {
+   "title": "GitHub Docs: About the repository README file",
+   "url": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes",
+   "date": "2026-11-10"
+  },
+  {
+   "title": "GitHub Docs: Creating diagrams",
+   "url": "https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-diagrams",
+   "date": "2026-11-10"
+  }
+ ],
+ "parts": [
+  {
+   "part": "Size",
+   "ideal": "No function past complexity 10 or 50 lines, and no file past 300 lines",
+   "setup": "Split the worst function first; the tab lists every item over a limit"
+  },
+  {
+   "part": "Dead and stale code",
+   "ideal": "No unused file, export, package or function, and no comment naming a file that is gone",
+   "setup": "knip reads JavaScript, Python's ast reads Python; delete what they list"
+  },
+  {
+   "part": "Comments",
+   "ideal": "Every shared function says what it does on the line where it starts",
+   "setup": "A header comment in JavaScript, a docstring in Python"
+  },
+  {
+   "part": "Names",
+   "ideal": "Every file and folder follows the naming rule of its folder",
+   "setup": "Name the rules once in the repo's targets; the tab lists each name that breaks one"
+  },
+  {
+   "part": "Structure",
+   "ideal": "Imports run one way, with no cycle between files",
+   "setup": "Move the shared piece to a file both sides import"
+  },
+  {
+   "part": "Visual",
+   "ideal": "Every code area is drawn in a table or a diagram a reader lands on",
+   "setup": "A table row or a Mermaid block in a README, or in a doc it links"
+  },
+  {
+   "part": "Speed",
+   "ideal": "The guard judges a command within a tenth of a second",
+   "setup": "Time it where sessions run; keep imports and rule loading off the hot path"
+  },
+  {
+   "part": "Tokens",
+   "ideal": "Every file fits one Read call and every area fits one context window",
+   "setup": "Split a file past 25,000 tokens and an area past 200K"
+  }
+ ],
+ "quality": "No function past complexity 10 or 50 lines, no file past 300, nothing unused or uncommented, no import cycle, every area drawn from its README.",
+ "speed": "The guard, which runs before every command, answers within a tenth of a second.",
+ "consumption": "Every file fits one Read call of 25,000 tokens, and every area fits a 200K-token context window."
+}

@@ -1,0 +1,187 @@
+/* Git Crafter pages: only what the shared styles (quality/render/page.css, on the
+   tokens in quality/render/tokens.css) do not already cover. Colors are those
+   tokens: night for the critical path, community blue for the one data
+   series, stone for what is off the path, pine, brass and danger for status
+   with its glyph beside it. */
+
+:root {
+  --lane: color-mix(in oklab, var(--c-night) 38%, var(--c-ground));
+}
+
+body.cos nav a { flex: none; }
+/* An error can carry a long URL; it wraps rather than widen the page. */
+.reason, .foot { overflow-wrap: anywhere; }
+.foot { padding: 0 var(--gut) 2.5rem; }
+.foot p + p { margin-top: var(--s-1); }
+code { font-size: 0.9em; }
+figure { margin: 0; }
+figcaption { margin-bottom: var(--s-1); font-size: 0.75rem; color: var(--c-text-dim); }
+.axis { display: flex; justify-content: space-between; max-width: 16.25rem; font-size: 0.6875rem; color: var(--c-text-dim); }
+
+/* ---- The trail ---- */
+.trail-box { overflow-x: auto; }
+/* A map's time bar: where its hours go, one labelled stacked bar under the trail. */
+.time-bar { margin: var(--s-5) 0 0; }
+.time-bar figcaption { font-weight: 600; }
+.time-bar .missing { margin: var(--s-1) 0 0; padding-left: var(--s-4); color: var(--c-text-dim); font-size: 0.8125rem; }
+.trail { display: block; width: 100%; min-width: 57.5rem; height: auto; }
+.t-stbg { fill: var(--c-ground); }
+.t-main { fill: none; stroke: var(--c-night); stroke-width: 6; stroke-linecap: round; }
+.t-off { fill: none; stroke: var(--c-stone-edge); stroke-width: 3; }
+.t-back, .t-arrow { fill: none; stroke: var(--c-stone-edge); stroke-width: 1.5; stroke-linejoin: round; }
+.t-note { font-size: 0.8125rem; fill: var(--c-text-dim); text-anchor: middle; }
+.t-hit { fill: transparent; }
+.t-halo { fill: transparent; }
+.t-track { fill: none; stroke: var(--c-rule); stroke-width: 4; }
+.t-ring { fill: none; stroke: var(--c-community); stroke-width: 4; }
+.t-node { fill: var(--c-ground); stroke: var(--c-night); stroke-width: 2.5; }
+.t-step.crit .t-node { fill: var(--c-night); }
+.t-num { font-size: 1.1875rem; font-weight: 700; fill: var(--c-night); text-anchor: middle; }
+.t-step.crit .t-num { fill: var(--c-on-night); }
+.t-name { font-size: var(--t-step--1); font-weight: 650; fill: var(--c-text); text-anchor: middle; }
+.t-val { font-size: 0.8125rem; fill: var(--c-text); text-anchor: middle; }
+.t-k { fill: var(--c-text-dim); }
+.t-v { font-weight: 650; }
+.t-step { cursor: pointer; }
+.t-step:hover .t-hit { fill: color-mix(in oklab, var(--c-ground) 70%, transparent); }
+.t-step[aria-current] .t-hit { fill: var(--c-ground); stroke: var(--c-night); stroke-width: 1.5; }
+.t-step:focus { outline: none; }
+.t-step:focus-visible .t-hit { stroke: var(--c-focus); stroke-width: 2.5; }
+.map-index { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: 0 0 var(--s-3); }
+.map-index a { flex: 1 1 9.375rem; min-width: 0; padding: var(--s-2) var(--s-3); border: var(--line-hair) solid var(--c-border); border-radius: var(--r-chisel); background: var(--c-surface); color: var(--c-text); text-decoration: none; font-size: 0.875rem; }
+.map-index a:hover, .map-index a:focus-visible { border-color: var(--c-night); }
+.map-index .sbar { margin: 0.375rem 0 0; }
+.t-key { display: flex; flex-wrap: wrap; gap: 0.375rem 1.375rem; margin: 0.375rem 0 0; padding: 0; list-style: none; font-size: 0.8125rem; color: var(--c-text-dim); }
+.t-key li { display: inline-flex; align-items: center; gap: 0.375rem; }
+.t-key svg { width: 1.75rem; height: 0.75rem; overflow: visible; }
+.t-key svg:has(circle) { width: 0.875rem; height: 0.875rem; }
+.k-main { stroke: var(--c-night); stroke-width: 5; }
+.k-ring { fill: none; stroke: var(--c-community); stroke-width: 2.5; }
+@media (prefers-reduced-motion: no-preference) {
+  .t-ring { animation: ring 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+}
+@keyframes ring { from { stroke-dasharray: 0 100; } }
+
+/* ---- One section per process map ---- */
+.map + .map { margin-top: var(--s-7); padding-top: 1.75rem; border-top: var(--line-hair) solid var(--c-border); }
+.map-head h2 { margin: 0; font-size: 1.375rem; font-weight: 700; }
+.map-head p { margin: var(--s-1) 0 var(--s-3); color: var(--c-text-dim); }
+
+/* ---- Step panels ---- */
+.stepbar { display: flex; gap: 0.375rem; margin: 1.75rem 0 0; overflow-x: auto; scrollbar-width: thin; }
+.stepbar button { flex: none; min-height: 2.5rem; padding: var(--s-1) var(--s-3); border: var(--line-hair) solid var(--c-border); border-radius: var(--r-chisel); background: var(--c-ground); color: var(--c-text); font-size: 0.875rem; cursor: pointer; }
+.stepbar button b { margin-right: 0.375rem; }
+.stepbar button[aria-pressed="true"] { border-color: var(--c-night); background: var(--c-night); color: var(--c-on-night); }
+.panel { margin-top: var(--s-5); scroll-margin-top: 4rem; }
+.panel + .panel { padding-top: var(--s-5); border-top: var(--line-hair) solid var(--c-rule); }
+.p-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) 0.875rem; }
+.p-head h3 { display: flex; align-items: center; gap: 0.625rem; margin: 0; font-size: 1.625rem; font-weight: 700; }
+.p-head h3 .ic { width: 1.5rem; height: 1.5rem; color: var(--c-text-dim); }
+.p-num { display: inline-grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 0.15625rem solid var(--c-night); border-radius: 50%; font-size: var(--t-step-0); font-weight: 700; }
+.p-num.crit { background: var(--c-night); color: var(--c-on-night); }
+.chip { padding: 0.125rem var(--s-2); border-radius: var(--r-chisel); background: var(--c-surface); font-size: 0.8125rem; }
+.tiles { display: grid; gap: 1.125rem 2.25rem; margin: 1.375rem 0 var(--s-2); }
+@media (min-width: 47.5em) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.tile { padding-top: 0.625rem; border-top: var(--line-bold) solid var(--c-rule); }
+.tile.s-meets { border-top-color: var(--c-pine); }
+.tile.s-near { border-top-color: var(--c-brass); }
+.tile.s-misses { border-top-color: var(--c-danger); }
+.t-l { font-size: 0.8125rem; color: var(--c-text-dim); }
+.t-n { display: flex; align-items: center; gap: var(--s-2); margin: 0.125rem 0; font-size: 2.5rem; font-weight: 700; line-height: 1.1; letter-spacing: -0.01em; }
+.t-n .g { width: 1.25rem; height: 1.25rem; }
+.t-m { font-size: 0.875rem; }
+.tile .bl { max-width: 15rem; margin: var(--s-2) 0 0.125rem; }
+.tile .goal, .tile .reason { font-size: 0.8125rem; color: var(--c-text-dim); }
+.tile.none .t-m { color: var(--c-text-dim); }
+.p-body { display: grid; gap: var(--s-5) var(--s-7); margin-top: var(--s-4); }
+@media (min-width: 62.5em) { .p-body { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); } }
+.p-figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(16.25rem, 1fr)); gap: 1.25rem 2.25rem; align-content: start; }
+/* No per-repo figure: the rule and tools take the whole row. */
+@media (min-width: 62.5em) { .p-body:has(.p-figs > .empty:only-child) { grid-template-columns: minmax(0, 1fr); } }
+.p-figs > .empty:only-child { margin: 0; }
+.rule { margin: 0 0 0.875rem; padding: var(--s-3) var(--s-4); border-left: var(--line-bold) solid var(--c-night); border-radius: 0 var(--r-card) var(--r-card) 0; background: var(--c-surface); }
+.rule p { margin-bottom: 0.375rem; }
+.rule a { font-size: 0.8125rem; }
+.tools { display: flex; flex-wrap: wrap; gap: 0.375rem; margin: 0 0 0.875rem; padding: 0; list-style: none; }
+.tools li { padding: 0.1875rem 0.625rem; border: var(--line-hair) solid var(--c-rule); border-radius: var(--r-chisel); font-size: 0.8125rem; }
+.also { margin: var(--s-2) 0; padding: 0; list-style: none; }
+.also li { display: flex; align-items: center; gap: var(--s-2); padding: 0.375rem 0; border-bottom: var(--line-hair) solid var(--c-rule); font-size: 0.875rem; }
+.also li > .g:empty { visibility: hidden; }
+.also b { margin-left: auto; font-weight: 650; white-space: nowrap; }
+
+/* ---- The goal strip and outcome scores ---- */
+.strip-box { overflow-x: auto; }
+.strip { display: block; width: 100%; min-width: 43.75rem; height: auto; }
+.s-zone, .s-nmh { font-size: 0.75rem; fill: var(--c-text-dim); text-anchor: middle; }
+.s-tick { stroke: var(--c-text-dim); stroke-width: 1; }
+.s-base { stroke: var(--c-rule); stroke-width: 1; }
+.s-ic { color: var(--c-text-dim); }
+.s-name { font-size: var(--t-step--1); font-weight: 600; fill: var(--c-text); }
+.s-score { font-size: var(--t-step-0); font-weight: 700; fill: var(--c-text); text-anchor: end; }
+.s-hit { fill: transparent; }
+.s-mark:hover .s-hit, .s-mark:focus-visible .s-hit { fill: color-mix(in oklab, var(--c-night) 14%, transparent); }
+.s-mark:focus-visible .s-hit { stroke: var(--c-focus); stroke-width: 2.5; }
+.s-mark:focus { outline: none; }
+.s-row.dim { opacity: 0.28; }
+.stripbox .range-key { margin-top: var(--s-1); }
+.stripbox .sbar { max-width: 32.5rem; }
+
+.outcomes { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.375rem, 1fr)); gap: var(--s-2) var(--s-5); margin-top: var(--s-5); }
+.oc { display: grid; gap: var(--s-1); align-content: start; padding: 0.625rem 0.375rem var(--s-3); border: 0; border-top: var(--line-bold) solid var(--c-rule); background: none; color: var(--c-text); text-align: left; cursor: pointer; }
+.oc:hover { background: color-mix(in oklab, var(--c-surface) 60%, transparent); }
+.oc[aria-pressed="true"] { border-top-color: var(--c-night); background: var(--c-surface); }
+.oc-n { display: flex; align-items: center; gap: 0.375rem; font-size: var(--t-step--1); font-weight: 600; }
+.oc-n .ic { color: var(--c-text-dim); }
+.oc-s { display: flex; align-items: center; gap: var(--s-2); font-size: 2.5rem; font-weight: 700; line-height: 1.1; }
+.oc-s .g { width: 1.25rem; height: 1.25rem; }
+.oc .meter { max-width: 11.25rem; }
+.oc .spark { margin: 0.125rem 0 0; }
+
+/* ---- Filters and goal rows ---- */
+.filters { position: sticky; top: 2.8125rem; z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: 0.625rem 1.125rem; margin: 1.75rem calc(-1 * var(--gut)) 0; padding: 0.625rem var(--gut); background: var(--c-ground); border-bottom: var(--line-hair) solid var(--c-rule); }
+.filters .chips { margin: 0; }
+.filters .seg { flex-wrap: wrap; }
+.filters .seg button { min-height: 2.25rem; }
+.repo-pick { display: inline-flex; align-items: center; gap: 0.375rem; }
+.repo-pick select { min-height: 2.25rem; padding: var(--s-1) var(--s-2); border: var(--line-hair) solid var(--c-border); border-radius: var(--r-chisel); background: var(--c-ground); color: var(--c-text); font: inherit; font-size: 0.875rem; }
+.og { container-type: inline-size; }
+@container (min-width: 37.5rem) {
+  .og .metric > summary { grid-template-columns: 1rem minmax(0, 1fr) auto 11.25rem 9.5rem 0.75rem; }
+}
+.og h3 { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }
+.og h3 .ic { width: 1.25rem; height: 1.25rem; color: var(--c-text-dim); }
+.og-m { font-size: 0.8125rem; font-weight: 400; color: var(--c-text-dim); }
+a.og-m { color: var(--c-link); }
+.g-row.orgonly.dimmed > summary { opacity: 0.55; }
+/* A deep-linked row lands below the sticky nav and filters. */
+.g-row { scroll-margin-top: 9.375rem; }
+.d-figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: var(--s-4) var(--s-6); margin: var(--s-1) 0 0.625rem; }
+
+/* ---- Repos ---- */
+.cmp { width: 100%; min-width: 60rem; font-size: 0.875rem; }
+.cmp th, .cmp td { padding: 0.4375rem 0.625rem; border-bottom: var(--line-hair) solid var(--c-rule); text-align: left; white-space: nowrap; }
+.cmp thead th { min-width: 5.25rem; max-width: 8rem; font-size: 0.75rem; font-weight: 400; color: var(--c-text-dim); white-space: normal; vertical-align: bottom; }
+.cmp thead button { padding: 0.125rem 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.cmp th[aria-sort] button { color: var(--c-text); font-weight: 650; }
+.cmp th[aria-sort="ascending"] button::after { content: " \25B4"; }
+.cmp th[aria-sort="descending"] button::after { content: " \25BE"; }
+.cmp tbody th a { display: inline-flex; align-items: center; gap: 0.375rem; color: var(--c-text); font-weight: 600; text-decoration: none; }
+.cmp tbody th a:hover { text-decoration: underline; }
+.cmp tbody th .ic { color: var(--c-text-dim); }
+.cmp td.c .g { width: 0.75rem; height: 0.75rem; margin-right: 0.3125rem; }
+.cmp td .meter { display: inline-block; width: 4rem; margin-right: 0.375rem; vertical-align: middle; }
+.cmp td.s-meets { background: var(--z-meets); }
+.cmp td.s-near { background: var(--z-near); }
+.cmp td.s-misses { background: var(--z-misses); }
+.cmp td.s-not-measured { color: var(--c-text-dim); }
+.cmp tr.on > * { box-shadow: inset 0 0.125rem 0 var(--c-night), inset 0 -0.125rem 0 var(--c-night); }
+
+@media (max-width: 40em) {
+  .t-n, .oc-s { font-size: 2.125rem; }
+  .p-head h3 { font-size: 1.375rem; }
+  .filters { top: 2.8125rem; }
+}
+
+/* Every tap target is at least 24 px tall on a phone (WCAG 2.2 SC 2.5.8; axe target-size at 375 px). */
+body.cos nav a, a.og-m { display: inline-flex; align-items: center; min-height: 1.5rem; }
+body.cos button, body.cos summary { min-height: 1.5rem; }

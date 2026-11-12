@@ -1,0 +1,119 @@
+{
+  "Branches": {
+    "repository": {
+      "defaultBranchRef": {
+        "name": "main"
+      },
+      "refs": {
+        "pageInfo": {
+          "hasNextPage": false,
+          "endCursor": null
+        },
+        "nodes": [
+          {
+            "name": "main",
+            "target": {
+              "committedDate": "2026-11-09T23:00:00Z"
+            },
+            "open": {
+              "totalCount": 0
+            },
+            "done": {
+              "totalCount": 0,
+              "nodes": []
+            }
+          },
+          {
+            "name": "feature-a",
+            "target": {
+              "committedDate": "2026-11-09T22:00:00Z"
+            },
+            "open": {
+              "totalCount": 1
+            },
+            "done": {
+              "totalCount": 0,
+              "nodes": []
+            }
+          },
+          {
+            "name": "merged-b",
+            "target": {
+              "committedDate": "2026-11-09T11:00:00Z"
+            },
+            "open": {
+              "totalCount": 0
+            },
+            "done": {
+              "totalCount": 1,
+              "nodes": [
+                {
+                  "closedAt": "2026-11-09T12:00:00Z"
+                }
+              ]
+            }
+          },
+          {
+            "name": "closed-c",
+            "target": {
+              "committedDate": "2026-11-04T00:00:00Z"
+            },
+            "open": {
+              "totalCount": 0
+            },
+            "done": {
+              "totalCount": 2,
+              "nodes": [
+                {
+                  "closedAt": "2026-11-07T00:00:00Z"
+                },
+                {
+                  "closedAt": "2026-11-05T00:00:00Z"
+                }
+              ]
+            }
+          },
+          {
+            "name": "never-d",
+            "target": {
+              "committedDate": "2026-11-01T00:00:00Z"
+            },
+            "open": {
+              "totalCount": 0
+            },
+            "done": {
+              "totalCount": 0,
+              "nodes": []
+            }
+          },
+          {
+            "name": "fresh-e",
+            "target": {
+              "committedDate": "2026-11-09T20:00:00Z"
+            },
+            "open": {
+              "totalCount": 0
+            },
+            "done": {
+              "totalCount": 0,
+              "nodes": []
+            }
+          },
+          {
+            "name": "gh-pages",
+            "target": {
+              "committedDate": "2026-10-01T00:00:00Z"
+            },
+            "open": {
+              "totalCount": 0
+            },
+            "done": {
+              "totalCount": 0,
+              "nodes": []
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "ideal": "Use free and included allowances before anything that bills, read their use the same day, and never idle free capacity in a lane over budget.",
+  "sources": [
+    {
+      "title": "GitHub Actions billing",
+      "url": "https://docs.github.com/en/billing/concepts/product-billing/github-actions",
+      "date": "2026-11-04"
+    },
+    {
+      "title": "REST API endpoints for billing usage",
+      "url": "https://docs.github.com/en/rest/billing/usage",
+      "date": "2026-11-04"
+    },
+    {
+      "title": "What is the Ultra plan?",
+      "url": "https://support.claude.com/en/articles/17728952-what-is-the-ultra-plan",
+      "date": "2026-11-04"
+    }
+  ],
+  "quality": "No free capacity sits idle in a lane over budget, no useful free allowance is left unclaimed, and each allowance stays under its limit.",
+  "speed": "Every claimed allowance's use is read, from limits re-read within a week.",
+  "consumption": "The plan's included Actions allowance stays under its limit."
+}

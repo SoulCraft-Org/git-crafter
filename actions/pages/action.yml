@@ -1,0 +1,247 @@
+# Git Crafter pages: a repo's own Process page and Quality, Speed and
+# Consumption page, built in the repo's CI from its own config and its own
+# data, with Git Crafter's code at the pinned commit. Nothing is copied into the
+# repo.
+#
+#   - uses: <owner>/code-os/actions/pages@<full sha> # v1
+#     with:
+#       pages: process quality
+#       config: quality/process/config.json
+#       quality-config: quality/config.json
+#
+# pages names which to build: process (the default), quality, or both. When
+# both build, the Quality page goes first, so the Process page reads its
+# fresh quality/data/latest.json.
+#
+# Three modes. all (the default) collects and builds in one step. collect
+# makes the reads that need nothing from the repo's build (the Process
+# page's API half, the Quality page's collectors) and uploads them as the
+# artifact `artifact`; a job beside the build can run it. render downloads
+# that artifact, adds the repo's own data and builds the pages; a short job
+# after the build runs it. A Quality collector that reads a build output
+# (a bundle size, say) marks its metric not measured when the output is
+# missing, so a repo whose collectors need the build runs mode all after it.
+#
+# A gate metric worse than its goal fails a pull request or a merge queue
+# run: quality/collect.mjs writes the run, names each row and exits 3. In
+# mode all the action still builds the pages, then fails as its last step. In
+# mode collect it uploads the run, then fails, so the render job that needs it
+# is skipped. On a push the pages publish, showing the miss. The one gate is
+# docs.unmapped: a doc with no usable params.areas entry, an area path that
+# matches no tracked file, or an area that matches only its doc. So a pull
+# request that adds or moves a doc fails until the repo's docs targets map it.
+# A repo's pull_request trigger must include its doc globs (its
+# params.doc_set), or a docs-only pull request never runs the gate.
+#
+# config is the Process page's: the collector's scope (tools/collect_org.mjs
+# SCOPE: repos, own_repo, site, docs, data) and the page's settings
+# (pages/build.mjs PAGE_DEFAULTS: out, pages, tabs, heading, nav,
+# quality_config). docs.maps names the repo's own process maps, one per
+# category it needs, each step scored by one metric on its Quality page;
+# Git Crafter maps.json is the example, and a repo that names none shows none.
+# A map, a Process tab (process.json ideals) and a goals.json outcome may
+# open with an ideal state: ideal and sources, as a Quality ideals file.
+# The repo reads its own numbers by default: own_repo is its first repo, and
+# each map step reads its Quality run, the latest.json then local.json in the
+# data folder of the Quality config quality_config names (none: its own
+# quality/config.json, else the template's defaults). site, whose Claude and
+# Tokens data the page copies, is that same run unless the config names
+# another. quality-config is the
+# Quality page's (quality/config.mjs): tabs, the repo's targets overrides and
+# own collectors, folders, link. Paths are relative to the repo root.
+#
+# Needs: the repo checked out, Node 22 or later, npm, and gh, which
+# GitHub-hosted runners ship. Every run installs Git Crafter's four packages
+# (package-lock.json: typescript, yaml, axe-core for a repo with none of its
+# own, and playwright-core, which drives the runner's Chrome when the repo has
+# no playwright of its own) inside the
+# action's checkout, a Process page collect half included. The token reads
+# this repo's pull requests, runs, checks and files; the calling job grants
+# contents, actions, checks, issues and pull-requests read. A read it refuses
+# becomes not measured, never 0.
+#
+# admin-read-token is optional: a fine-grained read-only token (repository
+# Administration, the alert types, Metadata; organization Administration and
+# Members, all read) that only the metrics marked needs: github-admin read
+# with, in the Quality collect step alone, through its environment. Empty, the
+# default, leaves those metrics not measured, as before.
+#
+# hf-token and openrouter-api-key are optional too: the Hugging Face and
+# OpenRouter usage keys the Credits tab's provider readers read with (#836),
+# as HF_TOKEN and OPENROUTER_API_KEY in the Quality collect step's environment
+# alone. Empty, the default, leaves the Credits metrics not measured in CI.
+name: Git Crafter pages
+description: Build a repo's Process page and Quality, Speed and Consumption page from its own config and its own data.
+inputs:
+  pages:
+    description: Which pages to build, space or comma separated - process, quality, or both.
+    default: process
+  config:
+    description: The Process page's config, from the repo root. Needed when pages names process.
+    default: ""
+  quality-config:
+    description: The Quality page's config, from the repo root. Empty uses quality/config.json when the repo has one, else the defaults.
+    default: ""
+  token:
+    description: Token the collectors read this repo with.
+    default: ${{ github.token }}
+  admin-read-token:
+    description: Optional. A fine-grained read-only token the metrics marked needs github-admin read with; empty leaves them not measured.
+    default: ""
+  hf-token:
+    description: Optional. A Hugging Face key the Credits tab reads its ZeroGPU use with; empty leaves it not read in CI.
+    default: ""
+  openrouter-api-key:
+    description: Optional. An OpenRouter key the Credits tab reads its free-model use with; empty leaves it not read in CI.
+    default: ""
+  mode:
+    description: all (one job), collect (the reads, uploaded as an artifact) or render (download them, add the repo's data, build).
+    default: all
+  artifact:
+    description: The artifact collect uploads and render downloads.
+    default: code-os-pages-api
+runs:
+  using: composite
+  steps:
+    - name: Check the inputs
+      id: pick
+      shell: bash
+      env:
+        MODE: ${{ inputs.mode }}
+        PAGES: ${{ inputs.pages }}
+        CONFIG: ${{ inputs.config }}
+      run: |
+        case "$MODE" in
+          all|collect|render) ;;
+          *) echo "::error::actions/pages: mode must be all, collect or render, not '$MODE'"; exit 2 ;;
+        esac
+        process=false quality=false
+        for p in ${PAGES//,/ }; do
+          case "$p" in
+            process) process=true ;;
+            quality) quality=true ;;
+            *) echo "::error::actions/pages: pages takes process and quality, not '$p'"; exit 2 ;;
+          esac
+        done
+        if [ "$process$quality" = falsefalse ]; then echo "::error::actions/pages: pages names no page"; exit 2; fi
+        if [ "$process" = true ] && [ -z "$CONFIG" ]; then echo "::error::actions/pages: the Process page needs config"; exit 2; fi
+        echo "process=$process" >> "$GITHUB_OUTPUT"
+        echo "quality=$quality" >> "$GITHUB_OUTPUT"
+
+    # ---- Quality, Speed and Consumption ----
+
+    # Every picked page, in every mode: the Process page's build reads the Quality page's definitions to check and
+    # rate each map step, and its collect half imports yaml through quality/config.mjs and quality/score.mjs (#650).
+    - name: Install Git Crafter's packages
+      shell: bash
+      run: npm ci --prefix "$GITHUB_ACTION_PATH/../.." --ignore-scripts --no-audit --no-fund --loglevel=error
+
+    - name: Collect this repo's quality data
+      id: collect
+      if: steps.pick.outputs.quality == 'true' && inputs.mode != 'render'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        # Read by github-core.mjs adminGh() for the needs github-admin metrics alone; empty is unset.
+        ADMIN_READ_TOKEN: ${{ inputs.admin-read-token }}
+        # Read by credits/providers.mjs for the Credits provider readers alone; empty is unset.
+        HF_TOKEN: ${{ inputs.hf-token }}
+        OPENROUTER_API_KEY: ${{ inputs.openrouter-api-key }}
+        QCONFIG: ${{ inputs.quality-config }}
+        MODE: ${{ inputs.mode }}
+        RUN: ${{ runner.temp }}/code-os-pages/quality.json
+      run: |
+        args=()
+        if [ -n "$QCONFIG" ]; then args+=(--config "$QCONFIG"); fi
+        if [ "$MODE" = collect ]; then args+=(--out "$RUN"); fi
+        # 3: the run is written, but a gate metric missed its goal; the last
+        # step fails a pull request on it. Any other failure stops here.
+        rc=0
+        node "$GITHUB_ACTION_PATH/../../quality/collect.mjs" "${args[@]}" || rc=$?
+        if [ "$rc" -eq 3 ]; then echo "gate=failed" >> "$GITHUB_OUTPUT"; elif [ "$rc" -ne 0 ]; then exit "$rc"; fi
+
+    # ---- Process: the API half ----
+
+    - name: Collect the Process page's API half
+      if: steps.pick.outputs.process == 'true' && inputs.mode == 'collect'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        CONFIG: ${{ inputs.config }}
+        API: ${{ runner.temp }}/code-os-pages/api.json
+      run: node "$GITHUB_ACTION_PATH/../../tools/collect_org.mjs" --config "$CONFIG" --phase api --api "$API"
+
+    # Tags, as gh actions-lock writes them: the runner matches the lockfile by this text. A caller locks them in its own lockfile.
+    - name: Upload the collected half
+      if: inputs.mode == 'collect'
+      uses: actions/upload-artifact@v7.0.2
+      with:
+        name: ${{ inputs.artifact }}
+        path: ${{ runner.temp }}/code-os-pages/
+        retention-days: 1
+        if-no-files-found: error
+
+    - name: Download the collected half
+      if: inputs.mode == 'render'
+      uses: actions/download-artifact@v8.0.2
+      with:
+        name: ${{ inputs.artifact }}
+        path: ${{ runner.temp }}/code-os-pages
+
+    - name: Restore this repo's quality data
+      if: steps.pick.outputs.quality == 'true' && inputs.mode == 'render'
+      shell: bash
+      env:
+        QCONFIG: ${{ inputs.quality-config }}
+        RUN: ${{ runner.temp }}/code-os-pages/quality.json
+      run: |
+        args=(--from "$RUN")
+        if [ -n "$QCONFIG" ]; then args+=(--config "$QCONFIG"); fi
+        node "$GITHUB_ACTION_PATH/../../quality/collect.mjs" "${args[@]}"
+
+    - name: Build the Quality page
+      if: steps.pick.outputs.quality == 'true' && inputs.mode != 'collect'
+      shell: bash
+      env:
+        QCONFIG: ${{ inputs.quality-config }}
+      run: |
+        args=()
+        if [ -n "$QCONFIG" ]; then args+=(--config "$QCONFIG"); fi
+        node "$GITHUB_ACTION_PATH/../../quality/build.mjs" "${args[@]}"
+
+    # ---- Process ----
+
+    - name: Collect this repo's process data
+      if: steps.pick.outputs.process == 'true' && inputs.mode == 'all'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        CONFIG: ${{ inputs.config }}
+      run: node "$GITHUB_ACTION_PATH/../../tools/collect_org.mjs" --config "$CONFIG"
+
+    - name: Add this repo's own data to the Process page's API half
+      if: steps.pick.outputs.process == 'true' && inputs.mode == 'render'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        CONFIG: ${{ inputs.config }}
+        API: ${{ runner.temp }}/code-os-pages/api.json
+      run: node "$GITHUB_ACTION_PATH/../../tools/collect_org.mjs" --config "$CONFIG" --phase site --api "$API"
+
+    - name: Build the Process page
+      if: steps.pick.outputs.process == 'true' && inputs.mode != 'collect'
+      shell: bash
+      env:
+        CONFIG: ${{ inputs.config }}
+      run: node "$GITHUB_ACTION_PATH/../../pages/build.mjs" --config "$CONFIG"
+
+    # ---- Gate ----
+
+    # Last, after the pages built (mode all) or the run uploaded (mode
+    # collect), so a push to main still publishes the page that shows the miss.
+    - name: Fail the pull request on a quality gate
+      if: steps.collect.outputs.gate == 'failed' && (github.event_name == 'pull_request' || github.event_name == 'merge_group')
+      shell: bash
+      run: |
+        echo "::error::actions/pages: a gate metric missed its goal; the collect step's errors name each row"
+        exit 1

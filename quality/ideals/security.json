@@ -1,0 +1,195 @@
+{
+  "ideal": "No malicious package installed; no vulnerability outlives a week; no secret in the repo; workflows least-privilege on pinned actions; Claude reads no credential.",
+  "parts": [
+    {
+      "part": "Security policy",
+      "ideal": "SECURITY.md names a private reporting channel that works for this repo's visibility",
+      "setup": "Add SECURITY.md; turn on private vulnerability reporting, which GitHub offers on public repos"
+    },
+    {
+      "part": "Dependabot alerts",
+      "ideal": "Vulnerability and malware alerts on; no malware alert open; no vulnerability alert older than a week",
+      "setup": "Enable both in the organization's security configuration; malware alerts are off until asked for"
+    },
+    {
+      "part": "Dependency updates",
+      "ideal": "Security fixes arrive grouped; a new release waits 14 days; packages come from one trusted registry",
+      "setup": "In dependabot.yml: a cooldown, and a group that applies to security updates"
+    },
+    {
+      "part": "Secret scanning",
+      "ideal": "Bought: scanning and push protection on. Free: a secret scan that must pass to merge",
+      "setup": "Enable Secret Protection, or require a pinned scanner's check in a ruleset"
+    },
+    {
+      "part": "Code scanning and quality",
+      "ideal": "Code scanning on where the repo is public or Code Security is bought; Code Quality where its license is bought; never billed unasked",
+      "setup": "Enable CodeQL default setup and Code Quality in the repo's security settings"
+    },
+    {
+      "part": "Actions",
+      "ideal": "A read-only token by default; only listed actions run, each at a full commit SHA or in a lockfile",
+      "setup": "Actions settings: selected actions, required SHA pins, read-only workflow permissions"
+    },
+    {
+      "part": "Claude Code",
+      "ideal": "Claude Code cannot read a credential file in the repo or the home folder",
+      "setup": "Deny Read rules for .env, key and secrets paths in .claude/settings.json"
+    },
+    {
+      "part": "Threat model",
+      "ideal": "Each covered element has its threat, control and gap, re-read as part of routine development",
+      "setup": "THREAT-MODEL.md beside the code; name the paths it covers and the days it may trail them"
+    }
+  ],
+  "sources": [
+    {
+      "title": "GitHub: Advanced Security plans and prices",
+      "url": "https://github.com/security/plans",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: GitHub security features",
+      "url": "https://docs.github.com/en/code-security/getting-started/github-security-features",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Quickstart for securing your repository",
+      "url": "https://docs.github.com/en/code-security/getting-started/quickstart-for-securing-your-repository",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Adding a security policy to your repository",
+      "url": "https://docs.github.com/en/code-security/getting-started/adding-a-security-policy-to-your-repository",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Configuring private vulnerability reporting for a repository",
+      "url": "https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/configure-vulnerability-reporting/configuring-private-vulnerability-reporting-for-a-repository",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: About Dependabot alerts",
+      "url": "https://docs.github.com/en/code-security/dependabot/dependabot-alerts/about-dependabot-alerts",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Dependabot malware alerts",
+      "url": "https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-malware-alerts",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Dependabot auto-triage rules",
+      "url": "https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-auto-triage-rules",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: About code scanning",
+      "url": "https://docs.github.com/en/code-security/code-scanning/introduction-to-code-scanning/about-code-scanning",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: About secret scanning",
+      "url": "https://docs.github.com/en/code-security/secret-scanning/introduction/about-secret-scanning",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: About push protection",
+      "url": "https://docs.github.com/en/code-security/secret-scanning/introduction/about-push-protection",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: GitHub Code Quality",
+      "url": "https://docs.github.com/en/code-security/code-quality",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: GitHub Code Quality billing",
+      "url": "https://docs.github.com/en/billing/concepts/product-billing/github-code-quality",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: GitHub Advanced Security license billing",
+      "url": "https://docs.github.com/en/billing/concepts/product-billing/github-advanced-security",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Secure use reference (formerly Security hardening for GitHub Actions)",
+      "url": "https://docs.github.com/en/actions/reference/security/secure-use",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Managing GitHub Actions settings for a repository",
+      "url": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: REST API endpoints for GitHub Actions permissions",
+      "url": "https://docs.github.com/en/rest/actions/permissions",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Enforcing policies for GitHub Actions in your enterprise",
+      "url": "https://docs.github.com/en/admin/enforcing-policies/enforcing-policies-for-your-enterprise/enforcing-policies-for-github-actions-in-your-enterprise",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: About Dependabot on GitHub Actions runners",
+      "url": "https://docs.github.com/en/code-security/dependabot/working-with-dependabot/about-dependabot-on-github-actions-runners",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Dependabot options reference",
+      "url": "https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "GitHub Docs: Security overview dashboard metrics",
+      "url": "https://docs.github.com/en/code-security/reference/security-at-scale/overview-dashboard-metrics",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "OpenSSF: S2C2F framework requirements (AUD-2, ENF-1, ING-1)",
+      "url": "https://github.com/ossf/s2c2f/blob/main/specification/framework.md",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Anthropic: Claude Code settings",
+      "url": "https://code.claude.com/docs/en/settings",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Anthropic: Claude Code security",
+      "url": "https://code.claude.com/docs/en/security",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Anthropic: Claude Code GitHub Actions",
+      "url": "https://code.claude.com/docs/en/github-actions",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "CISA: BOD 26-04, Prioritizing Security Updates Based on Risk",
+      "url": "https://www.cisa.gov/news-events/directives/bod-26-04-prioritizing-security-updates-based-risk",
+      "date": "2026-06-10"
+    },
+    {
+      "title": "Microsoft: Security Development Lifecycle (SDL) practices",
+      "url": "https://www.microsoft.com/en-us/securityengineering/sdl/practices",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "Microsoft: Security Development Lifecycle, threat modeling",
+      "url": "https://www.microsoft.com/en-us/securityengineering/sdl/threatmodeling",
+      "date": "2026-11-10"
+    },
+    {
+      "title": "OpenSSF Scorecard: checks",
+      "url": "https://github.com/ossf/scorecard/blob/main/docs/checks.md",
+      "date": "2026-11-10"
+    }
+  ],
+  "quality": "Free features and malware alerts on; no open finding; least-privilege workflows pinned by policy; packages past cooldown; fresh threat model.",
+  "speed": "No alert stays open more than a week; an open malware alert is a miss at once.",
+  "consumption": "Scans bill a few runner minutes, and no paid feature bills unless the organization bought it."
+}

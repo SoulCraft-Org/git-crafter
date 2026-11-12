@@ -1,0 +1,51 @@
+{
+ "version": 1,
+ "comment_purpose": "What Git Crafter publishes, and where. Keys under files are paths relative to the Git Crafter root. Values are paths relative to the target. Declaring a target here writes nothing. Only claude_os_sync.py apply --yes writes, and only to the paths listed. An org's own repo entries go in a manifest of its own, read with --manifest (config/example.json shows an org's config).",
+ "comment_path": "Each path is the repo's main checkout, so apply writes into whatever branch that checkout has out. To target a git worktree instead, such as <repo>/.claude/worktrees/<name>, pass --repo-path PATH with one repo name, for status, diff, plan or apply. The record file goes there too. Apply prints the target branch, and refuses a checkout with staged or unstaged changes to tracked files unless --force-target. Sources always come from the Git Crafter root, wherever this manifest lives.",
+ "record_file": ".claude-os-managed.json",
+ "repos": {
+  "user-claude": {
+   "path": "~/.claude",
+   "files": {
+    "rules/comfy.md": "rules/comfy.md",
+    "rules/compute.md": "rules/compute.md",
+    "rules/compute-detail.md": "rules/compute-detail.md",
+    "rules/delegation.md": "rules/delegation.md",
+    "rules/gates.md": "rules/gates.md",
+    "rules/keys-detail.md": "rules/keys-detail.md",
+    "rules/keys.md": "rules/keys.md",
+    "rules/writing-and-gates.md": "rules/writing-and-gates.md",
+    "skills/merging/SKILL.md": "skills/merging/SKILL.md",
+    "skills/merging/orchestrating.md": "skills/merging/orchestrating.md",
+    "skills/merging/reviewing.md": "skills/merging/reviewing.md",
+    "tools/bash_guard.py": "code-os/bash_guard.py",
+    "tools/bash_guard_args.py": "code-os/bash_guard_args.py",
+    "tools/bash_guard_code.py": "code-os/bash_guard_code.py",
+    "tools/bash_guard_conditions.py": "code-os/bash_guard_conditions.py",
+    "tools/bash_guard_evaluate.py": "code-os/bash_guard_evaluate.py",
+    "tools/bash_guard_feeds.py": "code-os/bash_guard_feeds.py",
+    "tools/bash_guard_gh.py": "code-os/bash_guard_gh.py",
+    "tools/bash_guard_issuer.py": "code-os/bash_guard_issuer.py",
+    "tools/bash_guard_literals.py": "code-os/bash_guard_literals.py",
+    "tools/bash_guard_hook.py": "code-os/bash_guard_hook.py",
+    "tools/bash_guard_operands.py": "code-os/bash_guard_operands.py",
+    "tools/bash_guard_paths.py": "code-os/bash_guard_paths.py",
+    "tools/bash_guard_perl.py": "code-os/bash_guard_perl.py",
+    "tools/bash_guard_program.py": "code-os/bash_guard_program.py",
+    "tools/bash_guard_rules.py": "code-os/bash_guard_rules.py",
+    "tools/bash_guard_scan.py": "code-os/bash_guard_scan.py",
+    "tools/bash_guard_shellc.py": "code-os/bash_guard_shellc.py",
+    "tools/bash_guard_slow.py": "code-os/bash_guard_slow.py",
+    "tools/bash_guard_words.py": "code-os/bash_guard_words.py",
+    "tools/bash_guard_rules.json": "code-os/bash_guard_rules.json",
+    "tools/write_guard.py": "code-os/write_guard.py",
+    "tools/comfy_guard.py": "code-os/comfy_guard.py",
+    "tools/turn_check.py": "code-os/turn_check.py",
+    "tools/voice_lint.py": "code-os/voice_lint.py",
+    "tools/json_facts.py": "code-os/json_facts.py"
+   }
+  }
+ },
+ "comment_overlay": "Each account's own facts are not in Git Crafter. They live in that account's private overlay folder, laid out like ~/.claude (code-os/account.json from config/account.example.json, and any rules/<name>.md of its own), installed with apply user-claude --yes --overlay DIR. Only code-os/ and rules/ are taken, an overlay never replaces a file listed here, and it installs only once merged in its own checkout. Without an overlay, the rules that read account.json fall back to asking the owner.",
+ "comment_user_claude": "user-claude installs tier 1 into ~/.claude for this account: the rules, the bash guard that settings.json wires as a PreToolUse hook, the write guard with the voice_lint.py it imports, the Comfy guard, the turn check, a Stop hook, and json_facts.py, which the bash guard's credential fix names. Apply never edits settings.json, so each account wires the write and Comfy guards and the turn check by hand, from the entry in each one's header. ~/.claude is not a git checkout, so apply warns and writes. Apply only copies: a file dropped from this list stays installed until someone deletes it by hand. It copies, never symlinks: a plugin cannot ship rules (code.claude.com/docs/en/plugins/components, read 2026-11-02), and Cowork skips a symlinked rules folder that points outside the working directory (code.claude.com/docs/en/memory, read 2026-11-02)."
+}
