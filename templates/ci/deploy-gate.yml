@@ -1,0 +1,63 @@
+name: deploy-gate
+
+# OPTIONAL, for adopters that deploy from a branch: copy to
+# .github/workflows/deploy-gate.yml and tools/deploy_gate.sh beside it.
+# It fast-forwards DEPLOY_BRANCH to each source-branch commit whose gates
+# passed. A range holding an outside contributor's commit waits SOAK_MINUTES
+# on staging, and for STAGING_CHECK when set, before it moves; the schedule
+# re-checks it (skills/merging/outside.md). Set `workflows:` to the same
+# names as DEPLOY_GATES.
+#
+# Runs on GitHub's standard runners, free on a public repo. On a private
+# repo the schedule spends minutes: drop it there, or set SOAK_MINUTES: 0.
+#
+# workflow_run runs this file as the default branch holds it, so no pull
+# request changes what decides; the job runs only for this repository's own
+# push runs, never a fork's. The push uses GITHUB_TOKEN with contents: write
+# on this job only, and is never forced.
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+
+permissions: {}
+
+env:
+  DEPLOY_GATES: ci
+  SOURCE_BRANCH: main
+  DEPLOY_BRANCH: production
+  SOAK_MINUTES: "30"
+  STAGING_CHECK: ""
+
+jobs:
+  advance:
+    if: >-
+      github.event_name == 'schedule'
+      || (github.event.workflow_run.conclusion == 'success'
+          && github.event.workflow_run.event == 'push'
+          && github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      actions: read
+      checks: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Self-test
+        run: bash tools/deploy_gate.sh --self-test
+
+      - name: Advance the deploy branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if [ -z "$SHA" ]; then SHA="$(git rev-parse "origin/$SOURCE_BRANCH")"; fi
+          bash tools/deploy_gate.sh "$SHA"
