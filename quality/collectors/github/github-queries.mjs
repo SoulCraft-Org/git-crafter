@@ -125,7 +125,12 @@ export const VULNERABILITY_ALERTS = `query VulnerabilityAlerts($owner: String!, 
 }`;
 
 export const PROJECT_FIND = `query ProjectFind($owner: String!, $title: String!) {
-  repositoryOwner(login: $owner) { ... on ProjectV2Owner { projectsV2(first: 20, query: $title) { nodes { id title workflows(first: 20) { nodes { name enabled } } } } } }
+  repositoryOwner(login: $owner) { ... on ProjectV2Owner { projectsV2(first: 20, query: $title) { nodes { id title } } } }
+}`;
+
+// The board's built-in workflows, read apart from its cards: GitHub refuses them to an App's token, which reads the cards.
+export const PROJECT_WORKFLOWS = `query ProjectWorkflows($id: ID!) {
+  node(id: $id) { ... on ProjectV2 { workflows(first: 20) { nodes { name enabled } } } }
 }`;
 
 export const PROJECT_ITEMS = `query ProjectItems($id: ID!, $cursor: String) {

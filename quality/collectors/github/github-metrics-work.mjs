@@ -221,6 +221,7 @@ export const PROJECT_METRICS = {
       const board = await projectOr(L, cfg);
       if (board.could_not_check) return board;
       if (!cfg.workflows.length) return skip(`params.project_workflows in ${TARGETS_FILE} lists no workflow`);
+      if (board.items.workflows.error) throw board.items.workflows.error;
       const on = new Set(board.items.workflows.filter((w) => w.enabled).map((w) => w.name));
       const detail = cfg.workflows.map((name) => flag(name, on.has(name)));
       return measured(pct(detail.filter((d) => d.value).length, detail.length), detail);

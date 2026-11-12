@@ -366,6 +366,13 @@ describe("collect() fails open", () => {
     assert.equal(out["projects.cards_by_column"].could_not_check, "no project named fixture-repo yet; set params.project_title in targets/github.json");
     assert.match(out["settings.pages_private"].could_not_check, /Pages is not enabled/);
   });
+
+  it("a refused workflows read leaves the board's cards measured (an App token reads cards, not workflows)", async () => {
+    const graphql = { ...GRAPHQL, ProjectWorkflows: { __error: { status: 403, message: "You do not have permission to access workflows" } } };
+    const out = await run({ gh: fakeGh({ graphql }) });
+    assert.match(out["projects.workflows_on"].could_not_check, /You do not have permission to access workflows/);
+    assert.equal(typeof out["projects.cards_by_column"].value, "number", "the cards still read");
+  });
 });
 
 describe("params and targets from the engine", () => {
