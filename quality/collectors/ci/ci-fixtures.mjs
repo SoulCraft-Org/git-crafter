@@ -191,6 +191,7 @@ export function fakeGh({ rest = REST, text = TEXT, checks = CHECKS, closes = CLO
       return structuredClone(closes);
     }
     if (/query ProjectFind/.test(query)) return { repositoryOwner: { projectsV2: { nodes: board ? [{ id: "PVT_1", title: "fixture-repo" }] : [] } } };
+    if (/query ProjectWorkflows/.test(query)) return { node: { workflows: { nodes: [] } } };
     if (/query ProjectItems/.test(query)) return { node: { items: { pageInfo: { hasNextPage: false, endCursor: null }, nodes: structuredClone(board) } } };
     const ids = [...query.matchAll(/"WFR_(\d+)"/g)].map((m) => Number(m[1]));
     calls.push(`graphql nodes ${ids.join(",")}`);

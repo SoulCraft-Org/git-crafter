@@ -184,10 +184,13 @@
       "projectsV2": {
         "nodes": [
           { "id": "PVT_other", "title": "fixture-repo-archive" },
-          { "id": "PVT_site", "title": "fixture-repo", "workflows": { "nodes": [{ "name": "Item closed", "enabled": true }, { "name": "Pull request merged", "enabled": true }, { "name": "Item added to project", "enabled": false }] } }
+          { "id": "PVT_site", "title": "fixture-repo" }
         ]
       }
     }
+  },
+  "ProjectWorkflows": {
+    "node": { "workflows": { "nodes": [{ "name": "Item closed", "enabled": true }, { "name": "Pull request merged", "enabled": true }, { "name": "Item added to project", "enabled": false }] } }
   },
   "ProjectItems": {
     "node": {
