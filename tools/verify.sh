@@ -31,6 +31,7 @@ echo "== write guard";  python3 -I tools/write_guard.py --self-test
 echo "== comfy guard";  python3 -I tools/comfy_guard.py --self-test
 echo "== turn check";   python3 -I tools/turn_check.py --self-test
 echo "== json facts";   python3 -I tools/json_facts.py --self-test
+echo "== merge policy"; python3 -I tools/merge_policy.py --self-test --policy templates/open/merge_policy.json
 echo "== clauses";      python3 -I tools/clause_check.py --self-test
                         python3 -I tools/clause_check.py
 echo "== prose";        python3 -I tools/voice_lint.py README.md rules/*.md skills/*/SKILL.md

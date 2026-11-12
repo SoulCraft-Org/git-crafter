@@ -1,0 +1,37 @@
+{
+  "_README": [
+    "Bad policy for merge_policy.py --self-test: a maintainer_only sample the policy lets through. Must exit 1."
+  ],
+  "_expect": {
+    "exit": 1,
+    "text": "should wait as maintainer_only"
+  },
+  "maintainer_only": [
+    ".github/**"
+  ],
+  "ai_mergeable": [
+    "src/pages/**"
+  ],
+  "samples": {
+    "ai_mergeable": [
+      [
+        "src/pages/x.md"
+      ]
+    ],
+    "maintainer_only": [
+      [
+        "docs/runbooks/launch.md"
+      ]
+    ],
+    "default_deny": [
+      [
+        "README.md"
+      ]
+    ],
+    "refused": [
+      [
+        "src/pages/../../.github/x.yml"
+      ]
+    ]
+  }
+}

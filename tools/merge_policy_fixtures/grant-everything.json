@@ -1,0 +1,17 @@
+{
+  "_README": [
+    "Bad policy for merge_policy.py --self-test: a '**/*' allowlist glob grants every path. Must exit 3."
+  ],
+  "_expect": {
+    "exit": 3,
+    "text": "grants too much"
+  },
+  "maintainer_only": [
+    ".github/**"
+  ],
+  "ai_mergeable": [
+    "src/pages/**",
+    "**/*"
+  ],
+  "samples": {}
+}
