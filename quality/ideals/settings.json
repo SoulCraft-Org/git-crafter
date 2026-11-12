@@ -115,6 +115,16 @@
       "title": "OpenSSF Scorecard: checks",
       "url": "https://github.com/ossf/scorecard/blob/main/docs/checks.md",
       "date": "2026-10-28"
+    },
+    {
+      "title": "GitHub Docs: Approving workflow runs from forks",
+      "url": "https://docs.github.com/en/actions/how-tos/manage-workflow-runs/approve-runs-from-forks",
+      "date": "2026-11-12"
+    },
+    {
+      "title": "GitHub Docs: Configuring private vulnerability reporting for a repository",
+      "url": "https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/configure-vulnerability-reporting/configure-for-a-repository",
+      "date": "2026-11-12"
     }
   ],
   "quality": "Branch, tags and deploys are protected with no bypass, secret files cannot be pushed, access stays inside the organization, and every secret is used.",
@@ -128,8 +138,8 @@
     },
     {
       "part": "Access",
-      "ideal": "Members only, through the organization: no outside collaborator, no open invitation, no custom role until a team needs one",
-      "setup": "Organization base permission read, two-factor required; invite people to the organization, not the repo"
+      "ideal": "Members only via the org: no outside collaborator, invite or custom role. A public repo gates fork runs, takes private reports, blocks secrets, has Discussions",
+      "setup": "Org base permission read, two-factor on; invite to the org, not a repo; public repo settings: templates/open/README.md"
     },
     {
       "part": "Rules, branches and tags",

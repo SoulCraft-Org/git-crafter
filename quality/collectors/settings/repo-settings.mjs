@@ -137,6 +137,24 @@ const METRICS = {
       return measured(sum(rows), rows);
     },
   },
+  "settings.open_repo_missing": {
+    source: "state: gh api repos/{repo} (has_discussions, security_and_analysis.secret_scanning_push_protection), repos/{repo}/actions/permissions/fork-pr-contributor-approval (approval_policy) and repos/{repo}/private-vulnerability-reporting (enabled); not measured for a private repo",
+    async run(R) {
+      const repo = await R.repo();
+      if (repo.private !== false) return skip("a private repo takes no outside contributions, so no open-repo setting applies");
+      const push = repo.security_and_analysis?.secret_scanning_push_protection?.status;
+      if (push === undefined) return skip(`gh api repos answered without security_and_analysis: ${NEEDS["github-admin"]}`);
+      const [fork, vuln] = [await R.forkApproval(), await R.vulnReporting()];
+      if (!fork || !vuln) return skip(`the fork approval or vulnerability reporting setting is not readable: ${NEEDS["github-admin"]}`);
+      const rows = [
+        flag("Every outside contributor's run waits for approval", fork.approval_policy === "all_external_contributors"),
+        flag("Private vulnerability reporting is on", vuln.enabled === true),
+        flag("Secret scanning push protection is on", push === "enabled"),
+        flag("Discussions are on, for ideas before issues", repo.has_discussions === true),
+      ];
+      return measured(rows.filter((r) => !r.value).length, rows);
+    },
+  },
   "settings.admin_read_age_hours": {
     source: "state: generated_at of local.json in the repo's data folder, the last collect.mjs --local run, against the time of this run",
     async run(R, cfg, { mode, data, now }) {

@@ -103,6 +103,22 @@
     "chart": "table"
   },
   {
+    "id": "settings.open_repo_missing",
+    "tab": "settings",
+    "kind": "quality",
+    "group": "Access",
+    "label": "Open-repo settings off",
+    "means": "Settings a public repo needs: fork run approval, private vulnerability reporting, push protection, Discussions.",
+    "unit": "settings",
+    "goal": 0,
+    "near": 1,
+    "direction": "lower",
+    "goal_source": "template goal: each is one API call and protects the repo from outside code or a public leak; GitHub docs, Approving workflow runs from forks, Configuring private vulnerability reporting, About push protection and Enabling GitHub Discussions (read 2026-11-12)",
+    "source": "state: gh api repos/{repo} (has_discussions, security_and_analysis.secret_scanning_push_protection), repos/{repo}/actions/permissions/fork-pr-contributor-approval (approval_policy) and repos/{repo}/private-vulnerability-reporting (enabled); not measured for a private repo",
+    "needs": "github-admin",
+    "chart": "table"
+  },
+  {
     "id": "settings.admin_read_age_hours",
     "tab": "settings",
     "kind": "speed",
