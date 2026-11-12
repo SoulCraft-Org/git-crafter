@@ -138,8 +138,8 @@
     },
     {
       "part": "Access",
-      "ideal": "Members only, through the organization: no outside collaborator, no open invitation, no custom role until a team needs one. A public repo approves every outside contributor's run, takes private vulnerability reports, blocks pushed secrets and opens Discussions",
-      "setup": "Organization base permission read, two-factor required; invite people to the organization, not the repo; a public repo's four settings are one gh api call each (templates/open/README.md)"
+      "ideal": "Members only via the org: no outside collaborator, invite or custom role. A public repo gates fork runs, takes private reports, blocks secrets, has Discussions",
+      "setup": "Org base permission read, two-factor on; invite to the org, not the repo; a public repo's four settings are one gh api call each (templates/open/README.md)"
     },
     {
       "part": "Rules, branches and tags",
