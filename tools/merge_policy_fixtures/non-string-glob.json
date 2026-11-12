@@ -1,0 +1,17 @@
+{
+  "_README": [
+    "Bad policy for merge_policy.py --self-test: a glob that is not a string. Must exit 3."
+  ],
+  "_expect": {
+    "exit": 3,
+    "text": "maintainer_only in"
+  },
+  "maintainer_only": [
+    ".github/**",
+    42
+  ],
+  "ai_mergeable": [
+    "src/pages/**"
+  ],
+  "samples": {}
+}
