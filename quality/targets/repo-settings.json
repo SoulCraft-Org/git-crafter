@@ -108,7 +108,7 @@
     "kind": "quality",
     "group": "Access",
     "label": "Open-repo settings off",
-    "means": "Settings a public repo needs before outside contributors arrive: approval for every outside contributor's run, private vulnerability reporting, push protection and Discussions.",
+    "means": "Settings a public repo needs: fork run approval, private vulnerability reporting, push protection, Discussions.",
     "unit": "settings",
     "goal": 0,
     "near": 1,

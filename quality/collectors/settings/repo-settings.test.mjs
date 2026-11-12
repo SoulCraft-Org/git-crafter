@@ -169,7 +169,7 @@ test("open repo: on a public repo each missing setting counts once; a private on
   assert.equal(hidden[id].could_not_check, `gh api repos answered without security_and_analysis: ${NEEDS["github-admin"]}`);
   const noSetting = { ...open() };
   delete noSetting[R("/actions/permissions/fork-pr-contributor-approval")];
-  assert.equal((await run(noSetting))[id].value, 1, "an unread fork policy counts as missing, never as set");
+  assert.match((await run(noSetting))[id].could_not_check, /not readable/, "an unread fork policy is not measured, never read as set");
 });
 
 test("reaches: the default branch, every ref, a pattern and an exclusion", () => {

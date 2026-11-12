@@ -144,9 +144,11 @@ const METRICS = {
       if (repo.private !== false) return skip("a private repo takes no outside contributions, so no open-repo setting applies");
       const push = repo.security_and_analysis?.secret_scanning_push_protection?.status;
       if (push === undefined) return skip(`gh api repos answered without security_and_analysis: ${NEEDS["github-admin"]}`);
+      const [fork, vuln] = [await R.forkApproval(), await R.vulnReporting()];
+      if (!fork || !vuln) return skip(`the fork approval or vulnerability reporting setting is not readable: ${NEEDS["github-admin"]}`);
       const rows = [
-        flag("Every outside contributor's run waits for approval", (await R.forkApproval())?.approval_policy === "all_external_contributors"),
-        flag("Private vulnerability reporting is on", (await R.vulnReporting())?.enabled === true),
+        flag("Every outside contributor's run waits for approval", fork.approval_policy === "all_external_contributors"),
+        flag("Private vulnerability reporting is on", vuln.enabled === true),
         flag("Secret scanning push protection is on", push === "enabled"),
         flag("Discussions are on, for ideas before issues", repo.has_discussions === true),
       ];
