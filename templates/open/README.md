@@ -42,3 +42,4 @@ Each is one API call (GitHub Docs, read 2026-11-12). Read each back after.
 |---|---|---|
 | Community profile `health_percentage` | 100 | `gh api repos/<owner>/<repo>/community/profile -q .health_percentage` |
 | Merge policy self-test | PASS | `python3 -I tools/merge_policy.py --self-test` |
+| OpenSSF Scorecard, from [`scorecard.yml`](../ci/scorecard.yml) | 8 or more, a goal | `curl -s https://api.scorecard.dev/projects/github.com/<owner>/<repo> \| jq .score` |
