@@ -438,6 +438,7 @@ jobs:
           repositories: ${{ github.event.repository.name }}
           permission-administration: read
           permission-code-quality: read
+          permission-environments: read
           permission-secrets: read
           permission-secret-scanning-alerts: read
           permission-security-events: read

@@ -94,6 +94,18 @@ describe("Security and quality: GitHub's five features, their findings, fix time
     assert.match(out["security.dependabot_alerts_on"].could_not_check, /admin rights/);
   });
 
+  it("reads code quality's findings for the oldest alert without its setup, which an App's read-only token is refused", async () => {
+    const out = await run({
+      gh: withRest({
+        [`repos/${REPO}/code-quality/setup`]: { __error: { status: 403, message: "Resource not accessible by integration" } },
+        [`repos/${REPO}/code-quality/findings?state=open&per_page=100`]: [{ state: "open", created_at: "2026-09-01T00:00:00Z", rule: { severity: "note" } }],
+      }),
+    });
+    assert.equal(out["security.oldest_open_alert_days"].detail[0].label, "oldest: code quality");
+    const off = await run({ gh: withRest({ [`repos/${REPO}/code-quality/findings?state=open&per_page=100`]: { __error: { status: 403, message: "Code quality is not enabled for this repository." } } }) });
+    assert.equal(off["security.oldest_open_alert_days"].value, 32.8, "a repo with code quality off counts the other alerts");
+  });
+
   it("prices the paid features by the committers billed now", async () => {
     const billed = (n) => ({ total_advanced_security_committers: n });
     const out = await run({
