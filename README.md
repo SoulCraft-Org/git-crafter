@@ -1,6 +1,6 @@
 # Git Crafter
 
-Templates that let AI agents run an open-source or open-weight repo: Quality, Speed and Consumption pages, plus process maps of every step. Built for repos run with Claude Code or OpenCode. Git Crafter is licensed under [Apache-2.0](LICENSE) and published by SoulCraft. It began as Code-OS by Colorado Startups ([NOTICE](NOTICE)).
+Templates for AI agents to run an open-source or open-weight repo with Claude Code or OpenCode. Git Crafter is licensed under [Apache-2.0](LICENSE) and published by SoulCraft. It began as Code-OS by Colorado Startups ([NOTICE](NOTICE)).
 
 ![Diagram of the two pages: scores by tab with a work queue, and process maps of steps](.github/assets/pages.svg)
 
@@ -23,8 +23,6 @@ Both pages are public.
 | 1 | `<repo>/.github/dependabot.yml`, which bumps the Git Crafter pin | [templates/ci/dependabot.yml](templates/ci/dependabot.yml) |
 | 2 | A ruleset on `main` requiring `ci / ci-ok` | [templates/ci](templates/ci/README.md) |
 | 3 | Settings, Pages: source "GitHub Actions" | [templates/ci](templates/ci/README.md) |
-
-Improve a template in your repo? Open a pull request here, so every adopter gets it at its next pin bump.
 
 ## The 21 categories
 
@@ -60,14 +58,14 @@ Each map's steps: [pages/maps](pages/maps/README.md).
 | [compute-detail](rules/compute-detail.md), [comfy](rules/comfy.md), [gates](rules/gates.md), [keys-detail](rules/keys-detail.md) | Matching files | CI pool, GPU tiers, how to build a gate |
 | [merging](skills/merging/SKILL.md) | Reviewing and merging | Merge conditions and review depth |
 
-What loads when: the [memory](https://code.claude.com/docs/en/memory) and [skills](https://code.claude.com/docs/en/skills) docs, read 2026-11-03. `tools/claude_os_sync.py` copies the rules and guards into `~/.claude` with `apply`, from the public [manifest.json](manifest.json); [CONTRIBUTING](CONTRIBUTING.md#releases) says when. Formerly Claude-OS.
+What loads when: the [memory](https://code.claude.com/docs/en/memory) and [skills](https://code.claude.com/docs/en/skills) docs, read 2026-11-03. `tools/claude_os_sync.py` copies the rules and guards into `~/.claude` with `apply`, from the public [manifest.json](manifest.json); [CONTRIBUTING](CONTRIBUTING.md#releases) says when.
 
 ## Folder map
 
 | Folder | Holds |
 |---|---|
 | `actions/` | The `pages` action adopters pin |
-| `config/` | Git Crafter's own Quality config, with its collector in `config/quality/collectors/`. Also an org's example config and [account.example.json](config/account.example.json), which an account fills in a private overlay (`apply --overlay DIR`) |
+| `config/` | Git Crafter's own Quality config and collector, an org's example config, and [account.example.json](config/account.example.json) for a private overlay (`apply --overlay DIR`) |
 | `data/` | Snapshots Git Crafter's pages read |
 | `pages/` | The Process and Metrics builder and the map library, `pages/maps/` |
 | `quality/` | The Quality engine and its collectors ([README](quality/README.md)) |
@@ -82,6 +80,6 @@ What loads when: the [memory](https://code.claude.com/docs/en/memory) and [skill
 | Need | Go to |
 |---|---|
 | Help, bugs and ideas | [SUPPORT.md](SUPPORT.md) |
-| Changes | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Changes, and template fixes from adopters | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Security problems | [SECURITY.md](SECURITY.md) |
-| Maintainer | Colorado Startups, the publisher |
+| Maintainer | SoulCraft, the publisher |
