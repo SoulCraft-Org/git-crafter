@@ -120,7 +120,7 @@ except ModuleNotFoundError as exc:
     if not (exc.name or "").startswith("bash_guard_"):
         raise
     print(f"bash_guard: {exc.name}.py is missing beside {HERE}; reinstall it with "
-          "python3 -I ~/Developer/Code-OS/tools/claude_os_sync.py apply user-claude --yes",
+          "python3 -I ~/Developer/SoulCraft-Org/Git-Crafter/tools/claude_os_sync.py apply user-claude --yes",
           file=sys.stderr)
     if __name__ != "__main__":
         raise
