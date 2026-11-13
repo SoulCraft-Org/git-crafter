@@ -1,0 +1,71 @@
+name: wiki
+
+# Copy to .github/workflows/wiki.yml, with wiki/Home.md from templates/open/wiki/. Then two web-UI steps no API
+# covers (templates/open/README.md): limit wiki editing to people with push access, and create the wiki's first
+# page once, which creates its git repository. After that, wiki pages change only by pull request: this workflow
+# publishes wiki/ to the wiki on each push to main that touches it.
+# A wiki is a git repository at <repo>.wiki.git, and only pushes to its default branch go live (docs.github.com,
+# Adding or editing wiki pages, read 2026-11-13). Plain git only: no third-party action and no REST or GraphQL
+# request. The wiki mirrors the folder: a page removed from wiki/ is removed from the wiki. It commits and pushes
+# only when a page changed. Git Crafter runs the same file from on: down (.github/workflows/wiki.yml).
+on:
+  push:
+    branches: [main]
+    paths: ["wiki/**", ".github/workflows/wiki.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One publish at a time, never cut off mid-push; each run mirrors the whole folder, so the newest one wins.
+concurrency:
+  group: wiki
+  cancel-in-progress: false
+
+jobs:
+  wiki:
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    # Write, on this job alone: a push to the wiki's git repository.
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The token reaches git through a credential helper that reads it from the environment: never in a URL, on
+      # a command line or in the log.
+      - name: Mirror wiki/ into the wiki
+        env:
+          WIKI_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          src="$GITHUB_WORKSPACE/wiki"
+          if [ ! -f "$src/Home.md" ]; then
+            echo "::error::wiki/Home.md is missing; refusing to publish, which would empty the wiki"
+            exit 1
+          fi
+          dest="$RUNNER_TEMP/wiki"
+          # Single quotes on purpose: git's shell expands the variable when it asks, so the value never sits here.
+          # shellcheck disable=SC2016
+          helper='!f() { if [ "$1" = get ]; then printf "username=x-access-token\npassword=%s\n" "$WIKI_TOKEN"; fi; }; f'
+          if ! git -c credential.helper="$helper" clone --quiet "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.wiki.git" "$dest"; then
+            echo "::error::could not clone the wiki; turn it on and create its first page once in the web UI"
+            exit 1
+          fi
+          cd "$dest"
+          git config credential.helper "$helper"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -r --quiet --ignore-unmatch -- .
+          cp -R "$src/." .
+          git add -A
+          if git diff --cached --quiet; then
+            echo "The wiki already matches wiki/ at $GITHUB_SHA." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git diff --cached --stat
+          git commit --quiet -m "Publish wiki/ from $GITHUB_REPOSITORY@$GITHUB_SHA"
+          git push --quiet origin HEAD
+          echo "Published wiki/ at $GITHUB_SHA to the wiki." | tee -a "$GITHUB_STEP_SUMMARY"
