@@ -4,6 +4,7 @@ import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { it } from "node:test";
+import { fileURLToPath } from "node:url";
 import { keyOf, readOnly, summary, writeShim } from "./gh-replay.mjs";
 it("gh-replay replays reads only, never a write or a mutation", () => {
   for (const a of [["api", "repos/o/r/pulls"], ["api", "graphql", "-f", "query=query { viewer { login } }"], ["pr", "list"], ["api", "x", "-X", "GET"]]) assert.ok(readOnly(a), a.join(" "));
@@ -23,4 +24,27 @@ it("gh-replay records on main, then a pull request replays it without calling gh
   assert.equal(readdirSync(path.join(tmp, "save", "r")).length, 1, "only a PUBLIC family is saved: dependabot, the cache limit and an unlisted path wrote none");
   assert.equal(readFileSync(path.join(tmp, "calls"), "utf8"), "x\n".repeat(8), "only the public read replayed; the three unsaved reads and the PR's own read ran live");
   assert.equal(summary(readFileSync(path.join(tmp, "save.log"), "utf8").trim().split("\n").map((l) => l.split(" ")), "replay"), "live 8 REST, 0 GraphQL; 1 replayed from main (replay)");
+});
+it("gh-replay refuses -XPOST and --method=POST, saves no climbing path or token-only field, counts each page and reads a bad save live (#42)", () => {
+  for (const a of [["api", "x", "-XPOST"], ["api", "x", "-X=PUT"], ["api", "x", "-iXDELETE"], ["api", "x", "--method", "POST"], ["api", "x", "--method=post"]]) assert.ok(!readOnly(a), a.join(" "));
+  assert.ok(readOnly(["api", "x", "-XGET"]));
+  const tmp = mkdtempSync(path.join(tmpdir(), "gh-replay-"));
+  const trace = `printf '* Request at t\\n* Request to https://api.github.com/a\\n* Request took 1ms\\n'; case "$*" in *--paginate*) printf '* Request to https://api.github.com/a?page=2\\n';; esac`;
+  writeFileSync(path.join(tmp, "real"), `#!/bin/sh\n{ ${trace}; echo "debug $GH_DEBUG"; } >&2; echo "real $*"\n`, { mode: 0o755 });
+  mkdirSync(path.join(tmp, "save", "r"), { recursive: true });
+  writeShim(tmp);
+  const env = (mode) => ({ ...process.env, PATH: `${path.dirname(process.execPath)}:${process.env.PATH}`, GH_REPLAY_REAL: path.join(tmp, "real"), GH_REPLAY_DIR: path.join(tmp, "save"), GH_REPLAY_MODE: mode });
+  const gh = (mode, ...args) => spawnSync(path.join(tmp, "gh"), args, { env: env(mode) });
+  for (const p of ["commits/../actions/cache/storage-limit", "commits/%2E%2E/x", "contents/./x"]) gh("record", "api", `repos/o/r/${p}`);
+  gh("record", "api", "graphql", "-f", 'query=query { repository(owner: "o", name: "r") { viewerPermission } }');
+  assert.equal(readdirSync(path.join(tmp, "save", "r")).length, 0, "a dot segment, an encoded dot and a token-only GraphQL field are never saved");
+  const paged = gh("count", "api", "repos/o/r/tags", "--paginate", "--jq", ".[]");
+  assert.equal(paged.stderr.toString(), "debug 1\n", "the request trace is cut from stderr");
+  writeFileSync(path.join(tmp, "save", "r", `${keyOf(["api", "repos/o/r/labels"])}.json`), "{not json");
+  const bad = gh("replay", "api", "repos/o/r/labels");
+  assert.deepEqual([bad.status, bad.stdout.toString()], [0, "real api repos/o/r/labels\n"], "an unreadable save reads live");
+  const rows = readFileSync(path.join(tmp, "save.log"), "utf8").trim().split("\n");
+  assert.deepEqual(rows.slice(-3), ["rest 2", "unreadable 1", "rest 1"], "two pages count 2; the bad save is logged");
+  const report = spawnSync(process.execPath, [fileURLToPath(new URL("gh-replay.mjs", import.meta.url)), "report"], { env: env("replay"), cwd: tmp }).stdout.toString();
+  assert.match(report, /::warning title=GitHub requests::1 saved reads from main were unreadable/);
 });
