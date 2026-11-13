@@ -35,7 +35,7 @@ Dependabot moves an adopter's [SHA pin](templates/ci/README.md) to the newest ta
 | New metric, tab, ideal, param or goal | minor, `v1.3.0` |
 | Config stops loading: key, tab id or metric id renamed or removed | major, `v2.0.0` |
 | Metric moved to another tab: a repo with its own `tabs` list loses it until it adds the tab | major, `v2.0.0` |
-| Only files the action and `ci-standard.yml` never read: `tools/`, `skills/`, `templates/`, this file | none |
+| Files the action and `ci-standard.yml` never read: `tools/`, `skills/`, `templates/` but `setup.json`, this file | none |
 
 Right after a merge, the orchestrator tags its commit:
 

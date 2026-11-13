@@ -6,7 +6,7 @@ Files and settings that open a Git Crafter repo to outside contributors, with AI
 flowchart LR
   T[templates/open] -->|copy, fill the angle brackets| R[your repo root]
   P[merge_policy.json] -->|narrow ai_mergeable| R
-  S[Settings below] -->|gh api| G[GitHub repo]
+  S[templates/setup.json] -->|tools/apply_setup.mjs| G[GitHub repo]
   R --> C[Community profile 100%]
   G --> C
 ```
@@ -25,32 +25,30 @@ flowchart LR
 
 ## Settings
 
-Each is one call or a web UI step (GitHub Docs and the gh manual, read 2026-11-12 and 2026-11-13). Read each back after.
+[`setup.json`](../setup.json) lists each repo switch these files assume, one row each; [`apply_setup.mjs`](../../tools/apply_setup.mjs) sets them with `gh api` (GitHub Docs and the gh manual, read 2026-11-12 and 2026-11-13). Run it from a Git Crafter clone, signed in to `gh` as the repo admin.
+
+| Step | Command |
+|---|---|
+| Show what would change | `node tools/apply_setup.mjs --repo <owner>/<repo> --values values.json` |
+| Set each change, then read it back | the same, with `--apply` |
+| Exit 1 if a required row differs | the same, with `--check` |
+
+`values.json` holds your `topics`, `homepage`, `description` and `optional_on`, the optional rows to turn on ([Git Crafter's](../../config/setup-values.json)). A `by hand` row names its web UI step. The list leaves out three:
 
 | Setting | Call |
 |---|---|
-| Fork runs wait for approval | `gh api -X PUT repos/<owner>/<repo>/actions/permissions/fork-pr-contributor-approval -f approval_policy=all_external_contributors` |
-| Private vulnerability reporting | `gh api -X PUT repos/<owner>/<repo>/private-vulnerability-reporting` |
-| Secret scanning and push protection | `gh api -X PATCH repos/<owner>/<repo> --input security.json`, both `status` fields `enabled` |
-| Discussions on | GraphQL `updateRepository(input: {repositoryId, hasDiscussionsEnabled: true})`; create the Ideas, Q&A and Show and tell categories in the web UI, the one step no API covers |
-| Squash only, required checks | `gh api -X POST repos/<owner>/<repo>/rulesets`: a `pull_request` rule with `allowed_merge_methods: ["squash"]`, and `required_status_checks` naming your CI and DCO |
+| Required checks | a `required_status_checks` rule naming your CI and DCO, in the default branch ruleset |
 | Labels | `gh label create <name> --color <hex> --description <text>` per `labels.json` entry |
-| Wiki on | `gh repo edit <owner>/<repo> --enable-wiki` |
-| Wiki editing by collaborators only; the first page | the default, keep it; web UI only |
-| Push limit, 5 refs a push (Docs' suggestion) | web UI only; public preview |
-| Sponsor button | GraphQL `updateRepository(input: {repositoryId, hasSponsorshipsEnabled: true})`; reads `FUNDING.yml` |
-| Immutable releases | `gh api -X PUT repos/<owner>/<repo>/immutable-releases` |
 | A Release per tag | `gh release create <tag> --verify-tag --generate-notes` |
-| Topics, homepage | `gh repo edit <owner>/<repo> --add-topic <topic> --homepage <url>` |
-| Social preview image | web UI only; under 1 MB, 1280 by 640 |
-| Template flag, starter repos only | `gh repo edit <owner>/<repo> --template` |
 
 ## Options, off by default
 
-| Option | For | Turn on |
+Name a row in `optional_on` to turn it on.
+
+| Option | For | Row, and what else it needs |
 |---|---|---|
-| Merge queue | a busy branch, with several human maintainers | rule "Require merge queue"; CI runs `on: merge_group`; `gh pr merge` then turns on auto-merge while checks run |
-| Artifact attestations | a repo that publishes a built artifact | `actions/attest`, with `id-token: write` and `attestations: write` |
+| Merge queue | a busy branch, with several human maintainers | `rules.merge_queue`; CI runs `on: merge_group`; `gh pr merge` then turns on auto-merge while checks run |
+| Artifact attestations | a repo that publishes a built artifact | `manual.artifact_attestations`: `actions/attest`, with `id-token: write` and `attestations: write` |
 
 ## Check
 
