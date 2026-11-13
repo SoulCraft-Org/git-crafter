@@ -13,7 +13,7 @@ import { configScope, namedIds, ownQuality, ownSteps, finishCollect, readDocs as
 import { systemsMetrics } from "../tools/systems.mjs";
 import { loadLibrary, resolveMaps } from "../pages/library.mjs";
 import { TABS as TEMPLATE_TABS } from "../quality/score.mjs";
-import { BUDGET, build, checkDocs, checkMaps, checkTokens, CODE_OS_QUALITY_CONFIG, MAX_STEPS, qualityDefs } from "../pages/build.mjs";
+import { BUDGET, build, checkDocs, checkMaps, CODE_OS_QUALITY_CONFIG, MAX_STEPS, qualityDefs } from "../pages/build.mjs";
 import { figureOf, goalOf, modelsLane, PROCESS_TABS, renderMetrics, renderProcess } from "../pages/render.mjs";
 import { GAP, places, systemsMap, tokenFlow, trail, TRAIL } from "../pages/draw.mjs";
 import { GRID, grid } from "../pages/draw-grid.mjs";
@@ -242,7 +242,7 @@ test("systems.json is a template: another repo's doc draws its own map, readers 
   assert.match(lane, /not measured: no reader/);
 });
 
-test("tokens.json is a template: figures, rows, fields and goals from the repo's own data", () => {
+test("the Tokens tab is a template: figures, rows, fields and goals from the repo's own data", () => {
   const data = {
     generated_at: ago(1),
     rest_calls: 250,
@@ -263,16 +263,6 @@ test("tokens.json is a template: figures, rows, fields and goals from the repo's
   assert.equal(goalOf({ metric: "x.call" }, data.metrics["x.call"], goals, sys).goal, 800, "a metric's own target wins");
   assert.equal(goalOf({ field: "rest_calls" }, null, goals, sys).goal, 300);
   assert.equal(goalOf({ metric: "x.parts", row: "memory" }, data.metrics["x.parts"], goals, sys), null, "a row is not the metric its goal rates");
-  const doc = readJson("tokens.json");
-  assert.deepEqual(checkTokens(doc, readJson("systems.json")), []);
-  const bad = structuredClone(doc);
-  bad.flow.edges.push({ from: "workers", to: "nowhere" });
-  bad.goals.push({ metric: "m", system: "nope", limit: 0 });
-  bad.practices[0].doc = "http://insecure";
-  const errs = checkTokens(bad, readJson("systems.json")).join("\n");
-  assert.match(errs, /edge workers to nowhere: unknown node/);
-  assert.match(errs, /systems.json has no limit 0 for nope/);
-  assert.match(errs, /needs an https doc link/);
   const svg = tokenFlow({
     groups: [{ id: "a", label: "Alpha", figs: [{ text: "1K tokens", tip: "t" }], cache: { text: "cache 5 min", tip: "q" } }],
     nodes: [{ id: "n1", label: "One", icon: "plan", group: "a", at: [0, 0] }, { id: "n2", label: "Two", icon: "ci", group: "a", at: [1, 1], fig: { text: "2 runs", tip: "s" } }],
