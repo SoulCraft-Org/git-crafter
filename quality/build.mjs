@@ -17,9 +17,9 @@ import { pathToFileURL } from "node:url";
 
 import { parseArgs } from "./collect.mjs";
 import { CONFIG_DEFAULTS, loadConfig, QUALITY } from "./config.mjs";
-import { configDefs } from "./packs.mjs";
+import { configDefs, configIdeals } from "./packs.mjs";
 import { render } from "./render/page.mjs";
-import { currentMetrics, loadAllReviews, loadData, loadIdeals, mergeMetrics, newestReviews, TABS, tabGaps } from "./score.mjs";
+import { currentMetrics, loadAllReviews, loadData, mergeMetrics, newestReviews, TABS, tabGaps } from "./score.mjs";
 
 // The drawing lives in quality/render/ (charts, layout, styles, client
 // script); these two stay exported here for the self-test.
@@ -39,7 +39,7 @@ export function sizeCheck(html, budget = PAGE_BUDGET) {
 export function readInputs(config, { template = QUALITY } = {}) {
   const tabIds = new Set(config.tabs.map(([id]) => id));
   const { defs } = configDefs(config, join(template, "targets"));
-  const ideals = loadIdeals({ templateDir: join(template, "ideals"), repoDir: config.ideals, tabIds: new Set([...TABS.map(([id]) => id), ...tabIds]) });
+  const ideals = configIdeals(config, join(template, "ideals"));
   // A review of a template tab the repo turned off stays on disk and off the
   // page, never a usage error.
   const reviewHistory = Object.fromEntries(Object.entries(loadAllReviews(config.reviews, new Set([...TABS.map(([id]) => id), ...tabIds]))).filter(([tab]) => tabIds.has(tab)));

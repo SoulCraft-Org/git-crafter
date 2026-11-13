@@ -172,6 +172,7 @@
      "doc": "quality/CONFIG.md",
      "area": [
       "quality/config.mjs",
+      "quality/packs.mjs",
       "quality/overlay.mjs",
       "config/quality.json"
      ]

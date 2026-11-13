@@ -1,0 +1,10 @@
+{
+ "id": "fixture-map",
+ "name": "Fixture map",
+ "why": "A pack's own process map, drawn beside the library's",
+ "ideal": "A pack adds a map to any repo's Process page with no engine change.",
+ "sources": [{ "title": "GitHub Docs: about custom actions", "url": "https://docs.github.com/en/actions/sharing-automations/creating-actions/about-custom-actions", "date": "2026-11-12" }],
+ "steps": [
+  { "id": "done", "name": "Fixture step", "tools": ["The fixture pack"], "rule": "Each fixture step is done.", "rule_ref": "https://docs.github.com/en/actions/sharing-automations/creating-actions/about-custom-actions", "metric": "fixture_pack.done_share" }
+ ]
+}

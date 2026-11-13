@@ -18,16 +18,24 @@ const LIBRARY = fileURLToPath(new URL("maps", import.meta.url));
 const MAP_OVERRIDES = ["name", "why", "ideal", "sources", "critical_path", "time_bar", "steps"];
 const STEP_OVERRIDES = ["name", "short", "tools", "rule", "rule_ref", "metric", "icon", "gates", "gates_from", "drop"];
 
-// Every library map by id. A file whose id is not its name is a usage error.
-export function loadLibrary(dir = LIBRARY) {
+// Every library map by id, the template's and then each pack's maps folder
+// (quality/packs.mjs). A file whose id is not its name, or a pack map with a
+// library map's id, is a usage error.
+export function loadLibrary(dir = LIBRARY, packDirs = []) {
   const maps = {};
-  if (!existsSync(dir)) return maps;
+  for (const d of [dir, ...packDirs]) readMaps(d, d === dir ? "pages/maps" : d, maps);
+  return maps;
+}
+
+// Adds the maps in one folder to maps, by id; at is the folder as an error names it.
+function readMaps(dir, at, maps) {
+  if (!existsSync(dir)) return;
   for (const file of readdirSync(dir).filter((f) => f.endsWith(".json")).sort()) {
     const map = JSON.parse(readFileSync(join(dir, file), "utf8"));
-    if (map?.id !== file.replace(/\.json$/, "")) throw new Error(`pages/maps/${file}: id must be "${file.replace(/\.json$/, "")}", its file name`);
+    if (map?.id !== file.replace(/\.json$/, "")) throw new Error(`${at}/${file}: id must be "${file.replace(/\.json$/, "")}", its file name`);
+    if (maps[map.id]) throw new Error(`${at}/${file}: the library already has a map "${map.id}"; rename the pack's`);
     maps[map.id] = map;
   }
-  return maps;
 }
 
 // A repo's maps file with each { use } entry replaced by its library map,

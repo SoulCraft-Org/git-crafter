@@ -573,7 +573,7 @@ test("the pages action runs scripts that exist, passes its inputs only through e
   const dir = join(ROOT, "actions", "pages");
   const yml = readFileSync(join(dir, "action.yml"), "utf8");
   const scripts = [...new Set([...yml.matchAll(/"\$GITHUB_ACTION_PATH\/([^"]+\.mjs)"/g)].map((m) => m[1]))];
-  assert.deepEqual(scripts.sort(), ["../../pages/build.mjs", "../../quality/build.mjs", "../../quality/collect.mjs", "../../tools/collect_org.mjs"]);
+  assert.deepEqual(scripts.sort(), ["../../pages/build.mjs", "../../quality/build.mjs", "../../quality/collect.mjs", "../../quality/pack-checkouts.mjs", "../../tools/collect_org.mjs"]);
   // Each action is fixed: a full SHA, or a reference .github/workflows/actions.lock records with its commit.
   const lock = readFileSync(join(ROOT, ".github", "workflows", "actions.lock"), "utf8");
   const locked = (ref) => new RegExp(`^ {4}'${ref.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}':\\n {8}ref: '[^']+'\\n {8}commit: 'sha1-[0-9a-f]{40}'$`, "m").test(lock);

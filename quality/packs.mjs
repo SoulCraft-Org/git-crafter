@@ -10,7 +10,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { loadDefs, TABS } from "./score.mjs";
+import { loadDefs, loadIdeals, TABS } from "./score.mjs";
 
 const PINNED = /^([\w.-]+)\/([\w.-]+)@([0-9a-f]{40})$/;
 const REMOTE = /^[\w.-]+\/[\w.-]+@/;
@@ -46,10 +46,22 @@ export function resolvePacks(list, { root, env = process.env, ci = false }) {
 // A config's packs; a config object built by hand may have none.
 const packsOf = (config) => config.packs ?? [];
 
+// Throws unless every pack's folder is there: a missing checkout is a usage error, never an empty tab.
+function checkedOut(packs) {
+  const gone = packs.find((p) => !existsSync(p.dir));
+  if (gone) throw new Error(`pack ${gone.spec} is not at ${gone.dir}; actions/pages checks it out, and a --local run names a folder`);
+}
+
 // Every tab id a definition or an ideal may name: the template's, the pack's and the page's.
 const tabIdsOf = (config) => new Set([...TABS.map(([id]) => id), ...packsOf(config).flatMap((p) => p.tabs.map(([id]) => id)), ...config.tabs.map(([id]) => id)]);
 
 // The page's metric definitions (score.mjs loadDefs) with each pack's targets beside the template's.
 export function configDefs(config, templateDir) {
+  checkedOut(packsOf(config));
   return loadDefs({ templateDir, packDirs: packsOf(config).map((p) => p.targets), repoDir: config.targets, tabs: config.tabs, tabIds: tabIdsOf(config) });
+}
+
+// The page's ideals (score.mjs loadIdeals): the template's, each pack's, then the repo's.
+export function configIdeals(config, templateDir) {
+  return loadIdeals({ templateDir, packDirs: packsOf(config).map((p) => p.ideals), repoDir: config.ideals, tabIds: tabIdsOf(config) });
 }

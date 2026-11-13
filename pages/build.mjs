@@ -20,7 +20,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { CONFIG_DEFAULTS, loadConfig, QUALITY } from "../quality/config.mjs";
 import { readTargetFiles } from "../quality/overlay.mjs";
-import { loadDefs } from "../quality/score.mjs";
+import { configDefs } from "../quality/packs.mjs";
 import { configScope, ownStepMetrics, readDocs, readOwnRun, SCOPE } from "../tools/collect_org.mjs";
 import { withComputed } from "./model.mjs";
 import { checkDocs, checkLibrary, checkMaps, checkTokens, inlineIdeal, MAX_STEPS, missingKinds } from "./checks.mjs";
@@ -78,7 +78,7 @@ export function qualityDefs(root, file = null) {
   try {
     const config = loadConfig({ root, file });
     targets = config.targets;
-    const { defs } = loadDefs({ templateDir: template, repoDir: config.targets, tabs: config.tabs });
+    const { defs } = configDefs(config, template);
     return { defs: Object.fromEntries(defs.map((d) => [d.id, d])), ids: new Set(defs.map((d) => d.id)), history: config.history };
   } catch (err) {
     return { defs: null, ids: targetIds([template, targets]), why: err.message };
@@ -105,7 +105,7 @@ const shown = (p) => (p && isAbsolute(p) && !relative(ROOT, p).startsWith("..") 
 function loadDocs(root, config) {
   try {
     const scope = config ? configScope(config) : SCOPE;
-    return { scope, docs: readDocs(root, scope.docs) };
+    return { scope, docs: readDocs(root, scope.docs, qualityConfigPath(config)) };
   } catch (err) {
     return { error: `could not read the docs: ${err.message}` };
   }

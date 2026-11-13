@@ -1,0 +1,4 @@
+{
+ "ideal": "A pack adds a tab to any repo's page with no engine change.",
+ "sources": [{ "title": "GitHub Docs: about custom actions", "url": "https://docs.github.com/en/actions/sharing-automations/creating-actions/about-custom-actions", "date": "2026-11-12" }]
+}
