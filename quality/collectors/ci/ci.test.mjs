@@ -326,7 +326,7 @@ describe("ci.pr_run_requests", () => {
 describe("targets/ci.json", () => {
   it("puts each metric on its tab with a group, a plain meaning and a goal source", () => {
     for (const t of TARGETS) {
-      assert.ok(["actions", "pull-requests", "issues", "projects", "security", "code", "insights"].includes(t.tab), t.id);
+      assert.ok(["actions", "pull-requests", "issues", "projects", "scanning", "code", "insights"].includes(t.tab), t.id);
       // GitHub files its Actions usage view under Insights, so that one metric sits on that tab, grouped by view.
       const view = t.id === "insights.failed_minutes_share";
       assert.equal(t.tab === "insights", view, `${t.id}: no other metric here goes on the Insights tab`);

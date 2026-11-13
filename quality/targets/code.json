@@ -345,7 +345,7 @@
   },
   {
     "id": "code.test_coverage_pct",
-    "tab": "tests",
+    "tab": "code",
     "kind": "quality",
     "group": "Coverage",
     "label": "Line and branch coverage",

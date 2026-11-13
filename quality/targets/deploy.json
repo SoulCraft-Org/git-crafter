@@ -1,7 +1,7 @@
 [
   {
     "id": "deploy.waiting_merges",
-    "tab": "deploy",
+    "tab": "pages",
     "kind": "speed",
     "group": "Now",
     "label": "Merges waiting to deploy",
@@ -22,7 +22,7 @@
   },
   {
     "id": "deploy.oldest_waiting_hours",
-    "tab": "deploy",
+    "tab": "pages",
     "kind": "speed",
     "group": "Now",
     "label": "Oldest waiting merge",
@@ -38,7 +38,7 @@
   },
   {
     "id": "deploy.latest_lead_hours",
-    "tab": "deploy",
+    "tab": "pages",
     "kind": "speed",
     "group": "Latest deploy",
     "label": "Latest deploy's time from merge to live",
@@ -54,7 +54,7 @@
   },
   {
     "id": "deploy.latest_failed",
-    "tab": "deploy",
+    "tab": "pages",
     "kind": "quality",
     "group": "Latest deploy",
     "label": "Latest deploy failed",
@@ -70,7 +70,7 @@
   },
   {
     "id": "deploy.failure_rate_last10",
-    "tab": "deploy",
+    "tab": "pages",
     "kind": "quality",
     "group": "Last 10 deploys",
     "label": "Failed deploys, last 10",
@@ -86,7 +86,7 @@
   },
   {
     "id": "deploy.latest_restore_hours",
-    "tab": "deploy",
+    "tab": "pages",
     "kind": "quality",
     "group": "Latest deploy",
     "label": "Latest failure's time to restore",
@@ -102,7 +102,7 @@
   },
   {
     "id": "deploy.latest_build_minutes",
-    "tab": "deploy",
+    "tab": "pages",
     "kind": "consumption",
     "group": "Use",
     "label": "CI minutes behind the latest deploy",

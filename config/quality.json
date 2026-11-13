@@ -1,20 +1,19 @@
 {
- "comment": "Git Crafter's own Quality, Speed and Consumption page: the template measuring this repo, deployed beside the Process page at quality/ (pages.yml). Every template tab is on. Only what differs from the template lives here: config/quality/targets/ holds this repo's params and the metrics it turns off because it has no such thing. Dropped, and why: code growth over the last merged PRs (a goal with no outside standard that falls whenever a feature lands; copies, dead code, complexity, cycles and the size limits measure least code instead); Worker timing, CPU, bundle and build (no Worker); security headers (GitHub Pages serves fixed headers a repo cannot set); client JS and the end-to-end and axe routes (no bundle and no e2e suite: design.total_bytes and usability.axe_violations read the built pages); test coverage and the e2e shard (no vitest or e2e suite); docs.runbooks_verified (no runbooks); security.claude_review_share (the sensitive-path review, #838, comments as github-actions, which it does not count); pull_requests.commits_via_pr (an org ruleset requires a pull request with no bypass, so the share cannot move). Design and Usability read the built Process and Metrics pages in pages/dist (targets/web.json). Deploy reads the github-pages deployments (targets/deploy.json, params.platform pages). Two metrics are this repo's own: guards.call_ms, the bash guard's time per command, read by config/quality/collectors/guard-speed.mjs (targets/guard-speed.json), and engine.page_seconds, the pages.yml step that collects and builds this page, read in CI by config/quality/collectors/page-speed.mjs (targets/page-speed.json). repo and name come from GITHUB_REPOSITORY, so the same file serves this repo and its public copy. Keys: quality/config.mjs.",
+ "comment": "Git Crafter's own Quality, Speed and Consumption page: the template measuring this repo, deployed beside the Process page at quality/ (pages.yml). Every template tab is on. Only what differs from the template lives here: config/quality/targets/ holds this repo's params and the metrics it turns off because it has no such thing. Dropped, and why: code growth over the last merged PRs (a goal with no outside standard that falls whenever a feature lands; copies, dead code, complexity, cycles and the size limits measure least code instead); Worker timing, CPU, bundle and build (no Worker); security headers (GitHub Pages serves fixed headers a repo cannot set); client JS and the end-to-end and axe routes (no bundle and no e2e suite: design.total_bytes and usability.axe_violations read the built pages); test coverage and the e2e shard (no vitest or e2e suite); docs.runbooks_verified (no runbooks); security.claude_review_share (the sensitive-path review, #838, comments as github-actions, which it does not count); pull_requests.commits_via_pr (an org ruleset requires a pull request with no bypass, so the share cannot move). The Pages tab reads the built Process and Metrics pages in pages/dist (targets/web.json) and the github-pages deployments (targets/deploy.json, params.platform pages). Two metrics are this repo's own: guards.runner_call_ms, the bash guard's time per command on a cloud runner, read by config/quality/collectors/guard-speed.mjs (targets/guard-speed.json), and engine.page_seconds, the pages.yml step that collects and builds this page, read in CI by config/quality/collectors/page-speed.mjs (targets/page-speed.json). repo and name come from GITHUB_REPOSITORY, so the same file serves this repo and its public copy. Keys: quality/config.mjs.",
  "tabs": [
   "code",
   "documentation",
   "issues",
-  "projects",
   "pull-requests",
+  "discussions",
   "actions",
-  "tests",
+  "projects",
   "security",
+  "dependabot",
+  "scanning",
   "insights",
   "settings",
-  "design",
-  "usability",
-  "deploy",
-  "tools"
+  "pages"
  ],
  "targets": "config/quality/targets",
  "collectors": "config/quality/collectors",
@@ -29,8 +28,9 @@
    "documentation": "documentation",
    "actions": "ci",
    "security": "security",
-   "design": "accessibility",
-   "usability": "accessibility"
+   "dependabot": "security",
+   "scanning": "security",
+   "pages": "accessibility"
   },
   "project": 2,
   "quick": [

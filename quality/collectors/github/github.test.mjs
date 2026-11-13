@@ -18,9 +18,10 @@ import { EXPECTED } from "./github-expected.mjs";
 
 describe("targets/github.json", () => {
   // Issues (id issues) holds the issue metrics, Projects the board's, Settings
-  // the repo settings this collector reads. Ids keep their prefixes.
-  const TABS = ["issues", "projects", "pull-requests", "actions", "security", "settings"];
-  const PREFIX = { issues: ["issues"], projects: ["projects"], "pull-requests": ["pull_requests"], actions: ["actions"], security: ["security", "actions"], settings: ["settings"] };
+  // the repo settings this collector reads. Ids keep their prefixes when a
+  // metric moves tab (v7.0.0), so history and overrides stand.
+  const TABS = ["code", "issues", "pull-requests", "actions", "projects", "security", "dependabot", "scanning", "settings", "pages"];
+  const PREFIX = { code: ["security"], issues: ["issues"], projects: ["projects"], "pull-requests": ["pull_requests"], actions: ["actions", "security"], security: ["security"], dependabot: ["security", "settings", "pull_requests"], scanning: ["security"], settings: ["settings"], pages: ["security", "settings"] };
 
   it("defines exactly the metrics the collector reads", () => {
     assert.deepEqual(TARGETS.map((t) => t.id).sort(), [...METRIC_IDS].sort());
@@ -82,8 +83,8 @@ describe("targets/github.json", () => {
   });
 
   it("gives each tab at least one quality and one speed metric", () => {
-    // CI keeps only quality here; its speed metrics are in targets/ci.json.
-    for (const tab of TABS.filter((t) => t !== "actions")) {
+    // The tabs this file leads; the others take a few metrics from it.
+    for (const tab of ["issues", "projects", "pull-requests", "security"]) {
       const kinds = new Set(TARGETS.filter((t) => t.tab === tab).map((t) => t.kind));
       assert.ok(kinds.has("quality") && kinds.has("speed"), tab);
     }

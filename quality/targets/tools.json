@@ -1,7 +1,7 @@
 [
   {
     "id": "tools.deps_latest_share",
-    "tab": "tools",
+    "tab": "dependabot",
     "kind": "quality",
     "group": "Versions",
     "label": "Direct dependencies on the latest allowed",
@@ -26,7 +26,7 @@
   },
   {
     "id": "tools.majors_behind",
-    "tab": "tools",
+    "tab": "dependabot",
     "kind": "quality",
     "group": "Versions",
     "label": "Dependencies a major behind",
@@ -42,7 +42,7 @@
   },
   {
     "id": "tools.actions_latest_share",
-    "tab": "tools",
+    "tab": "dependabot",
     "kind": "quality",
     "group": "Versions",
     "label": "Actions pinned to the latest allowed",
@@ -58,7 +58,7 @@
   },
   {
     "id": "tools.adopters_latest_share",
-    "tab": "tools",
+    "tab": "dependabot",
     "kind": "quality",
     "group": "Adoption",
     "label": "Adopting repos within the cooldown of the newest tag",
@@ -75,7 +75,7 @@
   },
   {
     "id": "tools.node_lts",
-    "tab": "tools",
+    "tab": "dependabot",
     "kind": "quality",
     "group": "Versions",
     "label": "CI's Node is the current LTS",
@@ -91,7 +91,7 @@
   },
   {
     "id": "tools.oldest_update_wait_days",
-    "tab": "tools",
+    "tab": "dependabot",
     "kind": "speed",
     "group": "Updates",
     "label": "Oldest update waiting",
@@ -107,7 +107,7 @@
   },
   {
     "id": "tools.open_dependency_prs",
-    "tab": "tools",
+    "tab": "dependabot",
     "kind": "speed",
     "group": "Updates",
     "label": "Open dependency PRs",
@@ -123,7 +123,7 @@
   },
   {
     "id": "tools.oldest_dependency_pr_days",
-    "tab": "tools",
+    "tab": "dependabot",
     "kind": "speed",
     "group": "Updates",
     "label": "Oldest open dependency PR",
@@ -139,7 +139,7 @@
   },
   {
     "id": "tools.latest_dependency_pr_ci_minutes",
-    "tab": "tools",
+    "tab": "dependabot",
     "kind": "consumption",
     "group": "Use",
     "label": "CI minutes on the latest dependency PR",
@@ -155,7 +155,7 @@
   },
   {
     "id": "tools.npm_ci_seconds",
-    "tab": "tools",
+    "tab": "dependabot",
     "kind": "speed",
     "group": "Install",
     "label": "Install step time, latest main run",

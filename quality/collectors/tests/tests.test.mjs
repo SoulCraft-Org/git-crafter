@@ -495,9 +495,9 @@ describe("naming the test job in params", () => {
 });
 
 describe("targets/tests.json and the repo", () => {
-  it("puts every metric on the Tests tab with a group, a plain meaning and a goal source", () => {
+  it("puts every metric on the Actions tab with a group, a plain meaning and a goal source", () => {
     for (const t of TARGETS) {
-      assert.equal(t.tab, "tests", t.id);
+      assert.equal(t.tab, "actions", t.id);
       assert.ok(["Coverage", "Trust", "Suite time", "Cost"].includes(t.group), t.id);
       assert.equal(t.group === "Cost", t.kind === "consumption", `${t.id}: Cost holds the Consumption metrics`);
       assert.ok(t.means.trim() && t.means.length <= 120 && !/\d/.test(t.means), `${t.id} means`);
@@ -506,7 +506,7 @@ describe("targets/tests.json and the repo", () => {
     }
     const code = JSON.parse(readFileSync(path.join(QUALITY, "targets", "code.json"), "utf8"));
     const coverage = code.find((t) => t.id === "code.test_coverage_pct");
-    assert.deepEqual([coverage.tab, coverage.group], ["tests", "Coverage"], "line coverage moved to the Tests tab's Coverage group");
+    assert.deepEqual([coverage.tab, coverage.group], ["code", "Coverage"], "line coverage is on the Code tab, in its Coverage group");
   });
 
   it("emits each target's own source, and every run source states the window", async () => {

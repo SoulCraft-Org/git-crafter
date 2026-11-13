@@ -99,7 +99,7 @@ test("targets and collector agree on the metric ids, and every target is well fo
   const got = await collect({ root: join(fixtures, "root"), mode: "ci", params: FIXTURE, site: fixtureSite() });
   assert.deepEqual(Object.keys(got).sort(), targets.map((t) => t.id).sort());
   for (const t of targets) {
-    assert.equal(t.tab, "design", t.id);
+    assert.equal(t.tab, "pages", t.id);
     assert.ok(["quality", "speed", "consumption"].includes(t.kind), t.id);
     assert.ok(t.label.split(/\s+/).length <= 6, `${t.id} label over 6 words`);
     assert.ok(["higher", "lower"].includes(t.direction), t.id);

@@ -1,7 +1,7 @@
 [
   {
     "id": "design.raw_hex",
-    "tab": "design",
+    "tab": "pages",
     "kind": "quality",
     "label": "Raw hex outside tokens",
     "means": "Colors typed straight into the code instead of taken from the brand palette; fewer is better.",
@@ -26,7 +26,7 @@
   },
   {
     "id": "design.raw_px",
-    "tab": "design",
+    "tab": "pages",
     "kind": "quality",
     "label": "Raw px outside tokens",
     "means": "Fixed sizes typed straight into the code instead of taken from the shared scale; fewer is better.",
@@ -41,7 +41,7 @@
   },
   {
     "id": "design.font_sizes_off_scale",
-    "tab": "design",
+    "tab": "pages",
     "kind": "quality",
     "label": "Off-scale font sizes",
     "means": "Different text sizes on the pages that are not in the brand's size scale; fewer is better.",
@@ -56,7 +56,7 @@
   },
   {
     "id": "design.text_colors_off_token",
-    "tab": "design",
+    "tab": "pages",
     "kind": "quality",
     "label": "Off-token text colors",
     "means": "Different text colors on the pages that are not in the brand palette; fewer is better.",
@@ -71,7 +71,7 @@
   },
   {
     "id": "design.contrast_violations",
-    "tab": "design",
+    "tab": "pages",
     "kind": "quality",
     "label": "Contrast failures (axe)",
     "means": "Page elements whose text is hard to read against its background; fewer is better.",
@@ -86,7 +86,7 @@
   },
   {
     "id": "design.lcp_mobile",
-    "tab": "design",
+    "tab": "pages",
     "kind": "speed",
     "label": "LCP, mobile, slowest page",
     "means": "How long the main content takes to appear on a phone, for the slowest page, in seconds; lower is better.",
@@ -101,7 +101,7 @@
   },
   {
     "id": "design.cls_mobile",
-    "tab": "design",
+    "tab": "pages",
     "kind": "speed",
     "label": "CLS, mobile, worst page",
     "means": "How much the worst page jumps around while loading on a phone; lower is better.",
@@ -116,7 +116,7 @@
   },
   {
     "id": "design.total_bytes",
-    "tab": "design",
+    "tab": "pages",
     "kind": "consumption",
     "label": "Total KiB, heaviest page",
     "means": "How much data the heaviest page downloads in all; less loads faster, so lower is better.",

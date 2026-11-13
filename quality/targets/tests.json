@@ -1,7 +1,7 @@
 [
   {
     "id": "tests.e2e_routes",
-    "tab": "tests",
+    "tab": "actions",
     "kind": "quality",
     "group": "Coverage",
     "label": "Page routes an e2e spec opens",
@@ -36,7 +36,7 @@
   },
   {
     "id": "tests.axe_routes",
-    "tab": "tests",
+    "tab": "actions",
     "kind": "quality",
     "group": "Coverage",
     "label": "Page routes with an axe check",
@@ -52,7 +52,7 @@
   },
   {
     "id": "tests.main_pass_rate",
-    "tab": "tests",
+    "tab": "actions",
     "kind": "quality",
     "group": "Trust",
     "label": "Test job pass rate on main",
@@ -68,7 +68,7 @@
   },
   {
     "id": "tests.skipped",
-    "tab": "tests",
+    "tab": "actions",
     "kind": "quality",
     "group": "Trust",
     "label": "Skipped and todo tests",
@@ -84,7 +84,7 @@
   },
   {
     "id": "tests.site_tests_p50",
-    "tab": "tests",
+    "tab": "actions",
     "kind": "speed",
     "group": "Suite time",
     "label": "Test job, median",
@@ -100,7 +100,7 @@
   },
   {
     "id": "tests.e2e_shard_p50",
-    "tab": "tests",
+    "tab": "actions",
     "kind": "speed",
     "group": "Suite time",
     "label": "Slowest e2e shard, median",
@@ -116,7 +116,7 @@
   },
   {
     "id": "tests.ci_minutes_latest_main",
-    "tab": "tests",
+    "tab": "actions",
     "kind": "consumption",
     "group": "Cost",
     "label": "Billed test job minutes, latest run",

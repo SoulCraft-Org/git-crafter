@@ -77,12 +77,12 @@ fs.writeFileSync(path.join(root, 'site', 'wrangler.jsonc'), '{ "name": "site" }'
 const params = { worker_dir: 'site', branch: 'origin/main', deploy_paths: ['site'], repo: 'o/r' };
 const base = { root, mode: 'local', now, params };
 
-test('targets: one per metric on the Deploy tab, each goal cited', () => {
+test('targets: one per metric on the Pages tab, each goal cited', () => {
   const defs = ownTargets('deploy.json').filter((d) => d.file === 'deploy.json');
   assert.equal(area, 'deploy');
   assert.deepEqual(defs.map((d) => d.id), metricIds);
   for (const d of defs) {
-    assert.equal(d.tab, 'deploy');
+    assert.equal(d.tab, 'pages');
     assert.match(d.goal_source, /^(goal from |template goal, no public benchmark: )/, d.id);
   }
 });

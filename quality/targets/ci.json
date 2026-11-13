@@ -117,7 +117,7 @@
   },
   {
     "id": "security.latest_scan_minutes",
-    "tab": "security",
+    "tab": "scanning",
     "kind": "consumption",
     "group": "Cost",
     "label": "Runner minutes, the latest security scans",

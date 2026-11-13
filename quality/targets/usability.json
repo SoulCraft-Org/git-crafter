@@ -1,7 +1,7 @@
 [
   {
     "id": "usability.reading_grade",
-    "tab": "usability",
+    "tab": "pages",
     "kind": "quality",
     "label": "Reading grade, hardest page",
     "means": "The school grade needed to read the hardest page; a lower grade is easier for everyone, so lower is better.",
@@ -35,7 +35,7 @@
   },
   {
     "id": "usability.long_sentences",
-    "tab": "usability",
+    "tab": "pages",
     "kind": "quality",
     "label": "Sentences over 30 words",
     "means": "Sentences on the pages that run too long to read easily; fewer is better.",
@@ -50,7 +50,7 @@
   },
   {
     "id": "usability.axe_violations",
-    "tab": "usability",
+    "tab": "pages",
     "kind": "quality",
     "label": "axe violations, not contrast",
     "means": "Page elements an automatic accessibility scan flags as hard for some people to use; fewer is better.",
@@ -65,7 +65,7 @@
   },
   {
     "id": "usability.target_size_375",
-    "tab": "usability",
+    "tab": "pages",
     "kind": "quality",
     "label": "Small tap targets, phone width",
     "means": "Buttons and links on a phone that are too small to tap easily; fewer is better.",
@@ -80,7 +80,7 @@
   },
   {
     "id": "usability.unlabeled_fields",
-    "tab": "usability",
+    "tab": "pages",
     "kind": "quality",
     "label": "Unlabeled form fields",
     "means": "Form fields with no label telling people what to type; fewer is better.",
@@ -95,7 +95,7 @@
   },
   {
     "id": "usability.broken_links",
-    "tab": "usability",
+    "tab": "pages",
     "kind": "quality",
     "label": "Broken internal links",
     "means": "Links inside the site that lead to a missing or failing page; fewer is better.",
@@ -110,7 +110,7 @@
   },
   {
     "id": "usability.keyboard_task_share",
-    "tab": "usability",
+    "tab": "pages",
     "kind": "quality",
     "label": "Main tasks done by keyboard alone",
     "means": "Main tasks a visitor finishes by keyboard: Tab reaches each link on the way, and Enter follows it to the next page.",
@@ -125,7 +125,7 @@
   },
   {
     "id": "usability.task_clicks",
-    "tab": "usability",
+    "tab": "pages",
     "kind": "speed",
     "label": "Clicks from home, longest task",
     "means": "The most clicks from the home page that any main task needs; fewer is better.",
@@ -140,7 +140,7 @@
   },
   {
     "id": "usability.words_before_action",
-    "tab": "usability",
+    "tab": "pages",
     "kind": "speed",
     "label": "Words before first action",
     "means": "Words a visitor reads before the first link or button, on the wordiest page; fewer is better.",
@@ -155,7 +155,7 @@
   },
   {
     "id": "usability.tbt_mobile",
-    "tab": "usability",
+    "tab": "pages",
     "kind": "speed",
     "label": "TBT, mobile, slowest page",
     "means": "How long the slowest page freezes and ignores taps while loading on a phone; lower is better.",
@@ -170,7 +170,7 @@
   },
   {
     "id": "usability.form_page_kib",
-    "tab": "usability",
+    "tab": "pages",
     "kind": "consumption",
     "label": "Form page KiB, heaviest form",
     "means": "How much data a visitor downloads to open the heaviest form, where most tasks end; lower is better.",

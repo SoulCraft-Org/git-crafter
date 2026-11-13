@@ -71,7 +71,7 @@ const index = [{ version: 'v27.1.0', lts: false }, { version: 'v26.4.0', lts: 'F
 const params = { repo: 'acme/r', release_age_days: 14, last_n: 10 };
 const base = { root, mode: 'ci', now, params, fetchJson: async () => index };
 
-test('targets: one per metric on the Tools tab, a third of the kinds each', () => {
+test('targets: one per metric on the Dependabot tab, a third of the kinds each', () => {
   const defs = ownTargets('tools.json').filter((d) => d.file === 'tools.json');
   assert.equal(area, 'tools');
   assert.deepEqual(defs.map((d) => d.id), metricIds);
