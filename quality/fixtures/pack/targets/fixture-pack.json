@@ -1,0 +1,17 @@
+[
+ {
+  "id": "fixture_pack.done_share",
+  "tab": "fixture-pack",
+  "kind": "quality",
+  "label": "Fixture steps done",
+  "unit": "%",
+  "goal": 100,
+  "near": 90,
+  "direction": "higher",
+  "goal_source": "test fixture goal, no benchmark",
+  "source": "state: the fixture pack's collector, through lib",
+  "needs": "none",
+  "chart": "gauge",
+  "params": { "done": 3, "steps": 4 }
+ }
+]

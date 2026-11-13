@@ -15,6 +15,9 @@
 //   collectors  the repo's own collectors, run beside the template's
 //   ideals      the repo's ideal states, one file per tab, in place of the
 //               template's for the same tab (score.mjs loadIdeals)
+//   packs       folders of tabs and maps from other repos, each
+//               "owner/repo@<40-hex sha>", or a path in a --local run
+//               (packs.mjs). Their tabs join the default list
 //   reviews     review files (score.mjs loadAllReviews)
 //   data        where collect.mjs writes latest.json and local.json
 //   history     where a local run keeps one file a day
@@ -35,6 +38,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { basename, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { resolvePacks } from "./packs.mjs";
 import { TABS, WEB_TABS } from "./score.mjs";
 
 export const QUALITY = fileURLToPath(new URL(".", import.meta.url));
@@ -48,6 +52,7 @@ export const CONFIG_DEFAULTS = {
   targets: "quality/targets",
   collectors: "quality/collectors",
   ideals: "quality/ideals",
+  packs: [],
   reviews: "quality/reviews",
   data: "quality/data",
   history: "quality/history",
@@ -60,10 +65,11 @@ export const CONFIG_DEFAULTS = {
 };
 const PATHS = ["targets", "collectors", "ideals", "reviews", "data", "history", "out", "tokens_css"];
 
-// The tabs a page shows, as [id, name] pairs.
-export function resolveTabs({ tabs = null, web = false } = {}) {
-  const names = new Map(TABS);
-  if (tabs === null) return TABS.filter(([id]) => web || !WEB_TABS.includes(id));
+// The tabs a page shows, as [id, name] pairs; packTabs, the packs' own, join
+// the default list and may be named by id.
+export function resolveTabs({ tabs = null, web = false } = {}, packTabs = []) {
+  const names = new Map([...TABS, ...packTabs]);
+  if (tabs === null) return [...TABS.filter(([id]) => web || !WEB_TABS.includes(id)), ...packTabs];
   if (!Array.isArray(tabs) || !tabs.length) throw new Error("tabs must be a list of tab ids");
   const out = tabs.map((t) => {
     if (typeof t === "string") {
@@ -111,14 +117,16 @@ const isSync = (s) => isObj(s) && isText(s.label) && Object.keys(s).every((k) =>
 
 // The settings for a run in `root`: the named config file, else
 // quality/config.json when the repo has one, else the defaults. Paths come
-// back absolute. Throws on a bad file: a usage error.
-export function loadConfig({ root = process.cwd(), file = null, env = process.env } = {}) {
+// back absolute. ci, a run in CI, refuses a pack named by path. Throws on a
+// bad file: a usage error.
+export function loadConfig({ root = process.cwd(), file = null, env = process.env, ci = false } = {}) {
   const path = configPath(root, file);
   const raw = readRaw(path, Boolean(file));
   const c = { ...CONFIG_DEFAULTS, ...raw };
   checkRaw(raw, c);
   const repo = c.repo ?? (REPO_RE.test(env.GITHUB_REPOSITORY ?? "") ? env.GITHUB_REPOSITORY : null);
   const named = Boolean(file) || existsSync(path);
+  const packs = resolvePacks(c.packs, { root: resolve(root), env, ci });
   const settings = {
     ...c,
     root: resolve(root),
@@ -126,7 +134,8 @@ export function loadConfig({ root = process.cwd(), file = null, env = process.en
     repo,
     name: c.name ?? (repo ? repo.split("/")[1] : basename(resolve(root))),
     repoUrl: repoUrl(repo, env),
-    tabs: resolveTabs(c),
+    packs,
+    tabs: resolveTabs(c, packs.flatMap((p) => p.tabs)),
   };
   for (const k of PATHS) settings[k] = absolute(root, c[k]);
   settings.tokens_css ??= join(QUALITY, "render", "tokens.css");
