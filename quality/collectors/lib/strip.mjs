@@ -2,7 +2,10 @@
 // replace can rejoin a match from the pieces around one it removed:
 // "<!<!-- a -->-- b -->" loses "<!-- a -->" and leaves "<!-- b -->".
 
-/** The text with every match of the global pattern `re` replaced by `by`, pass after pass until none is left. */
+/**
+ * The text with every match of the global pattern `re` replaced by `by`, pass after pass until none is left.
+ * It never ends when `by` itself re-creates a match of `re`, so pass a `by` that cannot.
+ */
 export function stripAll(text, re, by = "") {
   let out = String(text);
   let before;

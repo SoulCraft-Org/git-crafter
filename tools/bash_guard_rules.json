@@ -2932,7 +2932,7 @@
         "git log --oneline -5",
         "gh run view 123 --log",
         "gh pr checks 42",
-        "gh workflow run cloud-test.yml -f ref=feat/x -f script=test:unit",
+        "gh workflow run cloud-test.yml --ref feat/x -f script=test:unit",
         "cat package.json",
         "echo 'never run npm test or pytest on this Mac'",
         "git commit -m 'run npm test in CI, not on the Mac'",
