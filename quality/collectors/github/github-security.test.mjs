@@ -7,7 +7,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { after, describe, it } from "node:test";
-import { collect, lockPackages, pulledBy, registryOf, runsPullRequestCode } from "./github.mjs";
+import { lockPackages, pulledBy, registryOf, runsPullRequestCode } from "./github.mjs";
 import { adminGh, clientFor } from "./github-core.mjs";
 import { HERE, FIXTURES, REST, GRAPHQL, PARAMS, NOW, REPO, HOUR_MS, fakeGh, run } from "./github-test-lib.mjs";
 import { EXPECTED } from "./github-expected.mjs";
