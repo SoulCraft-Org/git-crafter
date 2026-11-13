@@ -102,7 +102,25 @@ test("the public export leaves out data/ but data/quality/ less local.json, hist
     assert.deepEqual(listed, ["README.md", "config/quality.json", "config/quality/targets/a.json", "data/quality/run.json", "tools/bash_guard_cases.json", "tools/bash_guard_rules.json", "tools/export_public.sh"]);
     for (const f of ["cases", "rules"]) assert.equal(readFileSync(join(out, "tools", `bash_guard_${f}.json`), "utf8"), '["sudo -u someone -H x"]', "the guard's other account is renamed");
     assert.equal(spawnSync("bash", [join(repo, "tools", "export_public.sh"), out]).status, 2, "a non-empty OUT is refused");
+    const check = spawnSync("bash", [join(repo, "tools", "export_public.sh"), "--check"], { encoding: "utf8" });
+    assert.equal(check.status, 1, "--check fails on a tracked private path");
+    const named = [...check.stderr.matchAll(/tracked: (\S+)/g)].map((m) => m[1]).sort();
+    assert.deepEqual(named, ["config/accounts/a.json", "config/acme.json", "config/private-terms.txt", "data/history/d.json", "data/org.json", "data/quality/history/2026-11-05.json", "data/quality/local.json", "data/quality/plan-usage.json"]);
+    git("rm", "-q", "--cached", ...named);
+    assert.equal(spawnSync("bash", [join(repo, "tools", "export_public.sh"), "--check"]).status, 0, "--check passes once none is tracked");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+// This repo is public: verify fails when it tracks a private path, and .gitignore keeps the local ones out.
+test("this repo tracks no private path, and git ignores the local data files", () => {
+  const root = new URL("..", import.meta.url).pathname;
+  const r = spawnSync("bash", [join(root, "tools", "export_public.sh"), "--check"], { encoding: "utf8" });
+  assert.equal(r.status, 0, r.stderr);
+  const local = ["data/org.json", "data/history/d.json", "data/quality/local.json", "data/quality/plan-usage.json", "data/quality/history/d.json", "config/accounts/a.json", "config/private-terms.txt"];
+  const ignored = spawnSync("git", ["-C", root, "check-ignore", "--no-index", ...local], { encoding: "utf8" }).stdout.trim().split("\n");
+  assert.deepEqual(ignored, local);
+  const kept = spawnSync("git", ["-C", root, "check-ignore", "--no-index", "data/quality/run.json"], { encoding: "utf8" });
+  assert.equal(kept.status, 1, "the rest of data/quality/ is not ignored");
 });

@@ -9,20 +9,25 @@
 # and each config/*.json that names an "org" (the org config, tools/org_base.mjs findOrgConfig).
 #
 # Usage:  bash tools/export_public.sh OUT      OUT must be missing or empty
-# Exit:   0 written, 2 usage error. Prints the count of files copied.
+#         bash tools/export_public.sh --check  names each tracked private path; tests/verify.test.mjs runs it on this repo
+# Exit:   0 written or none tracked, 1 a private path is tracked, 2 usage error. Prints the count of files copied.
 set -euo pipefail
 
 out="${1:-}"
 if [ -z "$out" ] || [ "$#" -ne 1 ]; then
-  echo "usage: export_public.sh OUT" >&2
+  echo "usage: export_public.sh OUT | --check" >&2
   exit 2
 fi
-if [ -e "$out" ] && [ -n "$(ls -A "$out")" ]; then
+check=0
+[ "$out" = "--check" ] && check=1
+if [ "$check" = 0 ] && [ -e "$out" ] && [ -n "$(ls -A "$out")" ]; then
   echo "export_public.sh: $out is not empty" >&2
   exit 2
 fi
-mkdir -p "$out"
-out="$(cd "$out" && pwd)"
+if [ "$check" = 0 ]; then
+  mkdir -p "$out"
+  out="$(cd "$out" && pwd)"
+fi
 cd "$(dirname "$0")/.."
 
 # 0 when a tracked path stays private.
@@ -37,6 +42,18 @@ private() {
     *) return 1 ;;
   esac
 }
+
+if [ "$check" = 1 ]; then
+  bad=0
+  while IFS= read -r -d '' f; do
+    [ -e "$f" ] || [ -L "$f" ] || continue
+    if private "$f"; then
+      echo "export_public.sh: a private path is tracked: $f" >&2
+      bad=1
+    fi
+  done < <(git ls-files -z)
+  exit "$bad"
+fi
 
 n=0
 while IFS= read -r -d '' f; do
