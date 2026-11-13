@@ -547,7 +547,7 @@ test("the pages action's admin-read-token is optional and reaches the Quality co
   assert.doesNotMatch(wf.slice(wf.indexOf("- id: admin-app"), wf.indexOf("- name:", wf.indexOf("- id: admin-app"))), /: write$/m, "the App token reads only");
 });
 
-test("the pages action's Credits keys are optional and reach the Quality collect step's env alone; pages.yml passes them on main only", () => {
+test("the pages action's pack keys are optional and reach the Quality collect step's env alone; pages.yml passes none", () => {
   const yml = readFileSync(join(ROOT, "actions", "pages", "action.yml"), "utf8");
   const wf = readFileSync(join(ROOT, ".github", "workflows", "pages.yml"), "utf8");
   for (const [input, secret] of [["hf-token", "HF_TOKEN"], ["openrouter-api-key", "OPENROUTER_API_KEY"]]) {
@@ -556,8 +556,7 @@ test("the pages action's Credits keys are optional and reach the Quality collect
     assert.deepEqual(uses.map((l) => l.trim()), [`${secret}: \${{ inputs.${input} }}`], `${input}: one env line, never a run line`);
     const step = yml.slice(yml.lastIndexOf("- name:", yml.indexOf(`inputs.${input}`)));
     assert.match(step, /^- name: Collect this repo's quality data\n/);
-    assert.equal([...wf.matchAll(new RegExp(`secrets\\.${secret}\\b`, "g"))].length, 1, `pages.yml names ${secret} once`);
-    assert.ok(wf.includes(`${input}: \${{ github.ref == 'refs/heads/main' && secrets.${secret} || '' }}`), `${secret}: a branch's code never runs with it`);
+    assert.ok(!wf.includes(secret) && !wf.includes(`${input}:`), `pages.yml passes no ${input}`);
   }
 });
 

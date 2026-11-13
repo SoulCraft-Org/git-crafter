@@ -23,8 +23,6 @@ flowchart LR
 | [document.json](document.json) | write, lint, map, publish, read, load |
 | [contribute.json](contribute.json) | idea, approve, review, merge, rebuild, deploy (a fork: merge or rebuild) |
 
-Git Crafter's own [`maps.json`](../../maps.json) adds Spend (free first, read, stay under, drop idle); it reads a local credits registry an adopter's CI lacks, so it is not in the library.
-
 | Rule | Checked by |
 | --- | --- |
 | an `ideal` and dated `sources` | `checkLibrary`, `pages/build.mjs` |

@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { collect as credits } from '../credits/credits.mjs';
 import { redact, redactText } from './redact.mjs';
 
 // Split, so the repo's private-reference scan does not count a fixture home.
@@ -29,13 +28,4 @@ test('redactText: a home is replaced only as a whole name; a longer one goes to 
   assert.equal(redactText('*-Users-alicebob-Dev*', alice), '*-Users-<user>-Dev*');
   assert.equal(redactText('~/p/-Users-alicebob/x.jsonl', alice), '~/p/-Users-<user>/x.jsonl');
   assert.equal(redactText(`${alice}bob/x and ${alice}/y`, alice), '~/x and ~/y');
-});
-
-test('credits collect: a missing file under home prints no home path and no account name', async () => {
-  const params = { usage_file: '~/missing/-Users-alicebob/usage.json', allowances: [{ id: 'a' }] };
-  const got = await credits({ mode: 'local', home: alice, params });
-  const text = JSON.stringify(got);
-  assert.match(text, /a source file is missing or unreadable/, 'the missing file is the reason');
-  assert.ok(!text.includes('alice'), text);
-  assert.match(text, /~\/missing\/-Users-<user>\/usage\.json/);
 });

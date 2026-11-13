@@ -24,13 +24,13 @@ Both pages are public.
 | 2 | A ruleset on `main` requiring `ci / ci-ok` | [templates/ci](templates/ci/README.md) |
 | 3 | Settings, Pages: source "GitHub Actions" | [templates/ci](templates/ci/README.md) |
 
-## The 15 categories
+## The 14 categories
 
 Each tab scores Quality, Speed and Consumption, a third each, against goals that name their source ([quality/SCORING.md](quality/SCORING.md)).
 
 | Tab ids | What each measures, which to drop |
 |---|---|
-| `code` `documentation` `issues` `projects` `pull-requests` `actions` `tests` `security` `insights` `settings` `design` `usability` `deploy` `credits` `tools` | [templates/quality](templates/quality/README.md) |
+| `code` `documentation` `issues` `projects` `pull-requests` `actions` `tests` `security` `insights` `settings` `design` `usability` `deploy` `tools` | [templates/quality](templates/quality/README.md) |
 
 ## The maps
 

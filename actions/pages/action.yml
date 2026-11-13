@@ -67,9 +67,9 @@
 # default, leaves those metrics not measured, as before.
 #
 # hf-token and openrouter-api-key are optional too: the Hugging Face and
-# OpenRouter usage keys the Credits tab's provider readers read with (#836),
-# as HF_TOKEN and OPENROUTER_API_KEY in the Quality collect step's environment
-# alone. Empty, the default, leaves the Credits metrics not measured in CI.
+# OpenRouter usage keys a pack's collectors read with (#836), as HF_TOKEN and
+# OPENROUTER_API_KEY in the Quality collect step's environment alone. Empty,
+# the default, leaves those reads not measured in CI.
 name: Git Crafter pages
 description: Build a repo's Process page and Quality, Speed and Consumption page from its own config and its own data.
 inputs:
@@ -89,10 +89,10 @@ inputs:
     description: Optional. A fine-grained read-only token the metrics marked needs github-admin read with; empty leaves them not measured.
     default: ""
   hf-token:
-    description: Optional. A Hugging Face key the Credits tab reads its ZeroGPU use with; empty leaves it not read in CI.
+    description: Optional. A Hugging Face key a pack's collectors read with; empty leaves it not read in CI.
     default: ""
   openrouter-api-key:
-    description: Optional. An OpenRouter key the Credits tab reads its free-model use with; empty leaves it not read in CI.
+    description: Optional. An OpenRouter key a pack's collectors read with; empty leaves it not read in CI.
     default: ""
   mode:
     description: all (one job), collect (the reads, uploaded as an artifact) or render (download them, add the repo's data, build).

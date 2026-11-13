@@ -1,6 +1,6 @@
 # Quality starter
 
-[config.json](config.json) turns on all 15 tabs of the Quality, Speed and Consumption page. Copy it to `<repo>/quality/config.json`, then drop the tabs your repo has no use for. Keys: [quality/CONFIG.md](../../quality/CONFIG.md).
+[config.json](config.json) turns on all 14 tabs of the Quality, Speed and Consumption page. Copy it to `<repo>/quality/config.json`, then drop the tabs your repo has no use for. Keys: [quality/CONFIG.md](../../quality/CONFIG.md).
 
 ```mermaid
 flowchart LR
@@ -27,7 +27,6 @@ flowchart LR
 | `design` | tokens, contrast, Core Web Vitals |
 | `usability` | axe, tap targets, task clicks |
 | `deploy` | lead time, failures, restore (DORA) |
-| `credits` | free allowances used and idle |
 | `tools` | dependencies and actions current |
 
 ## Which tabs to drop
@@ -39,9 +38,9 @@ flowchart LR
 | `code`, `documentation`, `issues`, `pull-requests`, `actions`, `tests`, `security`, `insights`, `settings`, `tools` | ✓ | ✓ | ✓ | ✓ |
 | `design`, `usability` (score a site the repo serves) | ✗ | ✓ | ✓ | ✗ |
 | `deploy` (reads a Cloudflare Worker with Wrangler) | ✗ | ✓ | ✗ unless on Workers | ✗ |
-| `credits` (free allowances the repo draws on) | ✓ | ✓ | ✓ | ✓ |
 | `projects` | ✓ with a GitHub Project board, else ✗ | same | same | same |
 | The six Claude tabs | moved to `Colorado-Startups/claudius`; load them through the `packs` key | same | same | same |
+| `credits` (free allowances the repo draws on) | moved to `SoulCraft-Org/compute-crafter`; load it through the `packs` key | same | same | same |
 
 A web tab needs `params.origin` (the production URL) or `params.site_dir` (a built site folder) in `<repo>/quality/targets/`. A dropped tab is not collected, shown or scored.
 

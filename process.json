@@ -25,8 +25,8 @@
   }
  },
  "ci": {
-  "comment": "The CI tab's standard: how much of the org's included Actions minutes are used and left (the Credits tab's credits.actions_pool_used). templates/ci/README.md holds the rules and the metric definitions.",
+  "comment": "The CI tab's standard: what CI on the latest merged pull request costs in runner dollars (ci.latest_pr_dollars). templates/ci/README.md holds the rules and the metric definitions.",
   "source": "templates/ci/README.md",
-  "metrics": ["credits.actions_pool_used"]
+  "metrics": ["ci.latest_pr_dollars"]
  }
 }

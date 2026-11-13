@@ -38,7 +38,7 @@ The call, with this repo's Quality config as the example:
 
 | Command | Does | Fires or waits |
 | --- | --- | --- |
-| `actions/pages`, `pages: quality` | `npm ci`, then `collect.mjs` (ci) and `build.mjs`. Modes `collect` and `render` split it over two jobs. Optional `admin-read-token`, `hf-token` and `openrouter-api-key` read admin and Credits metrics in CI | Fires: the repo's workflow |
+| `actions/pages`, `pages: quality` | `npm ci`, then `collect.mjs` (ci) and `build.mjs`. Modes `collect` and `render` split it over two jobs. Optional `admin-read-token` reads admin metrics in CI; `hf-token` and `openrouter-api-key` serve a pack's collectors | Fires: the repo's workflow |
 | `node <code-os>/quality/collect.mjs --local` | admin, transcript and other local-only metrics into `<data>/local.json` and `<history>/<date>.json`. It runs from a Git Crafter checkout at the repo's pinned SHA. It exits 4 when this hour's quota left is under a full run's last recorded spend. `--only NAME` runs one collector alone | Waits for a session; commit the result by PR |
 | `node <code-os>/quality/build.mjs` | render `<out>/index.html`, print its size, exit 1 over the budget | Either |
 | `node quality/selftest.mjs` | the engine's self-test, which runs `render/*.test.mjs` | Fires: `tools/verify.sh` in CI |

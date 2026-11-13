@@ -11,7 +11,6 @@ flowchart LR
 | --- | --- | --- |
 | `ci/` | `ci.mjs` | Actions, Pull requests, Issues, Projects, Security and quality, Insights |
 | `code/` | `code.mjs` | Code, Tests |
-| `credits/` | `credits.mjs` | Credits |
 | `docs/` | `docs.mjs` | Documentation |
 | `github/` | `github.mjs` | Issues, Pull requests, Security and quality, Actions, Projects |
 | `insights/` | `insights.mjs` | Insights |

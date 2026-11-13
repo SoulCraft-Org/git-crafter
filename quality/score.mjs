@@ -40,7 +40,6 @@ export const TABS = [
   ["design", "Design"],
   ["usability", "Usability"],
   ["deploy", "Deploy"],
-  ["credits", "Credits"],
   ["tools", "Tools"],
 ];
 // Tabs that score a website a repo serves. Off unless a repo's config turns
