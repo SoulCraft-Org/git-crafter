@@ -226,14 +226,17 @@ export function checkIdeal(doc, where) {
 }
 
 // The ideal per tab: the template's and each pack's, then a repo's file for
-// the same tab in its place. A file for a tab no list knows is a usage error.
+// the same tab in its place. A file for a tab no list knows is a usage error,
+// and so is a pack's for a template tab or another pack's, as a pack map is.
 export function loadIdeals({ templateDir, packDirs = [], repoDir = null, tabIds = TAB_IDS }) {
   const ideals = {};
   for (const dir of [templateDir, ...packDirs, repoDir && repoDir !== templateDir ? repoDir : null]) {
     if (!dir || !existsSync(dir)) continue;
+    const pack = packDirs.includes(dir);
     for (const file of readdirSync(dir).filter((f) => f.endsWith(".json")).sort()) {
       const tab = file.replace(/\.json$/, "");
       if (!tabIds.has(tab)) throw new Error(`ideals/${file}: no tab "${tab}"`);
+      if (pack && (TAB_IDS.has(tab) || ideals[tab])) throw new Error(`${dir}/${file}: tab "${tab}" already has an ideal; a pack sets only its own tabs' ideals`);
       const doc = JSON.parse(readFileSync(join(dir, file), "utf8"));
       checkIdeal(doc, `ideals/${file}`);
       ideals[tab] = doc;

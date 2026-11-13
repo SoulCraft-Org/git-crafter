@@ -295,7 +295,7 @@ function main() {
   if (!args) return console.error("usage: node quality/sync-issues.mjs [--config FILE] [--dry-run]"), process.exit(2);
   let config;
   try {
-    config = loadConfig({ file: args.config });
+    config = loadConfig({ file: args.config, ci: process.env.GITHUB_ACTIONS === "true" });
   } catch (err) {
     return console.error(`quality: ${err.message}`), process.exit(2);
   }

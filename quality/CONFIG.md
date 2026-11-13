@@ -30,11 +30,13 @@ A pack adds Quality tabs and Process maps from another repo ([`packs.mjs`](packs
 | `"owner/repo@<40-hex sha>"` | `actions/pages` fetches that commit ([`pack-checkouts.mjs`](pack-checkouts.mjs)) |
 | a tag, branch or short SHA | refused: each can move |
 | a folder path | `--local` runs only |
+| a name with a leading dot | refused |
 
 | Pack file | Adds |
 | --- | --- |
-| `pack.json` | `{ "tabs": [["id", "Name"]] }` |
-| `targets/`, `ideals/`, `maps/` | beside the template's |
+| `pack.json` | `{ "tabs": [["id", "Name"]] }`; each id matches `^[a-z][a-z0-9-]*$` and is new to the page |
+| `targets/`, `maps/` | beside the template's |
+| `ideals/` | its own tabs' ideals only |
 | `collectors/` | run with `lib` ([contract](collectors/README.md)) |
 
 Fixture: [`fixtures/pack/`](fixtures/pack/), drawn by [`packs.test.mjs`](packs.test.mjs).

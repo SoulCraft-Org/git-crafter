@@ -14,11 +14,13 @@ import { loadDefs, loadIdeals, TABS } from "./score.mjs";
 
 const PINNED = /^(?!\.)([\w.-]+)\/(?!\.)([\w.-]+)@([0-9a-f]{40})$/;
 const REMOTE = /^[\w.-]+\/[\w.-]+@/;
+const DOT = /^(?:\.[\w.-]*\/[\w.-]+|[\w.-]+\/\.[\w.-]*)@/;
 
 // The folder a pack is read from, or a usage error naming why the entry is refused.
 function packDir(spec, { root, env, ci }) {
   const pin = PINNED.exec(spec);
   if (pin) return join(env.CODE_OS_PACKS ?? join(root, ".code-os-packs"), pin[1], pin[2]);
+  if (DOT.test(spec)) throw new Error(`packs: "${spec}" has an owner or repo name that starts with a dot, which a pack may not: it could name a folder above the checkout`);
   if (REMOTE.test(spec)) throw new Error(`packs: "${spec}" needs a full 40-hex commit SHA after @, not a tag or branch: a pack runs in CI, and a tag or branch can move`);
   if (ci) throw new Error(`packs: "${spec}" is a local path, which only a --local run takes; CI takes owner/repo@<40-hex sha>`);
   return resolve(root, spec);

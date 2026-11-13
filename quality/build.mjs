@@ -94,7 +94,7 @@ function main() {
   let config;
   let page;
   try {
-    config = loadConfig({ file: args.config });
+    config = loadConfig({ file: args.config, ci: process.env.GITHUB_ACTIONS === "true" });
     page = buildPage(config);
   } catch (err) {
     console.error(`quality: ${err.message}`);

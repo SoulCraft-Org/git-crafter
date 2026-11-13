@@ -19,9 +19,9 @@
 // line from the newest successful run on the default branch, as code-test.mjs
 // reads a suite's lcov, so no runner is timed twice. Those GitHub readers load
 // packages (yaml, typescript), so they are imported only when this metric is
-// read, and a missing package reads as could_not_check: the helpers here come
-// from run.mjs, which imports none, so the Pages action's two-page collect
-// loads this file without node_modules (issue #715).
+// read, and a missing package reads as could_not_check. The helpers here come
+// through collectors/lib/, which loads yaml with the scorer; the Pages action
+// installs Git Crafter's packages in every mode, so they are there (#650).
 import { firstLine, measured, runCommand, unknown } from "../../../quality/collectors/lib/index.mjs";
 
 export const area = "guard-speed";
