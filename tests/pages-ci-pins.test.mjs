@@ -34,7 +34,17 @@ test("verify.yml runs GitHub's dependency review on a pull request only", () => 
   assert.match(job, /^ {6}- uses: actions\/dependency-review-action@[0-9a-f]{40} # v\d+\.\d+\.\d+$/m);
 });
 
-for (const name of ["ci-standard.yml", "ci-overflow.yml", "verify.yml"]) {
+test("scorecard.yml runs weekly, publishes its result and uploads no SARIF", () => {
+  const yml = read(".github/workflows/scorecard.yml");
+  const on = yml.slice(yml.indexOf("\non:\n"), yml.indexOf("\npermissions:"));
+  assert.match(on, /^ {2}schedule:\n {4}- cron: "\d+ \d+ \* \* [0-6]"$/m, "once a week");
+  assert.doesNotMatch(on, /pull_request|push:/, "never on a pull request or a push");
+  assert.match(yml, /^ {10}publish_results: true$/m);
+  assert.doesNotMatch(yml, /uses: github\/codeql-action|security-events: write|results_format: sarif/, "no code scanning upload, so no new alerts");
+  assert.doesNotMatch(yml, /^\s+run:/m, "only the two actions, as Scorecard's publish check expects");
+});
+
+for (const name of ["ci-standard.yml", "ci-overflow.yml", "verify.yml", "scorecard.yml"]) {
   test(`${name} pins each remote step by full SHA with its version comment, and actions.lock keys it`, () => {
     const file = `.github/workflows/${name}`;
     const yml = read(file);

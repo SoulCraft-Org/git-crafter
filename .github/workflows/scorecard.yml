@@ -1,0 +1,36 @@
+name: scorecard
+
+# OpenSSF Scorecard for Git Crafter itself, from templates/ci/scorecard.yml: it grades the repo's supply-chain
+# practices, 0 to 10, and publishes the score to api.scorecard.dev for the public badge
+# (github.com/ossf/scorecard-action, read 2026-11-12). Free on a public repo.
+# Weekly and on demand, on the default branch only, never on a pull request, so no fork's code runs with id-token.
+# No SARIF upload: the template's upload-sarif step is left out, so a Scorecard finding opens no code scanning
+# alert; the score and its checks are read on api.scorecard.dev. ADVISORY: no ruleset requires this check.
+# The repo's Actions policy allows verified creators' actions (verified_allowed), and Scorecard's publisher is one.
+on:
+  schedule:
+    - cron: "41 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+      # Publishing the result signs it with the run's OIDC token.
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ossf/scorecard-action@fa7117db83c52d787ae5a89f350999701505d78e # v2.5.0
+        with:
+          results_file: results.json
+          results_format: json
+          publish_results: true
