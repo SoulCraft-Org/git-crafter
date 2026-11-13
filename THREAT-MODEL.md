@@ -26,7 +26,7 @@ flowchart LR
 | [actions/pages](actions/pages/action.yml) | Token lands in page data | Disclosure | Token only to `gh`; computed figures, never raw API replies; redacted transcripts | A collector bug |
 | [actions/pages](actions/pages/action.yml) | Failed read looks good | Repudiation | Refused reads are not measured | None known |
 | [templates/](templates/) | Copied config reads another repo's data | Disclosure | Repo-relative paths; the caller's read token | None known |
-| [public_scan.py](tools/public_scan.py) | Private name ships in the public tree | Disclosure | `public-export.yml` and the scan (#397) | Advisory check |
+| [public_scan.py](tools/public_scan.py) | Private name or path ships in this public repo | Disclosure | `verify` fails on a tracked private path; the overlay's daily scan (#397) | The scan is advisory |
 | `main` | Unreviewed change lands | Elevation | Rulesets: a PR, `ci / ci-ok`, `secret-scan`, no force push | One human |
 
 Report findings: [SECURITY.md](SECURITY.md).
