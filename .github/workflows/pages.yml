@@ -5,12 +5,14 @@ name: pages
 # measuring this repo through actions/pages with config/quality.json) and
 # deploys them to the repo's GitHub Pages site.
 #
-# Fires on every push to main and on demand (the github-pages environment
+# Fires on every push to main, once a day and on demand (the github-pages environment
 # deploys from main only). On a pull request that touches the pages, their
 # data or this file, it builds and screenshots without deploying, so a broken
 # page shows before merge. A pull request that touches a doc (**/*.md, the doc set) runs docs-gate, and a doc-only
-# one runs nothing else (changes, below). No schedule: a cron is new scheduled work and waits
-# for the owner. A committed data/org.json is read as it is; with none (a public copy or a fork), the build
+# one runs nothing else (changes, below). The daily schedule (the owner's yes, plan call 3, 2026-11-12) runs as a
+# push to main does: the App token's admin reads, the main-reads save and the deploy, so the scores and
+# settings.admin_read_age_hours (goal 24) stay current between merges. It takes no screenshots.
+# A committed data/org.json is read as it is; with none (a public copy or a fork), the build
 # collects it with GITHUB_TOKEN first, and a read the token refuses is not measured.
 #
 # visual-check: headless Chrome on the runner (ubuntu-latest ships Google
@@ -65,6 +67,9 @@ on:
       - "tests/action-config.json"
       - ".github/workflows/pages.yml"
       - "**/*.md"
+  # Daily, off the hour (the owner's yes, plan call 3, 2026-11-12).
+  schedule:
+    - cron: "23 5 * * *"
   workflow_dispatch:
 
 permissions:
@@ -95,12 +100,12 @@ jobs:
         continue-on-error: true
         env:
           CI_OVERFLOW_RUNNER: ${{ vars.CI_OVERFLOW_RUNNER }}
-          CI_OVERFLOW_SAVE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          CI_OVERFLOW_SAVE: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/main' }}
           GITHUB_TOKEN: ${{ github.token }}
         run: python3 -I tools/ci_overflow.py choose --state-out "$RUNNER_TEMP/ci-overflow/state.json"
       # The meter's state for the next run; only main's is read back.
       - uses: actions/upload-artifact@v7.0.2
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.choose.outputs.artifact != ''
+        if: (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/main' && steps.choose.outputs.artifact != ''
         continue-on-error: true
         with:
           name: ${{ steps.choose.outputs.artifact }}
@@ -418,8 +423,12 @@ jobs:
       - name: Install Git Crafter's packages
         run: npm ci --ignore-scripts --no-audit --no-fund --loglevel=error
 
+      # gh-replay.mjs records on a push to main; the daily run on main records the same way, under the push's
+      # event name for this one step.
       - id: replay
-        run: node quality/gh-replay.mjs setup
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = schedule ]; then export GITHUB_EVENT_NAME=push; fi
+          node quality/gh-replay.mjs setup
         env:
           GH_TOKEN: ${{ github.token }}
 
@@ -491,11 +500,17 @@ jobs:
           hf-token: ${{ github.ref == 'refs/heads/main' && secrets.HF_TOKEN || '' }}
           openrouter-api-key: ${{ github.ref == 'refs/heads/main' && secrets.OPENROUTER_API_KEY || '' }}
 
+      # The first build ran before the Quality run existed, so its map steps read none. This one reads the
+      # run the step above wrote (data/quality/latest.json) and keeps data/org.json, so the site metrics keep
+      # their readings. Process and Metrics only: the Quality page stays as the step above wrote it.
+      - name: Build the Process page again from this run
+        run: node pages/build.mjs
+
       - if: always()
         run: node quality/gh-replay.mjs report
 
       - uses: actions/upload-artifact@v7.0.2
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/main'
         with:
           name: main-reads
           path: ${{ runner.temp }}/gh-replay/
@@ -504,9 +519,9 @@ jobs:
 
       # The shots are for a reviewer of a pull request, which took them on its own run. A push to main repeated
       # them for no reader (44 of the build's 137 s, run 42969770326), so main skips them; its pages still build,
-      # score and deploy.
+      # score and deploy. The daily run on main skips them too.
       - name: visual-check
-        if: github.event_name != 'push'
+        if: github.event_name != 'push' && github.event_name != 'schedule'
         run: |
           set -euo pipefail
           mkdir -p shots
@@ -539,7 +554,7 @@ jobs:
           ls -la shots
 
       - uses: actions/upload-artifact@v7.0.2
-        if: github.event_name != 'push'
+        if: github.event_name != 'push' && github.event_name != 'schedule'
         with:
           name: page-screenshots
           path: shots/
