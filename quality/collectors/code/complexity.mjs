@@ -90,7 +90,7 @@ function openingComment(text, start, comments) {
     if (!next) break;
     run.push(c);
   }
-  return run.flatMap((c) => c.text.split("\n")).map((l) => l.replace(/^\s*(\/\*+|\/\/+|#+|<!--|\{\/\*|\*)|(\*+\/\}?|-->)\s*$/g, ""));
+  return run.flatMap((c) => c.text.split("\n")).map((l) => l.replace(/^\s*(\/\*+|\/\/+|#+|<!--|\{\/\*|\*)|(\*+\/\}?|--!?>)\s*$/g, ""));
 }
 
 // An .astro file is TypeScript in the frontmatter and in each <script>, CSS in
@@ -101,7 +101,7 @@ function analyzeAstro(text) {
   const front = /^---[ \t]*\r?\n([\s\S]*?)^---[ \t]*$/dm.exec(text);
   if (front && front.index === 0) scripts.push({ start: front.indices[1][0], end: front.indices[1][1], kind: ts.ScriptKind.TS });
   const after = front && front.index === 0 ? front.indices[0][1] : 0;
-  for (const m of text.slice(after).matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/dg)) {
+  for (const m of text.slice(after).matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\b[^>]*>/dgi)) {
     const [start, end] = m.indices[2].map((i) => i + after);
     if (/\btype\s*=\s*["']?(application\/(ld\+)?json|text\/(html|plain|template))/i.test(m[1])) continue;
     scripts.push({ start, end, kind: ts.ScriptKind.TS });

@@ -1,14 +1,14 @@
 // How the GitHub collector reads a PR, issue or card body: its words, tables and visuals.
 
+import { stripAll } from "../lib/strip.mjs";
+
 // A PR body without the patterns params.pr_body_ignore names (a bot's footer
 // that no author can change), HTML comments, fenced blocks (code, mermaid and
 // other diagrams), then single-line HTML tags, so a < or > in prose or a fence
 // survives. The ignore patterns go first: a footer wrapped in HTML comments
 // would otherwise lose only its markers.
 export const unfenced = (body, ignore = []) =>
-  ignore
-    .reduce((text, re) => text.replace(re, ""), String(body))
-    .replace(/<!--[\s\S]*?-->/g, "")
+  stripAll(ignore.reduce((text, re) => text.replace(re, ""), String(body)), /<!--[\s\S]*?-->/g)
     .replace(/^\s*(```|~~~)[\s\S]*?^\s*\1[^\n]*$/gm, "")
     .replace(/<\/?[A-Za-z][^<>\n]*>/g, " ");
 
@@ -66,7 +66,7 @@ function fences(text) {
  * a bot's footer never counts.
  */
 export function hasVisual(body, ignore = []) {
-  const text = ignore.reduce((t, re) => t.replace(re, ""), String(body)).replace(/<!--[\s\S]*?-->/g, "");
+  const text = stripAll(ignore.reduce((t, re) => t.replace(re, ""), String(body)), /<!--[\s\S]*?-->/g);
   const { infos, outside } = fences(text);
   if (infos.some((info) => DIAGRAM_INFO.has(info))) return true;
   return IMAGE.test(outside.replace(/`[^`\n]*`/g, " ")) || TABLE.test(outside);
@@ -78,7 +78,7 @@ export function hasVisual(body, ignore = []) {
  * A table is not a picture. `ignore`: patterns cut first, as in hasVisual.
  */
 export function hasPicture(body, { diagrams = true, ignore = [] } = {}) {
-  const text = ignore.reduce((t, re) => t.replace(re, ""), String(body ?? "")).replace(/<!--[\s\S]*?-->/g, "");
+  const text = stripAll(ignore.reduce((t, re) => t.replace(re, ""), String(body ?? "")), /<!--[\s\S]*?-->/g);
   const { infos, outside } = fences(text);
   if (diagrams && infos.some((info) => DIAGRAM_INFO.has(info))) return true;
   return IMAGE.test(outside.replace(/`[^`\n]*`/g, " "));

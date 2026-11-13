@@ -9,7 +9,8 @@ name: cloud-test
 #   gh run list --workflow cloud-test.yml --limit 1, then gh run view <id>
 #
 # The allowlist is read from the commit under test: only a name it lists runs, with its argument list and its
-# timeout in minutes, never a shell string. A `ref` input tests another commit. A pull request that changes this
+# timeout in minutes, never a shell string. It tests the ref you dispatch from, never an input ref: a checkout of an
+# input ref, then npm ci, could poison the default branch's cache (code scanning, #13). A pull request that changes this
 # file or the allowlist runs the default script once, which proves the wiring; the path filter keeps every other
 # pull request from spending minutes. Self-contained, so a fork or a public copy runs it with no other repo.
 on:
@@ -19,11 +20,6 @@ on:
       - .github/cloud-test.json
   workflow_dispatch:
     inputs:
-      ref:
-        description: Commit SHA or branch to test. Empty tests the branch you dispatch from
-        required: false
-        default: ""
-        type: string
       script:
         description: A name from .github/cloud-test.json
         required: true
@@ -48,7 +44,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
         with:
-          ref: ${{ inputs.ref }}
           persist-credentials: false
 
       - uses: actions/setup-node@v7.1.0
