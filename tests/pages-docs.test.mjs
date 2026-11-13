@@ -286,17 +286,14 @@ const templateKinds = () => Object.fromEntries(readTargetFiles(join(ROOT, "quali
 
 test("the library: every map has its ideal and dated sources, at most MAX_STEPS steps, each step one template metric, and a step of each kind", () => {
   const library = loadLibrary();
-  assert.deepEqual(Object.keys(library).sort(), ["adopt", "board", "code", "contribute", "decide", "delivery", "deploy", "document", "guard", "measure", "secure", "triage"]);
-  // Decide is a fork: a question goes to Claude's call or the owner's queue, and both meet at clear.
-  assert.deepEqual(library.decide.steps.map((s) => [s.id, s.at]), [["arise", [0, 0]], ["decide", [1, 0]], ["queue", [1, 1]], ["clear", [2, 0]]]);
-  assert.equal(library.decide.steps.find((s) => s.id === "queue").metric, "claude_settings.prompts_per_100_calls", "a prompt reaching the owner is what the queue step counts");
+  assert.deepEqual(Object.keys(library).sort(), ["adopt", "board", "code", "contribute", "delivery", "deploy", "document", "measure", "secure", "triage"]);
   assert.ok(library.document.steps.every((s) => s.metric.startsWith("docs.")), "every Document step reads a docs metric");
   assert.deepEqual(checkLibrary(library, templateIds(), templateKinds()), [], "a template metric a step names was removed, or a map lost a kind: ask the orchestrator before dropping it");
   // Git Crafter's own maps too, Spend and each override included: the library check never sees them.
   const own = readDocsFrom(ROOT, { goals: "goals.json", process: "process.json", maps: "maps.json" }).maps.maps;
   assert.deepEqual(own.filter((m) => missingKinds(m.steps, templateKinds()).length).map((m) => m.id), [], "each map scores quality, speed and consumption (pages/maps/README.md)");
-  const broken = { x: { ...library.guard, id: "x", ideal: undefined, sources: undefined, critical_path: undefined, steps: [{ ...library.guard.steps[0], rule: "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty twentyone", rule_ref: "rules/x.md", metric: "gone.metric" }] } };
-  assert.deepEqual(checkLibrary(broken, templateIds(), templateKinds()), ['pages/maps map "x", step "call": gone.metric is not a metric on this repo\'s Quality page', "pages/maps/x.json: a library map needs an ideal and its sources", 'pages/maps/x.json, step "call": rule_ref must be an https link', 'pages/maps/x.json, step "call": rule has 21 words; a library rule keeps 20 at most', "pages/maps/x.json: no step scores quality, speed, consumption; a map scores quality, speed and consumption"]);
+  const broken = { x: { ...library.delivery, id: "x", ideal: undefined, sources: undefined, critical_path: undefined, steps: [{ ...library.delivery.steps[0], rule: "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty twentyone", rule_ref: "rules/x.md", metric: "gone.metric" }] } };
+  assert.deepEqual(checkLibrary(broken, templateIds(), templateKinds()), ['pages/maps map "x", step "plan": gone.metric is not a metric on this repo\'s Quality page', "pages/maps/x.json: a library map needs an ideal and its sources", 'pages/maps/x.json, step "plan": rule_ref must be an https link', 'pages/maps/x.json, step "plan": rule has 21 words; a library rule keeps 20 at most', "pages/maps/x.json: no step scores quality, speed, consumption; a map scores quality, speed and consumption"]);
 });
 
 test("a repo uses a library map by id and changes a step by id; a typo is an error, never a no-op", () => {
@@ -307,7 +304,7 @@ test("a repo uses a library map by id and changes a step by id; a typo is an err
   assert.deepEqual(m.steps.map((s) => s.id), ["build", "ci", "review", "merge"], "the library's order, less the dropped step");
   assert.deepEqual(m.critical_path, ["build", "ci", "review", "merge"]);
   const review = m.steps.find((s) => s.id === "review");
-  assert.deepEqual([review.rule, review.rule_ref, review.metric], ["Two reviewers.", "REVIEW.md", "blockers.review_tokens_per_pr"]);
+  assert.deepEqual([review.rule, review.rule_ref, review.metric], ["Two reviewers.", "REVIEW.md", "pull_requests.reviewed"]);
   assert.equal(own, doc.maps[1], "a map of the repo's own passes through");
   for (const [bad, re] of [
     [{ use: "nope" }, /no library map "nope"/],
@@ -321,7 +318,7 @@ test("a repo uses a library map by id and changes a step by id; a typo is an err
 test("a repo with only library maps and template defaults builds, every section with its ideal", () => {
   const dir = mkdtempSync(join(tmpdir(), "cos-library-"));
   try {
-    const uses = ["delivery", "deploy", "guard", "adopt", "measure", "code"];
+    const uses = ["delivery", "deploy", "adopt", "measure", "code"];
     writeFileSync(join(dir, "maps.json"), JSON.stringify({ repo_url: "https://github.com/example/one/blob/main", maps: uses.map((use) => ({ use })) }));
     mkdirSync(join(dir, "data"));
     writeFileSync(join(dir, "data", "org.json"), JSON.stringify({ generated_at: ago(1), org: "example-org", repos: [{ name: "one", default_branch: "main" }], errors: [], metrics: {} }));
@@ -335,11 +332,11 @@ test("a repo with only library maps and template defaults builds, every section 
   }
 });
 
-test("Git Crafter's maps use all eleven library maps and add Spend, and its own Quality run reads every step's metric (#330)", (t) => {
+test("Git Crafter's maps use nine library maps and add Spend, and its own Quality run reads every step's metric (#330)", (t) => {
   // This repo tracks no Mac's run (.gitignore), so only a local checkout holds it.
   if (!existsSync(join(ROOT, "data/quality/local.json"))) return t.skip("no data/quality/local.json in this tree");
   const maps = readJson("maps.json").maps;
-  assert.deepEqual(maps.map((m) => m.use ?? m.id), ["delivery", "deploy", "board", "guard", "adopt", "measure", "code", "triage", "decide", "document", "secure", "spend"]);
+  assert.deepEqual(maps.map((m) => m.use ?? m.id), ["delivery", "deploy", "board", "adopt", "measure", "code", "triage", "document", "secure", "spend"]);
   const own = readJson("data/quality/local.json").metrics;
   const steps = readDocsFrom(ROOT, { goals: "goals.json", process: "process.json", maps: "maps.json" }).maps.maps.flatMap((m) => m.steps.map((s) => s.metric));
   const unread = steps.filter((id) => !own[id] || String(own[id].could_not_check ?? "").includes("no repo to read"));

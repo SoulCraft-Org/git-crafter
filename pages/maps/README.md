@@ -15,13 +15,11 @@ flowchart LR
 | [delivery.json](delivery.json) | plan, build, check, review, merge |
 | [board.json](board.json) | card, split, start, finish, done, watch |
 | [deploy.json](deploy.json) | build, ship, verify, restore |
-| [guard.json](guard.json) | call, block, message, false alarm, change |
 | [adopt.json](adopt.json) | copy, require, update, check, current |
 | [measure.json](measure.json) | collect, score, page, goal, fix |
 | [code.json](code.json) | measure, simplify, delete, explain, check, hold |
 | [triage.json](triage.json) | intake, issue, card, fix, link (a fork: issue and card sit side by side) |
 | [secure.json](secure.json) | keys, scan, model, report, alerts |
-| [decide.json](decide.json) | arise, decide, queue, clear (a fork: Claude decides or the owner's queue) |
 | [document.json](document.json) | write, lint, map, publish, read, load |
 | [contribute.json](contribute.json) | idea, approve, review, merge, rebuild, deploy (a fork: merge or rebuild) |
 
@@ -35,7 +33,7 @@ Git Crafter's own [`maps.json`](../../maps.json) adds Spend (free first, read, s
 | `rule_ref` an https link | `checkLibrary` |
 | a step of each kind: quality, speed and consumption | `checkLibrary`; `tests/pages-build.test.mjs` for a repo's own maps |
 | `at: [col, row]` on every step draws a fork; no two steps share a cell | `checkMaps` |
-| `time_bar`, optional: one metric whose detail rows are step hours, drawn under the trail as one labelled stacked bar. A step it could not read is listed, never a zero. Delivery's is `lead_time.hours` | `checkMaps`, `tests/pages-build.test.mjs` |
+| `time_bar`, optional: one metric whose detail rows are step hours, drawn under the trail as one labelled stacked bar. A step it could not read is listed, never a zero | `checkMaps`, `tests/pages-build.test.mjs` |
 | a step's value comes from the repo's own Quality run when the page builds (`withOwnRun`), never an older copy in `data/org.json`: no step to re-run | `tests/pages-build.test.mjs` |
 
 ## In a repo's maps file

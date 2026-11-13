@@ -15,9 +15,6 @@
    "use": "deploy"
   },
   {
-   "use": "guard"
-  },
-  {
    "use": "adopt"
   },
   {

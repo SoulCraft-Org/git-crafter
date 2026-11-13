@@ -17,12 +17,10 @@
   },
   {"use": "deploy", "why": "A merged change to Git Crafter, from the Pages build to live, and back when it fails", "steps": {"build": {"tools": ["pages.yml on every push to main"], "rule": "Every merge to main builds and publishes the pages on its own; nobody deploys by hand."}, "ship": {"tools": ["GitHub Pages"], "rule": "A merged change is live once its push goes green, within minutes.", "metric": "ci.latest_flow"}, "verify": {"tools": ["pages.yml build checks", "visual-check screenshots"], "rule": "A publish whose checks fail, or pass only on a rerun, counts as a failed change.", "metric": "deploy.failure_rate_last10"}, "restore": {"tools": ["Re-run pages.yml on the last good commit"], "rule": "A failed publish re-runs on the last good commit before anyone debugs it, so main stays red for minutes.", "metric": "ci.main_red_minutes"}}},
   {"use": "board"},
-  {"use": "guard"},
   {"use": "adopt"},
   {"use": "measure"},
   {"use": "code", "why": "Git Crafter's own code, from measured to simplified, deleted, explained, checked and held small"},
   {"use": "triage", "why": "A finding in Git Crafter, from intake to the issue or card a merged pull request closes", "steps": {"intake": {"rule_ref": "SUPPORT.md"}, "issue": {"rule_ref": "CONTRIBUTING.md"}, "card": {"rule_ref": "CONTRIBUTING.md"}, "link": {"rule_ref": "CONTRIBUTING.md"}}},
-  {"use": "decide", "why": "A question or blocker in Git Crafter, from where it arises to Claude's call or the owner's queue", "steps": {"arise": {"rule_ref": "rules/delegation.md"}, "decide": {"rule_ref": "rules/delegation.md#decide-without-asking"}, "queue": {"rule_ref": "rules/delegation.md#owners-queue"}, "clear": {"rule_ref": "rules/delegation.md"}}},
   {"use": "document"},
   {"use": "secure", "why": "Git Crafter's security, from keys no session reads to alerts closed within a week", "steps": {"keys": {"rule_ref": "rules/keys.md"}, "scan": {"rule_ref": "SECURITY.md"}, "model": {"rule_ref": "THREAT-MODEL.md"}, "report": {"rule_ref": "SECURITY.md"}, "alerts": {"rule_ref": "SECURITY.md"}}},
   {
