@@ -689,7 +689,7 @@ test("a rate limit fails open: a run that read nothing, a warning and exit 0; an
     // The pages build from it: every figure not measured, with why, and none a 0.
     const out = build({ root: dir, now: NOW });
     assert.equal(out.code, 0, "never the exit 3 of a missing data file");
-    assert.match(out.pages["index.html"], /not measured: could not read the site&#39;s data: site quality data: not read, gh: API rate limit exceeded/);
+    assert.match(out.pages["index.html"], /Could not read: repos and docs: gh: API rate limit exceeded.*site quality data: not read, gh: API rate limit exceeded/);
     assert.match(out.pages["metrics.html"], /Could not read: repos and docs: gh: API rate limit exceeded/);
     // The API half fails open the same way, in the shape the site half finishes.
     assert.equal(failedRun(fail(limits[0]), { ...args, phase: "api", api: "data/org.api.json" }, opts), 0);
