@@ -47,6 +47,18 @@ test("scorecard.yml runs weekly, publishes its result and uploads no SARIF", () 
   assert.doesNotMatch(yml, /^\s+run:/m, "only the two actions, as Scorecard's publish check expects");
 });
 
+test("wiki.yml and the adopter's templates/ci/wiki.yml are the same from on: down; only the header comment differs", () => {
+  const body = (yml) => yml.slice(yml.indexOf("\non:\n"));
+  const [ours, theirs] = [read(".github/workflows/wiki.yml"), read("templates/ci/wiki.yml")];
+  assert.ok(ours.includes("\non:\n") && theirs.includes("\non:\n"), "both have an on: block");
+  assert.equal(body(theirs), body(ours));
+  assert.match(ours, /^ {6}contents: write$/m, "write on the job");
+  assert.match(ours, /^permissions:\n {2}contents: read$/m, "read at the top");
+  // The one expression is the token's env line, so none reaches the shell; git only, so no API request.
+  assert.deepEqual([...ours.matchAll(/^.*\$\{\{.*$/gm)].map(([line]) => line.trim()), ["WIKI_TOKEN: ${{ github.token }}"]);
+  assert.doesNotMatch(body(ours), /https:\/\/[^\s"]*@|\bgh |curl |wget /, "no token in a URL, no API call");
+});
+
 // Every workflow file (#61), so a new one is checked without a change here.
 const workflows = readdirSync(new URL("../.github/workflows/", import.meta.url)).filter((n) => /\.ya?ml$/.test(n)).sort();
 

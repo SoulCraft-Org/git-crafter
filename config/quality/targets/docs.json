@@ -201,13 +201,29 @@
      ]
     },
     {
+     "doc": "wiki/*.md",
+     "area": [
+      "README.md",
+      "CONTRIBUTING.md",
+      "templates/",
+      ".github/workflows/wiki.yml"
+     ]
+    },
+    {
+     "doc": "templates/open/wiki/*.md",
+     "area": [
+      "templates/ci/wiki.yml",
+      "templates/open/README.md"
+     ]
+    },
+    {
      "doc": "**",
      "area": [
       "{dir}/"
      ]
     }
    ],
-   "areas_readme": "First match wins. Each doc maps to the files it describes: a change there can make the doc wrong, a change to a sibling doc cannot. THREAT-MODEL.md and tools/THREAT-MODEL.md each take the code their rows describe, from the paths of security.threat_model_current, the guard rules and the Comfy guard. CODE_OF_CONDUCT.md adopts an outside standard, so it is a record. Any other doc covers its own folder."
+   "areas_readme": "First match wins. Each doc maps to the files it describes: a change there can make the doc wrong, a change to a sibling doc cannot. THREAT-MODEL.md and tools/THREAT-MODEL.md each take the code their rows describe, from the paths of security.threat_model_current, the guard rules and the Comfy guard. CODE_OF_CONDUCT.md adopts an outside standard, so it is a record. The wiki pages take what they link to and the workflow that publishes them. Any other doc covers its own folder."
   }
  },
  {

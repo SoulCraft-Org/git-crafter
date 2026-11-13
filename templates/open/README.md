@@ -16,12 +16,13 @@ flowchart LR
 | File | To | Set |
 |---|---|---|
 | `CONTRIBUTING.md`, `GOVERNANCE.md`, `MAINTAINERS.md`, `SECURITY.md` | the repo root | `<owner>/<repo>`, the run commands, the maintainer row |
-| A `LICENSE` file, such as MIT or Apache-2.0 | the repo root | the year and holder |
+| `LICENSE`, such as MIT or Apache-2.0 | the repo root | the year and holder |
 | Git Crafter's [`CODE_OF_CONDUCT.md`](../../CODE_OF_CONDUCT.md), [`SUPPORT.md`](../../SUPPORT.md) | the repo root | the project name |
 | [`templates/agents/`](../agents/) | the repo root | as that folder says |
 | `.github/PULL_REQUEST_TEMPLATE.md`, `.github/ISSUE_TEMPLATE/`, `.github/DISCUSSION_TEMPLATE/`, `.github/CODEOWNERS`, `.github/dco.yml`, `.github/release.yml`, `.github/FUNDING.yml` | the same paths | the owner login in `CODEOWNERS`; your `FUNDING.yml` destinations |
-| `labels.json` | read by the label step below | nothing |
+| `labels.json` | the label step reads it | nothing |
 | [`merge_policy.json`](merge_policy.json) and [`tools/merge_policy.py`](../../tools/merge_policy.py) | `tools/`, side by side | `ai_mergeable` to your content paths |
+| [`wiki/`](wiki/), [`wiki.yml`](../ci/wiki.yml) | `wiki/`, `.github/workflows/` | `<owner>/<repo>` |
 
 ## Settings
 
