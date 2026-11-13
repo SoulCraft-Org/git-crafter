@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 // Builds Git Crafter's two pages into pages/dist/: index.html (Process) and
 // metrics.html (Metrics and goals), from goals.json, process.json, the
-// repo's own maps (Git Crafter's: maps.json), systems.json and tokens.json (each
-// optional), data/org.json, the repo's own Quality run (each map step's
-// value) and data/history/*.json. CI runs it (pages.yml);
+// repo's own maps (Git Crafter's: maps.json; optional), data/org.json, the
+// repo's own Quality run (each map step's value) and data/history/*.json. CI runs it (pages.yml);
 // it reads files and writes two, nothing else.
 //
 //   node pages/build.mjs
@@ -23,10 +22,10 @@ import { readTargetFiles } from "../quality/overlay.mjs";
 import { configDefs } from "../quality/packs.mjs";
 import { configScope, ownStepMetrics, readDocs, readOwnRun, SCOPE } from "../tools/collect_org.mjs";
 import { withComputed } from "./model.mjs";
-import { checkDocs, checkLibrary, checkMaps, checkTokens, inlineIdeal, MAX_STEPS, missingKinds } from "./checks.mjs";
+import { checkDocs, checkLibrary, checkMaps, inlineIdeal, MAX_STEPS, missingKinds } from "./checks.mjs";
 import { renderMetrics, renderProcess } from "./render.mjs";
 
-export { checkDocs, checkLibrary, checkMaps, checkTokens, inlineIdeal, MAX_STEPS, missingKinds };
+export { checkDocs, checkLibrary, checkMaps, inlineIdeal, MAX_STEPS, missingKinds };
 
 const PAGES = fileURLToPath(new URL(".", import.meta.url));
 // The orchestrator's page budget, 2026-11-03: each page under 700 KB.
@@ -158,13 +157,13 @@ export function build({ root = ROOT, now = new Date(), config = null } = {}) {
   const loaded = loadDocs(root, config);
   if (loaded.error) return { code: 2, errs: [loaded.error] };
   const { scope, docs } = loaded;
-  const { goals: goalsDoc, process: processDoc, maps: mapsDoc, systems: systemsDoc, tokens: tokensDoc } = docs;
+  const { goals: goalsDoc, process: processDoc, maps: mapsDoc } = docs;
   // The Quality page's definitions check each map step's id and rate it. A
   // Quality config the engine cannot read is that page's error, not the
   // maps': the ids go unchecked, with a warning, and the page still builds.
   const quality = mapsDoc ? qualityDefs(root, qualityConfigPath(config)) : { defs: null };
   const warnings = qualityWarnings(mapsDoc, quality);
-  const errs = [...checkDocs(goalsDoc, processDoc, systemsDoc, tokensDoc), ...checkMaps(mapsDoc, quality.ids ?? null, shown(scope.docs.maps) ?? "maps")];
+  const errs = [...checkDocs(goalsDoc, processDoc), ...checkMaps(mapsDoc, quality.ids ?? null, shown(scope.docs.maps) ?? "maps")];
   if (errs.length) return { code: 2, errs };
   const dataPath = join(root, scope.data);
   if (!existsSync(dataPath)) return { code: 3, errs: [`no ${scope.data}; run node ${page.collector}`] };
@@ -175,7 +174,7 @@ export function build({ root = ROOT, now = new Date(), config = null } = {}) {
   const script = readFileSync(join(PAGES, "client.js"), "utf8");
   const chrome = pageChrome(page, scope);
   const pages = {};
-  if (page.pages.process) pages[page.pages.process] = renderProcess({ data, goalsDoc, processDoc, mapsDoc, defs: quality.defs, history: readRuns(quality.history), css, script, rulesMd: docs.rules, systemsDoc, tokensDoc, chrome, tabs: page.tabs });
+  if (page.pages.process) pages[page.pages.process] = renderProcess({ data, goalsDoc, processDoc, mapsDoc, defs: quality.defs, history: readRuns(quality.history), css, script, chrome, tabs: page.tabs });
   if (page.pages.metrics) pages[page.pages.metrics] = renderMetrics({ data, goalsDoc, history: readHistory(root, scope), css, script, chrome });
   return { code: 0, pages, out: page.out, warnings };
 }

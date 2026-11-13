@@ -39,9 +39,7 @@
  "tabs": [
   "build",
   "ci",
-  "testing",
-  "claude",
-  "tokens"
+  "testing"
  ],
  "heading": "my-repo",
  "collector": "Git Crafter actions/pages",

@@ -37,7 +37,7 @@ import {
   qualityDefs,
   withOwnRun,
 } from "../pages/build.mjs";
-import { openingStep, position, rate, rateGoals, ruleList, stepReadout } from "../pages/model.mjs";
+import { openingStep, position, rate, rateGoals, stepReadout } from "../pages/model.mjs";
 
 const ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const NOW = new Date("2026-11-03T12:00:00Z");
@@ -86,30 +86,6 @@ test("the org and site come from the environment or the org config, never a cons
     rmSync(dir, { recursive: true, force: true });
   }
   assert.throws(() => fetchSite({}, null), /no site repo/);
-});
-
-test("who decides what comes from rules/delegation.md, label first, whole bullet kept", () => {
-  const md = readFileSync(join(ROOT, "rules", "delegation.md"), "utf8");
-  const alone = ruleList(md, "Decide without asking");
-  const owner = ruleList(md, "Owner's queue");
-  // The owner answers product, strategy and billing questions; the platform keeps a few steps human.
-  assert.ok(alone.length >= 3 && owner.length >= 2, `${alone.length} and ${owner.length}`);
-  assert.ok(owner.some((i) => i.label === "Questions" && /billing/.test(i.text)));
-  assert.ok(owner.some((i) => i.label === "Human steps" && /admin password/.test(i.text)));
-  assert.deepEqual(ruleList("## Other\n- a\n", "Owner's queue"), []);
-  // A table reads like bullets: the header row is left out, a row is "first cell: rest".
-  const table = ruleList("## Owner's queue\n\n| Item | Covers |\n|---|---|\n| Spending money | purchases. |\n| Sign-ins | OAuth. |\n", "Owner's queue");
-  assert.deepEqual(table.map((i) => i.label), ["Spending money", "Sign-ins"]);
-  assert.equal(table[0].text, "Spending money: purchases.");
-});
-
-test("the owner's queue: any \"<name>'s queue\" heading, and the Claude tab names no person", () => {
-  const md = "## Decide without asking\n- Build: plan.\n\n## Owner's queue\n- Spending money: purchases.\n";
-  assert.deepEqual(ruleList(md, /^.+'s queue$/).map((i) => i.label), ["Spending money"]);
-  assert.deepEqual(ruleList(md, /^Nobody's$/), []);
-  const tab = readFileSync(join(ROOT, "pages", "claude-tab.mjs"), "utf8");
-  assert.match(tab, /Waits for the owner/);
-  assert.doesNotMatch(tab, /Waits for [A-Z]/);
 });
 
 test("rating: bands by direction, and positions put near at 0 and the goal at 1", () => {
@@ -174,12 +150,6 @@ test("goals.json and process.json pass the docs check; a goal with near on the w
   const bad = structuredClone(goals);
   bad.outcomes[0].goals[0].near = 99;
   assert.match(checkDocs(bad, proc).join("\n"), /near must sit on the worse side/);
-  const badProc = structuredClone(proc);
-  badProc.claude.delegate.source = "http://example.com";
-  badProc.claude.delegate.branches[0].metrics = undefined;
-  const dErrs = checkDocs(goals, badProc).join("\n");
-  assert.match(dErrs, /claude.delegate: needs an https source/);
-  assert.match(dErrs, /claude.delegate parallel: needs a label and a metrics list/);
   // The maps are each repo's own file: process.json holds none.
   assert.equal("steps" in proc, false);
   assert.match(checkDocs(goals, { ...proc, steps: [] }).join("\n"), /process.json: steps are gone/);
@@ -188,39 +158,12 @@ test("goals.json and process.json pass the docs check; a goal with near on the w
 // The maps self-test: a known-good file passes and a known-bad one fails on
 // every rule, each error naming its map and step, against the ids of
 // Git Crafter's own Quality page.
-test("every id process.json, tokens.json and systems.json name resolves: on Git Crafter's Quality page, or written by the Process collector", () => {
+test("every id process.json names resolves: on Git Crafter's Quality page, or written by the Process collector", () => {
   const { ids } = qualityDefs(ROOT, CODE_OS_QUALITY_CONFIG);
   assert.ok(ids?.size > 50, "the Quality page's ids were read");
-  // The collector's own: its labelled ids and each systems.json reader's.
-  const written = new Set([...Object.keys(LABELS), ...readJson("systems.json").systems.flatMap((x) => (x.reads ?? []).map((r) => r.metric))]);
-  for (const file of ["process.json", "tokens.json", "systems.json"]) {
-    const dead = [...namedIds(readJson(file))].filter((id) => !ids.has(id) && !written.has(id));
-    assert.deepEqual(dead, [], `${file} names ids no page measures`);
-  }
+  const dead = [...namedIds(readJson("process.json"))].filter((id) => !ids.has(id) && !(id in LABELS));
+  assert.deepEqual(dead, [], "process.json names ids no page measures");
   assert.deepEqual([...namedIds({ a: [{ metric: "x" }, { metrics: ["y"], usage: { metric: "z" } }] })].sort(), ["x", "y", "z"], "the walk finds nested ids");
-});
-
-// Every route names the metric it moves (rules/writing-and-gates.md: add
-// nothing unless it moves a measured goal): the Moves column of the merging
-// skill's Delegating table, and each account's delegate routes.
-test("every Delegating route and every account's delegate route names a metric the pages read", () => {
-  const { ids } = qualityDefs(ROOT, CODE_OS_QUALITY_CONFIG);
-  const written = new Set([...Object.keys(LABELS), ...readJson("systems.json").systems.flatMap((x) => (x.reads ?? []).map((r) => r.metric))]);
-  const goals = new Set(readJson("goals.json").outcomes.flatMap((o) => o.goals.flatMap((g) => g.metrics)));
-  const known = (id) => ids.has(id) || written.has(id) || goals.has(id);
-  const md = readFileSync(join(ROOT, "skills/merging/orchestrating.md"), "utf8");
-  const lines = md.slice(md.indexOf("| Work | Who does it | Moves |")).split("\n");
-  const rows = lines.slice(2, lines.findIndex((l) => !l.startsWith("|")));
-  assert.ok(rows.length >= 5, "the Delegating table was found");
-  const moves = rows.map((l) => l.split("|").at(-2).trim().replace(/`/g, ""));
-  assert.deepEqual(moves.filter((id) => !known(id)), [], "each row's Moves cell is one metric id");
-  // This repo tracks no config/accounts/ (.gitignore); the placeholder file stands in for it.
-  const dir = join(ROOT, "config/accounts");
-  const accounts = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(".json")).map((f) => `config/accounts/${f}`) : ["config/account.example.json"];
-  for (const f of accounts) {
-    const routes = Object.entries(readJson(f).delegate ?? {}).filter(([k, v]) => k !== "never" && v && typeof v === "object");
-    for (const [k, r] of routes) assert.ok(r.use && known(r.metric), `${f} delegate.${k} needs a use and a metric the pages read`);
-  }
 });
 
 // Each account's facts live in its own overlay's code-os/account.json, so a

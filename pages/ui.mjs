@@ -40,8 +40,8 @@ export function entryOf(data, id) {
   const err = siteError(data);
   return /^(claude|site)\./.test(id) && err ? { could_not_check: `could not read the site's data: ${err}`, source: `${data.site?.repo ?? "the Quality data's repo"} quality/data/local.json` } : undefined;
 }
-// A label for a metric with none: "claude.context_per_call" reads "context per call".
-export const idLabel = (id) => String(id).split(".").pop().replace(/_/g, " ");
+// A label for a metric with none: "ci.pass_rate" reads "pass rate".
+const idLabel = (id) => String(id).split(".").pop().replace(/_/g, " ");
 const WEEK = /^\d{4}-\d{2}-\d{2}$/;
 
 // The metric's own target as a goal, when it carries one with a number.
@@ -76,10 +76,3 @@ export function mtile(e, id, label) {
 // Quality page draws a tab's: the summary, then its dated sources. Optional:
 // a section with none draws nothing.
 export const ideal = (id, doc, name, level) => (doc?.ideal ? idealBlock(esc(id), doc, name && esc(name), level) : "");
-
-// A number rounded to one decimal, as text.
-export const r1 = (n) => String(Math.round(n * 10) / 10);
-// A metric's value with an optional suffix, or "not measured".
-export const figText = (e, suffix) => (isMeasured(e) ? `${valueOf(e)}${suffix ? ` ${suffix}` : ""}` : "not measured");
-// A figure's tooltip: label, value and source, or why it is not measured.
-export const figTip = (e) => (isMeasured(e) ? `${e.label ?? ""}: ${valueOf(e)}; ${srcTip(e)}` : `not measured: ${e?.could_not_check ?? "no collector reported it"}`);

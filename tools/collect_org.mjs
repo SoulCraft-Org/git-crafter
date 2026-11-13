@@ -53,12 +53,11 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { collectApi, SITE_READERS, unreadApi } from "./org_api.mjs";
+import { collectApi, unreadApi } from "./org_api.mjs";
 import { attempt, isMeasured, notMeasured, ORG, reasonOf, ROOT } from "./org_base.mjs";
 import { ghClient, isRateLimit } from "./org_fetch.mjs";
 import { configScope, ownQuality, readDocs, SCOPE } from "./org_scope.mjs";
 import { fetchSite, LABELS, namedIds, ownSteps, ownTokens, readSiteFromDisk, referencedIds, siteMetrics } from "./org_site.mjs";
-import { systemsMetrics } from "./systems.mjs";
 
 // ---- Main -------------------------------------------------------------------
 
@@ -87,12 +86,12 @@ export function readOwnRun(root, scope) {
 
 // Map steps, and every other Quality id the Process docs name, read the
 // repo's own run, last, so no copy stands in for it. An id its Quality page
-// does not define (pr.*, systems.*) is this collector's own and stays.
+// does not define (pr.*) is this collector's own and stays.
 export function ownStepMetrics(docs, scope, { own, ownSpec, ownError }) {
   // A map's time_bar reads the repo's own run too, like its steps.
   const stepIds = (docs.maps?.maps ?? []).flatMap((m) => [...(m.steps ?? []).map((s) => s.metric), m.time_bar]).filter(Boolean);
   const defined = new Set((own?.defs ?? []).map((d) => d.id));
-  const docIds = [docs.process, docs.tokens, docs.systems].flatMap((d) => [...namedIds(d)]).filter((id) => defined.has(id));
+  const docIds = [...namedIds(docs.process)].filter((id) => defined.has(id));
   return ownSteps(own, [...new Set([...stepIds, ...docIds])], ownSpec ?? { repo: scope.own_repo, data: ["its Quality run"] }, ownError);
 }
 
@@ -129,7 +128,6 @@ export function finishCollect(api, { gh = ghClient(), scope = SCOPE, root = ROOT
   Object.assign(metrics, ownStepMetrics(docs, scope, q));
   const pipelines = withSiteFlow({ ...api.pipelines }, metrics, scope.site.repo);
   fillNamed(metrics, docs, scope, q);
-  if (docs.systems) Object.assign(metrics, systemsMetrics({ gh, site, siteSource: `${ORG}/${scope.site.repo} quality/data/local.json`, doc: docs.systems, org: ORG, readAt: now.toISOString(), kinds: SITE_READERS }));
   for (const [id, e] of Object.entries(metrics)) if (!e.label) metrics[id] = { label: LABELS[id] ?? id, ...e };
   const graphql = gh.graphqlCalls - base.graphql;
   const rest = gh.calls - base.calls - graphql;

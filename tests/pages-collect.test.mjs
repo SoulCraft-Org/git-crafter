@@ -1,5 +1,5 @@
 // node --test tests/pages-collect.test.mjs: the collector, the workflow
-// and systems readers, and the run's scope, phases and flags. CI runs every
+// reader, and the run's scope, phases and flags. CI runs every
 // tests/pages*.test.mjs through tools/verify.sh. They sit outside pages/, so
 // the kit a repo installs from pages/ carries no test that needs Git Crafter's
 // own files.
@@ -41,9 +41,7 @@ import {
 import { fetchRuns } from "../tools/org_fetch.mjs";
 import { runMany } from "../tools/org_many.mjs";
 import { TEST_PATTERN, hookText, jobNames, jobsText, readWorkflow, repoFlow, repoTests, runsFor, workflowStats } from "../tools/workflows.mjs";
-import { comfyUsed, countSessions, guardMinutes, rateUse, REPO_READERS, systemsMetrics } from "../tools/systems.mjs";
-import { build, checkDocs } from "../pages/build.mjs";
-import { systemUse } from "../pages/render.mjs";
+import { build } from "../pages/build.mjs";
 import { ciFlow } from "../quality/render/ci-flow.mjs";
 import { rate } from "../pages/model.mjs";
 import { codeLiteral } from "../quality/collectors/lib/strip.mjs";
@@ -388,61 +386,6 @@ test("AI co-authors: Claude, a third-party model, and a person", () => {
   assert.deepEqual(aiAuthors("x\n\nCo-authored-by: Alex <p@example.com>"), []);
 });
 
-test("systems: rate limits, guard notices, Comfy's balance and sessions read as they should", () => {
-  assert.equal(rateUse({ limit: 5000, remaining: 4200, reset: 0 }, "REST", NOW.toISOString()).value, 800);
-  assert.deepEqual(guardMinutes(["noise", "Blacksmith: 1587 of this repository's 1800 minutes in the last 31 days, under its stop"]), { minutes: 1587, share: 1800 });
-  assert.equal(guardMinutes(["nothing"]), null);
-  assert.equal(comfyUsed({ ok: true, data: { credit_balance_credits: 4082, balance_confirmed: true, subscription: {} } }, 4200).used, 118);
-  assert.equal(comfyUsed({ ok: true, data: { credit_balance_credits: 4082, balance_confirmed: false } }, 4200), null, "an unconfirmed balance is not a reading");
-  const dir = mkdtempSync(join(tmpdir(), "cos-sessions-"));
-  try {
-    writeFileSync(join(dir, "a.jsonl"), '{"provider":"groq"}\n');
-    writeFileSync(join(dir, "b.json"), '{"providerID":"openrouter"}');
-    writeFileSync(join(dir, "auth.json"), '{"provider":"secret"}');
-    const c = countSessions(dir, (h) => /"provider(?:ID)?"\s*:\s*"([\w-]+)"/.exec(h)?.[1]);
-    assert.deepEqual(c, { sessions: 2, providers: { groq: 1, openrouter: 1 }, folder: true }, "a file named for credentials is never opened");
-    assert.deepEqual(countSessions(join(dir, "none"), () => null), { sessions: 0, providers: {}, folder: false });
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-test("systems metrics fail open: an unread guard leaves no org total, a missing comfy is not 0", () => {
-  const doc = readJson("systems.json");
-  const gh = {
-    rest: (path) => {
-      if (path === "rate_limit") return { core: { limit: 5000, remaining: 4900, reset: 0 }, graphql: { limit: 5000, remaining: 5000, reset: 0 } };
-      if (path.includes("/runs?")) return 7;
-      if (path.includes("/jobs")) return [{ id: 9, name: "choose-runner" }];
-      if (path.includes("annotations")) return ["Blacksmith: 1587 of this repository's 1800 minutes in the last 31 days"];
-      throw new Error(`unexpected ${path}`);
-    },
-  };
-  const site = { data: { metrics: { "ci.actions_month_end_share": { value: 329.4, detail: [{ label: "Spent so far this month, at list rates", value: 72.2 }], read_at: ago(1) } } } };
-  const out = systemsMetrics({ gh, site, doc, org: "O", readAt: NOW.toISOString(), home: "/nonexistent-home", exec: () => { throw new Error("comfy: command not found"); } });
-  assert.equal(out["systems.github.rest_used"].value, 100);
-  assert.equal(out["systems.actions.spent_share"].value, 72.2);
-  assert.match(out["systems.blacksmith.minutes"].could_not_check, /app-pro \(no guard publishes a reading\)/);
-  assert.equal(out["systems.blacksmith.minutes"].by_repo.app, 1587);
-  assert.match(out["systems.comfy.credits_used"].could_not_check, /could not run comfy cloud status/);
-  assert.equal(out["systems.goose.sessions"].value, 0);
-  assert.match(out["systems.goose.sessions"].source, /no session folder/);
-});
-
-test("a system's use is rated against its first limit and the 80% goal", () => {
-  const x = { limits: [{ value: 300, unit: "USD" }], usage: { metric: "m" } };
-  assert.equal(systemUse(x, { m: { value: 72, unit: "USD" } }, 80).status, "meets");
-  assert.equal(systemUse(x, { m: { value: 250, unit: "USD" } }, 80).status, "near");
-  assert.equal(systemUse(x, { m: { value: 310, unit: "USD" } }, 80).status, "misses");
-  assert.equal(systemUse(x, { m: { could_not_check: "no key" } }, 80).status, "not-measured");
-  assert.match(systemUse({ limits: [], usage: { why: "needs an API key from the owner" } }, {}, 80).tip, /needs an API key from the owner/);
-  const doc = readJson("systems.json");
-  assert.deepEqual(checkDocs(readJson("goals.json"), readJson("process.json"), doc), []);
-  const bad = structuredClone(doc);
-  bad.systems[0].to.push("nowhere");
-  assert.match(checkDocs(readJson("goals.json"), readJson("process.json"), bad).join("\n"), /unknown system nowhere/);
-});
-
 test("a missing data file is exit 3, not a crash", () => {
   const dir = mkdtempSync(join(tmpdir(), "cos-pages-"));
   try {
@@ -509,10 +452,10 @@ test("the site's data from disk: the first file that measured an id wins, a miss
     assert.equal(got.pagesUrl, null, "no gh, no Pages URL, no crash");
     assert.equal(got.defs_error, undefined);
     // An older targets file of full definitions: the overlay refuses it, and the numbers still read.
-    writeFileSync(join(dir, "quality", "targets", "blockers.json"), JSON.stringify([{ id: "blockers.costly", tab: "blockers", kind: "quality", label: "Costly" }]));
+    writeFileSync(join(dir, "quality", "targets", "ci.json"), JSON.stringify([{ id: "ci.latest_pr_dollars", tab: "ci", kind: "consumption", label: "Dollars" }]));
     const old = readSiteFromDisk(dir, site, null, () => "abc1234\n");
     assert.deepEqual([old.defs, old.data.metrics["ci.latest_flow"].value], [[], 7], "the numbers read, unrated");
-    assert.match(old.defs_error, /^quality\/targets: blockers\.json: blockers\.costly: overrides the template metric/);
+    assert.match(old.defs_error, /^quality\/targets: ci\.json: ci\.latest_pr_dollars: overrides the template metric/);
     assert.throws(() => readSiteFromDisk(dir, { ...site, data: ["quality/data/gone.json"] }), /none of/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -543,7 +486,7 @@ test("a repo's own run makes no org-wide call, reads its own alerts, and runs on
     writeFileSync(join(dir, "quality", "targets", "ci.json"), "[]");
     writeFileSync(join(dir, "quality", "data", "local.json"), JSON.stringify({ metrics: {} }));
     mkdirSync(join(dir, "docs"));
-    for (const f of ["goals.json", "process.json", "maps.json", "systems.json"]) cpSync(join(ROOT, f), join(dir, "docs", f));
+    for (const f of ["goals.json", "process.json", "maps.json"]) cpSync(join(ROOT, f), join(dir, "docs", f));
     // Every call is recorded and refused, so every read path runs and fails open.
     const calls = [];
     const refuse = (kind, what) => {
@@ -551,17 +494,13 @@ test("a repo's own run makes no org-wide call, reads its own alerts, and runs on
       throw new Error("HTTP 403: Resource not accessible by integration");
     };
     const gh = { calls: 0, graphqlCalls: 0, rest: (p) => refuse("rest", p), restLines: (p) => refuse("rest", p), raw: (p) => refuse("raw", p), graphql: (q) => refuse("graphql", q.slice(0, 200)) };
-    const scope = configScope({ repos: ["one"], site: { repo: "one", root: "." }, docs: { goals: "docs/goals.json", process: "docs/process.json", maps: "docs/maps.json", systems: "docs/systems.json", tokens: null, rules: null }, data: "org.json", history: null });
+    const scope = configScope({ repos: ["one"], site: { repo: "one", root: "." }, docs: { goals: "docs/goals.json", process: "docs/process.json", maps: "docs/maps.json", rules: null }, data: "org.json", history: null });
     const data = collect({ gh, now: NOW, scope, root: dir });
     assert.ok(calls.length > 5, `the run read something: ${calls.length} calls`);
     assert.deepEqual(calls.filter((c) => /\borgs\//.test(c)), [], "no org-wide call");
     assert.deepEqual(calls.filter((c) => new RegExp(`repos/${ORG}/(?!one\\b)|name:"(?!one")`).test(c)), [], "no other repo's reads");
     assert.ok(calls.includes(`rest repos/${ORG}/one/dependabot/alerts?state=open&severity=critical,high&per_page=100`));
     assert.match(data.metrics["security.critical_high_open"].could_not_check, /HTTP 403/);
-    const allowed = new Set(readJson("systems.json").systems.flatMap((x) => (x.reads ?? []).filter((r) => REPO_READERS.includes(r.kind)).map((r) => r.metric)));
-    const skipped = readJson("systems.json").systems.flatMap((x) => (x.reads ?? []).filter((r) => !REPO_READERS.includes(r.kind)).map((r) => r.metric));
-    assert.ok(skipped.length && skipped.every((id) => !(id in data.metrics) || !isFinite(data.metrics[id].value)), "no comfy, guard or session reader ran, so no false 0");
-    for (const id of allowed) assert.ok(id in data.metrics, id);
     assert.equal(data.metrics["public.private_refs"]?.value, undefined, "Git Crafter's own public.* is off");
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -637,16 +576,16 @@ test("the pages action pins each remote step by full SHA with its version commen
 });
 
 test("under --config a doc the repo does not name is Git Crafter's own, except the maps; one it names is the repo's", () => {
-  const s = configScope({ repos: ["one"], docs: { maps: "quality/process/maps.json", tokens: null } });
+  const s = configScope({ repos: ["one"], docs: { maps: "quality/process/maps.json", rules: null } });
   assert.equal(s.docs.goals, join(ROOT, "goals.json"));
   assert.equal(s.docs.process, join(ROOT, "process.json"));
-  assert.equal(s.docs.rules, join(ROOT, "rules", "delegation.md"));
+  assert.equal(configScope({ repos: ["one"] }).docs.rules, join(ROOT, "rules", "delegation.md"));
   assert.equal(s.docs.maps, "quality/process/maps.json");
   assert.equal(configScope({ repos: ["one"] }).docs.maps, null, "a repo never gets Git Crafter's maps");
-  assert.equal(s.docs.tokens, null, "a repo can turn a doc off");
+  assert.equal(s.docs.rules, null, "a repo can turn a doc off");
   const docs = readDocsFrom(join(tmpdir(), "no-such-repo"), { ...s.docs, maps: null });
   assert.equal(docs.goals.outcomes.length, readJson("goals.json").outcomes.length, "an absolute path ignores the repo root");
-  assert.equal(docs.tokens, null);
+  assert.equal(docs.rules, "");
   assert.equal(docs.maps, null);
 });
 
@@ -689,7 +628,7 @@ test("a rate limit fails open: a run that read nothing, a warning and exit 0; an
     // The pages build from it: every figure not measured, with why, and none a 0.
     const out = build({ root: dir, now: NOW });
     assert.equal(out.code, 0, "never the exit 3 of a missing data file");
-    assert.match(out.pages["index.html"], /not measured: could not read the site&#39;s data: site quality data: not read, gh: API rate limit exceeded/);
+    assert.match(out.pages["index.html"], /Could not read: repos and docs: gh: API rate limit exceeded.*site quality data: not read, gh: API rate limit exceeded/);
     assert.match(out.pages["metrics.html"], /Could not read: repos and docs: gh: API rate limit exceeded/);
     // The API half fails open the same way, in the shape the site half finishes.
     assert.equal(failedRun(fail(limits[0]), { ...args, phase: "api", api: "data/org.api.json" }, opts), 0);
@@ -706,7 +645,7 @@ test("the two halves, joined through JSON, give the run one call gives, the site
     mkdirSync(join(dir, "quality", "targets"), { recursive: true });
     mkdirSync(join(dir, "quality", "data"));
     mkdirSync(join(dir, "docs"));
-    for (const f of ["goals.json", "process.json", "maps.json", "systems.json"]) cpSync(join(ROOT, f), join(dir, "docs", f));
+    for (const f of ["goals.json", "process.json", "maps.json"]) cpSync(join(ROOT, f), join(dir, "docs", f));
     writeFileSync(join(dir, "quality", "targets", "ci.json"), JSON.stringify([{ id: "ci.latest_flow", goal: 10, near: 20, goal_source: "fixture" }]));
     const flow = [{ label: "site-tests", value: 4, unit: "minutes", stage: "ci", kind: "workflow", runs: "On every pull request", file: ".github/workflows/site-tests.yml", pass_rate: 98 }];
     // A site that has not taken the rename yet still reports ci.flow; the org page reads either.
@@ -723,7 +662,7 @@ test("the two halves, joined through JSON, give the run one call gives, the site
         return { r0: { wf: { entries: [{ name: "ci.yml", object: { text: "name: CI\non:\n  pull_request:\njobs:\n  test:\n    runs-on: ubuntu-latest\n" } }] }, hooks: null, ct: null } };
       },
     });
-    const scope = configScope({ repos: ["example-site"], site: { root: "." }, docs: { goals: "docs/goals.json", process: "docs/process.json", maps: "docs/maps.json", systems: "docs/systems.json", tokens: null, rules: null }, data: "org.json" });
+    const scope = configScope({ repos: ["example-site"], site: { root: "." }, docs: { goals: "docs/goals.json", process: "docs/process.json", maps: "docs/maps.json", rules: null }, data: "org.json" });
     const api = JSON.parse(JSON.stringify(collectApi({ gh: fake(), now: NOW, scope, root: dir })));
     assert.ok(!("site" in api) && !Object.keys(api.metrics).some((id) => id.startsWith("site.") || id.startsWith("claude.")), "the API half reads nothing of the site's data");
     assert.notDeepEqual(api.pipelines["example-site"].detail, flow, "the API half has the pipeline from the files");

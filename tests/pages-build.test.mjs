@@ -10,12 +10,11 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { configScope, namedIds, ownQuality, ownSteps, finishCollect, readDocs as readDocsFrom, readSiteFromDisk, SCOPE } from "../tools/collect_org.mjs";
-import { systemsMetrics } from "../tools/systems.mjs";
 import { loadLibrary, resolveMaps } from "../pages/library.mjs";
 import { TABS as TEMPLATE_TABS } from "../quality/score.mjs";
-import { BUDGET, build, checkDocs, checkMaps, checkTokens, CODE_OS_QUALITY_CONFIG, MAX_STEPS, qualityDefs } from "../pages/build.mjs";
-import { figureOf, goalOf, modelsLane, PROCESS_TABS, renderMetrics, renderProcess } from "../pages/render.mjs";
-import { GAP, places, systemsMap, tokenFlow, trail, TRAIL } from "../pages/draw.mjs";
+import { BUDGET, build, checkDocs, checkMaps, CODE_OS_QUALITY_CONFIG, MAX_STEPS, qualityDefs } from "../pages/build.mjs";
+import { PROCESS_TABS, renderMetrics, renderProcess } from "../pages/render.mjs";
+import { GAP, places, trail, TRAIL } from "../pages/draw.mjs";
 import { GRID, grid } from "../pages/draw-grid.mjs";
 import { stepReadout } from "../pages/model.mjs";
 import { stripAll } from "../quality/collectors/lib/strip.mjs";
@@ -116,8 +115,6 @@ test("both pages build from a fixture, escape untrusted labels, and show every g
     cpSync(join(ROOT, "goals.json"), join(dir, "goals.json"));
     cpSync(join(ROOT, "process.json"), join(dir, "process.json"));
     cpSync(join(ROOT, "maps.json"), join(dir, "maps.json"));
-    cpSync(join(ROOT, "systems.json"), join(dir, "systems.json"));
-    cpSync(join(ROOT, "tokens.json"), join(dir, "tokens.json"));
     mkdirSync(join(dir, "data", "history"), { recursive: true });
     const org = {
       generated_at: ago(2),
@@ -144,16 +141,13 @@ test("both pages build from a fixture, escape untrusted labels, and show every g
       },
     };
     writeFileSync(join(dir, "data", "org.json"), JSON.stringify(org));
-    mkdirSync(join(dir, "rules"));
-    writeFileSync(join(dir, "rules", "delegation.md"), "## Decide without asking\n\n- Plan, research: the work.\n\n## Owner's queue\n\n- Spending money: purchases,\n  plan changes.\n");
     writeFileSync(join(dir, "data", "history", "2026-11-03.json"), JSON.stringify({ generated_at: ago(2), values: { "pr.latest_merge_hours": 3 } }));
     const out = build({ root: dir, now: NOW });
     assert.equal(out.code, 0);
     const proc = out.pages["index.html"];
     const met = out.pages["metrics.html"];
-    // A lower bound reads "≥ x" wherever the value shows: the goal row, the metric tile and the goal mark's tooltip.
+    // A lower bound reads "≥ x" wherever the value shows: the goal row and the goal mark's tooltip.
     assert.match(met, /<span data-r="" class="val">≥ 1,008 h<\/span>/, "the goal row's headline");
-    assert.match(`${met}${proc}`, /<p class="mt-n">≥ 1,008 h<\/p>/, "the metric tile");
     assert.match(`${met}${proc}`, /aria-label="Hours since the 10th-latest merge: ≥ 1,008 h; goal ≤ 24 h"/, "the goal mark's tooltip");
     assert.doesNotMatch(`${met}${proc}`, /: 1,008 h; goal|class="val">1,008 h|class="mt-n">1,008 h/, "no headline or tooltip reads a bare 1,008 h");
     assert.match(proc, /<svg class="trail"/);
@@ -168,43 +162,15 @@ test("both pages build from a fixture, escape untrusted labels, and show every g
     assert.match(proc, /<tr class="job"><th scope="row">Web test/);
     assert.match(proc, /3 suites/, "a job named like its workflow counts once");
     assert.doesNotMatch(proc, /<tr class="job"><th scope="row">secret-scan/, "and gets no row of its own");
-    assert.match(proc, /id="tab-claude"/);
-    assert.doesNotMatch(proc, /class="cm-node"|Planning map/, "one process map, the Build tab's; the Claude tab draws none");
-    assert.match(proc, /data-tip="Spending money: purchases, plan changes\."[^>]*>.*Spending money</);
-    assert.match(proc, /not measured: no collector reads the plan&#39;s usage meter/);
-    assert.match(proc, /<svg class="routes"/);
-    const rts = readJson("process.json").claude.routes;
-    assert.equal((proc.match(/<ul class="rt-list">[^]*?<\/ul>/)?.[0].match(/<li /g) ?? []).length, rts.length, "every model route");
-    for (const r of rts) assert.ok(proc.includes(`>${r.label}</text>`), r.label);
+    assert.doesNotMatch(proc, /id="tab-claude"/, "the Claude tab left for Claudius");
     const ciTab = proc.slice(proc.indexOf('id="tab-ci"'), proc.indexOf('id="tab-testing"'));
     const std = readJson("process.json").ci.metrics;
     assert.doesNotMatch(ciTab, /class="cmap|How a repo gets CI/, "the CI standard shows its metrics, not a map");
     const stdSec = ciTab.slice(ciTab.indexOf('aria-label="The CI standard"'));
     assert.equal((stdSec.slice(0, stdSec.indexOf("</section>")).match(/<div class="mt[ "]/g) ?? []).length, std.length, "one tile for each of the standard's metrics");
     assert.match(stdSec, /data-tip="not measured: /, "a metric no collector builds yet says so");
-    const dg = readJson("process.json").claude.delegate;
-    assert.match(proc, /<svg class="dmap"/);
-    assert.equal((proc.match(/class="dm-node"/g) ?? []).length, 3 + dg.branches.length + dg.how.length, "start, one loop, every branch and step, and the lighter model");
-    assert.match(proc, /latest subagent return tokens: not measured: not in data\/org.json from the collector run at/, "a metric the data lacks says so, never that no collector reports it");
-    assert.match(proc, />no metric yet</);
-    assert.ok(proc.includes(`href="${dg.source}"`), "the article is cited");
-    const picks = readJson("process.json").claude.models.rows;
-    assert.equal((proc.match(/<table class="mlane mpick">[^]*?<\/table>/)?.[0].match(/<tr data-tip=/g) ?? []).length, picks.length, "every Which model row");
-    for (const r of picks) assert.ok(proc.includes(`href="${r.source}"`), r.work);
-    assert.match(proc, /id="tab-systems"/);
-    assert.match(proc, /<svg class="smap"/);
-    assert.equal((proc.match(/class="sy-node"/g) ?? []).length, 11, "every system on the map");
-    assert.match(proc, /needs an API key from the owner/);
-    assert.match(proc, /<table class="mlane">/);
-    assert.match(proc, /<div class="sypanel" id="sy-actions"[^]*?<div class="mts">/, "a system's panel shows its usage tiles");
-    const tok = proc.slice(proc.indexOf('id="tab-tokens"'), proc.indexOf('id="tab-systems"'));
-    const tdoc = readJson("tokens.json");
-    assert.match(tok, /<svg class="tflow"/);
-    assert.equal((tok.match(/class="tf-node"/g) ?? []).length, tdoc.flow.nodes.length, "every flow node is drawn");
-    assert.equal((tok.match(/<tr><th scope="row"><a href=/g) ?? []).length, tdoc.practices.length, "every practice is a row");
-    assert.match(tok, /no metric yet/);
-    assert.match(tok, /<p class="reason">not measured: no collector reported it<\/p>/, "the stack says why it has no bar");
-    assert.match(tok, /120 calls/, "a field figure reads data/org.json");
+    assert.doesNotMatch(proc, /id="tab-systems"/, "the Systems tab left with its reader");
+    assert.doesNotMatch(proc, /id="tab-tokens"/, "the Tokens tab left for Claudius");
     assert.ok(Buffer.byteLength(proc) < BUDGET && Buffer.byteLength(met) < BUDGET);
     assert.equal((proc.match(/<article class="panel"/g) ?? []).length, resolveMaps(readJson("maps.json")).maps.flatMap((m) => m.steps).length, "one panel per map step");
     for (const panel of proc.match(/<article class="panel"[^]*?<\/article>/g)) assert.equal((panel.match(/<div class="tile[ "]/g) ?? []).length, 1, "each step shows one metric");
@@ -219,7 +185,7 @@ test("both pages build from a fixture, escape untrusted labels, and show every g
   }
 });
 
-test("when the site's data could not be read, the Claude tab says why", () => {
+test("when the site's data could not be read, the Process tabs say why", () => {
   const dir = mkdtempSync(join(tmpdir(), "cos-pages-"));
   try {
     cpSync(join(ROOT, "goals.json"), join(dir, "goals.json"));
@@ -228,81 +194,11 @@ test("when the site's data could not be read, the Claude tab says why", () => {
     mkdirSync(join(dir, "data"));
     writeFileSync(join(dir, "data", "org.json"), JSON.stringify({ generated_at: ago(1), site: { repo: "org/example-site" }, repos: [{ name: "example-site" }], errors: ["site quality data: gh: Internal Server Error (HTTP 500)"], metrics: {}, pipelines: {}, testing: { "example-site": { rows: [], dispatch: [], source: "s", read_at: ago(1) } } }));
     const proc = build({ root: dir, now: NOW }).pages["index.html"];
-    assert.match(proc, /context per call/);
     assert.match(proc, /not measured: could not read the site&#39;s data: site quality data: gh: Internal Server Error \(HTTP 500\)/);
     assert.match(proc, /Test cases by suite: not measured: could not read the site/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
-});
-
-test("systems.json is a template: another repo's doc draws its own map, readers and lane", () => {
-  const doc = {
-    usage_goal: 70,
-    goals: [{ id: "u", measure: "under_goal", label: "Under goal", unit: "%", direction: "higher", goal: 100, near: 80 }],
-    lanes: [{ id: "a", label: "Apps", row: 0 }, { id: "b", label: "Data", row: 1 }],
-    models: { columns: [{ id: "k", label: "Kept", icon: "build" }], rows: [{ label: "Runs", k: { sum: ["x.one", "x.two"] } }, { label: "Spend", k: { why: "no reader" } }] },
-    systems: [
-      { id: "web", name: "Web", lane: "a", icon: "build", role: "r", from: [], to: ["db"], limits: [], usage: { why: "none" }, rule: "r", at: [0, 0], reads: [{ metric: "x.one", kind: "app_sessions", app: "Tool", dir: "~/tool" }] },
-      { id: "db", name: "Store", lane: "b", icon: "repo", role: "r", from: ["web"], to: [], limits: [], usage: { why: "none" }, rule: "r", at: [1, 1], reads: [{ metric: "x.two", kind: "no_such_reader" }] },
-    ],
-  };
-  const out = systemsMetrics({ gh: { rest: () => { throw new Error("no gh"); } }, site: null, doc, org: "O", readAt: NOW.toISOString(), home: "/nonexistent-home" });
-  assert.match(out["x.one"].source, /^~\/tool: no session folder/, "~ expands to the home it was given, and shows as ~");
-  assert.match(out["x.two"].could_not_check, /names no reader "no_such_reader"/);
-  assert.match(checkDocs(readJson("goals.json"), readJson("process.json"), doc).join("\n"), /db: a read needs a metric and one of the reader kinds/);
-  const svg = systemsMap(doc.systems.map((x) => ({ ...x, use: { pct: null, status: "not-measured", text: "not measured", tip: "t" } })), "web", doc.lanes, doc.usage_goal);
-  assert.match(svg, />Apps</);
-  assert.match(svg, />Data</);
-  assert.doesNotMatch(svg, /Build and ship|Renders/, "no Git Crafter lane is drawn into another repo's map");
-  assert.match(svg, /viewBox="0 0 430 /, "the map is as wide as its own columns");
-  const lane = modelsLane(doc.models, { "x.one": { value: 3, unit: "sessions", source: "s", read_at: NOW.toISOString() }, "x.two": { could_not_check: "no" } });
-  assert.match(lane, />Kept</);
-  assert.match(lane, />3 sessions</);
-  assert.match(lane, /not measured: no reader/);
-});
-
-test("tokens.json is a template: figures, rows, fields and goals from the repo's own data", () => {
-  const data = {
-    generated_at: ago(1),
-    rest_calls: 250,
-    metrics: {
-      "x.call": { label: "Call", value: 1000, unit: "tokens", target: { direction: "lower", goal: 800, near: 1200 }, source: "s", read_at: ago(1) },
-      "x.parts": { label: "Parts", value: 90, unit: "tokens", detail: [{ label: "repo CLAUDE.md", value: 60, unit: "tokens" }, { label: "house rules", value: 20, unit: "tokens" }, { label: "memory index", value: 10, unit: "tokens" }], source: "s", read_at: ago(1) },
-      "x.used": { label: "Used", value: 4500, unit: "requests", source: "s", read_at: ago(1) },
-    },
-  };
-  assert.equal(figureOf({ metric: "x.parts", row: "CLAUDE\\.md|rules" }, data).value, 80, "rows matching the pattern are summed");
-  assert.match(figureOf({ metric: "x.parts", row: "nothing" }, data).could_not_check, /no row matching nothing/);
-  assert.equal(figureOf({ field: "rest_calls", unit: "calls" }, data).value, 250);
-  assert.match(figureOf({ field: "nope" }, data).could_not_check, /has no nope/);
-  assert.match(figureOf({ metric: "x.missing" }, data).could_not_check, /no collector reported it/);
-  const sys = { usage_goal: 80, systems: [{ id: "gh", name: "GitHub", limits: [{ label: "REST requests", value: 5000, unit: "an hour" }] }] };
-  const goals = [{ metric: "x.used", system: "gh", limit: 0 }, { field: "rest_calls", direction: "lower", goal: 300, near: 300, goal_source: "g" }];
-  assert.deepEqual(goalOf({ metric: "x.used" }, data.metrics["x.used"], goals, sys), { direction: "lower", goal: 4000, near: 5000, unit: "requests", goal_source: "systems.json: under 80% of GitHub's REST requests, 5,000 an hour" });
-  assert.equal(goalOf({ metric: "x.call" }, data.metrics["x.call"], goals, sys).goal, 800, "a metric's own target wins");
-  assert.equal(goalOf({ field: "rest_calls" }, null, goals, sys).goal, 300);
-  assert.equal(goalOf({ metric: "x.parts", row: "memory" }, data.metrics["x.parts"], goals, sys), null, "a row is not the metric its goal rates");
-  const doc = readJson("tokens.json");
-  assert.deepEqual(checkTokens(doc, readJson("systems.json")), []);
-  const bad = structuredClone(doc);
-  bad.flow.edges.push({ from: "workers", to: "nowhere" });
-  bad.goals.push({ metric: "m", system: "nope", limit: 0 });
-  bad.practices[0].doc = "http://insecure";
-  const errs = checkTokens(bad, readJson("systems.json")).join("\n");
-  assert.match(errs, /edge workers to nowhere: unknown node/);
-  assert.match(errs, /systems.json has no limit 0 for nope/);
-  assert.match(errs, /needs an https doc link/);
-  const svg = tokenFlow({
-    groups: [{ id: "a", label: "Alpha", figs: [{ text: "1K tokens", tip: "t" }], cache: { text: "cache 5 min", tip: "q" } }],
-    nodes: [{ id: "n1", label: "One", icon: "plan", group: "a", at: [0, 0] }, { id: "n2", label: "Two", icon: "ci", group: "a", at: [1, 1], fig: { text: "2 runs", tip: "s" } }],
-    edges: [{ from: "n1", to: "n2", word: "hands" }],
-    ring: null,
-  });
-  assert.match(svg, />Alpha</);
-  assert.match(svg, />hands</);
-  assert.match(svg, />2 runs</);
-  assert.doesNotMatch(svg, /Orchestrator|Subagents/, "no Git Crafter node is drawn into another repo's flow");
 });
 
 // Every rules/ or skills/ link with an anchor must land on a heading of that
@@ -353,7 +249,7 @@ test("a repo's Process page: its own maps, tabs, nav and heading, and no link to
   const dir = mkdtempSync(join(tmpdir(), "cos-repo-"));
   try {
     mkdirSync(join(dir, "code-os", "docs"), { recursive: true });
-    for (const f of ["goals.json", "process.json", "systems.json", "tokens.json"]) cpSync(join(ROOT, f), join(dir, "code-os", "docs", f));
+    for (const f of ["goals.json", "process.json"]) cpSync(join(ROOT, f), join(dir, "code-os", "docs", f));
     mkdirSync(join(dir, "quality", "process", "data"), { recursive: true });
     const metric = "pull_requests.latest_merge_hours";
     const step = (id, extra = {}) => ({ id, name: id === "ci" ? "Cloud <CI>" : id, rule: `rule for ${id}`, rule_ref: "rules/compute.md", tools: ["a tool"], metric, ...extra });
@@ -379,12 +275,12 @@ test("a repo's Process page: its own maps, tabs, nav and heading, and no link to
     writeFileSync(join(dir, "quality", "process", "data", "org.json"), JSON.stringify(org));
     const config = {
       repos: ["one"],
-      docs: { goals: "code-os/docs/goals.json", process: "code-os/docs/process.json", maps: "quality/process/maps.json", systems: "code-os/docs/systems.json", tokens: "code-os/docs/tokens.json", rules: null },
+      docs: { goals: "code-os/docs/goals.json", process: "code-os/docs/process.json", maps: "quality/process/maps.json", rules: null },
       data: "quality/process/data/org.json",
       history: null,
       out: "quality/dist",
       pages: { process: "process.html" },
-      tabs: ["build", "ci", "testing", "claude", "tokens"],
+      tabs: ["build", "ci", "testing"],
       heading: "one",
       collector: "code-os/tools/collect_org.mjs",
       nav: [{ href: "index.html", label: "Quality and Speed", icon: "measure" }, { page: "process", label: "Process", icon: "plan" }],
@@ -402,7 +298,6 @@ test("a repo's Process page: its own maps, tabs, nav and heading, and no link to
     assert.deepEqual([Object.keys(out.pages), out.out], [["process.html"], "quality/dist"]);
     const html = out.pages["process.html"];
     for (const tab of config.tabs) assert.match(html, new RegExp(`id="tab-${tab}"`), tab);
-    assert.doesNotMatch(html, /id="tab-systems"/, "a tab the config leaves out is not drawn, even with its doc");
     assert.match(html, /<h1>one<\/h1>/);
     assert.match(html, /<title>one: Process<\/title>/);
     assert.match(html, /<span>1 repo<\/span>/);
@@ -524,15 +419,17 @@ test("every Quality id the Process docs name reads the repo's own run; the colle
   try {
     mkdirSync(join(dir, "quality", "data"), { recursive: true });
     mkdirSync(join(dir, "docs"));
-    for (const f of ["goals.json", "process.json", "systems.json", "tokens.json"]) cpSync(join(ROOT, f), join(dir, "docs", f));
+    for (const f of ["goals.json", "process.json"]) cpSync(join(ROOT, f), join(dir, "docs", f));
     writeFileSync(join(dir, "quality", "data", "latest.json"), JSON.stringify({ metrics: { "credits.actions_pool_used": { value: 40, unit: "%", source: "ci", read_at: ago(1) } } }));
-    const scope = configScope({ repos: ["one"], docs: { goals: "docs/goals.json", process: "docs/process.json", systems: "docs/systems.json", tokens: "docs/tokens.json", rules: null }, data: "org.json" });
+    const scope = configScope({ repos: ["one"], docs: { goals: "docs/goals.json", process: "docs/process.json", rules: null }, data: "org.json" });
     const refuse = () => { throw new Error("HTTP 403"); };
     const gh = { calls: 0, graphqlCalls: 0, rest: refuse, restLines: refuse, raw: refuse, graphql: refuse };
     const api = { errors: [], pipelines: {}, gh_calls: 0, rest_calls: 0, graphql_calls: 0, repos: [{ name: "one" }], metrics: { "pr.latest_merge_hours": { value: 3, unit: "h", source: "api" } } };
     const m = finishCollect(api, { gh, scope, root: dir }).metrics;
     assert.deepEqual([m["credits.actions_pool_used"].value, m["credits.actions_pool_used"].copied_from], [40, "one"], "the CI tab's pool reads the repo's own run");
-    assert.match(m["claude.context_per_call"].could_not_check, /one's Quality run does not measure it/, "a Quality id its run lacks is not measured, never a copy");
+    writeFileSync(join(dir, "quality", "data", "latest.json"), JSON.stringify({ metrics: {} }));
+    const lacks = finishCollect(api, { gh, scope, root: dir }).metrics["credits.actions_pool_used"];
+    assert.match(lacks.could_not_check, /one's Quality run does not measure it/, "a Quality id its run lacks is not measured, never a copy");
     assert.equal(m["pr.latest_merge_hours"].value, 3, "the collector's own id stays its own");
     assert.ok(namedIds(readJson("process.json")).has("credits.actions_pool_used"));
   } finally {
