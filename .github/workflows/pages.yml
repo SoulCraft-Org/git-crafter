@@ -591,6 +591,7 @@ jobs:
     runs-on: ubuntu-slim
     timeout-minutes: 10
     permissions:
+      actions: read
       contents: write
       issues: write
       pages: write
