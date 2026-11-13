@@ -59,39 +59,3 @@ tspan[data-vg].dimmed { fill-opacity: 0.5; }
 .suites tr.job th { padding-left: 0.875rem; font-weight: 400; color: var(--c-text-dim); }
 .suites tr.job td { color: var(--c-text-dim); }
 
-/* ---- Systems tab ---- */
-.smap { display: block; width: 100%; min-width: 57.5rem; height: auto; }
-.sy-box { fill: var(--c-ground); stroke: var(--c-border); stroke-width: 1; }
-.sy-node { cursor: pointer; color: var(--c-night); }
-.sy-node:hover .sy-box { fill: color-mix(in oklab, var(--c-surface) 60%, var(--c-ground)); }
-.sy-node[aria-current] .sy-box { stroke: var(--c-night); stroke-width: 2.5; }
-.sy-node:focus { outline: none; }
-.sy-node:focus-visible .sy-box { stroke: var(--c-focus); stroke-width: 3; }
-.sy-n { font-size: 0.8125rem; font-weight: 650; fill: var(--c-text); }
-.sy-v { font-size: 0.75rem; fill: var(--c-text-dim); }
-.sy-track { fill: var(--c-rule); }
-.sy-fill.s-meets { fill: var(--c-pine); }
-.sy-fill.s-near { fill: var(--c-brass); }
-.sy-fill.s-misses { fill: var(--c-danger); }
-.sy-tick { stroke: var(--c-text); stroke-width: 1.5; }
-.sy-edge { fill: none; stroke: var(--c-night); stroke-width: 1.75; }
-.sy-head { fill: var(--c-night); }
-.sy-w { font-size: 0.75rem; fill: var(--c-text-dim); text-anchor: middle; }
-.sy-w.l { text-anchor: start; }
-.sy-lane { font-size: 0.8125rem; font-weight: 650; fill: var(--c-text-dim); }
-.sypanel { margin-top: var(--s-4); }
-.sypanel h3 { display: flex; align-items: center; gap: var(--s-2); margin: 0 0 0.125rem; }
-.sypanel h3 .ic { width: 1.125rem; height: 1.125rem; color: var(--c-text-dim); }
-.lims { margin: 0.625rem 0 0.875rem; font-size: 0.875rem; }
-.lims th, .lims td { padding: 0.3125rem var(--s-4) 0.3125rem 0; border-bottom: var(--line-hair) solid var(--c-rule); text-align: left; }
-.lims th { font-weight: 600; }
-.hand { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; margin: 0.625rem 0 0; }
-.hand .chip { color: var(--c-text); text-decoration: none; }
-.mlane { min-width: 32.5rem; font-size: 0.875rem; }
-.mlane th, .mlane td { padding: var(--s-2) 1.125rem var(--s-2) 0; border-bottom: var(--line-hair) solid var(--c-rule); text-align: left; }
-.mlane thead th { font-size: var(--t-step--1); }
-.mlane thead .ic { width: 1rem; height: 1rem; margin-right: 0.375rem; vertical-align: -0.1875rem; color: var(--c-text-dim); }
-.mlane tbody th { font-weight: 400; color: var(--c-text-dim); }
-.mlane td { font-weight: 650; }
-.mlane td.nm { color: var(--c-text-dim); font-weight: 400; }
-

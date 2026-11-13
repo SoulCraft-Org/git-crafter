@@ -249,7 +249,7 @@ test("a repo's Process page: its own maps, tabs, nav and heading, and no link to
   const dir = mkdtempSync(join(tmpdir(), "cos-repo-"));
   try {
     mkdirSync(join(dir, "code-os", "docs"), { recursive: true });
-    for (const f of ["goals.json", "process.json", "systems.json"]) cpSync(join(ROOT, f), join(dir, "code-os", "docs", f));
+    for (const f of ["goals.json", "process.json"]) cpSync(join(ROOT, f), join(dir, "code-os", "docs", f));
     mkdirSync(join(dir, "quality", "process", "data"), { recursive: true });
     const metric = "pull_requests.latest_merge_hours";
     const step = (id, extra = {}) => ({ id, name: id === "ci" ? "Cloud <CI>" : id, rule: `rule for ${id}`, rule_ref: "rules/compute.md", tools: ["a tool"], metric, ...extra });
@@ -275,7 +275,7 @@ test("a repo's Process page: its own maps, tabs, nav and heading, and no link to
     writeFileSync(join(dir, "quality", "process", "data", "org.json"), JSON.stringify(org));
     const config = {
       repos: ["one"],
-      docs: { goals: "code-os/docs/goals.json", process: "code-os/docs/process.json", maps: "quality/process/maps.json", systems: "code-os/docs/systems.json", rules: null },
+      docs: { goals: "code-os/docs/goals.json", process: "code-os/docs/process.json", maps: "quality/process/maps.json", rules: null },
       data: "quality/process/data/org.json",
       history: null,
       out: "quality/dist",
@@ -298,7 +298,6 @@ test("a repo's Process page: its own maps, tabs, nav and heading, and no link to
     assert.deepEqual([Object.keys(out.pages), out.out], [["process.html"], "quality/dist"]);
     const html = out.pages["process.html"];
     for (const tab of config.tabs) assert.match(html, new RegExp(`id="tab-${tab}"`), tab);
-    assert.doesNotMatch(html, /id="tab-systems"/, "a tab the config leaves out is not drawn, even with its doc");
     assert.match(html, /<h1>one<\/h1>/);
     assert.match(html, /<title>one: Process<\/title>/);
     assert.match(html, /<span>1 repo<\/span>/);
@@ -420,9 +419,9 @@ test("every Quality id the Process docs name reads the repo's own run; the colle
   try {
     mkdirSync(join(dir, "quality", "data"), { recursive: true });
     mkdirSync(join(dir, "docs"));
-    for (const f of ["goals.json", "process.json", "systems.json"]) cpSync(join(ROOT, f), join(dir, "docs", f));
+    for (const f of ["goals.json", "process.json"]) cpSync(join(ROOT, f), join(dir, "docs", f));
     writeFileSync(join(dir, "quality", "data", "latest.json"), JSON.stringify({ metrics: { "credits.actions_pool_used": { value: 40, unit: "%", source: "ci", read_at: ago(1) } } }));
-    const scope = configScope({ repos: ["one"], docs: { goals: "docs/goals.json", process: "docs/process.json", systems: "docs/systems.json", rules: null }, data: "org.json" });
+    const scope = configScope({ repos: ["one"], docs: { goals: "docs/goals.json", process: "docs/process.json", rules: null }, data: "org.json" });
     const refuse = () => { throw new Error("HTTP 403"); };
     const gh = { calls: 0, graphqlCalls: 0, rest: refuse, restLines: refuse, raw: refuse, graphql: refuse };
     const api = { errors: [], pipelines: {}, gh_calls: 0, rest_calls: 0, graphql_calls: 0, repos: [{ name: "one" }], metrics: { "pr.latest_merge_hours": { value: 3, unit: "h", source: "api" } } };

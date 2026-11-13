@@ -158,15 +158,11 @@ test("goals.json and process.json pass the docs check; a goal with near on the w
 // The maps self-test: a known-good file passes and a known-bad one fails on
 // every rule, each error naming its map and step, against the ids of
 // Git Crafter's own Quality page.
-test("every id process.json and systems.json name resolves: on Git Crafter's Quality page, or written by the Process collector", () => {
+test("every id process.json names resolves: on Git Crafter's Quality page, or written by the Process collector", () => {
   const { ids } = qualityDefs(ROOT, CODE_OS_QUALITY_CONFIG);
   assert.ok(ids?.size > 50, "the Quality page's ids were read");
-  // The collector's own: its labelled ids and each systems.json reader's.
-  const written = new Set([...Object.keys(LABELS), ...readJson("systems.json").systems.flatMap((x) => (x.reads ?? []).map((r) => r.metric))]);
-  for (const file of ["process.json", "systems.json"]) {
-    const dead = [...namedIds(readJson(file))].filter((id) => !ids.has(id) && !written.has(id));
-    assert.deepEqual(dead, [], `${file} names ids no page measures`);
-  }
+  const dead = [...namedIds(readJson("process.json"))].filter((id) => !ids.has(id) && !(id in LABELS));
+  assert.deepEqual(dead, [], "process.json names ids no page measures");
   assert.deepEqual([...namedIds({ a: [{ metric: "x" }, { metrics: ["y"], usage: { metric: "z" } }] })].sort(), ["x", "y", "z"], "the walk finds nested ids");
 });
 

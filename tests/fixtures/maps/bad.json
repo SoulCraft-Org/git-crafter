@@ -9,7 +9,7 @@
    "critical_path": ["plan", "ship"],
    "steps": [
     { "id": "plan", "name": "Plan", "tools": ["Plan mode"], "rule": "Plan first.", "rule_ref": "CONTRIBUTING.md" },
-    { "id": "build", "name": "Build", "tools": ["Claude Code"], "rule": "Build.", "rule_ref": "README.md", "metric": "claude.tokens_per_merged_pr", "time": "claude.hours_session_to_pr" },
+    { "id": "build", "name": "Build", "tools": ["Claude Code"], "rule": "Build.", "rule_ref": "README.md", "metric": "ci.latest_flow", "time": "ci.latest_flow" },
     { "id": "check", "name": "Check", "tools": ["CI"], "rule": "Check.", "rule_ref": "README.md", "metric": "ci.pass_rate" },
     { "id": "review", "name": "Review", "tools": ["gh pr checks"], "rule": "Review.", "rule_ref": "README.md", "metric": ["pull_requests.fixed_after_review", "pull_requests.reviewed"] },
     { "id": "review", "name": "Review again", "tools": ["gh"], "rule": "Again.", "rule_ref": "README.md", "metric": "pull_requests.reviewed", "icon": "rocket", "gates_from": "everything" }

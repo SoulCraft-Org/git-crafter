@@ -8,7 +8,6 @@ import { fetchFiles, fetchHistory, fetchMerged, fetchOpen, fetchRuns, ghClient }
 import { ciMetrics, prMetrics } from "./org_flow.mjs";
 import { readDocs, SCOPE } from "./org_scope.mjs";
 import { alertMetrics, deployMetrics, modelMetrics, ORG_CONFIG, PUBLIC_SRC, publicMetrics, readTracked } from "./org_signals.mjs";
-import { READER_KINDS, REPO_READERS, systemsMetrics } from "./systems.mjs";
 import { LAST_N, repoFlow, repoTests, workflowStats } from "./workflows.mjs";
 
 // A scope with its own repos lists none: a repo's GITHUB_TOKEN cannot list
@@ -24,7 +23,6 @@ export function listRepos(gh, scope, errors) {
 // site's metrics and pipeline, the not-measured fill and the Quality readers.
 // collect() runs both, as one run always has. The API half's result is plain
 // JSON, so it crosses runners as an artifact (actions/pages, mode collect).
-export const SITE_READERS = ["quality_metric"];
 
 // Each source per repo: its rows, or null with the reason when the read
 // failed, so a failed read never counts as zero.
@@ -131,12 +129,6 @@ export function collectApi({ gh = ghClient(), now = new Date(), scope = SCOPE, r
     ...(scope.public ? publicOf(errors, readAt()) : {}),
   };
   const { pipelines, testing } = repoPipelines(gh, repos, { reads, fails }, errors, readAt);
-  // The Systems tab's live usage, last, so GitHub's rate_limit includes this
-  // run. The readers that read the site's data wait for finishCollect.
-  if (docs.systems) {
-    const kinds = (scope.repos ? REPO_READERS : READER_KINDS).filter((k) => !SITE_READERS.includes(k));
-    Object.assign(metrics, systemsMetrics({ gh, site: null, doc: docs.systems, org: ORG, readAt: readAt(), kinds }));
-  }
   return {
     generated_at: now.toISOString(),
     org: ORG,

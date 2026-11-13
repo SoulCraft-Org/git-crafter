@@ -139,7 +139,6 @@ jobs:
             maps.json
             data/**
             tools/collect_org.mjs
-            tools/systems.mjs
             tools/workflows.mjs
             quality/**
             config/quality.json
@@ -154,7 +153,6 @@ jobs:
             actions/**
             tests/action-config.json
             tools/collect_org.mjs
-            tools/systems.mjs
             tools/workflows.mjs
             pages/**
             package.json
