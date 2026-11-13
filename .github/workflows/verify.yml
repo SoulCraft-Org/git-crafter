@@ -44,7 +44,9 @@ jobs:
         .github/ci-overflow.json
 
   # GitHub's dependency review, free on a public repo: fails a pull request that adds a dependency with a known
-  # vulnerability, read from the dependency graph's diff of base and head. Not a required check; the merging skill
+  # vulnerability, read from the dependency graph's diff of base and head. It fails at the action's defaults, read in
+  # its README at the pinned v5.0.0: fail-on-severity low (any severity) and fail-on-scopes runtime (a development-only
+  # dependency never fails it). Not a required check; the merging skill
   # merges only when every check passed. A JavaScript action on the 1-core runner, with no checkout.
   dependency-review:
     if: github.event_name == 'pull_request'

@@ -2,7 +2,7 @@
 // refuses a tag at job setup, inside a reusable workflow as in the pages action. gh actions-lock's fix mode rewrites
 // these to tags; this test fails if a relock does. Named pages-* so tools/verify.sh's pages suite runs it.
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 
 const read = (rel) => readFileSync(new URL(`../${rel}`, import.meta.url), "utf8");
@@ -32,6 +32,9 @@ test("verify.yml runs GitHub's dependency review on a pull request only", () => 
   assert.ok(job.length > 1, "a dependency-review job");
   assert.match(job, /^ {4}if: github\.event_name == 'pull_request'$/m);
   assert.match(job, /^ {6}- uses: actions\/dependency-review-action@[0-9a-f]{40} # v\d+\.\d+\.\d+$/m);
+  // What fails a PR is stated (#61): a fail-on-severity input, or the job comment names the action's default.
+  const comment = yml.slice(yml.lastIndexOf("\n\n", yml.indexOf("\n  dependency-review:\n")), yml.indexOf("\n  dependency-review:\n"));
+  assert.ok(/^ {10}fail-on-severity: (low|moderate|high|critical)$/m.test(job) || /fail-on-severity low/.test(comment), "the threshold that fails a PR is named");
 });
 
 test("scorecard.yml runs weekly, publishes its result and uploads no SARIF", () => {
@@ -44,12 +47,18 @@ test("scorecard.yml runs weekly, publishes its result and uploads no SARIF", () 
   assert.doesNotMatch(yml, /^\s+run:/m, "only the two actions, as Scorecard's publish check expects");
 });
 
-for (const name of ["ci-standard.yml", "ci-overflow.yml", "verify.yml", "scorecard.yml"]) {
+// Every workflow file (#61), so a new one is checked without a change here.
+const workflows = readdirSync(new URL("../.github/workflows/", import.meta.url)).filter((n) => /\.ya?ml$/.test(n)).sort();
+
+test("the pin check reads the workflows that call remote actions", () => {
+  const withRemote = workflows.filter((n) => remote(read(`.github/workflows/${n}`)).length);
+  for (const name of ["ci-standard.yml", "pages.yml", "claude-review.yml", "scorecard.yml"]) assert.ok(withRemote.includes(name), name);
+});
+
+for (const name of workflows) {
   test(`${name} pins each remote step by full SHA with its version comment, and actions.lock keys it`, () => {
     const file = `.github/workflows/${name}`;
-    const yml = read(file);
-    assert.ok(remote(yml).length >= 1, "it has remote steps to check");
-    assert.deepEqual(pinFaults(file, yml, lock), []);
+    assert.deepEqual(pinFaults(file, read(file), lock), []);
   });
 }
 
