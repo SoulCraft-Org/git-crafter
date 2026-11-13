@@ -1,7 +1,7 @@
 {
   "_README": [
     "Every GitHub repo switch the Git Crafter templates assume, one row each; templates/open/README.md says how to apply them.",
-    "A row's method, path and body set the switch with gh api. {owner} and {repo} fill the path; a string that is only {key} takes your value, or the repo's node_id.",
+    "A row's method, path and body set the switch with gh api. {owner} and {repo} fill the path; a string that is only {key} takes your value whole (a JSON list for {topics}), or the repo's node_id.",
     "Its check reads it back: field of the GET at get (default: path) against value, exists (the GET answers 2xx), graphql (a query, field under its answer)",
     "or ruleset (an active ruleset of target reaching ref holds each rule type with at least those parameters).",
     "optional: off by default. api: false: GitHub's API cannot set it; reason says why, and a check, when present, reads it.",

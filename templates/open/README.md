@@ -50,7 +50,7 @@ Each is an `optional: true` row: apply it only if your repo needs it.
 
 | Option | For | Row, and what else it needs |
 |---|---|---|
-| Merge queue | a busy branch, with several human maintainers | `rules.merge_queue`; CI runs `on: merge_group`; `gh pr merge` then turns on auto-merge while checks run |
+| Merge queue | a busy branch, with several human maintainers | `rules.merge_queue`; CI runs `on: merge_group`; `gh pr merge` after checks pass: `repo.no_auto_merge` keeps auto-merge off |
 | Artifact attestations | a repo that publishes a built artifact | `manual.artifact_attestations`: `actions/attest`, with `id-token: write` and `attestations: write` |
 
 ## Check
