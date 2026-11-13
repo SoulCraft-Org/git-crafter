@@ -15,7 +15,8 @@ STDOUT_REDIRECT_RE = re.compile(r"^(1|&)?>")  # >, >>, 1>, &>, >&2: stdout leave
 STDIN_REDIRECT_RE = re.compile(r"^0?<")  # < file, <<< word: stdin from the command line or disk
 FILE_STDIN_RE = re.compile(r"^0?<(?!<)")  # < file alone: never <<< word or <<EOF
 VALUE_FLAGS = {"-R", "--repo", "-o", "--org", "-e", "--env", "-a", "--app", "-v", "--visibility", "-r", "--repos"}
-TEXT_FLAGS = {"-b", "--body", "-f", "--env-file"}  # the value, or a file of many, in the command
+TEXT_FLAGS = {"--body", "--env-file"}  # the value, or a file of many, in the command
+TEXT_LETTERS = {"b", "f"}  # their short forms, -b and -f, alone or joined to other letters or a value
 
 
 def is_source(c, src):
@@ -60,8 +61,11 @@ def file_on_stdin(c):
 
 
 def text_flag(args):
-    """A flag that puts the value, or a file of many, in the command."""
-    return any(a.split("=")[0] in TEXT_FLAGS for a in args)
+    """A flag that puts the value, or a file of many, in the command: --body
+    and --env-file with or without =, and -b or -f in any short spelling
+    (-bX, -f.env, -uf x)."""
+    return any(a.split("=")[0] in TEXT_FLAGS if a.startswith("--") else a.startswith("-") and bool(set(a[1:]) & TEXT_LETTERS)
+               for a in args)
 
 
 def not_key_from_file(cmds, k, rule):

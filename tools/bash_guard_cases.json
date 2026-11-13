@@ -6606,5 +6606,14 @@
    "block",
    "gh secret set PRIVACY_NAMES -R o/r <<< a,b"
   ]
+,
+  [
+   "block",
+   "gh secret set PRIVACY_NAMES -R o/r -f.env < x"
+  ],
+  [
+   "block",
+   "gh secret set PRIVACY_NAMES -R o/r -bX < x"
+  ]
  ]
 }
