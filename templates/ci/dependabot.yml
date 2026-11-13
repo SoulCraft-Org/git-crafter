@@ -1,11 +1,14 @@
 # Copy to .github/dependabot.yml, or add the github-actions entry to the one the repo has. It bumps the CI standard's
-# pin (and every other action pin) once a week, in one pull request.
+# pin (and every other action pin) once a week, in one pull request. A new release waits 14 days first, as
+# Git Crafter's own .github/dependabot.yml (the dependabot.dependabot_cooldown ideal).
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 14
     groups:
       actions:
         patterns: ["*"]

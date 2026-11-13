@@ -303,6 +303,13 @@ test("suites are found by job and step names too, in a workflow named CI", () =>
   assert.equal(t.rows[0].jobs[0].when, "every pull request");
 });
 
+test("a job that calls the CI standard is a test suite, as templates/ci/ci.yml has it", () => {
+  const ci = "name: ci\non:\n  pull_request:\njobs:\n  ci:\n    uses: SoulCraft-Org/git-crafter/.github/workflows/ci-standard.yml@0123456789abcdef0123456789abcdef01234567 # v7.0.0\n    with:\n      short: node --test\n";
+  const t = repoTests({ workflows: [{ name: "ci.yml", text: ci }], hooks: [] }, new Map());
+  assert.equal(t.rows.length, 1);
+  assert.equal(t.rows[0].suite, "ci");
+});
+
 test("hooks say what they run, and a pre-push without a test command runs no tests", () => {
   const router = { name: "x-route.sh", text: 'PY=python3\nroute_all() {\n  run_checker "content"\n  "$PY" "$REPO_ROOT/tools/check_packages.py"\n}\n' };
   assert.equal(hookText("pre-commit", '. "$REPO_ROOT/.githooks/x-route.sh"\nroute_all "pre-commit"\n', [router]), "runs content, check_packages.py through x-route.sh");

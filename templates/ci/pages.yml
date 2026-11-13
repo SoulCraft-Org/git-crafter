@@ -2,7 +2,7 @@ name: pages
 
 # Git Crafter's pages for this repo (Git Crafter templates/ci/README.md): the Process page and the Quality, Speed and
 # Consumption page, built by Git Crafter's actions/pages from the two starter configs and published to GitHub Pages.
-# Copy this file to .github/workflows/pages.yml. Keep the pin a full commit SHA with its version comment, such as # v6.0.0; Dependabot's
+# Copy this file to .github/workflows/pages.yml. Keep the pin a full commit SHA with its version comment, such as # v7.0.0; Dependabot's
 # github-actions entry bumps it with ci.yml's. A pull request builds the pages and runs the docs.unmapped gate, so its
 # trigger lists the doc globs; only a push to main publishes.
 on:
@@ -47,7 +47,7 @@ jobs:
         with:
           node-version: 26
 
-      - uses: SoulCraft-Org/git-crafter/actions/pages@dd999dcac64873f77165609f3cc9fde4da49d332 # v6.0.0
+      - uses: SoulCraft-Org/git-crafter/actions/pages@a9d6b45b7e5ac54091123e2cda1efcfcd2f63696 # v7.0.0
         with:
           pages: process quality
           config: quality/process/config.json

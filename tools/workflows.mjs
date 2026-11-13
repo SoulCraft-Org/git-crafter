@@ -323,6 +323,8 @@ function flowNode(f, wf, e, stats) {
 // name or file, its jobs' ids and names, and their step names, so a suite in
 // a workflow named "CI" is found too.
 export const TEST_PATTERN = /test|e2e|verify|lint/i;
+// A job that calls Git Crafter's CI standard runs the repo's tests there (templates/ci/ci.yml: short and standard).
+const CI_STANDARD = /\/\.github\/workflows\/ci-standard\.ya?ml@/;
 const SETUP_STEP = /^(set up|setup|install|checkout|cache|upload|download|restore|save)\b/i;
 const stepsText = (steps) => (steps.length ? `${steps.slice(0, 4).join("; ")}${steps.length > 4 ? `; ${steps.length - 4} more` : ""}` : "");
 
@@ -354,7 +356,7 @@ function testRow(f, stats) {
   const wf = readWorkflow(f.text);
   const name = wf.name || f.name.replace(/\.ya?ml$/, "");
   const byName = TEST_PATTERN.test(`${name} ${f.name}`);
-  const testJobs = wf.jobs.filter((j) => TEST_PATTERN.test(`${j.id} ${j.name}`) || j.steps.some((x) => TEST_PATTERN.test(x)));
+  const testJobs = wf.jobs.filter((j) => TEST_PATTERN.test(`${j.id} ${j.name}`) || CI_STANDARD.test(j.uses ?? "") || j.steps.some((x) => TEST_PATTERN.test(x)));
   if (!byName && !testJobs.length) return null;
   const path = `.github/workflows/${f.name}`;
   const st = ["pull_request", "push", "workflow_dispatch", "schedule"].map((e) => stats.get(`${path}\n${e}`)).find(Boolean) ?? { value: null, pass_rate: null };

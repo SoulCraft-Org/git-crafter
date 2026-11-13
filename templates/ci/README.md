@@ -45,7 +45,7 @@ flowchart LR
 | Rule | Passes when |
 | --- | --- |
 | `caller` | a `pull_request` workflow calls `ci-standard.yml` |
-| `pin` | at a full SHA with a `# v6.0.0` comment |
+| `pin` | at a full SHA with a `# v7.0.0` comment |
 | `dependabot` | a `github-actions` entry exists |
 | `permissions` | top-level `read` or `none`; no `write-all` |
 | `concurrency` | a group that cancels superseded runs, never a deploy |
