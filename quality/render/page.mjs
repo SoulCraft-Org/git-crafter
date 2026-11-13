@@ -89,7 +89,7 @@ const readTime = (iso) => (typeof iso === "string" && iso.length >= 16 ? `${iso.
 const gapText = (def, value) => `${fmtCompact(Math.abs(value - def.goal), def.unit === "%" ? "pts" : def.unit)} ${def.direction === "lower" ? "over" : "under"} goal`;
 // Tabs that open with their worst gaps, and tabs whose rows draw a
 // week-by-week line, to show a trend such as fewer subagents.
-const GAP_TABS = new Set(["blockers", "pages", "credits", "dependabot"]);
+const GAP_TABS = new Set(["blockers", "deploy", "credits", "tools"]);
 const WEEKLY_TABS = new Set(["blockers", "tokens"]);
 const FULL_WIDTH = new Set(["flow", "ledger", "repos", "deploys", "credits", "tools"]);
 // The full-width drawings each file owns; flow falls back to a table above.

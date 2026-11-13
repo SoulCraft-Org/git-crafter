@@ -258,10 +258,13 @@ test("a repo uses a library map by id and changes a step by id; a typo is an err
   ]) assert.throws(() => resolveMaps({ maps: [bad] }, library), re);
 });
 
-test("a repo with only library maps and template defaults builds, every section with its ideal", () => {
+test("a repo with only library maps and template defaults, web on for the deploy map, builds every section with its ideal", () => {
   const dir = mkdtempSync(join(tmpdir(), "cos-library-"));
   try {
     const uses = ["delivery", "deploy", "adopt", "measure", "code"];
+    // The deploy map reads deploy.* ids, on Pages, a web tab (#97).
+    mkdirSync(join(dir, "quality"));
+    writeFileSync(join(dir, "quality", "config.json"), JSON.stringify({ web: true }));
     writeFileSync(join(dir, "maps.json"), JSON.stringify({ repo_url: "https://github.com/example/one/blob/main", maps: uses.map((use) => ({ use })) }));
     mkdirSync(join(dir, "data"));
     writeFileSync(join(dir, "data", "org.json"), JSON.stringify({ generated_at: ago(1), org: "example-org", repos: [{ name: "one", default_branch: "main" }], errors: [], metrics: {} }));
