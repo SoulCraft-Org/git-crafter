@@ -1,7 +1,7 @@
-# Groups for GitHub's generated release notes (gh release create <tag> --generate-notes). Each group names labels that
-# exist on Git Crafter; Dependabot adds and creates `dependencies` itself. "*" catches each pull request no group above
-# matched, so it stays last. Format: GitHub Docs, "Automatically generated
-# release notes", read 2026-11-13.
+# Groups for GitHub's generated release notes (gh release create <tag> --generate-notes). Each group but Dependencies
+# names labels that exist on Git Crafter. `dependencies` does not exist yet: Dependabot creates it with its first pull
+# request (GitHub Docs, Dependabot options reference, read 2026-11-13). "*" catches each pull request no group above
+# matched, so it stays last. Format: GitHub Docs, "Automatically generated release notes", read 2026-11-13.
 changelog:
   categories:
     - title: Security
