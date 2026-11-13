@@ -1,5 +1,5 @@
 // Drawings only Git Crafter needs: the process trail (one per map), the
-// goal strip, the model routes, and the systems, token and delegation maps,
+// goal strip, and the systems and token maps,
 // plus their icons. Like quality/render/charts.mjs, which both pages share,
 // each takes numbers and labels and returns an SVG string; page.css and
 // site.css color them.
@@ -175,25 +175,6 @@ export function strip(outcomes) {
   return `<svg class="strip" viewBox="0 0 ${S.width} ${h}" role="group" aria-label="Every goal placed against its near edge and its target, by outcome">${zones}${ticks}${rows}</svg>`;
 }
 
-// ---- Model routes -----------------------------------------------------------
-
-// Work fans out to the models that take it. A route is as thick as its share
-// where data measures one; with no data, routes are drawn alike and unlabeled.
-export function routes(list) {
-  const [w, h, x0, x1] = [900, 210, 110, 560];
-  const ys = list.map((_, i) => 40 + i * ((h - 80) / Math.max(list.length - 1, 1)));
-  const paths = list
-    .map((r, i) => {
-      const width = finite(r.share) ? Math.max(1, (r.share / 100) * 14) : 4;
-      const d = `M${x0 + 30} ${h / 2}C${x0 + 180} ${h / 2} ${x1 - 200} ${ys[i]} ${x1 - 26} ${ys[i]}`;
-      return `<g data-tip="${esc(r.tip)}" tabindex="0"><path class="rt-path${finite(r.share) ? " sh" : ""}" d="${d}" style="stroke-width:${r1(width)}"/><circle class="cm-c" cx="${x1}" cy="${ys[i]}" r="22"/><use href="#c-${esc(r.icon)}" x="${x1 - 10}" y="${ys[i] - 10}" width="20" height="20"/><text class="rt-l" x="${x1 + 34}" y="${ys[i] + 5}">${esc(r.label)}</text>${
-        r.shareText ? `<text class="rt-s" x="${x1 + 34}" y="${ys[i] + 23}">${esc(r.shareText)}</text>` : ""
-      }</g>`;
-    })
-    .join("");
-  return `<svg class="routes" viewBox="0 0 ${w} ${h}" role="group" aria-label="Which model takes which work"><circle class="cm-c" cx="${x0}" cy="${h / 2}" r="26"/><use href="#c-build" x="${x0 - 11}" y="${h / 2 - 11}" width="22" height="22"/><text class="rt-l" x="${x0}" y="${h / 2 + 46}" text-anchor="middle">Work</text>${paths}</svg>`;
-}
-
 // ---- The systems map ---------------------------------------------------------
 
 // Boxes on a grid, each placed by its at: [column, row] in systems.json; a
@@ -320,63 +301,4 @@ export function tokenFlow(flow) {
     : "";
   const defs = `<defs><marker id="tf-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 8 4 0 8z" class="tf-head"/></marker></defs>`;
   return `<svg class="tflow" viewBox="0 0 ${width} ${height}" role="group" aria-label="How work and tokens flow from the orchestrator to workers, subagents and workflows">${defs}${groups}${edges}${boxes}${ring}</svg>`;
-}
-
-// ---- When to delegate ----------------------------------------------------------
-
-// One loop by default; the conditions that earn a subagent or session fan out
-// from it, and lead to how to split. The lighter model hangs under the loop.
-// Every node arrives resolved: { label, icon?, text, status, tip }.
-const DMAP = { cols: [20, 260, 520, 790], top: 40, row: 76, box: [196, 58] };
-
-function dnode(n, x, y) {
-  const [bw, bh] = DMAP.box;
-  const lx = n.icon ? x + 32 : x + 12;
-  return `<g class="dm-node"${n.tip ? ` data-tip="${esc(n.tip)}" tabindex="0"` : ""}><rect class="dm-rect" x="${x}" y="${y}" width="${bw}" height="${bh}" rx="8"/>${n.icon ? `<use href="#c-${esc(n.icon)}" x="${x + 10}" y="${y + 10}" width="16" height="16"/>` : ""}<text class="dm-n" x="${lx}" y="${y + 23}">${esc(n.label)}</text>${
-    n.status ? `<use href="#g-${esc(n.status)}" x="${x + 12}" y="${y + 34}" width="12" height="12"/>` : ""
-  }<text class="dm-v" x="${x + (n.status ? 28 : 12)}" y="${y + 45}">${esc(n.text)}</text></g>`;
-}
-
-// d: { start, def, branches: [], how: [], light, when, then }
-export function delegateMap(d) {
-  const D = DMAP;
-  const [bw, bh] = D.box;
-  const [c0, c1, c2, c3] = D.cols;
-  const y = (i) => D.top + D.row * i;
-  const mid = (i) => y(i) + bh / 2;
-  const rows = Math.max(d.branches.length, d.how.length, d.light ? 3 : 1);
-  const height = y(rows - 1) + bh + 16;
-  const width = c3 + bw + 20;
-  const arrow = 'marker-end="url(#dm-arrow)"';
-  const e = [];
-  e.push(`<path class="dm-edge" d="M${c0 + bw} ${mid(0)}H${c1 - 4}" ${arrow}/>`);
-  const s1 = c2 - 32;
-  const last = d.branches.length - 1;
-  if (d.branches.length) {
-    e.push(`<path class="dm-edge" d="M${c1 + bw} ${mid(0)}H${s1}V${mid(last)}"/>`);
-    d.branches.forEach((_, i) => e.push(`<path class="dm-edge" d="M${s1} ${mid(i)}H${c2 - 4}" ${arrow}/>`));
-    e.push(`<text class="dm-w" x="${s1}" y="${D.top - 10}">${esc(d.when)}</text>`);
-  }
-  const s2 = c3 - 30;
-  if (d.how.length && d.branches.length) {
-    d.branches.forEach((_, i) => e.push(`<path class="dm-edge" d="M${c2 + bw} ${mid(i)}H${s2}"/>`));
-    const hm = (mid(0) + mid(d.how.length - 1)) / 2;
-    e.push(`<path class="dm-edge" d="M${s2} ${mid(0)}V${mid(last)}M${s2} ${r1(hm)}H${c3 - 4}" ${arrow}/>`);
-  }
-  if (d.light) {
-    e.push(`<path class="dm-edge" d="M${c1 + bw / 2} ${y(0) + bh}V${y(2) - 4}" ${arrow}/>`);
-    if (d.light.word) e.push(`<text class="dm-w l" x="${c1 + bw / 2 + 8}" y="${r1((y(0) + bh + y(2)) / 2 + 4)}">${esc(d.light.word)}</text>`);
-  }
-  const band = d.how.length
-    ? `<rect class="dm-band" x="${c3 - 10}" y="${D.top - 14}" width="${bw + 20}" height="${y(d.how.length - 1) + bh + 24 - D.top}" rx="10"/><text class="dm-lane" x="${c3}" y="${D.top - 20}">${esc(d.then)}</text>`
-    : "";
-  const nodes = [
-    dnode(d.start, c0, y(0)),
-    dnode(d.def, c1, y(0)),
-    ...d.branches.map((n, i) => dnode(n, c2, y(i))),
-    ...d.how.map((n, i) => dnode(n, c3, y(i))),
-    ...(d.light ? [dnode(d.light, c1, y(2))] : []),
-  ].join("");
-  const defs = `<defs><marker id="dm-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 8 4 0 8z" class="dm-head"/></marker></defs>`;
-  return `<svg class="dmap" viewBox="0 0 ${width} ${height}" role="group" aria-label="When to delegate: one loop by default, the conditions for a subagent or session, and how to split">${defs}${band}${e.join("")}${nodes}</svg>`;
 }

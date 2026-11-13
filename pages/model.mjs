@@ -160,27 +160,3 @@ export function openingStep(steps, readouts) {
   }
   return steps[0]?.id ?? null;
 }
-
-// The bullets and table rows under "## <title>" in a rules file (title is a
-// string, or a RegExp tested against the heading text), each with a
-// short label (up to its first colon or sentence end, or a row's first cell)
-// and its whole text for the tooltip. A row reads "first cell: second cell".
-export function ruleList(md, title) {
-  const lines = String(md ?? "").split("\n");
-  const heads = (l) => (title instanceof RegExp ? /^## /.test(l) && title.test(l.slice(3).trim()) : l.trim() === `## ${title}`);
-  const start = lines.findIndex(heads);
-  if (start < 0) return [];
-  const items = [];
-  for (const l of lines.slice(start + 1)) {
-    if (/^## /.test(l)) break;
-    if (/^- /.test(l)) items.push(l.slice(2).trim());
-    else if (/^\|/.test(l)) {
-      const cells = l.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
-      // The separator row means the row before it was the header.
-      if (cells.every((c) => /^:?-+:?$/.test(c))) items.pop();
-      else items.push(`${cells[0]}: ${cells.slice(1).join(" ")}`);
-    } else if (items.length && /^\s+\S/.test(l)) items[items.length - 1] += ` ${l.trim()}`;
-  }
-  return items.map((text) => ({ text, label: text.split(/:\s|\.\s|\.$/)[0] }));
-}
-

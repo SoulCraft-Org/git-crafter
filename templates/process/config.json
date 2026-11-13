@@ -40,7 +40,6 @@
   "build",
   "ci",
   "testing",
-  "claude",
   "tokens"
  ],
  "heading": "my-repo",
