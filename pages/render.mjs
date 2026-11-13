@@ -11,10 +11,8 @@ import { COS_SPRITE, cicon, strip } from "./draw.mjs";
 import { goalText, historySeries, isMeasured, outcomeHistory, rateGoals, repoScores } from "./model.mjs";
 import { ciTab, testingTab } from "./ci-tab.mjs";
 import { mapsTab } from "./maps-tab.mjs";
-import { systemsTab } from "./systems-tab.mjs";
 import { atLeast, ghRepo, ideal, repoBars, srcTip, val, when } from "./ui.mjs";
 
-export { modelsLane, systemUse } from "./systems-tab.mjs";
 
 // What frames a page: its heading, its nav, the files its footer names, and
 // the page a goal links to (none: a metric's name shows its source instead).
@@ -61,25 +59,23 @@ ${body}
 }
 
 // The Process page's tabs, in order; process.json ideals is keyed by these.
-export const PROCESS_TABS = ["build", "ci", "testing", "systems"];
+export const PROCESS_TABS = ["build", "ci", "testing"];
 
 // only: the tab ids a repo's config asks for, or null for every tab the docs
 // allow. A tab its doc is missing for stays out either way. The maps tab
 // keeps the id build, which configs and links already use.
-export function renderProcess({ data, goalsDoc, processDoc, mapsDoc = null, defs = null, history = [], css, script, systemsDoc = null, chrome = CHROME, tabs: only = null }) {
+export function renderProcess({ data, goalsDoc, processDoc, mapsDoc = null, defs = null, history = [], css, script, chrome = CHROME, tabs: only = null }) {
   const repos = data.repos.map((r) => r.name);
   const shows = (id) => !only || only.includes(id);
   const tabs = [
     ["build", "Maps", "plan"],
     ["ci", "CI", "ci"],
     ["testing", "Testing", "review"],
-    ...(systemsDoc ? [["systems", "Systems", "production"]] : []),
   ].filter(([id]) => shows(id));
   const draw = {
     build: () => mapsTab(data, goalsDoc, mapsDoc, defs, repos, chrome.metricsHref, history),
     ci: () => ciTab(data, repos, processDoc),
     testing: () => testingTab(data, repos),
-    systems: () => systemsTab(data, systemsDoc, processDoc.repo_url),
   };
   const bar = `<div class="pbar-row"><div class="ptabs" role="group" aria-label="Process maps">${tabs
     .map(([id, name, icon], i) => `<a href="#tab=${id}" data-tab="${id}"${i === 0 ? ' aria-current="true"' : ""}>${cicon(icon)}${esc(name)}</a>`)

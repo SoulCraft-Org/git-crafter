@@ -10,12 +10,11 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { configScope, namedIds, ownQuality, ownSteps, finishCollect, readDocs as readDocsFrom, readSiteFromDisk, SCOPE } from "../tools/collect_org.mjs";
-import { systemsMetrics } from "../tools/systems.mjs";
 import { loadLibrary, resolveMaps } from "../pages/library.mjs";
 import { TABS as TEMPLATE_TABS } from "../quality/score.mjs";
 import { BUDGET, build, checkDocs, checkMaps, CODE_OS_QUALITY_CONFIG, MAX_STEPS, qualityDefs } from "../pages/build.mjs";
-import { modelsLane, PROCESS_TABS, renderMetrics, renderProcess } from "../pages/render.mjs";
-import { GAP, places, systemsMap, trail, TRAIL } from "../pages/draw.mjs";
+import { PROCESS_TABS, renderMetrics, renderProcess } from "../pages/render.mjs";
+import { GAP, places, trail, TRAIL } from "../pages/draw.mjs";
 import { GRID, grid } from "../pages/draw-grid.mjs";
 import { stepReadout } from "../pages/model.mjs";
 import { stripAll } from "../quality/collectors/lib/strip.mjs";
@@ -116,7 +115,6 @@ test("both pages build from a fixture, escape untrusted labels, and show every g
     cpSync(join(ROOT, "goals.json"), join(dir, "goals.json"));
     cpSync(join(ROOT, "process.json"), join(dir, "process.json"));
     cpSync(join(ROOT, "maps.json"), join(dir, "maps.json"));
-    cpSync(join(ROOT, "systems.json"), join(dir, "systems.json"));
     mkdirSync(join(dir, "data", "history"), { recursive: true });
     const org = {
       generated_at: ago(2),
@@ -171,12 +169,7 @@ test("both pages build from a fixture, escape untrusted labels, and show every g
     const stdSec = ciTab.slice(ciTab.indexOf('aria-label="The CI standard"'));
     assert.equal((stdSec.slice(0, stdSec.indexOf("</section>")).match(/<div class="mt[ "]/g) ?? []).length, std.length, "one tile for each of the standard's metrics");
     assert.match(stdSec, /data-tip="not measured: /, "a metric no collector builds yet says so");
-    assert.match(proc, /id="tab-systems"/);
-    assert.match(proc, /<svg class="smap"/);
-    assert.equal((proc.match(/class="sy-node"/g) ?? []).length, 11, "every system on the map");
-    assert.match(proc, /needs an API key from the owner/);
-    assert.match(proc, /<table class="mlane">/);
-    assert.match(proc, /<div class="sypanel" id="sy-actions"[^]*?<div class="mts">/, "a system's panel shows its usage tiles");
+    assert.doesNotMatch(proc, /id="tab-systems"/, "the Systems tab left with its reader");
     assert.doesNotMatch(proc, /id="tab-tokens"/, "the Tokens tab left for Claudius");
     assert.ok(Buffer.byteLength(proc) < BUDGET && Buffer.byteLength(met) < BUDGET);
     assert.equal((proc.match(/<article class="panel"/g) ?? []).length, resolveMaps(readJson("maps.json")).maps.flatMap((m) => m.steps).length, "one panel per map step");
@@ -206,32 +199,6 @@ test("when the site's data could not be read, the Process tabs say why", () => {
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
-});
-
-test("systems.json is a template: another repo's doc draws its own map, readers and lane", () => {
-  const doc = {
-    usage_goal: 70,
-    goals: [{ id: "u", measure: "under_goal", label: "Under goal", unit: "%", direction: "higher", goal: 100, near: 80 }],
-    lanes: [{ id: "a", label: "Apps", row: 0 }, { id: "b", label: "Data", row: 1 }],
-    models: { columns: [{ id: "k", label: "Kept", icon: "build" }], rows: [{ label: "Runs", k: { sum: ["x.one", "x.two"] } }, { label: "Spend", k: { why: "no reader" } }] },
-    systems: [
-      { id: "web", name: "Web", lane: "a", icon: "build", role: "r", from: [], to: ["db"], limits: [], usage: { why: "none" }, rule: "r", at: [0, 0], reads: [{ metric: "x.one", kind: "app_sessions", app: "Tool", dir: "~/tool" }] },
-      { id: "db", name: "Store", lane: "b", icon: "repo", role: "r", from: ["web"], to: [], limits: [], usage: { why: "none" }, rule: "r", at: [1, 1], reads: [{ metric: "x.two", kind: "no_such_reader" }] },
-    ],
-  };
-  const out = systemsMetrics({ gh: { rest: () => { throw new Error("no gh"); } }, site: null, doc, org: "O", readAt: NOW.toISOString(), home: "/nonexistent-home" });
-  assert.match(out["x.one"].source, /^~\/tool: no session folder/, "~ expands to the home it was given, and shows as ~");
-  assert.match(out["x.two"].could_not_check, /names no reader "no_such_reader"/);
-  assert.match(checkDocs(readJson("goals.json"), readJson("process.json"), doc).join("\n"), /db: a read needs a metric and one of the reader kinds/);
-  const svg = systemsMap(doc.systems.map((x) => ({ ...x, use: { pct: null, status: "not-measured", text: "not measured", tip: "t" } })), "web", doc.lanes, doc.usage_goal);
-  assert.match(svg, />Apps</);
-  assert.match(svg, />Data</);
-  assert.doesNotMatch(svg, /Build and ship|Renders/, "no Git Crafter lane is drawn into another repo's map");
-  assert.match(svg, /viewBox="0 0 430 /, "the map is as wide as its own columns");
-  const lane = modelsLane(doc.models, { "x.one": { value: 3, unit: "sessions", source: "s", read_at: NOW.toISOString() }, "x.two": { could_not_check: "no" } });
-  assert.match(lane, />Kept</);
-  assert.match(lane, />3 sessions</);
-  assert.match(lane, /not measured: no reader/);
 });
 
 // Every rules/ or skills/ link with an anchor must land on a heading of that

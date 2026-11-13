@@ -1,6 +1,6 @@
 {
  "version": 1,
- "comment_purpose": "The Git Crafter Process page's other tabs as data: CI, Testing and Systems, and ideals: each tab's ideal state, keyed by tab id. The process maps are each repo's own: Git Crafter's are in maps.json, a repo names its own file in its config (docs.maps).",
+ "comment_purpose": "The Git Crafter Process page's other tabs as data: CI and Testing, and ideals: each tab's ideal state, keyed by tab id. The process maps are each repo's own: Git Crafter's are in maps.json, a repo names its own file in its config (docs.maps).",
  "repo_url": "https://github.com/SoulCraft-Org/git-crafter/blob/main",
  "ideals": {
   "build": {
@@ -21,13 +21,6 @@
    "ideal": "Many fast unit tests, fewer broad ones, few end-to-end; every suite runs in CI on every PR, and main stays green.",
    "sources": [
     {"title": "Martin Fowler: The Practical Test Pyramid", "url": "https://martinfowler.com/articles/practical-test-pyramid.html", "date": "2018-02-26"}
-   ]
-  },
-  "systems": {
-   "ideal": "Each outside system is mapped with its limits, read live and dated; use stays under 80%, and a failed read is not measured.",
-   "sources": [
-    {"title": "GitHub: rate limits for the REST API", "url": "https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api", "date": "2026-11-04"},
-    {"title": "GitHub: about billing for GitHub Actions", "url": "https://docs.github.com/en/billing/managing-billing-for-your-products/managing-billing-for-github-actions/about-billing-for-github-actions", "date": "2026-11-04"}
    ]
   }
  },

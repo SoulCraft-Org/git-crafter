@@ -42,8 +42,7 @@ import { fetchRuns } from "../tools/org_fetch.mjs";
 import { runMany } from "../tools/org_many.mjs";
 import { TEST_PATTERN, hookText, jobNames, jobsText, readWorkflow, repoFlow, repoTests, runsFor, workflowStats } from "../tools/workflows.mjs";
 import { comfyUsed, countSessions, guardMinutes, rateUse, REPO_READERS, systemsMetrics } from "../tools/systems.mjs";
-import { build, checkDocs } from "../pages/build.mjs";
-import { systemUse } from "../pages/render.mjs";
+import { build } from "../pages/build.mjs";
 import { ciFlow } from "../quality/render/ci-flow.mjs";
 import { rate } from "../pages/model.mjs";
 import { codeLiteral } from "../quality/collectors/lib/strip.mjs";
@@ -427,20 +426,6 @@ test("systems metrics fail open: an unread guard leaves no org total, a missing 
   assert.match(out["systems.comfy.credits_used"].could_not_check, /could not run comfy cloud status/);
   assert.equal(out["systems.goose.sessions"].value, 0);
   assert.match(out["systems.goose.sessions"].source, /no session folder/);
-});
-
-test("a system's use is rated against its first limit and the 80% goal", () => {
-  const x = { limits: [{ value: 300, unit: "USD" }], usage: { metric: "m" } };
-  assert.equal(systemUse(x, { m: { value: 72, unit: "USD" } }, 80).status, "meets");
-  assert.equal(systemUse(x, { m: { value: 250, unit: "USD" } }, 80).status, "near");
-  assert.equal(systemUse(x, { m: { value: 310, unit: "USD" } }, 80).status, "misses");
-  assert.equal(systemUse(x, { m: { could_not_check: "no key" } }, 80).status, "not-measured");
-  assert.match(systemUse({ limits: [], usage: { why: "needs an API key from the owner" } }, {}, 80).tip, /needs an API key from the owner/);
-  const doc = readJson("systems.json");
-  assert.deepEqual(checkDocs(readJson("goals.json"), readJson("process.json"), doc), []);
-  const bad = structuredClone(doc);
-  bad.systems[0].to.push("nowhere");
-  assert.match(checkDocs(readJson("goals.json"), readJson("process.json"), bad).join("\n"), /unknown system nowhere/);
 });
 
 test("a missing data file is exit 3, not a crash", () => {

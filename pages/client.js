@@ -96,24 +96,6 @@
     showRepoSections(state.repo);
   };
 
-  // The Systems map: one node's detail at a time.
-  const initSystemsMap = () => {
-    const node = ".sy-node, .hand a[data-sy]";
-    const panels = $$(".sypanel");
-    if (!panels.length) return;
-    const show = (id) => {
-      for (const p of panels) p.hidden = p.dataset.sy !== id;
-      for (const a of $$(".sy-node")) toggleCurrent(a, a.dataset.sy === id, "step");
-    };
-    show($(".sy-node[aria-current]")?.dataset.sy ?? panels[0].dataset.sy);
-    document.addEventListener("click", (e) => {
-      const a = e.target.closest(node);
-      if (!a) return;
-      e.preventDefault();
-      show(a.dataset.sy);
-    });
-  };
-
   // A click on a tab link switches tabs, and on a step link or button opens that step.
   const onProcessClick = (e, ctx) => {
     const { pick, open, state } = ctx;
@@ -150,7 +132,6 @@
     readProcessHash(ctx);
     for (const bar of $$(".stepbar")) bar.hidden = false;
     applyProcess(ctx);
-    initSystemsMap();
     ctx.pick.addEventListener("change", () => {
       ctx.state.repo = ctx.pick.value;
       applyProcess(ctx);

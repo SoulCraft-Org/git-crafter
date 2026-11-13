@@ -1,6 +1,5 @@
-// Drawings only Git Crafter needs: the process trail (one per map), the
-// goal strip, and the systems map,
-// plus their icons. Like quality/render/charts.mjs, which both pages share,
+// Drawings only Git Crafter needs: the process trail (one per map) and the
+// goal strip, plus their icons. Like quality/render/charts.mjs, which both pages share,
 // each takes numbers and labels and returns an SVG string; page.css and
 // site.css color them.
 
@@ -169,69 +168,4 @@ export function strip(outcomes) {
     })
     .join("");
   return `<svg class="strip" viewBox="0 0 ${S.width} ${h}" role="group" aria-label="Every goal placed against its near edge and its target, by outcome">${zones}${ticks}${rows}</svg>`;
-}
-
-// ---- The systems map ---------------------------------------------------------
-
-// Boxes on a grid, each placed by its at: [column, row] in systems.json; a
-// lane's label sits over its first row. Each box has a gauge of its use
-// against its first limit, with a tick at the goal; arrows carry the handoff
-// named in systems.json.
-const SMAP = { col: 225, row: 94, laneGap: 36, top: 34, left: 20, box: [160, 74] };
-
-// systems: systems.json entries, each with use { pct, status, text, tip };
-// lanes: systems.json's lanes; goalPct: the tick. A handoff into a lower lane
-// leaves from the box's bottom on a trunk above that lane, and one to another
-// row leaves from the top or bottom, so its word sits on a horizontal run.
-export function systemsMap(systems, selected, lanes = [], goalPct = 80) {
-  const S = SMAP;
-  const [bw, bh] = S.box;
-  const starts = lanes.filter((l) => Number.isInteger(l.row)).sort((a, b) => a.row - b.row);
-  const rowY = (r) => S.top + S.row * r + S.laneGap * starts.filter((l, i) => i > 0 && l.row <= r).length;
-  const placed = systems.filter((x) => Array.isArray(x.at));
-  if (!placed.length) return "";
-  const at = Object.fromEntries(placed.map((x) => [x.id, [S.left + S.col * x.at[0], rowY(x.at[1])]]));
-  const ctx = { at, bw, bh, cell: Object.fromEntries(placed.map((x) => [x.id, x.at])), laneOf: (id) => systems.find((x) => x.id === id)?.lane };
-  const maxCol = Math.max(...placed.map((x) => x.at[0]));
-  const maxRow = Math.max(...placed.map((x) => x.at[1]));
-  const width = S.left * 2 + S.col * maxCol + bw + 5;
-  const height = rowY(maxRow) + bh + 16;
-  const edges = systems.flatMap((x) => (x.to ?? []).filter((to) => at[x.id] && at[to]).map((to) => sysEdge(x, to, ctx)));
-  const boxes = systems.filter((x) => at[x.id]).map((x) => sysBox(x, at[x.id], { bw, bh, goalPct, selected })).join("");
-  const labels = starts.map((l, i) => `<text class="sy-lane" x="${S.left}" y="${rowY(l.row) - (i ? 30 : 16)}">${esc(l.label)}</text>`).join("");
-  const defs = `<defs><marker id="sy-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 8 4 0 8z" class="sy-head"/></marker></defs>`;
-  return `<svg class="smap" viewBox="0 0 ${width} ${height}" role="group" aria-label="The systems, their use against their limits, and the handoffs">${defs}${labels}${edges.join("")}${boxes}</svg>`;
-}
-
-// One handoff arrow from system x to system id `to`, with its word on a horizontal run.
-function sysEdge(x, to, { at, bw, bh, cell, laneOf }) {
-  const [ax, ay] = at[x.id];
-  const [bx, by] = at[to];
-  const word = x.handoff?.[to] ?? "";
-  if (laneOf(to) !== laneOf(x.id) && cell[to][1] > cell[x.id][1]) {
-    // Down into a lower lane: a trunk over that lane's label, then a drop.
-    const tx = ax + bw / 2;
-    const ty = by - 22;
-    return `<path class="sy-edge" d="M${tx} ${ay + bh}V${ty}H${bx + bw / 2}V${by - 4}" marker-end="url(#sy-arrow)"/>`;
-  }
-  const ty = by + bh / 2;
-  const label = (mid) => (word ? `<text class="sy-w" x="${r1(mid)}" y="${ty - 6}">${esc(word)}</text>` : "");
-  if (ay === by) {
-    const [x1, x2] = [ax + bw, bx];
-    return `<path class="sy-edge" d="M${x1} ${ty}H${x2 - 4}" marker-end="url(#sy-arrow)"/>${label((x1 + x2) / 2)}`;
-  }
-  const sx = ax + bw / 2;
-  const sy = by < ay ? ay : ay + bh;
-  return `<path class="sy-edge" d="M${sx} ${sy}V${ty}H${bx - 4}" marker-end="url(#sy-arrow)"/>${label((sx + bx) / 2)}`;
-}
-
-// One system's box: icon, name, use gauge against the goal tick, status and text.
-function sysBox(x, [bx, by], { bw, bh, goalPct, selected }) {
-  const u = x.use;
-  const gw = bw - 24;
-  const fill = finite(u.pct) ? Math.max(Math.min(u.pct, 100), 0) / 100 : null;
-  const gauge = `<rect class="sy-track" x="${bx + 12}" y="${by + 44}" width="${gw}" height="8" rx="2"/>${
-    fill !== null ? `<rect class="sy-fill s-${u.status}" x="${bx + 12}" y="${by + 44}" width="${r1(Math.max(gw * fill, 2))}" height="8" rx="2"/>` : ""
-  }<path class="sy-tick" d="M${r1(bx + 12 + (gw * goalPct) / 100)} ${by + 40}v16"/>`;
-  return `<a class="sy-node" href="#sy-${esc(x.id)}" data-sy="${esc(x.id)}"${x.id === selected ? ' aria-current="step"' : ""} aria-label="${esc(`${x.name}: ${u.tip}`)}" data-tip="${esc(u.tip)}"><rect class="sy-box" x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="8"/><use href="#c-${esc(x.icon)}" x="${bx + 10}" y="${by + 10}" width="16" height="16"/><text class="sy-n" x="${bx + 32}" y="${by + 23}">${esc(x.name)}</text>${gauge}${u.status ? `<use href="#g-${u.status}" x="${bx + 12}" y="${by + 58}" width="12" height="12"/>` : ""}<text class="sy-v" x="${bx + (u.status ? 28 : 12)}" y="${by + 68}">${esc(u.text)}</text></a>`;
 }

@@ -538,8 +538,6 @@ jobs:
           shot process-testing-1440 1440,2600 "index.html#tab=testing"
           shot process-ci-390 390,5200 "index.html#tab=ci"
           shot process-testing-390 390,4400 "index.html#tab=testing"
-          shot process-systems-1440 1440,2000 "index.html#tab=systems"
-          shot process-systems-390 390,3600 "index.html#tab=systems"
           shot metrics-top-1440 1440,1300 metrics.html
           shot metrics-1440 1440,5200 metrics.html
           shot metrics-goal-open-1440 1440,1400 "metrics.html#goal-ci-pass"
