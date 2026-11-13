@@ -6,15 +6,21 @@
 # that names an "org" (the org config, tools/org_base.mjs findOrgConfig), which has no pattern.
 #
 # Usage:  bash tools/private_paths.sh
-# Exit:   0 none tracked, 1 a private path is tracked.
+# Exit:   0 none tracked, 1 a private path is tracked, git's own code when git cannot list the files.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# Each list goes through a file: a failing git stops the check here, where a process substitution hides it.
+list=$(mktemp)
+trap 'rm -f "$list"' EXIT
+
 bad=0
+git ls-files -z -c -i --exclude-from=.gitignore > "$list"
 while IFS= read -r -d '' f; do
   echo "private_paths.sh: a private path is tracked: $f" >&2
   bad=1
-done < <(git ls-files -z -c -i --exclude-from=.gitignore)
+done < "$list"
+git ls-files -z -- 'config/*.json' > "$list"
 while IFS= read -r -d '' f; do
   case "$f" in
     config/*/*) continue ;;
@@ -23,5 +29,5 @@ while IFS= read -r -d '' f; do
   esac
   echo "private_paths.sh: a private path is tracked: $f" >&2
   bad=1
-done < <(git ls-files -z -- 'config/*.json')
+done < "$list"
 exit "$bad"

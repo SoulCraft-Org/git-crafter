@@ -94,6 +94,8 @@ test("private_paths.sh names data/ but data/quality/ less local.json, history/ a
     }
     writeFileSync(join(repo, "untracked.md"), "x");
     const git = (...args) => spawnSync("git", ["-C", repo, ...args], { encoding: "utf8" });
+    const noRepo = spawnSync("bash", [join(repo, "tools", "private_paths.sh")], { env: { ...process.env, GIT_CEILING_DIRECTORIES: dir } });
+    assert.equal(noRepo.status, 128, "it fails when git cannot list the files");
     git("init", "-q");
     git("add", "-f", ...Object.keys(files));
     const check = spawnSync("bash", [join(repo, "tools", "private_paths.sh")], { encoding: "utf8" });
