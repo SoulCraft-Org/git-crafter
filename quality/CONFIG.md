@@ -9,7 +9,7 @@ A repo's Quality page settings (`config.mjs`), and how its targets lie over the 
 | `repo` | `GITHUB_REPOSITORY` | `owner/name`, for issue, commit and review links |
 | `name` | the repo's name | the page title |
 | `tabs` | every template tab but the web tabs | tab ids in order; `["id", "Name"]` adds a tab of the repo's own |
-| `web` | `false` | `true` shows Design and Usability, the website tabs |
+| `web` | `false` | `true` shows Design and Usability, the tabs scoring a website |
 | `targets` | `<repo>/quality/targets` | the repo's overrides and own metrics |
 | `collectors` | `<repo>/quality/collectors` | the repo's own collectors; a template collector's name is a usage error |
 | `ideals` | `<repo>/quality/ideals` | the repo's ideal states, one file per tab, in place of the template's |
@@ -55,7 +55,7 @@ flowchart LR
 | --- | --- |
 | `{ "id": "ci.pass_rate", "goal": 98, "near": 90, "goal_source": "…" }` | the repo's goal for a template metric |
 | `{ "id": "…", "params": { … } }` | merged key by key over the template's params |
-| `{ "id": "…", "drop": true }` | not shown, not scored; collected only when it also has `gate` |
+| `{ "id": "…", "drop": true }` | off: not shown, not scored; collected only with `gate` |
 | `{ "id": "…", "gate": true }` | a miss fails the repo's pull request ([SCORING.md](SCORING.md)), even with `drop: true` |
 | `{ "id": "…", "gate": "warn" }` | a miss prints a warning; the pull request passes |
 | an id the template lacks | the repo's own metric, a full definition |
