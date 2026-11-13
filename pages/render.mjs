@@ -12,11 +12,9 @@ import { goalText, historySeries, isMeasured, outcomeHistory, rateGoals, repoSco
 import { ciTab, testingTab } from "./ci-tab.mjs";
 import { mapsTab } from "./maps-tab.mjs";
 import { systemsTab } from "./systems-tab.mjs";
-import { tokensTab } from "./tokens-tab.mjs";
 import { atLeast, ghRepo, ideal, repoBars, srcTip, val, when } from "./ui.mjs";
 
 export { modelsLane, systemUse } from "./systems-tab.mjs";
-export { figureOf, goalOf } from "./tokens-tab.mjs";
 
 // What frames a page: its heading, its nav, the files its footer names, and
 // the page a goal links to (none: a metric's name shows its source instead).
@@ -63,26 +61,24 @@ ${body}
 }
 
 // The Process page's tabs, in order; process.json ideals is keyed by these.
-export const PROCESS_TABS = ["build", "ci", "testing", "tokens", "systems"];
+export const PROCESS_TABS = ["build", "ci", "testing", "systems"];
 
 // only: the tab ids a repo's config asks for, or null for every tab the docs
 // allow. A tab its doc is missing for stays out either way. The maps tab
 // keeps the id build, which configs and links already use.
-export function renderProcess({ data, goalsDoc, processDoc, mapsDoc = null, defs = null, history = [], css, script, systemsDoc = null, tokensDoc = null, chrome = CHROME, tabs: only = null }) {
+export function renderProcess({ data, goalsDoc, processDoc, mapsDoc = null, defs = null, history = [], css, script, systemsDoc = null, chrome = CHROME, tabs: only = null }) {
   const repos = data.repos.map((r) => r.name);
   const shows = (id) => !only || only.includes(id);
   const tabs = [
     ["build", "Maps", "plan"],
     ["ci", "CI", "ci"],
     ["testing", "Testing", "review"],
-    ...(tokensDoc ? [["tokens", "Tokens", "measure"]] : []),
     ...(systemsDoc ? [["systems", "Systems", "production"]] : []),
   ].filter(([id]) => shows(id));
   const draw = {
     build: () => mapsTab(data, goalsDoc, mapsDoc, defs, repos, chrome.metricsHref, history),
     ci: () => ciTab(data, repos, processDoc),
     testing: () => testingTab(data, repos),
-    tokens: () => tokensTab(data, tokensDoc, systemsDoc, processDoc.repo_url),
     systems: () => systemsTab(data, systemsDoc, processDoc.repo_url),
   };
   const bar = `<div class="pbar-row"><div class="ptabs" role="group" aria-label="Process maps">${tabs

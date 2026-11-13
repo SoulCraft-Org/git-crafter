@@ -92,7 +92,7 @@ export function ownStepMetrics(docs, scope, { own, ownSpec, ownError }) {
   // A map's time_bar reads the repo's own run too, like its steps.
   const stepIds = (docs.maps?.maps ?? []).flatMap((m) => [...(m.steps ?? []).map((s) => s.metric), m.time_bar]).filter(Boolean);
   const defined = new Set((own?.defs ?? []).map((d) => d.id));
-  const docIds = [docs.process, docs.tokens, docs.systems].flatMap((d) => [...namedIds(d)]).filter((id) => defined.has(id));
+  const docIds = [docs.process, docs.systems].flatMap((d) => [...namedIds(d)]).filter((id) => defined.has(id));
   return ownSteps(own, [...new Set([...stepIds, ...docIds])], ownSpec ?? { repo: scope.own_repo, data: ["its Quality run"] }, ownError);
 }
 
