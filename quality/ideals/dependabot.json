@@ -1,0 +1,50 @@
+{
+  "ideal": "Dependabot alerts, malware alerts and security updates are on; the dependency graph and review cover every manifest; updates wait their cooldown, then merge within days.",
+  "parts": [
+    {
+      "part": "Dependabot alerts",
+      "ideal": "Vulnerability and malware alerts on; no malware alert open; no vulnerability alert older than a week",
+      "setup": "Enable both in the organization's security configuration; malware alerts are off until asked for"
+    },
+    {
+      "part": "Dependency updates",
+      "ideal": "Security fixes arrive grouped; a new release waits 14 days; packages come from one trusted registry",
+      "setup": "In dependabot.yml: a cooldown, and a group that applies to security updates"
+    }
+  ],
+  "sources": [
+    {
+      "title": "GitHub Docs: Dependabot alerts",
+      "url": "https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-alerts",
+      "date": "2026-11-13"
+    },
+    {
+      "title": "GitHub Docs: Dependabot malware alerts",
+      "url": "https://docs.github.com/en/code-security/concepts/supply-chain-security/malware-alerts",
+      "date": "2026-11-13"
+    },
+    {
+      "title": "GitHub Docs: Dependabot security updates",
+      "url": "https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-security-updates",
+      "date": "2026-11-13"
+    },
+    {
+      "title": "GitHub Docs: Dependabot version updates",
+      "url": "https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-version-updates",
+      "date": "2026-11-13"
+    },
+    {
+      "title": "GitHub Docs: Dependency graph",
+      "url": "https://docs.github.com/en/code-security/concepts/supply-chain-security/dependency-graph",
+      "date": "2026-11-13"
+    },
+    {
+      "title": "GitHub Docs: Dependency review",
+      "url": "https://docs.github.com/en/code-security/concepts/supply-chain-security/dependency-review",
+      "date": "2026-11-13"
+    }
+  ],
+  "quality": "No open alert or malware, every dependency and action on its newest allowed release, packages only from trusted registries.",
+  "speed": "An allowed update waits days, not weeks, and its pull request merges within the week.",
+  "consumption": "Update pull requests and installs bill few CI minutes."
+}
