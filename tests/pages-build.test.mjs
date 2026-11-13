@@ -88,6 +88,13 @@ test("the starters: the Quality config turns every tab on, and the Process confi
   }
 });
 
+test("the CI templates pin the engine at one full SHA with one release tag comment", () => {
+  const pins = ["ci.yml", "pages.yml"].flatMap((f) => [...readFileSync(join(ROOT, "templates/ci", f), "utf8").matchAll(/SoulCraft-Org\/git-crafter\/\S+@(\S+ # \S+)/g)].map((m) => m[1]));
+  assert.equal(pins.length, 2, "ci.yml and pages.yml each pin the engine once");
+  assert.equal(new Set(pins).size, 1, `one pin: ${pins.join(", ")}`);
+  assert.match(pins[0], /^[0-9a-f]{40} # v\d+\.\d+\.\d+$/);
+});
+
 test("the delivery map scores review by reviews at the head and merge by minutes from green, each goaled on Git Crafter's page", () => {
   const steps = Object.fromEntries(loadLibrary().delivery.steps.map((s) => [s.id, s]));
   assert.deepEqual([steps.review.metric, steps.merge.metric], ["pull_requests.reviewed", "pull_requests.green_to_merge_minutes"]);

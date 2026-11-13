@@ -3,7 +3,7 @@
 # data, with Git Crafter's code at the pinned commit. Nothing is copied into the
 # repo.
 #
-#   - uses: SoulCraft-Org/git-crafter/actions/pages@<full sha> # v4.0.0
+#   - uses: SoulCraft-Org/git-crafter/actions/pages@<full sha> # v6.0.0
 #     with:
 #       pages: process quality
 #       config: quality/process/config.json

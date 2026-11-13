@@ -5,7 +5,7 @@
 ```mermaid
 flowchart LR
   S[templates/process/config.json] -->|copy| C[quality/process/config.json]
-  C -->|docs.maps names itself| M[eight library maps]
+  C -->|docs.maps names itself| M[seven library maps]
   Q[quality/config.json] -->|metric ids| M
   M --> A[actions/pages<br/>pages: process quality] --> P[the repo's Process page]
 ```
@@ -14,7 +14,7 @@ flowchart LR
 | --- | --- |
 | `repos` | your repo's name, the one the page reads |
 | `repo_url` | `https://github.com/<owner>/<repo>/blob/main`, where each rule link points |
-| `maps` | `{ "use": "<id>" }` per map: delivery, deploy, adopt, measure, code, triage, secure ([pages/maps](../../pages/maps/README.md)) |
+| `maps` | `{ "use": "<id>" }` per map. The starter uses seven of the library's ten: delivery, deploy, adopt, measure, code, triage, secure. Board, document and contribute are added the same way ([pages/maps](../../pages/maps/README.md)) |
 | `tabs` | the Process tabs: build, ci, testing |
 
 A map step whose metric sits on a tab your Quality config drops fails the build: drop that step with `"steps": { "<id>": { "drop": true } }`. Every key: [actions/pages/action.yml](../../actions/pages/action.yml).

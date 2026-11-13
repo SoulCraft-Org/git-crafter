@@ -9,11 +9,11 @@ A repo's Quality page settings (`config.mjs`), and how its targets lie over the 
 | `repo` | `GITHUB_REPOSITORY` | `owner/name`, for issue, commit and review links |
 | `name` | the repo's name | the page title |
 | `tabs` | every template tab but the web tabs | tab ids in order; `["id", "Name"]` adds a tab of the repo's own |
-| `web` | `false` | `true` shows Design and Usability, the tabs that score a website |
+| `web` | `false` | `true` shows Design and Usability, the tabs scoring a website |
 | `targets` | `<repo>/quality/targets` | the repo's overrides and own metrics |
 | `collectors` | `<repo>/quality/collectors` | the repo's own collectors; a template collector's name is a usage error |
 | `ideals` | `<repo>/quality/ideals` | the repo's ideal states, one file per tab, in place of the template's |
-| `packs` | `[]` | tabs and maps from other repos ([below](#packs)) |
+| `packs` | `[]` | other repos' tabs and maps ([below](#packs)) |
 | `reviews`, `data`, `history`, `out` | `<repo>/quality/<key>`; `out` is `<repo>/quality/dist` | folders |
 | `tokens_css` | `render/tokens.css` | the color tokens the page draws with |
 | `budget` | 1,000,000, per `config.mjs` (read 2026-11-04) | page bytes; one over is exit 1 |
@@ -23,7 +23,7 @@ A repo's Quality page settings (`config.mjs`), and how its targets lie over the 
 
 ## Packs
 
-A pack adds Quality tabs and Process maps from another repo ([`packs.mjs`](packs.mjs)). Its collectors run in CI, so it is pinned like an action. `actions/pages` fetches packs only from its `quality-config` file.
+A pack adds another repo's Quality tabs and Process maps ([`packs.mjs`](packs.mjs)). A pack is pinned like an action, because its collectors run in CI. `actions/pages` fetches only its `quality-config` file's packs.
 
 | Entry | Means |
 | --- | --- |
@@ -33,7 +33,7 @@ A pack adds Quality tabs and Process maps from another repo ([`packs.mjs`](packs
 
 | Pack file | Adds |
 | --- | --- |
-| `pack.json` | `{ "tabs": [["id", "Name"]] }`, each id new |
+| `pack.json` | `{ "tabs": [["id", "Name"]] }`, each id new; a bare id (not `["id", "Name"]`) fails before checkout |
 | `targets/`, `ideals/`, `maps/` | beside the template's, never over it |
 | `collectors/` | run with `lib` ([contract](collectors/README.md)) |
 
@@ -55,7 +55,7 @@ flowchart LR
 | --- | --- |
 | `{ "id": "ci.pass_rate", "goal": 98, "near": 90, "goal_source": "…" }` | the repo's goal for a template metric |
 | `{ "id": "…", "params": { … } }` | merged key by key over the template's params |
-| `{ "id": "…", "drop": true }` | the metric is off: not shown, not scored; collected only when it also has `gate` |
+| `{ "id": "…", "drop": true }` | off: not shown, not scored; collected only with `gate` |
 | `{ "id": "…", "gate": true }` | a miss fails the repo's pull request ([SCORING.md](SCORING.md)), even with `drop: true` |
 | `{ "id": "…", "gate": "warn" }` | a miss prints a warning; the pull request passes |
 | an id the template lacks | the repo's own metric, a full definition |

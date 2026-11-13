@@ -19,14 +19,14 @@ flowchart LR
 | A `LICENSE` file, such as MIT or Apache-2.0 | the repo root | the year and holder |
 | Git Crafter's [`CODE_OF_CONDUCT.md`](../../CODE_OF_CONDUCT.md), [`SUPPORT.md`](../../SUPPORT.md) | the repo root | the project name |
 | [`templates/agents/`](../agents/) | the repo root | as that folder says |
-| `.github/PULL_REQUEST_TEMPLATE.md`, `.github/ISSUE_TEMPLATE/`, `.github/DISCUSSION_TEMPLATE/`, `.github/CODEOWNERS`, `.github/dco.yml` | the same paths | the owner login in `CODEOWNERS` |
+| `.github/PULL_REQUEST_TEMPLATE.md`, `.github/ISSUE_TEMPLATE/`, `.github/DISCUSSION_TEMPLATE/`, `.github/CODEOWNERS`, `.github/dco.yml`, `.github/release.yml`, `.github/FUNDING.yml` | the same paths | the owner login in `CODEOWNERS`; your `FUNDING.yml` destinations |
 | `labels.json` | read by the label step below | nothing |
 | [`merge_policy.json`](merge_policy.json) and [`tools/merge_policy.py`](../../tools/merge_policy.py) | `tools/`, side by side | `ai_mergeable` to your content paths |
 | [`wiki/Home.md`](wiki/Home.md) and [`templates/ci/wiki.yml`](../ci/wiki.yml) | `wiki/Home.md`, `.github/workflows/wiki.yml` | `<project>`, `<owner>/<repo>`; then the two wiki steps below |
 
 ## Settings
 
-Each is one API call (GitHub Docs, read 2026-11-12). Read each back after.
+Each is one call or a web UI step (GitHub Docs and the gh manual, read 2026-11-12 and 2026-11-13). Read each back after.
 
 | Setting | Call |
 |---|---|
@@ -36,8 +36,23 @@ Each is one API call (GitHub Docs, read 2026-11-12). Read each back after.
 | Discussions on | GraphQL `updateRepository(input: {repositoryId, hasDiscussionsEnabled: true})`; create the Ideas, Q&A and Show and tell categories in the web UI, the one step no API covers |
 | Squash only, required checks | `gh api -X POST repos/<owner>/<repo>/rulesets`: a `pull_request` rule with `allowed_merge_methods: ["squash"]`, and `required_status_checks` naming your CI and DCO |
 | Labels | `gh label create <name> --color <hex> --description <text>` per `labels.json` entry |
-| Wiki editing limited to push access | Web UI only: Settings, Features, Wikis on, with "Restrict editing to collaborators only" ticked (GitHub Docs, [Changing access permissions for wikis](https://docs.github.com/en/communities/documenting-your-project-with-wikis/changing-access-permissions-for-wikis), read 2026-11-13) |
-| Wiki's git repository exists | Web UI only: create the first page once; its git repository can be cloned after that (GitHub Docs, [Adding or editing wiki pages](https://docs.github.com/en/communities/documenting-your-project-with-wikis/adding-or-editing-wiki-pages), read 2026-11-13). Then `wiki.yml` publishes `wiki/` on each merge, so pages change only by pull request |
+| Wiki on | `gh repo edit <owner>/<repo> --enable-wiki` |
+| Wiki editing by collaborators only | the default, keep it; web UI only: Settings, Features, "Restrict editing to collaborators only" ([GitHub Docs](https://docs.github.com/en/communities/documenting-your-project-with-wikis/changing-access-permissions-for-wikis), read 2026-11-13) |
+| The wiki's first page | web UI only, once; it creates the wiki's git repository ([GitHub Docs](https://docs.github.com/en/communities/documenting-your-project-with-wikis/adding-or-editing-wiki-pages), read 2026-11-13). Then `wiki.yml` publishes `wiki/` on each merge |
+| Push limit, 5 refs a push (Docs' suggestion) | web UI only; public preview |
+| Sponsor button | GraphQL `updateRepository(input: {repositoryId, hasSponsorshipsEnabled: true})`; reads `FUNDING.yml` |
+| Immutable releases | `gh api -X PUT repos/<owner>/<repo>/immutable-releases` |
+| A Release per tag | `gh release create <tag> --verify-tag --generate-notes` |
+| Topics, homepage | `gh repo edit <owner>/<repo> --add-topic <topic> --homepage <url>` |
+| Social preview image | web UI only; under 1 MB, 1280 by 640 |
+| Template flag, starter repos only | `gh repo edit <owner>/<repo> --template` |
+
+## Options, off by default
+
+| Option | For | Turn on |
+|---|---|---|
+| Merge queue | a busy branch, with several human maintainers | rule "Require merge queue"; CI runs `on: merge_group`; `gh pr merge` then turns on auto-merge while checks run |
+| Artifact attestations | a repo that publishes a built artifact | `actions/attest`, with `id-token: write` and `attestations: write` |
 
 ## Check
 

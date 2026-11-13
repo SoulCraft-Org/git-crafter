@@ -1,0 +1,20 @@
+name: Quick fix
+description: "A small change one pull request closes within a day. Anything larger goes on the project board."
+title: "Area: what to fix"
+type: Task
+body:
+  - type: textarea
+    id: table
+    attributes:
+      label: Fix
+      description: "A table with these rows: Where, Change, Why, Files. Add a screenshot, chart or diagram where it helps. No paragraphs."
+      placeholder: |
+        | Field | Value |
+        |---|---|
+        | Where | file or metric id |
+        | Change | |
+        | Why | |
+        | Files | |
+        | Evidence | screenshot, chart or diagram |
+    validations:
+      required: true
