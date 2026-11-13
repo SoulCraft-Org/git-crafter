@@ -27,6 +27,7 @@ it("gh-replay records on main, then a pull request replays it without calling gh
 });
 it("gh-replay refuses -XPOST and --method=POST, saves no climbing path or token-only field, counts each page and reads a bad save live (#42)", () => {
   for (const a of [["api", "x", "-XPOST"], ["api", "x", "-X=PUT"], ["api", "x", "-iXDELETE"], ["api", "x", "--method", "POST"], ["api", "x", "--method=post"]]) assert.ok(!readOnly(a), a.join(" "));
+  for (const a of [["api", "x", "--input=body.json"], ...["-fquery=mutation { a }", "-Fquery=mutation { a }", "--field=query=mutation { a }", "--raw-field=query=mutation { a }"].map((f) => ["api", "graphql", f])]) assert.ok(!readOnly(a), a.join(" "));
   assert.ok(readOnly(["api", "x", "-XGET"]));
   const tmp = mkdtempSync(path.join(tmpdir(), "gh-replay-"));
   const trace = `printf '* Request at t\\n* Request to https://api.github.com/a\\n* Request took 1ms\\n'; case "$*" in *--paginate*) printf '* Request to https://api.github.com/a?page=2\\n';; esac`;
@@ -40,11 +41,26 @@ it("gh-replay refuses -XPOST and --method=POST, saves no climbing path or token-
   assert.equal(readdirSync(path.join(tmp, "save", "r")).length, 0, "a dot segment, an encoded dot and a token-only GraphQL field are never saved");
   const paged = gh("count", "api", "repos/o/r/tags", "--paginate", "--jq", ".[]");
   assert.equal(paged.stderr.toString(), "debug 1\n", "the request trace is cut from stderr");
-  writeFileSync(path.join(tmp, "save", "r", `${keyOf(["api", "repos/o/r/labels"])}.json`), "{not json");
-  const bad = gh("replay", "api", "repos/o/r/labels");
-  assert.deepEqual([bad.status, bad.stdout.toString()], [0, "real api repos/o/r/labels\n"], "an unreadable save reads live");
+  for (const [p, body] of [["labels", "{not json"], ["releases", '{"out":"cmVhbA==","err":5,"status":0}']]) {
+    writeFileSync(path.join(tmp, "save", "r", `${keyOf(["api", `repos/o/r/${p}`])}.json`), body);
+    const bad = gh("replay", "api", `repos/o/r/${p}`);
+    assert.deepEqual([bad.status, bad.stdout.toString()], [0, `real api repos/o/r/${p}\n`], `an unreadable save reads live: ${body}`);
+  }
   const rows = readFileSync(path.join(tmp, "save.log"), "utf8").trim().split("\n");
-  assert.deepEqual(rows.slice(-3), ["rest 2", "unreadable 1", "rest 1"], "two pages count 2; the bad save is logged");
+  assert.deepEqual(rows.slice(-5), ["rest 2", "unreadable 1", "rest 1", "unreadable 1", "rest 1"], "two pages count 2; each bad save is logged");
   const report = spawnSync(process.execPath, [fileURLToPath(new URL("gh-replay.mjs", import.meta.url)), "report"], { env: env("replay"), cwd: tmp }).stdout.toString();
-  assert.match(report, /::warning title=GitHub requests::1 saved reads from main were unreadable/);
+  assert.match(report, /::warning title=GitHub requests::2 saved reads from main were unreadable/);
+});
+it("gh-replay setup on a pull request replays the newest push or schedule run on main, in one request", () => {
+  const tmp = mkdtempSync(path.join(tmpdir(), "gh-replay-"));
+  const at = new Date().toISOString().slice(0, 19) + "Z";
+  const runs = { workflow_runs: [["workflow_dispatch", 3], ["schedule", 2], ["push", 1]].map(([event, id]) => ({ id, event, updated_at: at, head_repository: { full_name: "o/r" } })) };
+  writeFileSync(path.join(tmp, "runs.json"), JSON.stringify(runs));
+  writeFileSync(path.join(tmp, "gh"), `#!/bin/sh\necho "$*" >> "${tmp}/calls"\nif [ "$1" = api ]; then jq -r "$4" "${tmp}/runs.json"; fi\n`, { mode: 0o755 });
+  writeFileSync(path.join(tmp, "event.json"), JSON.stringify({ pull_request: { number: 7, head: { sha: "abc" } } }));
+  const files = Object.fromEntries(["GITHUB_ENV", "GITHUB_PATH", "GITHUB_OUTPUT"].map((k) => [k, path.join(tmp, k)]));
+  const env = { ...process.env, ...files, PATH: `${tmp}:${process.env.PATH}`, RUNNER_TEMP: tmp, GITHUB_EVENT_PATH: path.join(tmp, "event.json"), GITHUB_REPOSITORY: "o/r", GITHUB_WORKFLOW_REF: "o/r/.github/workflows/pages.yml@refs/pull/7/merge" };
+  const out = spawnSync(process.execPath, [fileURLToPath(new URL("gh-replay.mjs", import.meta.url)), "setup"], { env }).stdout.toString();
+  assert.match(out, /main save under 24 h old: run 2$/m, "the schedule run, newer than the push run, is chosen; the dispatch run is not");
+  assert.equal(readFileSync(path.join(tmp, "calls"), "utf8").split("\n").filter((l) => l.startsWith("api ")).length, 1, "one runs request");
 });

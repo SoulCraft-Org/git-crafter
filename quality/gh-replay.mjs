@@ -13,8 +13,8 @@ const methodOf = (args) => args.reduce((m, a, i) => { const x = METHOD.exec(a); 
 /** Whether gh `args` only reads: gh api with no write method, input or field (GraphQL takes fields, never a mutation), or pr/issue list. */
 export function readOnly(args) {
   if (args[0] === "pr" || args[0] === "issue") return args[1] === "list";
-  const field = args[1] === "graphql" ? /^query=\s*mutation\b/ : /^(-f|-F|--field|--raw-field|query=\s*mutation\b)/;
-  return args[0] === "api" && /^get$/i.test(methodOf(args)) && args.every((a) => a !== "--input" && !field.test(a));
+  const field = args[1] === "graphql" ? /^(-f|-F|--field=|--raw-field=)?query=\s*mutation\b/ : /^(-f|-F|--field|--raw-field|query=\s*mutation\b)/;
+  return args[0] === "api" && /^get$/i.test(methodOf(args)) && args.every((a) => !/^--input(=|$)/.test(a) && !field.test(a));
 }
 /** The save's name for `args`: a sha256 with each date as days and each time as hours from `now`, so a window read off the clock matches a day later. */
 export function keyOf(args, now = Date.now()) {
@@ -50,7 +50,7 @@ function loadSave(file, env) {
   if (!file || env.GH_REPLAY_MODE !== "replay" || !existsSync(file)) return null;
   let saved = null;
   try { saved = JSON.parse(readFileSync(file, "utf8")); } catch { saved = null; }
-  if (typeof saved?.out === "string") return saved;
+  if (typeof saved?.out === "string" && typeof saved.err === "string" && Number.isInteger(saved.status)) return saved;
   log(env, "unreadable", 1);
   return null;
 }
@@ -76,8 +76,9 @@ function setup(env) {
   const pr = JSON.parse(readFileSync(env.GITHUB_EVENT_PATH, "utf8")).pull_request;
   const mode = pr ? "replay" : env.GITHUB_EVENT_NAME === "push" && env.GITHUB_REF === "refs/heads/main" ? "record" : "count";
   mkdirSync(path.join(dir, "r"), { recursive: true }), mkdirSync(`${dir}-bin`), writeShim(`${dir}-bin`);
-  const jq = `.workflow_runs[] | select(.head_repository.full_name == "${env.GITHUB_REPOSITORY}" and now - (.updated_at | fromdateiso8601) < ${MAX_AGE_H * 3600}) | .id`;
-  const id = pr ? spawnSync(real, ["api", `repos/${env.GITHUB_REPOSITORY}/actions/workflows/${path.basename(env.GITHUB_WORKFLOW_REF.split("@")[0])}/runs?branch=main&event=push&status=success&per_page=1`, "--jq", jq]).stdout.toString().trim() : "";
+  // The newest successful main run that records a save: a push, or the daily schedule (#55). One request.
+  const jq = `first(.workflow_runs[] | select((.event == "push" or .event == "schedule") and .head_repository.full_name == "${env.GITHUB_REPOSITORY}")) | select(now - (.updated_at | fromdateiso8601) < ${MAX_AGE_H * 3600}) | .id`;
+  const id = pr ? spawnSync(real, ["api", `repos/${env.GITHUB_REPOSITORY}/actions/workflows/${path.basename(env.GITHUB_WORKFLOW_REF.split("@")[0])}/runs?branch=main&status=success&per_page=10`, "--jq", jq]).stdout.toString().trim() : "";
   const got = id && spawnSync(real, ["run", "download", id, "-n", "main-reads", "-D", dir, "-R", env.GITHUB_REPOSITORY]).status === 0;
   if (pr) log({ GH_REPLAY_DIR: dir }, "rest", id ? 3 : 1);
   const live = [env.GITHUB_SHA, env.GITHUB_RUN_ID, pr?.head.sha, ...(pr ? ["pulls/", "issues/", "pull/"].map((p) => p + pr.number) : [])];
