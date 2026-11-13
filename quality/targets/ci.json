@@ -313,7 +313,7 @@
     "kind": "consumption",
     "group": "Cost",
     "label": "GitHub requests per pull request run",
-    "means": "Requests the workflow token spent live in the latest green pull request run of pages.yml; a replayed read costs none",
+    "means": "Requests the workflow token spent live in the newest green pull request run that collected; a replayed read costs none",
     "unit": "requests",
     "goal": 100,
     "near": 765,
