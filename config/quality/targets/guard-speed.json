@@ -1,26 +1,5 @@
 [
  {
-  "id": "guards.call_ms",
-  "tab": "code",
-  "kind": "speed",
-  "group": "Guards",
-  "label": "Guard time per command",
-  "means": "How long the bash guard takes to judge one harmless command on the machine that runs the sessions.",
-  "unit": "ms",
-  "goal": 100,
-  "near": 1000,
-  "direction": "lower",
-  "goal_source": "Git Crafter's own goal: a tenth of a second, about the limit for a system to feel instant; near is one second, about the limit for a user's flow of thought (Jakob Nielsen, Response Times: The 3 Important Limits, nngroup.com/articles/response-times-3-important-limits, 1993-01-01, read 2026-11-10). The guard runs before every Bash call, so it is the hot path to optimize first (Microsoft Learn, Well-Architected PE:07, updated 2025-10-30, read 2026-11-10)",
-  "source": "latest: median wall time of params.runs (10) runs of python3 -I params.guard judging one harmless command on stdin, in a --local collect on the machine that runs the sessions; the command is parsed, never run. Not read in CI, where a runner under load would time itself",
-  "needs": "local-files",
-  "chart": "bar",
-  "defined": "2026-11-10",
-  "params": {
-   "guard": "tools/bash_guard.py",
-   "runs": 10
-  }
- },
- {
   "id": "guards.runner_call_ms",
   "tab": "code",
   "kind": "speed",

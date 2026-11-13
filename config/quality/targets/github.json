@@ -9,7 +9,8 @@
     "ci",
     "documentation",
     "security",
-    "accessibility"
+    "accessibility",
+    "templates"
    ],
    "project_title": "Git Crafter",
    "project_columns": [
@@ -20,14 +21,6 @@
     "Done"
    ]
   }
- },
- {
-  "id": "security.code_quality_on",
-  "drop": true
- },
- {
-  "id": "security.code_quality_open",
-  "drop": true
  },
  {
   "id": "security.headers",
