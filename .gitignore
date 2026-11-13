@@ -3,8 +3,8 @@ __pycache__/
 pages/dist/
 node_modules/
 data/quality/latest.json
-# Local data files: the private paths of tools/export_public.sh private(), which wins.
-# The org config (a config/*.json naming "org") has no pattern; export_public.sh --check catches it.
+# Local data files: the one list of private paths. tools/private_paths.sh fails verify on a tracked one.
+# The org config (a config/*.json naming "org") has no pattern; private_paths.sh catches it too.
 /data/*
 !/data/quality/
 /data/quality/local.json

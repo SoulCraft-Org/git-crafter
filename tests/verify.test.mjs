@@ -65,14 +65,15 @@ test("verify.sh stops at every failing command", () => {
   assert.deepEqual(leaks(VERIFY), []);
 });
 
-// tools/export_public.sh: a seeded checkout, exported; only the org's own files stay behind.
-test("the public export leaves out data/ but data/quality/ less local.json, history/ and plan-usage.json, the org config, accounts, the repo manifest and the term list", () => {
-  const dir = mkdtempSync(join(tmpdir(), "export-"));
+// tools/private_paths.sh on a seeded checkout: it names only the org's own files.
+test("private_paths.sh names data/ but data/quality/ less local.json, history/ and plan-usage.json, the org config, accounts and the term list", () => {
+  const dir = mkdtempSync(join(tmpdir(), "private-"));
   try {
     const repo = join(dir, "repo");
     const files = {
       "README.md": "x",
-      "tools/export_public.sh": readFileSync(new URL("../tools/export_public.sh", import.meta.url), "utf8"),
+      ".gitignore": readFileSync(new URL("../.gitignore", import.meta.url), "utf8"),
+      "tools/private_paths.sh": readFileSync(new URL("../tools/private_paths.sh", import.meta.url), "utf8"),
       "data/org.json": "{}",
       "data/history/d.json": "{}",
       "data/quality/local.json": "{}",
@@ -93,21 +94,16 @@ test("the public export leaves out data/ but data/quality/ less local.json, hist
     }
     writeFileSync(join(repo, "untracked.md"), "x");
     const git = (...args) => spawnSync("git", ["-C", repo, ...args], { encoding: "utf8" });
+    const noRepo = spawnSync("bash", [join(repo, "tools", "private_paths.sh")], { env: { ...process.env, GIT_CEILING_DIRECTORIES: dir } });
+    assert.equal(noRepo.status, 128, "it fails when git cannot list the files");
     git("init", "-q");
-    git("add", ...Object.keys(files));
-    const out = join(dir, "out");
-    const r = spawnSync("bash", [join(repo, "tools", "export_public.sh"), out], { encoding: "utf8" });
-    assert.equal(r.status, 0, r.stderr);
-    const listed = spawnSync("find", [out, "-type", "f"], { encoding: "utf8" }).stdout.trim().split("\n").map((p) => p.slice(out.length + 1)).sort();
-    assert.deepEqual(listed, ["README.md", "config/quality.json", "config/quality/targets/a.json", "data/quality/run.json", "tools/bash_guard_cases.json", "tools/bash_guard_rules.json", "tools/export_public.sh"]);
-    for (const f of ["cases", "rules"]) assert.equal(readFileSync(join(out, "tools", `bash_guard_${f}.json`), "utf8"), '["sudo -u someone -H x"]', "the guard's other account is renamed");
-    assert.equal(spawnSync("bash", [join(repo, "tools", "export_public.sh"), out]).status, 2, "a non-empty OUT is refused");
-    const check = spawnSync("bash", [join(repo, "tools", "export_public.sh"), "--check"], { encoding: "utf8" });
-    assert.equal(check.status, 1, "--check fails on a tracked private path");
+    git("add", "-f", ...Object.keys(files));
+    const check = spawnSync("bash", [join(repo, "tools", "private_paths.sh")], { encoding: "utf8" });
+    assert.equal(check.status, 1, "it fails on a tracked private path");
     const named = [...check.stderr.matchAll(/tracked: (\S+)/g)].map((m) => m[1]).sort();
     assert.deepEqual(named, ["config/accounts/a.json", "config/acme.json", "config/private-terms.txt", "data/history/d.json", "data/org.json", "data/quality/history/2026-11-05.json", "data/quality/local.json", "data/quality/plan-usage.json"]);
     git("rm", "-q", "--cached", ...named);
-    assert.equal(spawnSync("bash", [join(repo, "tools", "export_public.sh"), "--check"]).status, 0, "--check passes once none is tracked");
+    assert.equal(spawnSync("bash", [join(repo, "tools", "private_paths.sh")]).status, 0, "it passes once none is tracked");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -116,7 +112,7 @@ test("the public export leaves out data/ but data/quality/ less local.json, hist
 // This repo is public: verify fails when it tracks a private path, and .gitignore keeps the local ones out.
 test("this repo tracks no private path, and git ignores the local data files", () => {
   const root = new URL("..", import.meta.url).pathname;
-  const r = spawnSync("bash", [join(root, "tools", "export_public.sh"), "--check"], { encoding: "utf8" });
+  const r = spawnSync("bash", [join(root, "tools", "private_paths.sh")], { encoding: "utf8" });
   assert.equal(r.status, 0, r.stderr);
   const local = ["data/org.json", "data/history/d.json", "data/quality/local.json", "data/quality/plan-usage.json", "data/quality/history/d.json", "config/accounts/a.json", "config/private-terms.txt"];
   const ignored = spawnSync("git", ["-C", root, "check-ignore", "--no-index", ...local], { encoding: "utf8" }).stdout.trim().split("\n");

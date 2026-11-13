@@ -41,4 +41,5 @@ flowchart LR
 | The repo's Actions policy runs only GitHub-owned actions, and only at a full commit SHA | The repo's Settings, Actions, General (set 2026-11-10) |
 | Secret scanning with push protection, CodeQL default setup, Dependabot alerts and security updates, and immutable releases are on. Version updates come weekly, one grouped pull request per ecosystem, after a 14-day cooldown | [dependabot.yml](.github/dependabot.yml); the repo's security settings |
 | The sync tool writes only the paths the manifest and an overlay list, and only on `apply --yes` | [manifest.json](manifest.json), [tools/claude_os_sync.py](tools/claude_os_sync.py) |
-| An org's names live in its own private overlay, never in this repo. The overlay scans this repo's `main` daily for them (goal 0) | [tools/public_scan.py](tools/public_scan.py), [tools/export_public.sh](tools/export_public.sh) |
+| An org's names live in its own private overlay, never in this repo. The overlay scans this repo's `main` daily for them (goal 0) | [tools/public_scan.py](tools/public_scan.py) |
+| This repo is its own public copy. `verify` fails when it tracks a private path | [tools/private_paths.sh](tools/private_paths.sh), [.gitignore](.gitignore) |
