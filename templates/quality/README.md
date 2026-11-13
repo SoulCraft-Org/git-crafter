@@ -1,6 +1,6 @@
 # Quality starter
 
-[config.json](config.json) turns on all 21 tabs of the Quality, Speed and Consumption page. Copy it to `<repo>/quality/config.json`, then drop the tabs your repo has no use for. Keys: [quality/CONFIG.md](../../quality/CONFIG.md).
+[config.json](config.json) turns on all 15 tabs of the Quality, Speed and Consumption page. Copy it to `<repo>/quality/config.json`, then drop the tabs your repo has no use for. Keys: [quality/CONFIG.md](../../quality/CONFIG.md).
 
 ```mermaid
 flowchart LR
@@ -26,12 +26,6 @@ flowchart LR
 | `settings` | rules with no bypass, outside access, unused secrets, rules that wait for a person, settings that bill |
 | `design` | tokens, contrast, Core Web Vitals |
 | `usability` | axe, tap targets, task clicks |
-| `claude` | tokens and cost per merged PR |
-| `claude-settings` | settings errors, permission prompts |
-| `desktop-app` (Claude desktop app) | plugins and connectors loaded and unused, listing tokens, turns closed, subagent start |
-| `blockers` | guard blocks, false alarms, review tokens |
-| `tokens` | rework and waste tokens |
-| `instructions` | always-loaded instruction size |
 | `deploy` | lead time, failures, restore (DORA) |
 | `credits` | free allowances used and idle |
 | `tools` | dependencies and actions current |
@@ -47,8 +41,7 @@ flowchart LR
 | `deploy` (reads a Cloudflare Worker with Wrangler) | ✗ | ✓ | ✗ unless on Workers | ✗ |
 | `credits` (free allowances the repo draws on) | ✓ | ✓ | ✓ | ✓ |
 | `projects` | ✓ with a GitHub Project board, else ✗ | same | same | same |
-| `claude`, `claude-settings`, `blockers`, `tokens`, `instructions` | ✓ with Claude Code sessions, else ✗ | same | same | same |
-| `desktop-app` | ✓ with sessions in the Claude desktop app, else ✗ | same | same | same |
+| The six Claude tabs | moved to `Colorado-Startups/claudius`; load them through the `packs` key | same | same | same |
 
 A web tab needs `params.origin` (the production URL) or `params.site_dir` (a built site folder) in `<repo>/quality/targets/`. A dropped tab is not collected, shown or scored.
 

@@ -64,7 +64,6 @@ describe("targets/github.json", () => {
       pr_body_ignore: ["<!-- codesmith:footer -->[\\s\\S]*?<!-- /codesmith:footer -->"],
       cooldown_days: 14,
       registries: ["https://registry.npmjs.org/"],
-      credential_patterns: ["./.env", "./.env.*", "./secrets/**", "./**/*.pem", "./**/*.key", "~/.ssh/**", "~/.aws/**"],
       threat_model: "THREAT-MODEL.md",
       threat_model_covers: [],
       threat_model_grace_days: 0,

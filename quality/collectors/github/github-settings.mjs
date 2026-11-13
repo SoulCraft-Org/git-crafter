@@ -101,7 +101,6 @@ function supplySettings(params) {
   return {
     cooldownDays: number(params, "cooldown_days", 14),
     registries: registries(listOr(params, "registries", ["https://registry.npmjs.org/"])),
-    credentialPatterns: list(params, "credential_patterns"),
     threatModels,
     threatModelCovers: list(params, "threat_model_covers"),
     threatModelGraceDays: number(params, "threat_model_grace_days", 0),

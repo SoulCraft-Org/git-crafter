@@ -73,6 +73,7 @@ test("packs: a pack tab id that is a template tab's, another pack's or off the i
   assert.throws(load(packWith([["code", "Code again"]])), /tab "code" is already a tab/, "not added twice to the default list");
   assert.throws(load(FIXTURE, FIXTURE), /tab "fixture-pack" is already a tab/);
   assert.throws(load(packWith([["Bad Id", "Bad"]])), /tab id "Bad Id" must be/);
+  assert.deepEqual(load(packWith([["claude", "Claude"]]))().tabs.at(-1), ["claude", "Claude"], "a Claude tab id is free for a pack");
 });
 
 test("packs: a pack ideal for a template tab is refused, so it never replaces the template's", () => {

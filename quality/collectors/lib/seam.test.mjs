@@ -1,6 +1,6 @@
 // The seam between collectors and the engine: every collector file reaches
-// the engine only through collectors/lib/, the GitHub tabs never import a
-// Claude tab's folder, and collect.mjs hands each collect() the lib helpers.
+// the engine only through collectors/lib/, and collect.mjs hands each
+// collect() the lib helpers.
 import assert from 'node:assert/strict';
 import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -13,8 +13,6 @@ import * as lib from './index.mjs';
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const TREES = ['quality/collectors/', 'config/quality/collectors/'];
 const LIB = 'quality/collectors/lib/';
-// The Claude tabs' folders, bound for their own repo (plan PR 2).
-const CLAUDE = ['claude', 'desktop-app', 'blockers', 'tokens', 'instructions'].map((d) => `quality/collectors/${d}/`);
 // A relative module path in each shape a collector can load one: import, from,
 // import(), require() (createRequire's), and a resolve() (import.meta's,
 // require's, createRequire's), in any quote with no ${}.
@@ -72,11 +70,6 @@ test('seam: no collector file outside lib/ builds an import() path, except those
 
 test('seam: no collector file imports an engine file except through collectors/lib/', () => {
   assert.deepEqual(imports().filter((i) => !allowed(i)), []);
-});
-
-test('seam: no GitHub tab collector imports a Claude tab folder', () => {
-  const claude = (p) => CLAUDE.some((d) => p.startsWith(d));
-  assert.deepEqual(imports().filter((i) => !claude(i.file) && claude(i.target)), []);
 });
 
 test('seam: collect() receives lib, the engine helpers, and lib/ holds no collector', async () => {

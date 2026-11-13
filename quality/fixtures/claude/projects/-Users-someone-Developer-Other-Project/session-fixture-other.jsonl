@@ -1,3 +1,0 @@
-{"type":"user","timestamp":"2026-10-31T09:00:00.000Z","sessionId":"session-fixture-other","isSidechain":false,"message":{"role":"user","content":"DECOY-MESSAGE-TEXT"}}
-{"type":"assistant","timestamp":"2026-10-31T09:05:00.000Z","sessionId":"session-fixture-other","isSidechain":false,"requestId":"req-fixture-9","message":{"id":"msg-fixture-9","role":"assistant","content":[],"usage":{"input_tokens":1000000000,"output_tokens":1000000000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}}
-{"type":"pr-link","timestamp":"2026-10-31T10:00:00.000Z","sessionId":"session-fixture-other","prNumber":99,"prRepository":"acme/other","prUrl":"https://github.com/acme/other/pull/99"}

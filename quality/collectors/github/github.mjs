@@ -53,7 +53,6 @@
 //   max_registry_reads  registry requests one run may make: HEADs of
 //                    downloads, and full package documents to confirm a
 //                    publish time a Last-Modified header says is recent (100)
-//   credential_patterns  paths that .claude/settings.json should deny Read on
 //   threat_model     the threat model's path in the repo (THREAT-MODEL.md),
 //                    or a list of paths when it spans files: all must exist
 //   threat_model_covers  git pathspecs of the code it covers, such as the
@@ -90,7 +89,7 @@ export { reviewMarkers, privateMarkerAuthors, NOT_REVIEWED, isNotReviewed, revie
 export { PULL_FIELDS, MARKER_FIELDS } from "./github-queries.mjs";
 export { prRefs, causes } from "./github-refs.mjs";
 export { proseWords, hasTable, hasVisual, hasPicture, linksIssue } from "./github-text.mjs";
-export { lockPackages, pulledBy, denyCovers, registryOf } from "./github-lock.mjs";
+export { lockPackages, pulledBy, registryOf } from "./github-lock.mjs";
 export { repoOf, ConfigError, refusingGh, GhError, ghClient, percentile } from "./github-core.mjs";
 
 export const area = "github";

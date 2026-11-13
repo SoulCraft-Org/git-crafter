@@ -74,16 +74,6 @@ export function globRegex(glob) {
   return new RegExp(`^${re}$`);
 }
 
-// A path without a leading ./.
-const stripDot = (p) => p.replace(/^\.\//, "");
-
-/** Whether a deny rule's path covers a credential pattern: the same path, or a glob that takes it in. */
-export function denyCovers(rule, pattern) {
-  const r = stripDot(rule);
-  const p = stripDot(pattern);
-  return r === p || globRegex(r).test(p);
-}
-
 // A slash or backslash percent-encoded in a path: a server that decodes it reads another path,
 // so team/..%2Fother, under team/ as text, could serve other/.
 export const ENCODED_SEPARATOR = /%2f|%5c/i;

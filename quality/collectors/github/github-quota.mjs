@@ -2,8 +2,7 @@
 // a maintainer's machine, the workflow token in Actions. gh api rate_limit
 // counts against no limit (GitHub docs, "Rate limits for the REST API", read
 // 2026-11-11). The Actions tab's ci.api_headroom and collect.mjs --local's
-// guard both read it here; tools/systems.mjs reads the same call for the
-// Systems tab's used counts.
+// guard both read it here.
 
 // The two buckets every collector spends, by rate_limit's resource name.
 export const BUCKETS = [
