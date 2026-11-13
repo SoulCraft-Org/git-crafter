@@ -67,12 +67,12 @@
    "id": "review",
    "name": "Review",
    "tools": [
-    "Two reviewer subagents",
+    "Pull request reviews",
     "gh pr view and gh pr diff only"
    ],
-   "rule": "Two AI reviews read the diff as data; fork code never runs on the owner's machine.",
+   "rule": "Two reviews read the diff as data; fork code runs only in CI, within its runner budget.",
    "rule_ref": "https://github.com/SoulCraft-Org/git-crafter/blob/main/skills/merging/outside.md#safety",
-   "metric": "blockers.review_tokens_per_pr",
+   "metric": "ci.latest_pr_dollars",
    "at": [
     2,
     0

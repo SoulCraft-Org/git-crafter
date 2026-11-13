@@ -60,7 +60,7 @@ test("maps: a known-good file passes, a known-bad one fails on every rule, and G
   assert.deepEqual(checkMaps(null), [], "a repo that names no maps file has none");
   const unread = qualityDefs(ROOT, "no-such-config.json");
   assert.match(unread.why, /no-such-config\.json/, "an unreadable Quality config is a reason, not a throw");
-  assert.ok(unread.ids.has("claude.hours_session_to_pr"), "and the template's ids still check the maps");
+  assert.ok(unread.ids.has("pull_requests.reviewed"), "and the template's ids still check the maps");
 });
 
 test("Git Crafter's own Quality page turns every tab on, and each of its map steps names a tool, a rule and a metric", () => {
@@ -78,7 +78,7 @@ test("the starters: the Quality config turns every tab on, and the Process confi
     assert.deepEqual(readJson("templates/quality/config.json").tabs, TEMPLATE_TABS.map(([id]) => id), "every template tab, in the template's order");
     const scope = configScope(readJson("templates/process/config.json"));
     const { maps } = readDocsFrom(dir, scope.docs);
-    assert.deepEqual(maps.maps.map((m) => m.id), ["delivery", "deploy", "guard", "adopt", "measure", "code", "triage", "secure"]);
+    assert.deepEqual(maps.maps.map((m) => m.id), ["delivery", "deploy", "adopt", "measure", "code", "triage", "secure"]);
     const { defs, why } = qualityDefs(dir);
     assert.ok(defs, why);
     assert.deepEqual(checkMaps(maps, new Set(Object.keys(defs)), "config.json"), []);
@@ -89,10 +89,10 @@ test("the starters: the Quality config turns every tab on, and the Process confi
   }
 });
 
-test("the delivery map scores review by reviewer tokens and merge by minutes from green, each goaled on Git Crafter's page", () => {
+test("the delivery map scores review by reviews at the head and merge by minutes from green, each goaled on Git Crafter's page", () => {
   const steps = Object.fromEntries(loadLibrary().delivery.steps.map((s) => [s.id, s]));
-  assert.deepEqual([steps.review.metric, steps.merge.metric], ["blockers.review_tokens_per_pr", "pull_requests.green_to_merge_minutes"]);
-  assert.match(steps.review.tools[0], /^Parallel reviewer subagents, one per PR/);
+  assert.deepEqual([steps.review.metric, steps.merge.metric], ["pull_requests.reviewed", "pull_requests.green_to_merge_minutes"]);
+  assert.equal(steps.review.tools[0], "Pull request reviews");
   const { defs, why } = qualityDefs(ROOT, CODE_OS_QUALITY_CONFIG);
   assert.ok(defs, why);
   assert.deepEqual([defs["pull_requests.green_to_merge_minutes"].goal, defs["pull_requests.green_to_merge_minutes"].near], [30, 120]);
@@ -496,11 +496,11 @@ test("map steps read the repo's own Quality run, rated by its goal; the site's c
     const spec = ownQuality(dir, scope);
     assert.deepEqual(spec, { repo: "code-os", root: ".", data: ["out/latest.json", "out/local.json"], targets: "cfg/targets" });
     const own = readSiteFromDisk(dir, spec, null, () => "abcdef1234");
-    const m = ownSteps(own, ["pull_requests.fixed_after_review", "claude.hours_session_to_pr"], spec);
+    const m = ownSteps(own, ["pull_requests.fixed_after_review", "pull_requests.reviewed"], spec);
     const fixed = m["pull_requests.fixed_after_review"];
     assert.deepEqual([fixed.value, fixed.copied_from, typeof fixed.target?.goal], [5, "code-os", "number"], "CI's latest.json wins, rated by the template's goal");
     assert.match(fixed.source, /code-os@\w{7} out\/latest\.json or out\/local\.json/);
-    assert.match(m["claude.hours_session_to_pr"].could_not_check, /code-os's Quality run does not measure it/);
+    assert.match(m["pull_requests.reviewed"].could_not_check, /code-os's Quality run does not measure it/);
     assert.match(ownSteps(null, ["x"], spec, "no files").x.could_not_check, /could not read code-os's Quality run: no files/);
     assert.equal(stepReadout({ metric: "pull_requests.fixed_after_review" }, m, { ownRepo: "code-os" }).value, 5);
     // A repo's config reads its own numbers with no site or own_repo named.
@@ -565,11 +565,11 @@ test("the build draws a step from the repo's own Quality run, not data/org.json'
 
 test("a map's time_bar: one labelled stacked bar of its step hours, the missing step named, an unknown id an error", () => {
   const good = readJson("tests/fixtures/maps/good.json");
-  good.maps[0].time_bar = "lead_time.hours";
-  const ids = new Set(["lead_time.hours", ...good.maps.flatMap((m) => m.steps.map((s) => s.metric))]);
+  good.maps[0].time_bar = "x.hours";
+  const ids = new Set(["x.hours", ...good.maps.flatMap((m) => m.steps.map((s) => s.metric))]);
   assert.deepEqual(checkMaps(good, ids), []);
   assert.deepEqual(checkMaps({ ...good, maps: [{ ...good.maps[0], time_bar: "nope.hours" }] }, ids), ['maps map "delivery": time_bar "nope.hours" is not a metric on this repo\'s Quality page']);
-  assert.equal(resolveMaps({ maps: [{ use: "delivery" }] }).maps[0].time_bar, "lead_time.hours", "the library's Delivery map draws it");
+  assert.equal(resolveMaps({ maps: [{ use: "delivery" }] }).maps[0].time_bar, undefined, "the library's Delivery map draws none");
   // The CI shape: unscored, the read steps kept in detail.
   const entry = {
     could_not_check: "not scored: session start to PR open not read",
@@ -581,10 +581,10 @@ test("a map's time_bar: one labelled stacked bar of its step hours, the missing 
     read_at: readAt,
   };
   const draw = (metrics) => renderProcess({ data: { repos: [{ name: "one" }], metrics, org: "o" }, goalsDoc: { outcomes: [] }, processDoc: { repo_url: "https://example.org" }, mapsDoc: good, css: "", script: "", tabs: ["build"] });
-  const fig = /<figure class="time-bar" id="time-delivery">.*?<\/figure>/s.exec(draw({ "lead_time.hours": entry }))?.[0] ?? "";
+  const fig = /<figure class="time-bar" id="time-delivery">.*?<\/figure>/s.exec(draw({ "x.hours": entry }))?.[0] ?? "";
   assert.match(fig, /<\/span> not scored, goal ≤ 24 h<\/figcaption><span class="pbar lab" role="img" aria-label="PR open to all green 70%/, "no status mark, the bar and its text alternative still drawn");
   assert.doesNotMatch(fig, /<svg class="g"/);
-  const full = /<figure class="time-bar".*?<\/figcaption>/s.exec(draw({ "lead_time.hours": { ...entry, could_not_check: undefined, value: 6.91 } }))?.[0] ?? "";
+  const full = /<figure class="time-bar".*?<\/figcaption>/s.exec(draw({ "x.hours": { ...entry, could_not_check: undefined, value: 6.91 } }))?.[0] ?? "";
   assert.match(full, /aria-label="meets goal".*6\.91 h, goal ≤ 24 h/s, "the full total scores");
   assert.equal((fig.match(/<b>/g) ?? []).length, 3, "each GitHub step labelled on the bar");
   assert.match(fig, /<i class="p4"><\/i><b>merge to live 0\.04 h<\/b>/, "a step keeps its color when the session step is missing");
