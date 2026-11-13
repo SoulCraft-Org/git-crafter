@@ -3,7 +3,8 @@
 Part of tools/bash_guard.py, which says how the guard reads a command. A key
 passes only from its issuer, piped straight into its store, and the store
 reads only that pipe or a fresh value: never a file, a heredoc, a typed word
-or any other program's output.
+or any other program's output. The one exception is a secret the rule names
+as no key (store.not_keys), which may read one file on stdin.
 """
 
 import re
@@ -12,6 +13,10 @@ from bash_guard_gh import gh_command_words
 
 STDOUT_REDIRECT_RE = re.compile(r"^(1|&)?>")  # >, >>, 1>, &>, >&2: stdout leaves the pipe
 STDIN_REDIRECT_RE = re.compile(r"^0?<")  # < file, <<< word: stdin from the command line or disk
+FILE_STDIN_RE = re.compile(r"^0?<(?!<)")  # < file alone: never <<< word or <<EOF
+VALUE_FLAGS = {"-R", "--repo", "-o", "--org", "-e", "--env", "-a", "--app", "-v", "--visibility", "-r", "--repos"}
+TEXT_FLAGS = {"--body", "--env-file"}  # the value, or a file of many, in the command
+TEXT_LETTERS = {"b", "f"}  # their short forms, -b and -f, alone or joined to other letters or a value
 
 
 def is_source(c, src):
@@ -35,10 +40,50 @@ def issuer_ok(cmds, k, rule):
     return is_store(store, rule) and not any(STDOUT_REDIRECT_RE.match(t) for t in cmds[k]["raw"])
 
 
+def store_name(args):
+    """The name gh secret set sets: its first word that is no flag or a
+    flag's value."""
+    rest, k = gh_command_words(args)[1], 0
+    while k < len(rest):
+        if rest[k] in VALUE_FLAGS:
+            k += 2
+        elif rest[k].startswith("-"):
+            k += 1
+        else:
+            return rest[k]
+    return None
+
+
+def file_on_stdin(c):
+    """Stdin is one file, < path: no here-string and no heredoc."""
+    stdin = [t for t in c["raw"] if STDIN_REDIRECT_RE.match(t)]
+    return not c["docs"] and len(stdin) == 1 and FILE_STDIN_RE.match(stdin[0]) is not None
+
+
+def text_flag(args):
+    """A flag that puts the value, or a file of many, in the command: --body
+    and --env-file with or without =, and -b or -f in any short spelling
+    (-bX, -f.env, -uf x)."""
+    return any(a.split("=")[0] in TEXT_FLAGS if a.startswith("--") else a.startswith("-") and bool(set(a[1:]) & TEXT_LETTERS)
+               for a in args)
+
+
+def not_key_from_file(cmds, k, rule):
+    """A secret the rule's store.not_keys names (data, never a credential)
+    may read one file on stdin, alone in its pipeline: < path. Never a pipe,
+    a here-string, a heredoc or a flag's text, which put the value in the
+    command; never the file flag, which can read many."""
+    c = cmds[k]
+    named = store_name(c["args"]) in rule["store"].get("not_keys", [])
+    return len(cmds) == 1 and named and file_on_stdin(c) and not text_flag(c["args"])
+
+
 def store_ok(cmds, k, rule):
     """The store reads only a pipe from its issuer or a fresh value, whose
     stdout goes nowhere else."""
     c = cmds[k]
+    if not_key_from_file(cmds, k, rule):
+        return True
     if not k or c["docs"] or any(STDIN_REDIRECT_RE.match(t) for t in c["raw"]):
         return False
     if any(STDOUT_REDIRECT_RE.match(t) for t in cmds[k - 1]["raw"]):

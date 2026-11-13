@@ -6597,5 +6597,23 @@
    "block",
    "ONE_WAY_REASON=\" \" gh repo delete o/r --yes"
   ]
+,
+  [
+   "allow",
+   "gh secret set PRIVACY_NAMES -R o/r < names.txt"
+  ],
+  [
+   "block",
+   "gh secret set PRIVACY_NAMES -R o/r <<< a,b"
+  ]
+,
+  [
+   "block",
+   "gh secret set PRIVACY_NAMES -R o/r -f.env < x"
+  ],
+  [
+   "block",
+   "gh secret set PRIVACY_NAMES -R o/r -bX < x"
+  ]
  ]
 }

@@ -1495,10 +1495,13 @@
             "program": "openssl",
             "regex": "^rand(?!.*\\s--?(out|writerand)(\\s|=|$))(\\s|$)"
           }
+        ],
+        "not_keys": [
+          "PRIVACY_NAMES"
         ]
       },
       "why": "A GitHub App manifest conversion returns the app's private key, client secret and webhook secret. Printed, saved or teed, the key lands in the transcript or on disk (rules/keys.md: a session never holds a key value). A store reads only that pipe or a fresh openssl rand value; any other source (a file, a heredoc, echo, curl) is a value that sat on disk, on the command line or with someone else.",
-      "fix": "Pipe it straight into its store, as the pipeline's last stage: gh api -X POST /app-manifests/CODE/conversions --jq .pem | gh secret set NAME -R owner/repo. Read the client ID afterwards with gh api apps/SLUG --jq .client_id.",
+      "fix": "Pipe it straight into its store, as the pipeline's last stage: gh api -X POST /app-manifests/CODE/conversions --jq .pem | gh secret set NAME -R owner/repo. Read the client ID afterwards with gh api apps/SLUG --jq .client_id. A secret store.not_keys names (data such as a list of names, never a credential) reads one file on stdin: gh secret set PRIVACY_NAMES -R owner/repo < file.",
       "block": [
         "gh api -X POST /app-manifests/abc123/conversions",
         "gh api -X POST /app-manifests/abc123/conversions --jq .pem",
@@ -1518,13 +1521,18 @@
         "bash -c 'echo abc123 | gh secret set K -R o/r'",
         "openssl rand -out k 32 | gh secret set K -R o/r",
         "openssl rand --writerand k 32 | gh secret set K -R o/r",
-        "openssl rand -hex 32 > k | gh secret set K -R o/r"
+        "openssl rand -hex 32 > k | gh secret set K -R o/r",
+        "gh secret set PRIVACY_NAMES -R o/r <<< a,b",
+        "cat names.txt | gh secret set PRIVACY_NAMES -R o/r",
+        "gh secret set PRIVACY_NAMES -R o/r -b a,b",
+        "gh secret set K -R PRIVACY_NAMES < k.pem"
       ],
       "allow": [
         "gh api -X POST /app-manifests/abc123/conversions --jq .pem | gh secret set BOARD_APP_KEY -R o/r",
         "gh api -X POST app-manifests/abc123/conversions --jq .pem 2>/dev/null | gh secret set K -R o/r",
         "gh api apps/code-os-board --jq .client_id",
-        "openssl rand -hex 32 | gh secret set WEBHOOK_SECRET -R o/r"
+        "openssl rand -hex 32 | gh secret set WEBHOOK_SECRET -R o/r",
+        "gh secret set PRIVACY_NAMES -R o/r < names.txt"
       ]
     },
     {
