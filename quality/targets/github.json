@@ -388,7 +388,7 @@
     "near": 400,
     "direction": "lower",
     "goal_source": "SmartBear's code review study at Cisco: a reviewer should take in no more than 200 to 400 lines at a time (SmartBear, Best Kept Secrets of Peer Code Review, 2006)",
-    "source": "latest: gh api graphql: the latest merged pullRequest, additions plus deletions, less the lines of lockfiles, generated code, data snapshots and params.not_reviewed (NOT_REVIEWED in github.mjs), and two for each line its merge commit moves (git diff, readLines in github-reviews.mjs)",
+    "source": "latest: gh api graphql: the latest merged pullRequest, additions plus deletions, less the lines of lockfiles, generated code, data snapshots and params.not_reviewed (NOT_REVIEWED in github.mjs), and the lines of files removed whole (changeType DELETED), and two for each line its merge commit moves, one when it left with a removed file (git diff, readLines in github-reviews.mjs)",
     "needs": "none",
     "chart": "number"
   },
@@ -404,7 +404,7 @@
     "near": 25,
     "direction": "lower",
     "goal_source": "SmartBear's code review study at Cisco: a reviewer should take in no more than 200 to 400 lines at a time (SmartBear, Best Kept Secrets of Peer Code Review, 2006); the 10% share is a template goal",
-    "source": "gh api graphql: the last 20 merged pullRequests (N = 20, a template choice: enough for a median, few enough that new merges replace them), additions plus deletions, less lockfile, generated and snapshot lines and the lines each merge commit moves (git diff, readLines in github-reviews.mjs)",
+    "source": "gh api graphql: the last 20 merged pullRequests (N = 20, a template choice: enough for a median, few enough that new merges replace them), additions plus deletions, less lockfile, generated and snapshot lines, files removed whole (changeType DELETED) and the lines each merge commit moves (git diff, readLines in github-reviews.mjs)",
     "needs": "none",
     "chart": "gauge"
   },

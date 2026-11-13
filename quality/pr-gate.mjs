@@ -10,7 +10,8 @@
 //                                     than the goal (reviewedLines, which
 //                                     leaves out lockfiles, generated files,
 //                                     data snapshots and params.not_reviewed,
-//                                     and counts no moved line)
+//                                     and counts no moved line and no
+//                                     line of a file removed whole)
 //
 // The goal and the ignored text are the template's with the repo's targets
 // folder (config "targets") laid over them, through overlay.mjs. pr-body.yml
@@ -60,14 +61,14 @@ export function misses(body, author = '', { ignore = [], words = Infinity } = {}
 
 /**
  * The size miss as its fix, or null: the lines a reviewer reads in `files`,
- * as diffFiles reads them ({ filename, additions, deletions, patch }),
- * less two for each moved pair, over the reviewed-lines goal. None for
+ * as diffFiles reads them ({ filename, additions, deletions, patch, deleted }),
+ * less files removed whole and moved lines (readLines), over the reviewed-lines goal. None for
  * Dependabot, whose updates are lockfiles.
  */
 export function sizeMiss(files, author = '', { lines = Infinity, notReviewed = [] } = {}) {
   if (isDependabot(author)) return null;
   const sum = (k) => files.reduce((n, f) => n + f[k], 0);
-  const pull = { additions: sum('additions'), deletions: sum('deletions'), files: { nodes: files.map((f) => ({ path: f.filename, additions: f.additions, deletions: f.deletions })) } };
+  const pull = { additions: sum('additions'), deletions: sum('deletions'), files: { nodes: files.map((f) => ({ path: f.filename, additions: f.additions, deletions: f.deletions, ...(f.deleted && { changeType: 'DELETED' }) })) } };
   const read = readLines(pull, notReviewed, files).lines;
   return read > lines ? `the change asks a reviewer to read ${read} lines, goal ${lines}: split it into a GitHub stack, one pull request per layer at or under the goal (skills/merging/SKILL.md, Stack), then re-run this job` : null;
 }
