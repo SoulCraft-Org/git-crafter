@@ -23,7 +23,7 @@ A repo's Quality page settings (`config.mjs`), and how its targets lie over the 
 
 ## Packs
 
-A pack adds Quality tabs and Process maps from another repo ([`packs.mjs`](packs.mjs)). Its collectors run in CI, so it is pinned like an action. `actions/pages` fetches packs only from its `quality-config` file.
+A pack adds Quality tabs and Process maps from another repo ([`packs.mjs`](packs.mjs)), pinned: its collectors run in CI. `actions/pages` fetches only its `quality-config` file's packs.
 
 | Entry | Means |
 | --- | --- |
@@ -31,11 +31,9 @@ A pack adds Quality tabs and Process maps from another repo ([`packs.mjs`](packs
 | a tag, branch or short SHA | refused: each can move |
 | a folder path | `--local` runs only |
 
-A pack's tab in `tabs` is `["id", "Name"]`, never a bare id. The engine reads the config before `actions/pages` checks the pack out ([`pack-checkouts.mjs`](pack-checkouts.mjs)), so a bare id fails as `tabs: unknown tab`. With no `tabs` key, a pack's tabs join the default list.
-
 | Pack file | Adds |
 | --- | --- |
-| `pack.json` | `{ "tabs": [["id", "Name"]] }`, each id new |
+| `pack.json` | `{ "tabs": [["id", "Name"]] }`, each id new; `tabs` too: a bare id fails pre-checkout |
 | `targets/`, `ideals/`, `maps/` | beside the template's, never over it |
 | `collectors/` | run with `lib` ([contract](collectors/README.md)) |
 

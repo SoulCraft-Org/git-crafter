@@ -78,8 +78,7 @@ function checkPackTabs(packTabs) {
 }
 
 // The tabs a page shows, as [id, name] pairs; packTabs, the packs' own, join
-// the default list. A tabs entry names a pack tab by id only once the pack is
-// checked out, so CI configs write it ["id", "Name"] (CONFIG.md, Packs).
+// the default list and may be named by id.
 export function resolveTabs({ tabs = null, web = false } = {}, packTabs = []) {
   checkPackTabs(packTabs);
   const names = new Map([...TABS, ...packTabs]);
