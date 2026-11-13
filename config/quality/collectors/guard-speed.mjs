@@ -20,8 +20,8 @@
 // reads a suite's lcov, so no runner is timed twice. Those GitHub readers load
 // packages (yaml, typescript), so they are imported only when this metric is
 // read, and a missing package reads as could_not_check. The helpers here come
-// through collectors/lib/, which loads yaml with the scorer; the Pages action
-// installs Git Crafter's packages in every mode, so they are there (#650).
+// through collectors/lib/index.mjs, which loads yaml with the scorer, so this
+// file loads only where Git Crafter's packages are installed beside it.
 import { firstLine, measured, runCommand, unknown } from "../../../quality/collectors/lib/index.mjs";
 
 export const area = "guard-speed";
