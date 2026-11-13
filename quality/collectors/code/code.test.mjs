@@ -472,6 +472,11 @@ describe("helpers", () => {
     );
   });
 
+  it("reads an .astro script whose tags differ in case or carry a space", () => {
+    const f = analyzeFile("A.astro", "<p/>\n<SCRIPT>\nfunction f(a) {\n  if (a) {}\n}\n</script >\n");
+    assert.deepEqual(f.functions.map((fn) => [fn.name, fn.complexity]), [["f", 2]]);
+  });
+
   it("counts a header comment only when it ends right above the export", () => {
     const f = analyzeFile("x.ts", "// File header.\n\nexport function a() {}\n// Says what b does.\nexport function b() {}\n");
     assert.deepEqual(f.exports.map((e) => [e.name, e.documented]), [["a", false], ["b", true]]);

@@ -236,6 +236,10 @@ describe("the body's first line", () => {
     assert.equal(header, "| Metric id | Now | Goal | Source | Change |");
     assert.doesNotMatch(issueBody({ def, entry: { value: 7 } }, "opened"), /Quality page/, "no address, no link");
   });
+  it("escapes a backslash and a pipe in a cell, so neither ends the cell early", () => {
+    const body = issueBody({ def, entry: { value: 7, source: "a\\|b" } }, "opened");
+    assert.equal(body.trimEnd().split("\n").at(-1), "| deploy.waiting_merges | 7 merges | at most 0 merges | a\\\\\\|b | opened |");
+  });
   it("fills the meter by closeness: full at the goal, half at the near edge, less beyond", () => {
     assert.deepEqual([0, 5, 10, 45].map((v) => meter(def, v)), ["▰▰▰▰▰▰▰▰▰▰", "▰▰▰▰▰▱▱▱▱▱", "▰▰▰▱▱▱▱▱▱▱", "▰▱▱▱▱▱▱▱▱▱"]);
     assert.equal(meter({ goal: 100, near: 90, direction: "higher" }, 70), "▰▰▰▱▱▱▱▱▱▱");
