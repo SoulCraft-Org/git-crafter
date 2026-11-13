@@ -1,5 +1,5 @@
-// The checks build.mjs runs before it draws: goals, process.json, systems.json,
-// tokens.json and a repo's maps file. Each returns its errors as strings and
+// The checks build.mjs runs before it draws: goals, process.json, systems.json
+// and a repo's maps file. Each returns its errors as strings and
 // reads nothing from disk; build.mjs re-exports them, so callers import from there.
 
 import { checkIdeal } from "../quality/score.mjs";
@@ -72,28 +72,12 @@ function checkOutcomes(goalsDoc) {
   return errs;
 }
 
-const delegateNodeErr = (n) => (!n?.label || !Array.isArray(n.metrics) ? `claude.delegate ${n?.id ?? n?.label ?? "node"}: needs a label and a metrics list` : null);
-
-// claude.delegate: a source to cite, and every node a label and a list of metrics.
-function checkDelegate(dg) {
-  const errs = [];
-  if (!https(dg.source)) errs.push("claude.delegate: needs an https source");
-  const nodes = [dg.default, ...(dg.branches ?? []), ...(dg.how ?? []), ...(dg.light ? [dg.light] : [])];
-  errs.push(...nodes.map(delegateNodeErr).filter(Boolean));
-  if (!dg.branches?.length) errs.push("claude.delegate: needs at least one branch");
-  return errs;
-}
-
-const checkModelRows = (rows) => rows.filter((r) => !r.work || !r.model || !https(r.source)).map((r) => `claude.models "${r.work ?? "row"}": needs work, a model and an https source`);
-
 function checkProcess(processDoc) {
   const errs = [];
   if ("steps" in processDoc) errs.push("process.json: steps are gone; each repo's own maps file holds its process maps (maps.json is Git Crafter's)");
   if (processDoc.ci && !Array.isArray(processDoc.ci.metrics)) errs.push("ci: needs a metrics list");
   errs.push(...tabIdeals(processDoc.ideals));
-  const dg = processDoc.claude?.delegate;
-  if (dg) errs.push(...checkDelegate(dg));
-  return [...errs, ...checkModelRows(processDoc.claude?.models?.rows ?? [])];
+  return errs;
 }
 
 const badLimit = (l) => typeof l.value !== "number" || !https(l.source) || !/^\d{4}-\d{2}-\d{2}$/.test(l.read ?? "");
@@ -133,10 +117,8 @@ function checkSystems(systemsDoc) {
 
 // Every goal must be ratable and every step drawable; a bad file is a usage
 // error, not data.
-export function checkDocs(goalsDoc, processDoc, systemsDoc = null, tokensDoc = null) {
-  const errs = [...checkOutcomes(goalsDoc), ...checkProcess(processDoc), ...checkSystems(systemsDoc)];
-  if (tokensDoc) errs.push(...checkTokens(tokensDoc, systemsDoc));
-  return errs;
+export function checkDocs(goalsDoc, processDoc, systemsDoc = null) {
+  return [...checkOutcomes(goalsDoc), ...checkProcess(processDoc), ...checkSystems(systemsDoc)];
 }
 
 // A map shows the fewest steps that show where quality, speed and
@@ -259,80 +241,4 @@ export function checkLibrary(library, templateIds, kindOf = null) {
     if (missing.length) errs.push(`pages/maps/${m.id}.json: no step scores ${missing.join(", ")}; a map scores quality, speed and consumption`);
   }
   return errs;
-}
-
-const isFig = (f) => !!f && (typeof f.metric === "string" || typeof f.field === "string");
-
-function checkStack(stack) {
-  const errs = [];
-  if (!isFig(stack?.total)) errs.push("tokens.json stack: total needs a metric or a field");
-  for (const l of stack?.layers ?? []) {
-    if (!https(l.source)) errs.push(`tokens.json layer ${l.id}: needs an https source`);
-    if (!isFig(l.figure) && !l.why) errs.push(`tokens.json layer ${l.id}: needs a figure or a why`);
-  }
-  return errs;
-}
-
-const arr = (x) => x ?? [];
-
-function checkFlowNodes(f) {
-  const errs = [];
-  const groups = new Set(arr(f.groups).map((g) => g.id));
-  if (new Set(arr(f.nodes).map((n) => n.id)).size !== arr(f.nodes).length) errs.push("tokens.json flow: duplicate node id");
-  for (const n of arr(f.nodes)) {
-    if (!groups.has(n.group)) errs.push(`tokens.json node ${n.id}: unknown group ${n.group}`);
-    if (!isCell(n.at)) errs.push(`tokens.json node ${n.id}: at needs [column, row]`);
-  }
-  return errs;
-}
-
-// Group figures, group caches and the compaction line of the flow.
-function checkFlowGroups(f) {
-  const errs = [];
-  for (const g of arr(f.groups)) for (const x of arr(g.figures)) if (!isFig(x)) errs.push(`tokens.json group ${g.id}: a figure needs a metric or a field`);
-  for (const g of arr(f.groups)) if (g.cache && !https(g.cache.source)) errs.push(`tokens.json group ${g.id}: the cache needs an https source`);
-  if (f.compaction && (typeof f.compaction.value !== "number" || !https(f.compaction.source))) errs.push("tokens.json compaction: needs a number and an https source");
-  return errs;
-}
-
-function checkFlow(f) {
-  const errs = checkFlowNodes(f);
-  const nodes = new Set(arr(f.nodes).map((n) => n.id));
-  for (const e of arr(f.edges)) if (!nodes.has(e.from) || !nodes.has(e.to)) errs.push(`tokens.json edge ${e.from} to ${e.to}: unknown node`);
-  return [...errs, ...checkFlowGroups(f)];
-}
-
-function checkPractices(doc) {
-  const errs = [];
-  const pgroups = new Set((doc.groups ?? []).map((g) => g.id));
-  for (const p of doc.practices ?? []) {
-    if (!pgroups.has(p.group)) errs.push(`tokens.json practice "${p.label}": unknown group ${p.group}`);
-    if (!https(p.doc)) errs.push(`tokens.json practice "${p.label}": needs an https doc link`);
-    if (!p.moves) errs.push(`tokens.json practice "${p.label}": needs what it moves`);
-    if (p.figure && !isFig(p.figure)) errs.push(`tokens.json practice "${p.label}": a figure needs a metric or a field`);
-  }
-  return errs;
-}
-
-const unrated = (g) => !["higher", "lower"].includes(g.direction) || typeof g.goal !== "number" || typeof g.near !== "number" || !g.goal_source;
-
-function checkTokenGoal(g, systemsDoc) {
-  const name = g.metric ?? g.field;
-  const errs = [];
-  if (!name) errs.push("tokens.json goal: needs a metric or a field");
-  if (g.system) {
-    const sys = systemsDoc?.systems?.find((x) => x.id === g.system);
-    if (!sys?.limits?.[g.limit ?? 0]) errs.push(`tokens.json goal ${name}: systems.json has no limit ${g.limit ?? 0} for ${g.system}`);
-  } else if (unrated(g)) {
-    errs.push(`tokens.json goal ${name}: needs a direction, a goal, a near edge and a goal_source, or a system and a limit`);
-  }
-  return errs;
-}
-
-// tokens.json: every figure names a metric or a field, every link is https,
-// every flow edge and practice group points at something drawn, every goal
-// can be computed.
-export function checkTokens(doc, systemsDoc = null) {
-  const goals = (doc.goals ?? []).flatMap((g) => checkTokenGoal(g, systemsDoc));
-  return [...checkStack(doc.stack), ...checkFlow(doc.flow ?? {}), ...checkPractices(doc), ...goals];
 }

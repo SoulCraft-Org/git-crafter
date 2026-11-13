@@ -150,12 +150,6 @@ test("goals.json and process.json pass the docs check; a goal with near on the w
   const bad = structuredClone(goals);
   bad.outcomes[0].goals[0].near = 99;
   assert.match(checkDocs(bad, proc).join("\n"), /near must sit on the worse side/);
-  const badProc = structuredClone(proc);
-  badProc.claude.delegate.source = "http://example.com";
-  badProc.claude.delegate.branches[0].metrics = undefined;
-  const dErrs = checkDocs(goals, badProc).join("\n");
-  assert.match(dErrs, /claude.delegate: needs an https source/);
-  assert.match(dErrs, /claude.delegate parallel: needs a label and a metrics list/);
   // The maps are each repo's own file: process.json holds none.
   assert.equal("steps" in proc, false);
   assert.match(checkDocs(goals, { ...proc, steps: [] }).join("\n"), /process.json: steps are gone/);

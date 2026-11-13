@@ -23,10 +23,10 @@ import { readTargetFiles } from "../quality/overlay.mjs";
 import { configDefs } from "../quality/packs.mjs";
 import { configScope, ownStepMetrics, readDocs, readOwnRun, SCOPE } from "../tools/collect_org.mjs";
 import { withComputed } from "./model.mjs";
-import { checkDocs, checkLibrary, checkMaps, checkTokens, inlineIdeal, MAX_STEPS, missingKinds } from "./checks.mjs";
+import { checkDocs, checkLibrary, checkMaps, inlineIdeal, MAX_STEPS, missingKinds } from "./checks.mjs";
 import { renderMetrics, renderProcess } from "./render.mjs";
 
-export { checkDocs, checkLibrary, checkMaps, checkTokens, inlineIdeal, MAX_STEPS, missingKinds };
+export { checkDocs, checkLibrary, checkMaps, inlineIdeal, MAX_STEPS, missingKinds };
 
 const PAGES = fileURLToPath(new URL(".", import.meta.url));
 // The orchestrator's page budget, 2026-11-03: each page under 700 KB.
@@ -164,7 +164,7 @@ export function build({ root = ROOT, now = new Date(), config = null } = {}) {
   // maps': the ids go unchecked, with a warning, and the page still builds.
   const quality = mapsDoc ? qualityDefs(root, qualityConfigPath(config)) : { defs: null };
   const warnings = qualityWarnings(mapsDoc, quality);
-  const errs = [...checkDocs(goalsDoc, processDoc, systemsDoc, tokensDoc), ...checkMaps(mapsDoc, quality.ids ?? null, shown(scope.docs.maps) ?? "maps")];
+  const errs = [...checkDocs(goalsDoc, processDoc, systemsDoc), ...checkMaps(mapsDoc, quality.ids ?? null, shown(scope.docs.maps) ?? "maps")];
   if (errs.length) return { code: 2, errs };
   const dataPath = join(root, scope.data);
   if (!existsSync(dataPath)) return { code: 3, errs: [`no ${scope.data}; run node ${page.collector}`] };
