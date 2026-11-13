@@ -34,7 +34,7 @@ export const ISSUES = `query Issues($owner: String!, $name: String!, $cursor: St
  * judge a PR from the same data.
  */
 export const PULL_FIELDS = `number title createdAt mergedAt additions deletions headRefOid
-        files(first: 100) { nodes { path additions deletions } }
+        files(first: 100) { nodes { path additions deletions changeType } }
         reviews(last: 50, states: [COMMENTED, APPROVED, CHANGES_REQUESTED, DISMISSED]) {
           nodes { submittedAt commit { oid } author { __typename } }
         }`;

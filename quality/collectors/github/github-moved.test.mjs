@@ -9,7 +9,8 @@ import path from "node:path";
 import { after, describe, it } from "node:test";
 
 import { gitDiff } from "./github-loaders.mjs";
-import { readLines } from "./github-reviews.mjs";
+import { PULL_FIELDS } from "./github-queries.mjs";
+import { readLines, reviewedLines } from "./github-reviews.mjs";
 import { GRAPHQL, fakeGh, run } from "./github-test-lib.mjs";
 
 // A repo whose second commit moves 300 lines from a.mjs to b.mjs and adds 10 new ones.
@@ -49,6 +50,12 @@ describe("moved lines in the size metrics", () => {
     assert.deepEqual(readLines(p, [], gitDiff(root, MOVE)), { lines: 10, skipped: 0, moved: 600 });
     assert.deepEqual(readLines(p), { lines: 610, skipped: 0, moved: 0 }, "no patch moves nothing");
     assert.equal(readLines({ ...p, additions: 0, deletions: 0, files: { nodes: [] } }, [], gitDiff(root, MOVE)).lines, 0);
+  });
+
+  it("leaves out a file removed whole, as GraphQL's changeType names it", () => {
+    assert.match(PULL_FIELDS, /files\(first: 100\) \{ nodes \{ path additions deletions changeType \} \}/);
+    const p = { additions: 120, deletions: 100, files: { nodes: [{ path: "a.mjs", additions: 0, deletions: 100, changeType: "DELETED" }, { path: "b.mjs", additions: 120, deletions: 0, changeType: "ADDED" }] } };
+    assert.deepEqual(reviewedLines(p), { lines: 120, skipped: 0 });
   });
 
   it("scores the latest merge by its new lines, and says when a merge commit was not read", async () => {

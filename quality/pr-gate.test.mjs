@@ -123,6 +123,19 @@ describe('pr-gate', () => {
     assert.match(sizeMiss([from, { ...to, patch: undefined }], 'someone', held), /read 600 lines/, 'no patch counts in full');
   });
 
+  it('counts no line of a file removed whole, and a line that returns from one once', () => {
+    const lines = (n, at = 0) => Array.from({ length: n }, (_, i) => `old line ${at + i}`);
+    const removed = diffFiles(readFileSync(diffAt('removed', [{ name: 'old.mjs', sign: '-', lines: lines(300) }]), 'utf8'));
+    assert.equal(removed[0].deleted, true);
+    assert.equal(sizeMiss(removed, 'someone', { lines: 0 }), null, 'a 300-line file removed whole reads 0');
+    const back = diffAt('removed-back', [{ name: 'old.mjs', sign: '-', lines: lines(100) }, { name: 'new.mjs', sign: '+', lines: [...lines(100), ...lines(20, 500)] }]);
+    assert.match(sizeMiss(diffFiles(readFileSync(back, 'utf8')), 'someone', { lines: 0 }), /read 20 lines/, '100 lines back beside 20 new');
+    // The same diffs with the file emptied, not removed, read as before.
+    const kept = (path) => diffFiles(readFileSync(path, 'utf8').replace('deleted file mode 100644\n', '').replace('+++ /dev/null', '+++ b/old.mjs'));
+    assert.match(sizeMiss(kept(diffAt('emptied', [{ name: 'old.mjs', sign: '-', lines: lines(300) }])), 'someone', { lines: 0 }), /read 300 lines/);
+    assert.match(sizeMiss(kept(back), 'someone', { lines: 0 }), /read 20 lines/);
+  });
+
   it("parses git's patch, and passes #795's shape, one file moved into three, through main", () => {
     const body = Array.from({ length: 1500 }, (_, i) => `test line ${i}`);
     const moved = diffAt('795', [

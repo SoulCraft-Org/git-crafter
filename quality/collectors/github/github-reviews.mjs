@@ -80,10 +80,17 @@ export const NOT_REVIEWED = [
 /** Whether a changed file is one a reviewer does not read: a built-in pattern or one of `extra`. */
 export const isNotReviewed = (file, extra = []) => [...NOT_REVIEWED, ...extra].some((re) => re.test(file));
 
-/** Lines a person reads in a PR: additions plus deletions, minus not-reviewed files. */
+/**
+ * Lines a person reads in a PR: additions plus deletions, minus not-reviewed
+ * files and files removed whole (changeType DELETED). A reviewer of a removed
+ * file checks what still names it, not its lines.
+ */
 export function reviewedLines(pull, extra = []) {
-  const skipped = (pull.files?.nodes ?? []).filter((f) => isNotReviewed(f.path, extra)).reduce((n, f) => n + f.additions + f.deletions, 0);
-  return { lines: Math.max(0, pull.additions + pull.deletions - skipped), skipped };
+  const nodes = pull.files?.nodes ?? [];
+  const sum = (files) => files.reduce((n, f) => n + f.additions + f.deletions, 0);
+  const skipped = sum(nodes.filter((f) => isNotReviewed(f.path, extra)));
+  const removed = sum(nodes.filter((f) => f.changeType === "DELETED" && !isNotReviewed(f.path, extra)));
+  return { lines: Math.max(0, pull.additions + pull.deletions - skipped - removed), skipped };
 }
 
 /**
@@ -103,9 +110,10 @@ export function movedPairs(files) {
 
 /**
  * The changed files in `git diff --unified=0` output, each as
- * { filename, additions, deletions, patch }, the shape sizeMiss and readLines read. A
- * file's header runs to its first hunk, so a removed line that reads "--- x"
- * is a line, not a header. A rename with no edit has no lines.
+ * { filename, additions, deletions, patch }, the shape sizeMiss and readLines read,
+ * with deleted: true for a file removed whole. A file's header runs to its first
+ * hunk, so a removed line that reads "--- x" is a line, not a header. A rename
+ * with no edit has no lines.
  */
 export function diffFiles(text) {
   const files = [];
@@ -117,23 +125,26 @@ export function diffFiles(text) {
     } else if (!f) continue;
     else if (f.head) {
       if (l.startsWith("@@")) f.head = false;
+      else if (l.startsWith("deleted file mode")) f.deleted = true;
       else if (/^(\+\+\+ b\/|rename to )/.test(l)) f.filename = l.replace(/^(\+\+\+ b\/|rename to )/, "");
     } else if (l[0] === "+" || l[0] === "-") {
       f[l[0] === "+" ? "additions" : "deletions"]++;
       f.lines.push(l);
     }
   }
-  return files.map(({ filename, additions, deletions, lines }) => ({ filename, additions, deletions, patch: lines.join("\n") }));
+  return files.map(({ filename, additions, deletions, lines, deleted }) => ({ filename, additions, deletions, patch: lines.join("\n"), ...(deleted && { deleted }) }));
 }
 
 /**
  * reviewedLines less two for each moved pair among `patch`'s reviewed files
  * (diffFiles' shape): a line moved from one place to another is read once,
- * as the pull request gate reads it. No patch moves nothing.
+ * as the pull request gate reads it. A file removed whole counted no lines,
+ * so a pair from it takes off only its added line. No patch moves nothing.
  */
 export function readLines(pull, extra = [], patch = []) {
   const { lines, skipped } = reviewedLines(pull, extra);
-  const moved = Math.min(lines, 2 * movedPairs(patch.filter((f) => !isNotReviewed(f.filename, extra))));
+  const read = patch.filter((f) => !isNotReviewed(f.filename, extra));
+  const moved = Math.min(lines, movedPairs(read.filter((f) => !f.deleted)) + movedPairs(read));
   return { lines: lines - moved, skipped, moved };
 }
 
