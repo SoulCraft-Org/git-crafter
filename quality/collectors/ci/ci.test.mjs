@@ -312,7 +312,7 @@ describe("targets/ci.json", () => {
     assert.equal(TARGETS.find((t) => t.id === "ci.latest_flow").chart, "flow");
     assert.deepEqual(
       TARGETS.filter((t) => t.kind === "consumption").map((t) => t.id),
-      ["ci.latest_pr_dollars", "issues.latest_fix_ci_minutes", "projects.latest_card_ci_minutes", "security.latest_scan_minutes", "ci.light_run_share", "ci.latest_main_push_minutes", "ci.skip_unchanged_share", "insights.failed_minutes_share", "ci.runner_cents_per_minute", "ci.api_headroom"],
+      ["ci.latest_pr_dollars", "issues.latest_fix_ci_minutes", "projects.latest_card_ci_minutes", "security.latest_scan_minutes", "ci.light_run_share", "ci.latest_main_push_minutes", "ci.skip_unchanged_share", "insights.failed_minutes_share", "ci.runner_cents_per_minute", "ci.api_headroom", "ci.pr_run_requests"],
     );
     // Half the billed minutes on ubuntu-slim, near every minute at the standard Linux 2-core rate.
     const rate = TARGETS.find((t) => t.id === "ci.runner_cents_per_minute");

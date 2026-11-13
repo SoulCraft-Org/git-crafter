@@ -35,6 +35,7 @@ test("packs: a full SHA is taken; a tag, a branch or a short SHA is refused with
   }
   assert.throws(() => resolvePacks([""], { root: "/r", env: {} }), /packs must list/);
   assert.deepEqual(checkoutLines({ packs: [pack] }), [`octo/pack ${SHA} /p/octo/pack`], "actions/pages fetches it at its SHA");
+  for (const spec of [`../..@${SHA}`, `./x@${SHA}`, `o/.x@${SHA}`]) assert.throws(() => resolvePacks([spec], { root: "/r", env: {}, ci: true }), /packs: /, spec);
 });
 
 test("packs: a local path is a --local run's only; CI refuses it", () => {

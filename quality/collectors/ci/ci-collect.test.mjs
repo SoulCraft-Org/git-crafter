@@ -143,9 +143,9 @@ describe("collect", () => {
     assert.equal(count(/\/pulls\?/), 1);
     assert.equal(count(/\/check-runs/), 3, "one per merge commit of the last merged pull requests");
     assert.equal(count(/search\/issues|billing|commits\?/), 0);
-    // 1 repo + 1 list + 2 run lists + 11 jobs + 5 logs + 1 attempt + 1 pulls + 3 check runs + 1 rate_limit = 26 REST and text calls.
+    // 1 repo + 1 list + 2 run lists + 11 jobs + 5 logs + 1 attempt + 1 pulls + 3 check runs + 1 rate_limit + 1 pages.yml pull_request list = 27 REST and text calls.
     assert.equal(count(new RegExp(`^repos/${REPO}$`)), 1, "the default branch, read once");
-    assert.equal(calls.filter((c) => !c.startsWith("graphql")).length, 26);
+    assert.equal(calls.filter((c) => !c.startsWith("graphql")).length, 27);
   });
 
   it("reads jobs with their steps in GraphQL calls small enough to finish within GitHub's timeout", async () => {
@@ -191,7 +191,7 @@ describe("collect", () => {
     const calls = [];
     await collect({ root: ROOT, mode: "local", params: FULL_PARAMS, gh: fakeGh({}, calls), now: NOW, repo: REPO });
     assert.equal(calls.filter((c) => /billing/.test(c)).length, 0, "no billing read");
-    assert.equal(calls.filter((c) => !c.startsWith("graphql")).length, 26, "the same 26 as a ci run");
+    assert.equal(calls.filter((c) => !c.startsWith("graphql")).length, 27, "the same 27 as a ci run");
   });
 
   it("prices each workflow's billed minutes at its runners' list rate", async () => {

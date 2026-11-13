@@ -46,6 +46,7 @@ import { build, checkDocs } from "../pages/build.mjs";
 import { systemUse } from "../pages/render.mjs";
 import { ciFlow } from "../quality/render/ci-flow.mjs";
 import { rate } from "../pages/model.mjs";
+import { codeLiteral } from "../quality/collectors/lib/strip.mjs";
 
 const ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const NOW = new Date("2026-11-03T12:00:00Z");
@@ -115,7 +116,7 @@ test("fetchRuns reads every run, and each round of pages goes out in one batch",
 });
 
 test("restMany keeps the order, runs reads side by side, and a failure reaches the caller", () => {
-  const sleepy = (ms, out) => ["-e", `setTimeout(() => process.stdout.write(${JSON.stringify(out)}), ${ms})`];
+  const sleepy = (ms, out) => ["-e", `setTimeout(() => process.stdout.write(${codeLiteral(out)}), ${ms})`];
   // The sleeps sum to 4,500 ms, the floor for reads one by one on any runner. Side by side they take the longest,
   // 1,500 ms, plus process startups: about 1,500 ms more on a busy 1-core runner (#861, 1,781 ms for 300 ms
   // sleeps). The 4,000 ms bound sits 1,000 ms above that and 500 ms under the serial floor. The second read ends

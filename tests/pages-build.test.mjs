@@ -18,6 +18,7 @@ import { figureOf, goalOf, modelsLane, PROCESS_TABS, renderMetrics, renderProces
 import { GAP, places, systemsMap, tokenFlow, trail, TRAIL } from "../pages/draw.mjs";
 import { GRID, grid } from "../pages/draw-grid.mjs";
 import { stepReadout } from "../pages/model.mjs";
+import { stripAll } from "../quality/collectors/lib/strip.mjs";
 
 const ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const NOW = new Date("2026-11-03T12:00:00Z");
@@ -321,7 +322,7 @@ test("every trail is spaced evenly: a map's steps spread over the width, a long 
 });
 
 // A step link's name from its content: its one text, spaced, less the hidden per-repo variants.
-const shownWords = (link) => link.match(/<text>(.*)<\/text>/)[1].replace(/<tspan[^>]* hidden>[^<]*<\/tspan>/g, "").replace(/<[^>]+>/g, "");
+const shownWords = (link) => stripAll(link.match(/<text>(.*)<\/text>/)[1].replace(/<tspan[^>]* hidden>[^<]*<\/tspan>/g, ""), /<[^>]+>/g);
 test("a trail step's link name starts with the words the step shows (axe label-content-name-mismatch)", () => {
   const map = { id: "m", name: "Map", steps: [{ id: "plan", name: "Plan the work", short: "Plan" }, { id: "ship", name: "Ship" }] };
   const readouts = { plan: { label: "Session start to PR open", value: 0.59, unit: "h", kind: "speed" }, ship: { label: "Latest deploy", value: null, unit: "h" } };

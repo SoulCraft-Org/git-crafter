@@ -106,7 +106,7 @@ export function statuses(config) {
 }
 
 const unitOf = (def, n) => `${n}${def.unit ? (def.unit === "%" ? "%" : ` ${def.unit}`) : ""}`;
-const cell = (text) => String(text).replace(/\|/g, "\\|").replace(/\s+/g, " ");
+const cell = (text) => String(text).replace(/[\\|]/g, "\\$&").replace(/\s+/g, " ");
 
 // Ten cells, filled by closeness to the goal: 1 at the goal, 0.5 at the near
 // band's edge, falling toward 0 the farther a miss sits beyond it.
