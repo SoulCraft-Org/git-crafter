@@ -1,7 +1,7 @@
 // The CI collector's Consumption metrics that price one event's own runs from their REST jobs: the latest merge (Pull requests tab), fix (Issues), Done card (Projects), security scans (Security) and push to the default branch (Actions).
 import { projectSettings } from "../github/github.mjs";
 import { clientFor } from "../github/github-core.mjs";
-import { LAST, LAST_PRS, QUEUE_SAMPLE, TARGETS_FILE, completed, groupBy, mapLimit, measured, ms, newest, round1, round3, skip } from "./ci-core.mjs";
+import { CODE_QUALITY, LAST, LAST_PRS, QUEUE_SAMPLE, TARGETS_FILE, completed, groupBy, mapLimit, measured, ms, newest, round1, round3, skip } from "./ci-core.mjs";
 import { latestPriced, pricedCard, priceRuns } from "./ci-runs.mjs";
 
 // How many of the newest Done cards the card metric tries before it gives up.
@@ -99,15 +99,25 @@ export const SPEND_METRICS = {
     },
   },
   "security.latest_scan_minutes": {
-    source: `latest: gh api actions/runs/{id}/jobs: each workflow named like params.security_workflows, the repo's own (its latest run that did real work, of its newest ${QUEUE_SAMPLE} of the ${LAST}) and GitHub's dynamic ones such as CodeQL default setup (its latest passed run); billed runner minutes, summed`,
+    source: `latest: gh api actions/runs/{id}/jobs: each workflow named like params.security_workflows, the repo's own (its latest run that did real work, of its newest ${QUEUE_SAMPLE} of the ${LAST}) and GitHub's dynamic ones such as CodeQL default setup (its latest passed run), less ${CODE_QUALITY}; billed runner minutes, summed`,
     async run(L, { cfg }) {
       const real = (r) => r.conclusion === "success" && !r.light;
       const pick = (g) => newest(g.some(real) ? g.filter(real) : g);
       const own = [...groupBy((await L.queued()).filter((r) => cfg.securityWorkflows.test(r.workflow)), (r) => r.workflow)].map(([w, g]) => [w, pick(g)]);
-      const scans = [...own, ...(await L.dynamicScans())];
+      const scans = [...own, ...(await L.dynamicScans()).filter(([name]) => name !== CODE_QUALITY)];
       if (!scans.length) return skip(`no workflow's name matches params.security_workflows (${cfg.securityWorkflows.source}) in ${TARGETS_FILE}`);
       const detail = scans.map(([label, r]) => ({ label, value: round1(r.billed) }));
       return measured(round1(detail.reduce((n, d) => n + d.value, 0)), detail);
+    },
+  },
+  // Code Quality is a code product, so its minutes go on the Code tab (#62).
+  "code.quality_scan_minutes": {
+    source: `latest: gh api actions/runs/{id}/jobs: GitHub's dynamic ${CODE_QUALITY} workflow, its latest passed run, read with the security scans; billed runner minutes, summed`,
+    async run(L) {
+      const scan = (await L.dynamicScans()).find(([name]) => name === CODE_QUALITY);
+      if (!scan) return skip(`no passed run of GitHub's dynamic ${CODE_QUALITY} workflow; Code Quality is off or has not run`);
+      const value = round1(scan[1].billed);
+      return measured(value, [{ label: CODE_QUALITY, value }]);
     },
   },
 };

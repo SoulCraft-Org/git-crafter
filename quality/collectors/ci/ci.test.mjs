@@ -299,7 +299,7 @@ describe("fail open", () => {
 describe("targets/ci.json", () => {
   it("puts each metric on its tab with a group, a plain meaning and a goal source", () => {
     for (const t of TARGETS) {
-      assert.ok(["actions", "pull-requests", "issues", "projects", "security", "insights"].includes(t.tab), t.id);
+      assert.ok(["actions", "pull-requests", "issues", "projects", "security", "code", "insights"].includes(t.tab), t.id);
       // GitHub files its Actions usage view under Insights, so that one metric sits on that tab, grouped by view.
       const view = t.id === "insights.failed_minutes_share";
       assert.equal(t.tab === "insights", view, `${t.id}: no other metric here goes on the Insights tab`);
@@ -312,7 +312,7 @@ describe("targets/ci.json", () => {
     assert.equal(TARGETS.find((t) => t.id === "ci.latest_flow").chart, "flow");
     assert.deepEqual(
       TARGETS.filter((t) => t.kind === "consumption").map((t) => t.id),
-      ["ci.latest_pr_dollars", "issues.latest_fix_ci_minutes", "projects.latest_card_ci_minutes", "security.latest_scan_minutes", "ci.light_run_share", "ci.latest_main_push_minutes", "ci.skip_unchanged_share", "insights.failed_minutes_share", "ci.runner_cents_per_minute", "ci.api_headroom", "ci.pr_run_requests"],
+      ["ci.latest_pr_dollars", "issues.latest_fix_ci_minutes", "projects.latest_card_ci_minutes", "security.latest_scan_minutes", "code.quality_scan_minutes", "ci.light_run_share", "ci.latest_main_push_minutes", "ci.skip_unchanged_share", "insights.failed_minutes_share", "ci.runner_cents_per_minute", "ci.api_headroom", "ci.pr_run_requests"],
     );
     // Half the billed minutes on ubuntu-slim, near every minute at the standard Linux 2-core rate.
     const rate = TARGETS.find((t) => t.id === "ci.runner_cents_per_minute");

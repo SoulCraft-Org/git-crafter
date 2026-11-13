@@ -48,7 +48,8 @@
 //   deploy_apps     slugs of the GitHub Apps whose check runs on a merge commit
 //                   are deploys
 //   security_workflows  a pattern for the names of the workflows that scan
-//                   for vulnerabilities and secrets
+//                   for vulnerabilities and secrets; GitHub's dynamic
+//                   CodeQL - Code Quality run is read with them for the Code tab
 
 import { execFile } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -57,7 +58,7 @@ import { ConfigError, GhError, ghClient, projectSettings, readProject, refusingG
 import { adminGh, gated } from "../github/github-core.mjs";
 import { once } from "../github/github-loaders.mjs";
 import { runsOnPush } from "./ci-workflows.mjs";
-import { TARGETS_FILE, RUNS_PER_WORKFLOW, LAST_RUNS, LAST_PRS, QUEUE_SAMPLE, LOG_SAMPLE, LAST, round1, pct, skip, measured, ms, completed, newest, groupBy, mapLimit } from "./ci-core.mjs";
+import { TARGETS_FILE, RUNS_PER_WORKFLOW, LAST_RUNS, LAST_PRS, QUEUE_SAMPLE, LOG_SAMPLE, LAST, CODE_QUALITY, round1, pct, skip, measured, ms, completed, newest, groupBy, mapLimit } from "./ci-core.mjs";
 import { describeRun, pushToGreen, cacheVerdict, weightedLightShare, commonStart } from "./ci-describe.mjs";
 import { skipTriggers } from "./ci-stages.mjs";
 import { pipelineDetail } from "./ci-detail.mjs";
@@ -186,12 +187,12 @@ function pullLoaders(L, { gh, repo, cfg }) {
       const merged = closed.filter((p) => p.merged_at).sort((a, b) => ms(b.merged_at) - ms(a.merged_at));
       return { closed: closed.slice(0, LAST_PRS), merged: merged.slice(0, LAST_PRS), allMerged: merged };
     }),
-    // GitHub's own scan workflows (CodeQL default setup runs as a dynamic
-    // workflow), which no file here holds: each one's latest passed run, with
-    // its REST jobs. Read only for the scan metric, so the run metrics still
-    // cover only the repo's own workflows.
+    // GitHub's own scan workflows (CodeQL default setup and Code Quality run as
+    // dynamic workflows), which no file here holds: each one's latest passed
+    // run, with its REST jobs. Read only for the scan metrics, so the run
+    // metrics still cover only the repo's own workflows.
     dynamicScans: once(async () => {
-      const scans = (await L.listed()).filter((w) => String(w.path ?? "").startsWith("dynamic/") && cfg.securityWorkflows.test(w.name ?? ""));
+      const scans = (await L.listed()).filter((w) => String(w.path ?? "").startsWith("dynamic/") && (w.name === CODE_QUALITY || cfg.securityWorkflows.test(w.name ?? "")));
       const out = [];
       for (const w of scans) {
         const passed = (await workflowRuns(gh, repo, w)).filter((r) => completed(r) && r.conclusion === "success");
