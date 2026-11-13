@@ -480,8 +480,6 @@ jobs:
 
       # admin-read-token (#837): the ADMIN_READ_TOKEN secret, a fine-grained read-only token, else the App token
       # above, on main only, so a branch's code never runs with it. Neither, those metrics stay not measured.
-      # hf-token and openrouter-api-key (#836): the HF_TOKEN and OPENROUTER_API_KEY usage keys, on main only the
-      # same way, for the Credits provider readers. Unset, those stay not read in CI.
       - name: Quality page from main's scored run, no collector changed
         if: steps.replay.outputs.latest == 'true' && needs.changes.outputs.collect != 'true'
         run: node quality/collect.mjs --config config/quality.json --from "$GH_REPLAY_DIR/latest.json" && node quality/build.mjs --config config/quality.json
@@ -495,8 +493,6 @@ jobs:
           artifact: action-split-api
           quality-config: config/quality.json
           admin-read-token: ${{ github.ref == 'refs/heads/main' && (secrets.ADMIN_READ_TOKEN || steps.admin-app.outputs.token) || '' }}
-          hf-token: ${{ github.ref == 'refs/heads/main' && secrets.HF_TOKEN || '' }}
-          openrouter-api-key: ${{ github.ref == 'refs/heads/main' && secrets.OPENROUTER_API_KEY || '' }}
 
       # The first build ran before the Quality run existed, so its map steps read none. This one reads the
       # run the step above wrote (data/quality/latest.json) and keeps data/org.json, so the site metrics keep
@@ -523,10 +519,12 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p shots
+          # One hung Chrome ran to the job's 15-minute limit (#95): each call stops at 120 s and runs once more.
           shot() {
-            google-chrome --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
+            local args=(--headless=new --no-sandbox --disable-gpu --hide-scrollbars \
               --force-device-scale-factor=1 --virtual-time-budget=4000 \
-              --window-size="$2" --screenshot="shots/$1.png" "file://$PWD/pages/dist/$3"
+              --window-size="$2" --screenshot="shots/$1.png" "file://$PWD/pages/dist/$3")
+            timeout -k 10 120 google-chrome "${args[@]}" || timeout -k 10 120 google-chrome "${args[@]}"
           }
           shot process-1440 1440,1900 index.html
           shot process-step-ci-1440 1440,1900 "index.html#step-delivery-ci"

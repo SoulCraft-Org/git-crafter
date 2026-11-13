@@ -420,18 +420,18 @@ test("every Quality id the Process docs name reads the repo's own run; the colle
     mkdirSync(join(dir, "quality", "data"), { recursive: true });
     mkdirSync(join(dir, "docs"));
     for (const f of ["goals.json", "process.json"]) cpSync(join(ROOT, f), join(dir, "docs", f));
-    writeFileSync(join(dir, "quality", "data", "latest.json"), JSON.stringify({ metrics: { "credits.actions_pool_used": { value: 40, unit: "%", source: "ci", read_at: ago(1) } } }));
+    writeFileSync(join(dir, "quality", "data", "latest.json"), JSON.stringify({ metrics: { "ci.latest_pr_dollars": { value: 0.09, unit: "dollars", source: "ci", read_at: ago(1) } } }));
     const scope = configScope({ repos: ["one"], docs: { goals: "docs/goals.json", process: "docs/process.json", rules: null }, data: "org.json" });
     const refuse = () => { throw new Error("HTTP 403"); };
     const gh = { calls: 0, graphqlCalls: 0, rest: refuse, restLines: refuse, raw: refuse, graphql: refuse };
     const api = { errors: [], pipelines: {}, gh_calls: 0, rest_calls: 0, graphql_calls: 0, repos: [{ name: "one" }], metrics: { "pr.latest_merge_hours": { value: 3, unit: "h", source: "api" } } };
     const m = finishCollect(api, { gh, scope, root: dir }).metrics;
-    assert.deepEqual([m["credits.actions_pool_used"].value, m["credits.actions_pool_used"].copied_from], [40, "one"], "the CI tab's pool reads the repo's own run");
+    assert.deepEqual([m["ci.latest_pr_dollars"].value, m["ci.latest_pr_dollars"].copied_from], [0.09, "one"], "the CI tab's cost reads the repo's own run");
     writeFileSync(join(dir, "quality", "data", "latest.json"), JSON.stringify({ metrics: {} }));
-    const lacks = finishCollect(api, { gh, scope, root: dir }).metrics["credits.actions_pool_used"];
+    const lacks = finishCollect(api, { gh, scope, root: dir }).metrics["ci.latest_pr_dollars"];
     assert.match(lacks.could_not_check, /one's Quality run does not measure it/, "a Quality id its run lacks is not measured, never a copy");
     assert.equal(m["pr.latest_merge_hours"].value, 3, "the collector's own id stays its own");
-    assert.ok(namedIds(readJson("process.json")).has("credits.actions_pool_used"));
+    assert.ok(namedIds(readJson("process.json")).has("ci.latest_pr_dollars"));
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

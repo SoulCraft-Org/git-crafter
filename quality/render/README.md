@@ -24,7 +24,7 @@ A targets entry's `chart`. Anything else is a usage error. An entry may add `by_
 | `ledger` | one row per blocker, full width, by [ledger.mjs](ledger.mjs) | `group`, `fires`, `false_alarm`, `hours`, `tokens`, `verdict` |
 | `repos` | one row per repo, by [repos.mjs](repos.mjs) | `value` tokens, `share`, `merged`, `per_10m`, `tokens_per_pr`, `cache_read_share`, `waste_share`, `rework_per_pr`, `per_hour` |
 | `deploys` | one row per production deploy, by [deploys.mjs](deploys.mjs) | `value` merges shipped, `commit`, `commit_from`, `lead_hours`, `rollback`, `failed`, `restore_hours` |
-| `credits` | one row per allowance, by [credits.mjs](credits.mjs) | `allowance`, `used`, `used_floor`, `unused`, `used_share`, `pool`, `resets`, `status`, `replaces`, `could_take_over`, `claim_needs` |
+| `credits` | one row per allowance, for the Credits pack (`SoulCraft-Org/compute-crafter`), by [credits.mjs](credits.mjs) | `allowance`, `used`, `used_floor`, `unused`, `used_share`, `pool`, `resets`, `status`, `replaces`, `could_take_over`, `claim_needs` |
 | `tools` | one row per direct dependency, by [tools.mjs](tools.mjs) | `installed`, `eligible`, `newest`, `status`, `majors_behind`, `waiting_days`, `where` |
 
 ## Display fields

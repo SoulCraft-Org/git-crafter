@@ -194,7 +194,6 @@ check("every tab the template fills has an ideal and all three categories", () =
   const { all } = loadDefs({ templateDir: dir, tabs: TABS });
   const filled = TABS.filter(([id]) => ideals[id] || all.some((d) => d.tab === id));
   assert.deepEqual(tabGaps(filled, all.filter((d) => d.drop !== true), ideals), [], "a filled tab lacks its ideal or a category");
-  assert.ok(filled.some(([id]) => id === "credits") && DEFAULT_TABS.some(([id]) => id === "credits"), "Credits is a default tab the template fills");
   for (const d of all) assert.ok(!/\/Users\/|\/home\/[a-z]/.test(JSON.stringify(d.params ?? {})), `${d.id}: a home path in the template's params`);
   assert.ok(readFileSync(new URL("./render/client.js", import.meta.url), "utf8").includes("dataset.repo"), "the client reads the repo from the page");
 });

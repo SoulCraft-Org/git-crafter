@@ -22,24 +22,6 @@
   {"use": "code", "why": "Git Crafter's own code, from measured to simplified, deleted, explained, checked and held small"},
   {"use": "triage", "why": "A finding in Git Crafter, from intake to the issue or card a merged pull request closes", "steps": {"intake": {"rule_ref": "SUPPORT.md"}, "issue": {"rule_ref": "CONTRIBUTING.md"}, "card": {"rule_ref": "CONTRIBUTING.md"}, "link": {"rule_ref": "CONTRIBUTING.md"}}},
   {"use": "document"},
-  {"use": "secure", "why": "Git Crafter's security, from keys no session reads to alerts closed within a week", "steps": {"keys": {"rule_ref": "rules/keys.md"}, "scan": {"rule_ref": "SECURITY.md"}, "model": {"rule_ref": "THREAT-MODEL.md"}, "report": {"rule_ref": "SECURITY.md"}, "alerts": {"rule_ref": "SECURITY.md"}}},
-  {
-   "id": "spend",
-   "name": "Spend",
-   "why": "Git Crafter's compute and credits, from free allowances first to idle capacity dropped",
-   "ideal": "Use free and included allowances before anything that bills, read their use the same day, and never idle free capacity in a lane over budget.",
-   "sources": [
-    {"title": "GitHub Actions billing", "url": "https://docs.github.com/en/billing/concepts/product-billing/github-actions", "date": "2026-11-04"},
-    {"title": "REST API endpoints for billing usage", "url": "https://docs.github.com/en/rest/billing/usage", "date": "2026-11-04"},
-    {"title": "What is the Ultra plan?", "url": "https://support.claude.com/en/articles/17728952-what-is-the-ultra-plan", "date": "2026-11-04"}
-   ],
-   "critical_path": ["free", "read", "pool", "idle"],
-   "steps": [
-    {"id": "free", "name": "Free first", "tools": ["Free tiers", "Subscription credits"], "rule": "Claim every free allowance before anything that bills.", "rule_ref": "rules/compute.md", "metric": "credits.unclaimed_free"},
-    {"id": "read", "name": "Read", "tools": ["Usage reports", "The credits registry"], "rule": "Each allowance's use is read the same day.", "rule_ref": "rules/compute.md", "metric": "credits.usage_read_share"},
-    {"id": "pool", "name": "Stay under", "tools": ["GitHub Actions included minutes"], "rule": "CI stays under the included minutes; no overage, no larger runners.", "rule_ref": "rules/compute.md", "metric": "credits.actions_pool_used", "gates": ["Spend past the included amount waits for the owner's yes (rules/compute.md)"]},
-    {"id": "idle", "name": "Drop idle", "tools": ["The credits registry"], "rule": "Free capacity in a lane over budget never sits idle; swap in a cheaper lane.", "rule_ref": "rules/compute.md", "metric": "credits.idle_replaceable"}
-   ]
-  }
+  {"use": "secure", "why": "Git Crafter's security, from keys no session reads to alerts closed within a week", "steps": {"keys": {"rule_ref": "rules/keys.md"}, "scan": {"rule_ref": "SECURITY.md"}, "model": {"rule_ref": "THREAT-MODEL.md"}, "report": {"rule_ref": "SECURITY.md"}, "alerts": {"rule_ref": "SECURITY.md"}}}
  ]
 }

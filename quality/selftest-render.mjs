@@ -123,7 +123,7 @@ check("deploys and credits draw full width on their own tabs and keep their rows
   const cr = { id: "t.cr", tab: "credits", kind: "quality", label: "Free allowance idle", unit: "allowances", goal: 0, near: 1, direction: "lower", chart: "credits" };
   const deploys = [{ label: "2026-11-02 23:51", value: 45, unit: "merges", commit: "2549f97", commit_from: "tag", lead_hours: 2.3, rollback: false, failed: null, restore_hours: null }];
   const allowances = [{ label: "Blacksmith", lane: "ci", allowance: 3000, unit: "minutes", used: 1587, used_floor: true, unused: 513, status: "idle", replaces: true, could_take_over: "CI overflow", claim_needs: "a share" }];
-  const html = render({ defs: [dep, cr], metrics: { "t.dep": val(4, { detail: deploys }), "t.cr": val(1, { detail: allowances }) } });
+  const html = render({ defs: [dep, cr], metrics: { "t.dep": val(4, { detail: deploys }), "t.cr": val(1, { detail: allowances }) }, tabs: [...DEFAULT_TABS, ["credits", "Credits"]] });
   for (const [tab, id, text] of [["deploy", "t.dep", "2549f97"], ["credits", "t.cr", "Blacksmith"]]) {
     const section = new RegExp(`<section id="${tab}"[\\s\\S]*?<\\/section>\\n(<section id="|<\\/main>)`).exec(html)[0];
     const at = section.indexOf(`aria-labelledby="flow-${id}"`);

@@ -14,7 +14,6 @@
   "config/quality/collectors/page-speed.mjs",
   "quality/collectors/ci/ci.mjs",
   "quality/collectors/code/code.mjs",
-  "quality/collectors/credits/credits.mjs",
   "quality/collectors/docs/docs.mjs",
   "quality/collectors/github/github.mjs",
   "quality/collectors/insights/insights.mjs",

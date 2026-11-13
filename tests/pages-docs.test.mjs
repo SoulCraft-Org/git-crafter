@@ -275,11 +275,11 @@ test("a repo with only library maps and template defaults builds, every section 
   }
 });
 
-test("Git Crafter's maps use nine library maps and add Spend, and its own Quality run reads every step's metric (#330)", (t) => {
+test("Git Crafter's maps use nine library maps, and its own Quality run reads every step's metric (#330)", (t) => {
   // This repo tracks no Mac's run (.gitignore), so only a local checkout holds it.
   if (!existsSync(join(ROOT, "data/quality/local.json"))) return t.skip("no data/quality/local.json in this tree");
   const maps = readJson("maps.json").maps;
-  assert.deepEqual(maps.map((m) => m.use ?? m.id), ["delivery", "deploy", "board", "adopt", "measure", "code", "triage", "document", "secure", "spend"]);
+  assert.deepEqual(maps.map((m) => m.use ?? m.id), ["delivery", "deploy", "board", "adopt", "measure", "code", "triage", "document", "secure"]);
   const own = readJson("data/quality/local.json").metrics;
   const steps = readDocsFrom(ROOT, { goals: "goals.json", process: "process.json", maps: "maps.json" }).maps.maps.flatMap((m) => m.steps.map((s) => s.metric));
   const unread = steps.filter((id) => !own[id] || String(own[id].could_not_check ?? "").includes("no repo to read"));

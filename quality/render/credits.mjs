@@ -3,7 +3,7 @@
 // credits(detail) and places the result full width at the top of the tab,
 // as it does the ledger; this file escapes its own text.
 //
-// detail is one item per allowance, from quality/collectors/credits/credits.mjs:
+// detail is one item per allowance, from the Credits pack's collector (SoulCraft-Org/compute-crafter):
 // { label, lane, allowance, unit, per, used, used_floor, unused, used_share,
 // pool (an org-wide CI pool), resets, status (over, idle, not read, used up, unclaimed), replaces (its
 // lane is over budget), could_take_over, claim_needs }, numbers null when
