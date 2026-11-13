@@ -133,6 +133,12 @@ const isSync = (s) => isObj(s) && isText(s.label) && Object.keys(s).every((k) =>
 // quality/config.json when the repo has one, else the defaults. Paths come
 // back absolute. ci, a run in CI, refuses a pack named by path. Throws on a
 // bad file: a usage error.
+// An issue_sync.labels key that names a removed tab, unless a pack brings it back, stops.
+function checkLabels(labels, tabs) {
+  const gone = Object.keys(labels ?? {}).find((id) => Object.hasOwn(MOVED_TABS, id) && !tabs.some(([t]) => t === id));
+  if (gone) throw new Error(`issue_sync.labels: ${unknownTab(gone)}`);
+}
+
 export function loadConfig({ root = process.cwd(), file = null, env = process.env, ci = false } = {}) {
   const path = configPath(root, file);
   const raw = readRaw(path, Boolean(file));
@@ -151,8 +157,7 @@ export function loadConfig({ root = process.cwd(), file = null, env = process.en
     packs,
     tabs: resolveTabs(c, packs.flatMap((p) => p.tabs)),
   };
-  const gone = Object.keys(c.issue_sync?.labels ?? {}).find((id) => Object.hasOwn(MOVED_TABS, id) && !settings.tabs.some(([t]) => t === id));
-  if (gone) throw new Error(`issue_sync.labels: ${unknownTab(gone)}`);
+  checkLabels(c.issue_sync?.labels, settings.tabs);
   for (const k of PATHS) settings[k] = absolute(root, c[k]);
   settings.tokens_css ??= join(QUALITY, "render", "tokens.css");
   return settings;
