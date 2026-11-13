@@ -4,7 +4,7 @@ import { codeLiteral, stripAll } from './strip.mjs';
 
 test('stripAll: a match one pass rejoins goes too, and plain text stays (#13)', () => {
   const comment = /<!--[\s\S]*?-->/g;
-  assert.equal('<!<!-- a -->-- b -->x'.replace(comment, ''), '<!-- b -->x', 'one pass leaves a comment');
+  // One pass would leave "<!-- b -->x".
   assert.equal(stripAll('<!<!-- a -->-- b -->x', comment), 'x');
   assert.equal(stripAll('<scr<script>x</script>ipt>y</SCRIPT >', /<script\b[\s\S]*?<\/script\b[^>]*>/gi), '', 'and so does an upper case tag the first pass rejoined');
   assert.equal(stripAll('a <b>c</b>', /<[^>]+>/g, ' '), 'a  c ');
