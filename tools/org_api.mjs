@@ -117,7 +117,7 @@ export function unreadApi(errors, now = new Date()) {
 export function collectApi({ gh = ghClient(), now = new Date(), scope = SCOPE, root = ROOT } = {}) {
   const errors = [];
   const readAt = () => new Date().toISOString();
-  const docs = readDocs(root, scope.docs);
+  const docs = readDocs(root, scope.docs, scope.quality_config);
   const repoList = listRepos(gh, scope, errors).sort((a, b) => a.name.localeCompare(b.name));
   const repos = repoList.map((r) => r.name);
   const defaults = Object.fromEntries(repoList.map((r) => [r.name, r.default_branch]));

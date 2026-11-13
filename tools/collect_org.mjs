@@ -118,7 +118,7 @@ function fillNamed(metrics, docs, scope, { site, siteSpec, siteError }) {
 // half's own read, so a page shows both dates, never only the API half's (#690).
 export function finishCollect(api, { gh = ghClient(), scope = SCOPE, root = ROOT, now = new Date() } = {}) {
   const errors = [...api.errors];
-  const docs = readDocs(root, scope.docs);
+  const docs = readDocs(root, scope.docs, scope.quality_config);
   const metrics = { ...api.metrics };
   const base = { calls: gh.calls, graphql: gh.graphqlCalls };
   const q = readQuality(root, scope, gh, errors);

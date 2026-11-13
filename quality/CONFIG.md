@@ -13,13 +13,31 @@ A repo's Quality page settings (`config.mjs`), and how its targets lie over the 
 | `targets` | `<repo>/quality/targets` | the repo's overrides and own metrics |
 | `collectors` | `<repo>/quality/collectors` | the repo's own collectors; a template collector's name is a usage error |
 | `ideals` | `<repo>/quality/ideals` | the repo's ideal states, one file per tab, in place of the template's |
-| `packs` | `[]` | tabs from other repos, each `"owner/repo@<40-hex sha>"`, or a folder in a `--local` run ([`packs.mjs`](packs.mjs)) |
+| `packs` | `[]` | tabs and maps from other repos ([below](#packs)) |
 | `reviews`, `data`, `history`, `out` | `<repo>/quality/<key>`; `out` is `<repo>/quality/dist` | folders |
 | `tokens_css` | `render/tokens.css` | the color tokens the page draws with |
 | `budget` | 1,000,000, per `config.mjs` (read 2026-11-04) | page bytes; one over is exit 1 |
 | `issue_sync` | `null`, off | `{ "label", "labels", "project", "quick", "waiting" }` turns on [`sync-issues.mjs`](sync-issues.mjs): on main, one draft card per missed metric on org project `project`, Todo, or Waiting on data for ids in `waiting`. Ids in `quick` open a Task issue instead, labeled `labels[tab]` or `label`; with no `project`, every id does. Cards need env `BOARD_TOKEN` |
 | `comment` | | allowed |
 | an unknown key | | a usage error |
+
+## Packs
+
+A pack adds Quality tabs and Process maps from another repo ([`packs.mjs`](packs.mjs)). Its collectors run in CI, so it is pinned like an action.
+
+| Entry | Means |
+| --- | --- |
+| `"owner/repo@<40-hex sha>"` | `actions/pages` fetches that commit ([`pack-checkouts.mjs`](pack-checkouts.mjs)) |
+| a tag, branch or short SHA | refused: each can move |
+| a folder path | `--local` runs only |
+
+| Pack file | Adds |
+| --- | --- |
+| `pack.json` | `{ "tabs": [["id", "Name"]] }` |
+| `targets/`, `ideals/`, `maps/` | beside the template's |
+| `collectors/` | run with `lib` ([contract](collectors/README.md)) |
+
+Fixture: [`fixtures/pack/`](fixtures/pack/), drawn by [`packs.test.mjs`](packs.test.mjs).
 
 ## Overrides
 

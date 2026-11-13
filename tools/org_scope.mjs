@@ -4,7 +4,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
-import { resolveMaps } from "../pages/library.mjs";
+import { loadLibrary, resolveMaps } from "../pages/library.mjs";
 import { loadConfig } from "../quality/config.mjs";
 
 import { ROOT, SITE_REPO } from "./org_base.mjs";
@@ -76,18 +76,29 @@ export function ownQuality(root, scope) {
   return { repo: scope.own_repo, root: ".", data: ["latest.json", "local.json"].map((f) => rel(join(c.data, f))), targets: rel(c.targets) };
 }
 
+// The maps folders of the packs a Quality config names; none when it cannot
+// be read, since the Quality page build reports why.
+function packMaps(root, file) {
+  try {
+    return loadConfig({ root, file, env: { CODE_OS_PACKS: process.env.CODE_OS_PACKS } }).packs.map((p) => p.maps);
+  } catch {
+    return [];
+  }
+}
+
 // The docs a run and a page read. goals and process are required, and so is a
 // maps file the config names (a typo would show no maps), its { use } entries
 // resolved to the template's library maps (pages/library.mjs); each other doc
-// is null when its path is null or the file is missing.
-export function readDocs(root, docs) {
+// is null when its path is null or the file is missing. quality is the Quality
+// config whose packs add maps to the library (null: the repo's default).
+export function readDocs(root, docs, quality = null) {
   const path = (p) => (p ? resolve(root, p) : null);
   const json = (p) => JSON.parse(readFileSync(p, "utf8"));
   const optional = (p) => (path(p) && existsSync(path(p)) ? path(p) : null);
   return {
     goals: json(path(docs.goals)),
     process: json(path(docs.process)),
-    maps: docs.maps ? resolveMaps(json(path(docs.maps))) : null,
+    maps: docs.maps ? resolveMaps(json(path(docs.maps)), loadLibrary(undefined, packMaps(root, quality))) : null,
     systems: optional(docs.systems) ? json(optional(docs.systems)) : null,
     tokens: optional(docs.tokens) ? json(optional(docs.tokens)) : null,
     rules: optional(docs.rules) ? readFileSync(optional(docs.rules), "utf8") : "",

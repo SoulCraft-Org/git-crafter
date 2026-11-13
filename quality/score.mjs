@@ -225,11 +225,11 @@ export function checkIdeal(doc, where) {
   checkParts(doc.parts, where);
 }
 
-// The ideal per tab: the template's, then a repo's file for the same tab in
-// its place. A file for a tab no list knows is a usage error.
-export function loadIdeals({ templateDir, repoDir = null, tabIds = TAB_IDS }) {
+// The ideal per tab: the template's and each pack's, then a repo's file for
+// the same tab in its place. A file for a tab no list knows is a usage error.
+export function loadIdeals({ templateDir, packDirs = [], repoDir = null, tabIds = TAB_IDS }) {
   const ideals = {};
-  for (const dir of [templateDir, repoDir && repoDir !== templateDir ? repoDir : null]) {
+  for (const dir of [templateDir, ...packDirs, repoDir && repoDir !== templateDir ? repoDir : null]) {
     if (!dir || !existsSync(dir)) continue;
     for (const file of readdirSync(dir).filter((f) => f.endsWith(".json")).sort()) {
       const tab = file.replace(/\.json$/, "");

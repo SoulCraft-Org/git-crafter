@@ -136,6 +136,24 @@ runs:
       shell: bash
       run: npm ci --prefix "$GITHUB_ACTION_PATH/../.." --ignore-scripts --no-audit --no-fund --loglevel=error
 
+    # A pack (quality/CONFIG.md, Packs) is code the collect runs, so each is fetched at the full commit SHA its
+    # config pins, in every mode: the builds read its targets, ideals and maps too. Later steps find them through
+    # CODE_OS_PACKS. A public pack needs no token; a pack named by path fails here, as in any CI run.
+    - name: Check out each pack
+      shell: bash
+      env:
+        QCONFIG: ${{ inputs.quality-config }}
+        CODE_OS_PACKS: ${{ runner.temp }}/code-os-packs
+      run: |
+        echo "CODE_OS_PACKS=$CODE_OS_PACKS" >> "$GITHUB_ENV"
+        args=()
+        if [ -n "$QCONFIG" ]; then args+=(--config "$QCONFIG"); fi
+        node "$GITHUB_ACTION_PATH/../../quality/pack-checkouts.mjs" "${args[@]}" | while read -r repo sha dir; do
+          git init -q "$dir"
+          git -C "$dir" fetch -q --depth 1 "https://github.com/$repo" "$sha"
+          git -C "$dir" checkout -q --detach FETCH_HEAD
+        done
+
     - name: Collect this repo's quality data
       id: collect
       if: steps.pick.outputs.quality == 'true' && inputs.mode != 'render'
