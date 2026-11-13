@@ -8,8 +8,8 @@ A repo's Quality page settings (`config.mjs`), and how its targets lie over the 
 | --- | --- | --- |
 | `repo` | `GITHUB_REPOSITORY` | `owner/name`, for issue, commit and review links |
 | `name` | the repo's name | the page title |
-| `tabs` | every template tab but the web tabs | tab ids in order; `["id", "Name"]` adds a tab of the repo's own |
-| `web` | `false` | `true` shows Design and Usability, the tabs scoring a website |
+| `tabs` | every template tab but `pages` | tab ids in order; `["id", "Name"]` adds a tab of the repo's own; a removed id stops ([migration](../templates/quality/README.md#from-v6-to-v7)) |
+| `web` | `false` | `true` shows Pages, the tab scoring a website |
 | `targets` | `<repo>/quality/targets` | the repo's overrides and own metrics |
 | `collectors` | `<repo>/quality/collectors` | the repo's own collectors; a template collector's name is a usage error |
 | `ideals` | `<repo>/quality/ideals` | the repo's ideal states, one file per tab, in place of the template's |
