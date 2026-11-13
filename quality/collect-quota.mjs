@@ -123,3 +123,9 @@ export function recordLocal(local, { metrics, ran, only, after = null }) {
   const api_spend = { ...spent(gate.before, after), read_at: new Date().toISOString(), source: "gh api rate_limit before and after this run; other sessions' calls in between count too" };
   return { metrics, ran, extra: { api_spend } };
 }
+
+/** ci.pr_run_requests: each job's "GitHub requests" notice (gh-replay.mjs), live REST plus GraphQL; notes[i] is jobs[i]'s annotations. */
+export function prRunRequests(jobs, notes) {
+  const detail = jobs.flatMap((j, i) => (notes[i] ?? []).filter((a) => a.title === "GitHub requests").map((a) => /live (\d+) REST, (\d+) GraphQL/.exec(a.message)).filter(Boolean).map((m) => ({ label: j.name, value: Number(m[1]) + Number(m[2]) })));
+  return detail.length ? { value: detail.reduce((n, d) => n + d.value, 0), detail } : null;
+}

@@ -43,6 +43,7 @@ name: pages
 # .github/ci-overflow.json: tools/ci_overflow.py sums this cycle's minutes on that lane from GitHub's run and job data
 # and hands the label to action, action-collect, action-render and build until the lane's stop, then ubuntu-latest.
 # Anything it cannot read is ubuntu-latest too. deploy stays on GitHub: it holds pages: write and an OIDC token.
+# gh-replay (#38): action-collect and build replay main's public reads; no collector changed shows main's scored run.
 on:
   push:
     branches: [main]
@@ -116,6 +117,7 @@ jobs:
       docs: ${{ steps.changes.outputs.docs }}
       action: ${{ steps.changes.outputs.action }}
       code: ${{ steps.changes.outputs.code }}
+      collect: ${{ steps.changes.outputs.collect }}
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -158,17 +160,24 @@ jobs:
             tools/**
             knip.json
             **/*.md
+          COLLECT: |
+            quality/**
+            config/**
+            data/**
+            package*.json
+            actions/**
         run: |
           python3 -I tools/ci_standard.py changes --paths="$FULL" --base="$BASE" --output=full
           python3 -I tools/ci_standard.py changes --paths="$CODE" --base="$BASE" --output=code
           python3 -I tools/ci_standard.py changes --paths="**/*.md" --base="$BASE" --output=docs
           python3 -I tools/ci_standard.py changes --paths="$ACTION" --base="$BASE" --output=action
+          python3 -I tools/ci_standard.py changes --paths="$COLLECT" --base="$BASE" --output=collect
 
   # On any pull request that touches a doc: each changed doc against its base (quality/docs-gate.mjs), and on a
   # doc-only one the docs.unmapped gate too, the documentation tab alone with no page built.
   docs-gate:
     needs: changes
-    if: needs.changes.outputs.docs == 'true'
+    if: needs.changes.outputs.docs == 'true' || (needs.changes.outputs.full == 'true' && needs.changes.outputs.collect != 'true')
     runs-on: ubuntu-slim
     timeout-minutes: 10
     steps:
@@ -192,12 +201,12 @@ jobs:
         run: node quality/docs-gate.mjs --base "$BASE" --config config/quality.json
 
       - name: Install Git Crafter's packages
-        if: needs.changes.outputs.full != 'true'
+        if: needs.changes.outputs.collect != 'true'
         run: npm ci --ignore-scripts --no-audit --no-fund --loglevel=error
 
       # collect.mjs exits 3 when a gate metric misses its goal, naming each row.
       - name: The docs.unmapped gate
-        if: needs.changes.outputs.full != 'true'
+        if: needs.changes.outputs.collect != 'true'
         run: |
           set -euo pipefail
           node -e 'const fs = require("fs"); const c = JSON.parse(fs.readFileSync("config/quality.json", "utf8"));
@@ -209,7 +218,7 @@ jobs:
   # goal, naming each row. It reads files and git only: no GITHUB_TOKEN call.
   code-gate:
     needs: changes
-    if: needs.changes.outputs.code == 'true' && needs.changes.outputs.full != 'true'
+    if: needs.changes.outputs.collect != 'true' && (needs.changes.outputs.code == 'true' || needs.changes.outputs.full == 'true')
     runs-on: ubuntu-slim
     timeout-minutes: 10
     steps:
@@ -279,17 +288,24 @@ jobs:
       checks: read
       issues: read
       pull-requests: read
+      deployments: read
       # Dependabot's open alerts, read live on every run (security.dependabot_open, security.malware_open).
       vulnerability-alerts: read
     steps:
       - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - uses: actions/setup-node@v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
+
+      - id: replay
+        run: node quality/gh-replay.mjs setup
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       # The Process page alone in mode collect, as a repo's process-collect job calls the action (#650). It runs
       # first: the action's copy of the repo holds no package yet, so an install the action skips fails here.
@@ -307,6 +323,9 @@ jobs:
           quality-config: config/quality.json
           mode: collect
           artifact: action-split-api
+
+      - if: always()
+        run: node quality/gh-replay.mjs report
 
       # $/actions/pages runs from its own copy of the repo, so its npm ci leaves
       # this checkout without packages; the keyboard pass needs them here.
@@ -363,7 +382,7 @@ jobs:
           if-no-files-found: error
 
   build:
-    needs: [changes, runner]
+    needs: [changes, runner, action-collect]
     if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.changes.outputs.full == 'true') }}
     runs-on: ${{ needs.runner.outputs.label || 'ubuntu-latest' }}
     timeout-minutes: 15
@@ -398,6 +417,11 @@ jobs:
       # and rate each map step.
       - name: Install Git Crafter's packages
         run: npm ci --ignore-scripts --no-audit --no-fund --loglevel=error
+
+      - id: replay
+        run: node quality/gh-replay.mjs setup
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       # Main's CI runs, one a UTC day, from the quality-history branch (the deploy job's issue-sync steps write them), beside the local
       # snapshots main holds; a day main holds wins (cp -n). They draw each map step's trend line and the
@@ -451,14 +475,32 @@ jobs:
       # above, on main only, so a branch's code never runs with it. Neither, those metrics stay not measured.
       # hf-token and openrouter-api-key (#836): the HF_TOKEN and OPENROUTER_API_KEY usage keys, on main only the
       # same way, for the Credits provider readers. Unset, those stay not read in CI.
+      - name: Quality page from main's scored run, no collector changed
+        if: steps.replay.outputs.latest == 'true' && needs.changes.outputs.collect != 'true'
+        run: node quality/collect.mjs --config config/quality.json --from "$GH_REPLAY_DIR/latest.json" && node quality/build.mjs --config config/quality.json
+
       - name: Git Crafter's own Quality, Speed and Consumption page
+        if: steps.replay.outputs.latest != 'true' || needs.changes.outputs.collect == 'true'
         uses: $/actions/pages
         with:
           pages: quality
+          mode: ${{ github.event_name == 'pull_request' && needs.action-collect.result == 'success' && 'render' || 'all' }}
+          artifact: action-split-api
           quality-config: config/quality.json
           admin-read-token: ${{ github.ref == 'refs/heads/main' && (secrets.ADMIN_READ_TOKEN || steps.admin-app.outputs.token) || '' }}
           hf-token: ${{ github.ref == 'refs/heads/main' && secrets.HF_TOKEN || '' }}
           openrouter-api-key: ${{ github.ref == 'refs/heads/main' && secrets.OPENROUTER_API_KEY || '' }}
+
+      - if: always()
+        run: node quality/gh-replay.mjs report
+
+      - uses: actions/upload-artifact@v7.0.2
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          name: main-reads
+          path: ${{ runner.temp }}/gh-replay/
+          retention-days: 2
+          if-no-files-found: error
 
       # The shots are for a reviewer of a pull request, which took them on its own run. A push to main repeated
       # them for no reader (44 of the build's 137 s, run 42969770326), so main skips them; its pages still build,
