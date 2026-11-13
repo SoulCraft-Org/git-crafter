@@ -1,9 +1,8 @@
-// The checks build.mjs runs before it draws: goals, process.json, systems.json
-// and a repo's maps file. Each returns its errors as strings and
+// The checks build.mjs runs before it draws: goals, process.json and a
+// repo's maps file. Each returns its errors as strings and
 // reads nothing from disk; build.mjs re-exports them, so callers import from there.
 
 import { checkIdeal } from "../quality/score.mjs";
-import { READER_KINDS } from "../tools/systems.mjs";
 import { ICON_IDS } from "./draw.mjs";
 import { PROCESS_TABS } from "./render.mjs";
 
@@ -80,45 +79,10 @@ function checkProcess(processDoc) {
   return errs;
 }
 
-const badLimit = (l) => typeof l.value !== "number" || !https(l.source) || !/^\d{4}-\d{2}-\d{2}$/.test(l.read ?? "");
-const badRead = (r) => !READER_KINDS.includes(r.kind) || !r.metric;
-
-// One system: its handoffs name systems, each limit says where it came from and when, and its map cell.
-function checkSystem(x, sysIds) {
-  const at = `systems.json ${x.id}`;
-  return [
-    ...[...(x.from ?? []), ...(x.to ?? [])].filter((t) => !sysIds.has(t)).map((t) => `${at}: unknown system ${t}`),
-    ...(x.limits ?? []).filter(badLimit).map(() => `${at}: a limit needs a number, an https source and a read date`),
-    ...(!x.usage?.metric && !x.usage?.why ? [`${at}: usage needs a metric or a why`] : []),
-    ...(x.reads ?? []).filter(badRead).map(() => `${at}: a read needs a metric and one of the reader kinds ${READER_KINDS.join(", ")}`),
-    ...(x.at !== undefined && !isCell(x.at) ? [`${at}: at needs [column, row]`] : []),
-  ];
-}
-
-function checkSystemModels(systemsDoc) {
-  const errs = [];
-  const cols = systemsDoc?.models?.columns ?? [];
-  for (const r of systemsDoc?.models?.rows ?? []) for (const c of cols) if (r[c.id] && !r[c.id].metric && !r[c.id].sum && !r[c.id].why) errs.push(`systems.json models "${r.label}": a ${c.id} cell needs a metric, a sum or a why`);
-  return errs;
-}
-
-// systems.json: every handoff names a system, and every limit says where it came from and when.
-function checkSystems(systemsDoc) {
-  const sys = systemsDoc?.systems ?? [];
-  const sysIds = new Set(sys.map((x) => x.id));
-  const errs = [];
-  if (sysIds.size !== sys.length) errs.push("systems.json: duplicate id");
-  errs.push(...sys.flatMap((x) => checkSystem(x, sysIds)));
-  const cells = sys.filter((x) => Array.isArray(x.at)).map((x) => x.at.join(","));
-  if (new Set(cells).size !== cells.length) errs.push("systems.json: two systems share a map cell");
-  for (const g of systemsDoc?.goals ?? []) if (!g.metric && !["under_goal", "past_limit"].includes(g.measure)) errs.push(`systems.json goal ${g.id}: needs a metric or a measure (under_goal, past_limit)`);
-  return [...errs, ...checkSystemModels(systemsDoc)];
-}
-
 // Every goal must be ratable and every step drawable; a bad file is a usage
 // error, not data.
-export function checkDocs(goalsDoc, processDoc, systemsDoc = null) {
-  return [...checkOutcomes(goalsDoc), ...checkProcess(processDoc), ...checkSystems(systemsDoc)];
+export function checkDocs(goalsDoc, processDoc) {
+  return [...checkOutcomes(goalsDoc), ...checkProcess(processDoc)];
 }
 
 // A map shows the fewest steps that show where quality, speed and

@@ -157,13 +157,13 @@ export function build({ root = ROOT, now = new Date(), config = null } = {}) {
   const loaded = loadDocs(root, config);
   if (loaded.error) return { code: 2, errs: [loaded.error] };
   const { scope, docs } = loaded;
-  const { goals: goalsDoc, process: processDoc, maps: mapsDoc, systems: systemsDoc } = docs;
+  const { goals: goalsDoc, process: processDoc, maps: mapsDoc } = docs;
   // The Quality page's definitions check each map step's id and rate it. A
   // Quality config the engine cannot read is that page's error, not the
   // maps': the ids go unchecked, with a warning, and the page still builds.
   const quality = mapsDoc ? qualityDefs(root, qualityConfigPath(config)) : { defs: null };
   const warnings = qualityWarnings(mapsDoc, quality);
-  const errs = [...checkDocs(goalsDoc, processDoc, systemsDoc), ...checkMaps(mapsDoc, quality.ids ?? null, shown(scope.docs.maps) ?? "maps")];
+  const errs = [...checkDocs(goalsDoc, processDoc), ...checkMaps(mapsDoc, quality.ids ?? null, shown(scope.docs.maps) ?? "maps")];
   if (errs.length) return { code: 2, errs };
   const dataPath = join(root, scope.data);
   if (!existsSync(dataPath)) return { code: 3, errs: [`no ${scope.data}; run node ${page.collector}`] };
