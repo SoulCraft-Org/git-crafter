@@ -1,0 +1,39 @@
+{
+  "ideal": "Code scanning default setup and secret scanning with push protection are on; no alert stays open, and the scans run in minutes.",
+  "parts": [
+    {
+      "part": "Secret scanning",
+      "ideal": "Bought: scanning and push protection on. Free: a secret scan that must pass to merge",
+      "setup": "Enable Secret Protection, or require a pinned scanner's check in a ruleset"
+    },
+    {
+      "part": "Code scanning",
+      "ideal": "Code scanning on where the repo is public or Code Security is bought; never billed unasked",
+      "setup": "Enable CodeQL default setup in the repo security settings"
+    }
+  ],
+  "sources": [
+    {
+      "title": "GitHub Docs: Code scanning",
+      "url": "https://docs.github.com/en/code-security/concepts/code-scanning/code-scanning",
+      "date": "2026-11-13"
+    },
+    {
+      "title": "GitHub Docs: Configuring default setup for code scanning",
+      "url": "https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/configure-code-scanning/configure-code-scanning",
+      "date": "2026-11-13"
+    },
+    {
+      "title": "GitHub Docs: Secret scanning",
+      "url": "https://docs.github.com/en/code-security/concepts/secret-security/secret-scanning",
+      "date": "2026-11-13"
+    },
+    {
+      "title": "GitHub Docs: Push protection",
+      "url": "https://docs.github.com/en/code-security/concepts/secret-security/push-protection",
+      "date": "2026-11-13"
+    }
+  ],
+  "quality": "Both scans on, and no open code scanning or secret scanning alert.",
+  "consumption": "The latest scans bill few runner minutes."
+}

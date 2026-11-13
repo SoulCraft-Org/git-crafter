@@ -1,0 +1,28 @@
+{
+  "ideal": "The site builds and deploys from a workflow on every merge, rarely fails, restores within the hour, and stays fast, readable and accessible.",
+  "sources": [
+    {
+      "title": "GitHub Docs: What is GitHub Pages?",
+      "url": "https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages",
+      "date": "2026-11-13"
+    },
+    {
+      "title": "GitHub Docs: Using custom workflows with GitHub Pages",
+      "url": "https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages",
+      "date": "2026-11-13"
+    },
+    {
+      "title": "GitHub Docs: Deployments and environments",
+      "url": "https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments",
+      "date": "2026-11-13"
+    },
+    {
+      "title": "GitHub Docs: Securing your GitHub Pages site with HTTPS",
+      "url": "https://docs.github.com/en/pages/getting-started-with-github-pages/securing-your-github-pages-site-with-https",
+      "date": "2026-11-13"
+    }
+  ],
+  "quality": "Pages draw only from design tokens, pass contrast and axe, and every deploy passes its checks.",
+  "speed": "A merged change is live within hours, and pages paint fast on a phone.",
+  "consumption": "Pages stay light to download and deploys bill few minutes."
+}

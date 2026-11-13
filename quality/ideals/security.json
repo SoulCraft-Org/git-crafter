@@ -1,30 +1,10 @@
 {
-  "ideal": "No malicious package installed; no vulnerability outlives a week; no secret in the repo; workflows least-privilege on pinned actions; Claude reads no credential.",
+  "ideal": "Reporters have a private path, the threat model keeps up with its code, no alert outlives a week, and no paid security feature bills unasked.",
   "parts": [
     {
       "part": "Security policy",
       "ideal": "SECURITY.md names a private reporting channel that works for this repo's visibility",
       "setup": "Add SECURITY.md; turn on private vulnerability reporting, which GitHub offers on public repos"
-    },
-    {
-      "part": "Dependabot alerts",
-      "ideal": "Vulnerability and malware alerts on; no malware alert open; no vulnerability alert older than a week",
-      "setup": "Enable both in the organization's security configuration; malware alerts are off until asked for"
-    },
-    {
-      "part": "Dependency updates",
-      "ideal": "Security fixes arrive grouped; a new release waits 14 days; packages come from one trusted registry",
-      "setup": "In dependabot.yml: a cooldown, and a group that applies to security updates"
-    },
-    {
-      "part": "Secret scanning",
-      "ideal": "Bought: scanning and push protection on. Free: a secret scan that must pass to merge",
-      "setup": "Enable Secret Protection, or require a pinned scanner's check in a ruleset"
-    },
-    {
-      "part": "Code scanning and quality",
-      "ideal": "Code scanning on where the repo is public or Code Security is bought; Code Quality where its license is bought; never billed unasked",
-      "setup": "Enable CodeQL default setup and Code Quality in the repo's security settings"
     },
     {
       "part": "Actions",
@@ -189,7 +169,7 @@
       "date": "2026-11-10"
     }
   ],
-  "quality": "Free features and malware alerts on; no open finding; least-privilege workflows pinned by policy; packages past cooldown; fresh threat model.",
-  "speed": "No alert stays open more than a week; an open malware alert is a miss at once.",
-  "consumption": "Scans bill a few runner minutes, and no paid feature bills unless the organization bought it."
+  "quality": "A security policy with private reporting, a current threat model, and no secret a workflow or Claude can read.",
+  "speed": "No alert of any kind stays open more than a week.",
+  "consumption": "No paid security feature bills unless the organization bought it."
 }

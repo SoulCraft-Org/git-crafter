@@ -198,8 +198,7 @@ check("every tab the template fills has an ideal and all three categories", () =
   const ideals = loadIdeals({ templateDir: fileURLToPath(new URL("./ideals/", import.meta.url)) });
   const { all } = loadDefs({ templateDir: dir, tabs: TABS });
   // Discussions waits on its readers and Scanning on a speed metric: later PRs.
-  // The four new tabs' ideals land in the next PR of this stack.
-  const known = [["discussions", "ideal"], ["discussions", "quality"], ["discussions", "speed"], ["discussions", "consumption"], ["dependabot", "ideal"], ["scanning", "ideal"], ["scanning", "speed"], ["pages", "ideal"]].map(([tab, missing]) => ({ tab, missing }));
+  const known = [["discussions", "quality"], ["discussions", "speed"], ["discussions", "consumption"], ["scanning", "speed"]].map(([tab, missing]) => ({ tab, missing }));
   assert.deepEqual(tabGaps(TABS, all.filter((d) => d.drop !== true), ideals), known, "a tab lacks its ideal or a category");
   for (const d of all) assert.ok(!/\/Users\/|\/home\/[a-z]/.test(JSON.stringify(d.params ?? {})), `${d.id}: a home path in the template's params`);
   assert.ok(readFileSync(new URL("./render/client.js", import.meta.url), "utf8").includes("dataset.repo"), "the client reads the repo from the page");

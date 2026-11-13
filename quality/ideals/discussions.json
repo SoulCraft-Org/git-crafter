@@ -1,0 +1,18 @@
+{
+  "ideal": "Questions and ideas live in Discussions, sorted by category; each question gets a quick first reply and a marked answer, and work moves to issues.",
+  "sources": [
+    {
+      "title": "GitHub Docs: About discussions",
+      "url": "https://docs.github.com/en/discussions/collaborating-with-your-community-using-discussions/about-discussions",
+      "date": "2026-11-13"
+    },
+    {
+      "title": "GitHub Docs: Managing categories for discussions",
+      "url": "https://docs.github.com/en/discussions/managing-discussions-for-your-community/managing-categories-for-discussions",
+      "date": "2026-11-13"
+    }
+  ],
+  "quality": "Every answered question has a marked answer, and every category is in use.",
+  "speed": "A new discussion gets its first reply within a day.",
+  "consumption": "Discussions cost no runner minutes."
+}
