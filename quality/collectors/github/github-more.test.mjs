@@ -647,11 +647,12 @@ describe("PR descriptions", () => {
     const nodes = [
       item({ __typename: "DraftIssue", body: "Shipped." }, [{ number: 40, merged: true, state: "MERGED", createdAt: at }]),
       item({ __typename: "DraftIssue", body: "<!-- quality-metric: ci.api_headroom -->\nRecovered with a settings switch." }),
+      item({ __typename: "DraftIssue", body: "By hand: it quotes <!-- quality-metric: ci.api_headroom --> mid-body." }, [{ number: 41, merged: true, state: "MERGED", createdAt: at }]),
     ];
     const graphql = { ...GRAPHQL, ProjectItems: { node: { items: { pageInfo: { hasNextPage: false, endCursor: null }, nodes } } } };
     const out = await run({ params: { ...PARAMS, project_columns: ["Todo", "In Progress", "Done"] }, gh: fakeGh({ graphql }) });
     assert.equal(out["projects.done_with_pr"].value, 100, "the sync-made card, with no pull request, no longer counts");
-    assert.deepEqual(out["projects.done_with_pr"].detail.map((d) => d.value), [1, 0, 1]);
+    assert.deepEqual(out["projects.done_with_pr"].detail.map((d) => d.value), [2, 0, 1], "a card that only quotes the marker still counts");
   });
 
   it("reads the card metrics from issues only, in every mode, never the board's drafts", async () => {
