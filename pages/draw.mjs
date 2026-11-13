@@ -29,10 +29,6 @@ const SYMBOLS = {
   key: '<circle cx="5" cy="10.5" r="2.75"/><path d="m7 8.5 6.25-6.25M11 4.5l1.75 1.75M9.5 6l1.25 1.25"/>',
   trash: '<path d="M2.75 4.25h10.5M6.25 4.25V2.5h3.5v1.75M4.25 4.25l.75 9.5h6l.75-9.5"/>',
   clock: '<circle cx="8" cy="8" r="6"/><path d="M8 4.75V8l2.25 1.5"/>',
-  // Blockers: a no-entry sign, as on the site's Blockers tab.
-  blockers: '<circle cx="8" cy="8" r="6.25"/><path d="m3.6 12.4 8.8-8.8"/>',
-  // Simplicity: lines that shorten.
-  simplicity: '<path d="M2.5 4h11M2.5 8h7M2.5 12h3"/>',
 };
 
 // Every icon id the Git Crafter sprite draws.

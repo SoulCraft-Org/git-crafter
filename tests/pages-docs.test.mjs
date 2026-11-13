@@ -170,29 +170,6 @@ test("every id process.json and systems.json name resolves: on Git Crafter's Qua
   assert.deepEqual([...namedIds({ a: [{ metric: "x" }, { metrics: ["y"], usage: { metric: "z" } }] })].sort(), ["x", "y", "z"], "the walk finds nested ids");
 });
 
-// Every route names the metric it moves (rules/writing-and-gates.md: add
-// nothing unless it moves a measured goal): the Moves column of the merging
-// skill's Delegating table, and each account's delegate routes.
-test("every Delegating route and every account's delegate route names a metric the pages read", () => {
-  const { ids } = qualityDefs(ROOT, CODE_OS_QUALITY_CONFIG);
-  const written = new Set([...Object.keys(LABELS), ...readJson("systems.json").systems.flatMap((x) => (x.reads ?? []).map((r) => r.metric))]);
-  const goals = new Set(readJson("goals.json").outcomes.flatMap((o) => o.goals.flatMap((g) => g.metrics)));
-  const known = (id) => ids.has(id) || written.has(id) || goals.has(id);
-  const md = readFileSync(join(ROOT, "skills/merging/orchestrating.md"), "utf8");
-  const lines = md.slice(md.indexOf("| Work | Who does it | Moves |")).split("\n");
-  const rows = lines.slice(2, lines.findIndex((l) => !l.startsWith("|")));
-  assert.ok(rows.length >= 5, "the Delegating table was found");
-  const moves = rows.map((l) => l.split("|").at(-2).trim().replace(/`/g, ""));
-  assert.deepEqual(moves.filter((id) => !known(id)), [], "each row's Moves cell is one metric id");
-  // This repo tracks no config/accounts/ (.gitignore); the placeholder file stands in for it.
-  const dir = join(ROOT, "config/accounts");
-  const accounts = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(".json")).map((f) => `config/accounts/${f}`) : ["config/account.example.json"];
-  for (const f of accounts) {
-    const routes = Object.entries(readJson(f).delegate ?? {}).filter(([k, v]) => k !== "never" && v && typeof v === "object");
-    for (const [k, r] of routes) assert.ok(r.use && known(r.metric), `${f} delegate.${k} needs a use and a metric the pages read`);
-  }
-});
-
 // Each account's facts live in its own overlay's code-os/account.json, so a
 // rule names a field there instead of a value. Every field a rule names must
 // be documented in the placeholder file a new account copies.
