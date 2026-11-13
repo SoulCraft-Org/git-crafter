@@ -144,16 +144,13 @@ test("both pages build from a fixture, escape untrusted labels, and show every g
       },
     };
     writeFileSync(join(dir, "data", "org.json"), JSON.stringify(org));
-    mkdirSync(join(dir, "rules"));
-    writeFileSync(join(dir, "rules", "delegation.md"), "## Decide without asking\n\n- Plan, research: the work.\n\n## Owner's queue\n\n- Spending money: purchases,\n  plan changes.\n");
     writeFileSync(join(dir, "data", "history", "2026-11-03.json"), JSON.stringify({ generated_at: ago(2), values: { "pr.latest_merge_hours": 3 } }));
     const out = build({ root: dir, now: NOW });
     assert.equal(out.code, 0);
     const proc = out.pages["index.html"];
     const met = out.pages["metrics.html"];
-    // A lower bound reads "≥ x" wherever the value shows: the goal row, the metric tile and the goal mark's tooltip.
+    // A lower bound reads "≥ x" wherever the value shows: the goal row and the goal mark's tooltip.
     assert.match(met, /<span data-r="" class="val">≥ 1,008 h<\/span>/, "the goal row's headline");
-    assert.match(`${met}${proc}`, /<p class="mt-n">≥ 1,008 h<\/p>/, "the metric tile");
     assert.match(`${met}${proc}`, /aria-label="Hours since the 10th-latest merge: ≥ 1,008 h; goal ≤ 24 h"/, "the goal mark's tooltip");
     assert.doesNotMatch(`${met}${proc}`, /: 1,008 h; goal|class="val">1,008 h|class="mt-n">1,008 h/, "no headline or tooltip reads a bare 1,008 h");
     assert.match(proc, /<svg class="trail"/);
@@ -168,29 +165,13 @@ test("both pages build from a fixture, escape untrusted labels, and show every g
     assert.match(proc, /<tr class="job"><th scope="row">Web test/);
     assert.match(proc, /3 suites/, "a job named like its workflow counts once");
     assert.doesNotMatch(proc, /<tr class="job"><th scope="row">secret-scan/, "and gets no row of its own");
-    assert.match(proc, /id="tab-claude"/);
-    assert.doesNotMatch(proc, /class="cm-node"|Planning map/, "one process map, the Build tab's; the Claude tab draws none");
-    assert.match(proc, /data-tip="Spending money: purchases, plan changes\."[^>]*>.*Spending money</);
-    assert.match(proc, /not measured: no collector reads the plan&#39;s usage meter/);
-    assert.match(proc, /<svg class="routes"/);
-    const rts = readJson("process.json").claude.routes;
-    assert.equal((proc.match(/<ul class="rt-list">[^]*?<\/ul>/)?.[0].match(/<li /g) ?? []).length, rts.length, "every model route");
-    for (const r of rts) assert.ok(proc.includes(`>${r.label}</text>`), r.label);
+    assert.doesNotMatch(proc, /id="tab-claude"/, "the Claude tab left for Claudius");
     const ciTab = proc.slice(proc.indexOf('id="tab-ci"'), proc.indexOf('id="tab-testing"'));
     const std = readJson("process.json").ci.metrics;
     assert.doesNotMatch(ciTab, /class="cmap|How a repo gets CI/, "the CI standard shows its metrics, not a map");
     const stdSec = ciTab.slice(ciTab.indexOf('aria-label="The CI standard"'));
     assert.equal((stdSec.slice(0, stdSec.indexOf("</section>")).match(/<div class="mt[ "]/g) ?? []).length, std.length, "one tile for each of the standard's metrics");
     assert.match(stdSec, /data-tip="not measured: /, "a metric no collector builds yet says so");
-    const dg = readJson("process.json").claude.delegate;
-    assert.match(proc, /<svg class="dmap"/);
-    assert.equal((proc.match(/class="dm-node"/g) ?? []).length, 3 + dg.branches.length + dg.how.length, "start, one loop, every branch and step, and the lighter model");
-    assert.match(proc, /latest subagent return tokens: not measured: not in data\/org.json from the collector run at/, "a metric the data lacks says so, never that no collector reports it");
-    assert.match(proc, />no metric yet</);
-    assert.ok(proc.includes(`href="${dg.source}"`), "the article is cited");
-    const picks = readJson("process.json").claude.models.rows;
-    assert.equal((proc.match(/<table class="mlane mpick">[^]*?<\/table>/)?.[0].match(/<tr data-tip=/g) ?? []).length, picks.length, "every Which model row");
-    for (const r of picks) assert.ok(proc.includes(`href="${r.source}"`), r.work);
     assert.match(proc, /id="tab-systems"/);
     assert.match(proc, /<svg class="smap"/);
     assert.equal((proc.match(/class="sy-node"/g) ?? []).length, 11, "every system on the map");
@@ -219,7 +200,7 @@ test("both pages build from a fixture, escape untrusted labels, and show every g
   }
 });
 
-test("when the site's data could not be read, the Claude tab says why", () => {
+test("when the site's data could not be read, the Process tabs say why", () => {
   const dir = mkdtempSync(join(tmpdir(), "cos-pages-"));
   try {
     cpSync(join(ROOT, "goals.json"), join(dir, "goals.json"));
@@ -228,7 +209,6 @@ test("when the site's data could not be read, the Claude tab says why", () => {
     mkdirSync(join(dir, "data"));
     writeFileSync(join(dir, "data", "org.json"), JSON.stringify({ generated_at: ago(1), site: { repo: "org/example-site" }, repos: [{ name: "example-site" }], errors: ["site quality data: gh: Internal Server Error (HTTP 500)"], metrics: {}, pipelines: {}, testing: { "example-site": { rows: [], dispatch: [], source: "s", read_at: ago(1) } } }));
     const proc = build({ root: dir, now: NOW }).pages["index.html"];
-    assert.match(proc, /context per call/);
     assert.match(proc, /not measured: could not read the site&#39;s data: site quality data: gh: Internal Server Error \(HTTP 500\)/);
     assert.match(proc, /Test cases by suite: not measured: could not read the site/);
   } finally {
@@ -384,7 +364,7 @@ test("a repo's Process page: its own maps, tabs, nav and heading, and no link to
       history: null,
       out: "quality/dist",
       pages: { process: "process.html" },
-      tabs: ["build", "ci", "testing", "claude", "tokens"],
+      tabs: ["build", "ci", "testing", "tokens"],
       heading: "one",
       collector: "code-os/tools/collect_org.mjs",
       nav: [{ href: "index.html", label: "Quality and Speed", icon: "measure" }, { page: "process", label: "Process", icon: "plan" }],

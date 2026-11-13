@@ -10,7 +10,6 @@ import { SPRITE } from "../quality/render/icons.mjs";
 import { COS_SPRITE, cicon, strip } from "./draw.mjs";
 import { goalText, historySeries, isMeasured, outcomeHistory, rateGoals, repoScores } from "./model.mjs";
 import { ciTab, testingTab } from "./ci-tab.mjs";
-import { claudeTab } from "./claude-tab.mjs";
 import { mapsTab } from "./maps-tab.mjs";
 import { systemsTab } from "./systems-tab.mjs";
 import { tokensTab } from "./tokens-tab.mjs";
@@ -64,19 +63,18 @@ ${body}
 }
 
 // The Process page's tabs, in order; process.json ideals is keyed by these.
-export const PROCESS_TABS = ["build", "ci", "testing", "claude", "tokens", "systems"];
+export const PROCESS_TABS = ["build", "ci", "testing", "tokens", "systems"];
 
 // only: the tab ids a repo's config asks for, or null for every tab the docs
 // allow. A tab its doc is missing for stays out either way. The maps tab
 // keeps the id build, which configs and links already use.
-export function renderProcess({ data, goalsDoc, processDoc, mapsDoc = null, defs = null, history = [], css, script, rulesMd = "", systemsDoc = null, tokensDoc = null, chrome = CHROME, tabs: only = null }) {
+export function renderProcess({ data, goalsDoc, processDoc, mapsDoc = null, defs = null, history = [], css, script, systemsDoc = null, tokensDoc = null, chrome = CHROME, tabs: only = null }) {
   const repos = data.repos.map((r) => r.name);
   const shows = (id) => !only || only.includes(id);
   const tabs = [
     ["build", "Maps", "plan"],
     ["ci", "CI", "ci"],
     ["testing", "Testing", "review"],
-    ["claude", "Claude", "tokens"],
     ...(tokensDoc ? [["tokens", "Tokens", "measure"]] : []),
     ...(systemsDoc ? [["systems", "Systems", "production"]] : []),
   ].filter(([id]) => shows(id));
@@ -84,7 +82,6 @@ export function renderProcess({ data, goalsDoc, processDoc, mapsDoc = null, defs
     build: () => mapsTab(data, goalsDoc, mapsDoc, defs, repos, chrome.metricsHref, history),
     ci: () => ciTab(data, repos, processDoc),
     testing: () => testingTab(data, repos),
-    claude: () => claudeTab(data, processDoc, rulesMd),
     tokens: () => tokensTab(data, tokensDoc, systemsDoc, processDoc.repo_url),
     systems: () => systemsTab(data, systemsDoc, processDoc.repo_url),
   };

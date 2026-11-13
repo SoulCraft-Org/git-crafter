@@ -37,7 +37,7 @@ import {
   qualityDefs,
   withOwnRun,
 } from "../pages/build.mjs";
-import { openingStep, position, rate, rateGoals, ruleList, stepReadout } from "../pages/model.mjs";
+import { openingStep, position, rate, rateGoals, stepReadout } from "../pages/model.mjs";
 
 const ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const NOW = new Date("2026-11-03T12:00:00Z");
@@ -86,30 +86,6 @@ test("the org and site come from the environment or the org config, never a cons
     rmSync(dir, { recursive: true, force: true });
   }
   assert.throws(() => fetchSite({}, null), /no site repo/);
-});
-
-test("who decides what comes from rules/delegation.md, label first, whole bullet kept", () => {
-  const md = readFileSync(join(ROOT, "rules", "delegation.md"), "utf8");
-  const alone = ruleList(md, "Decide without asking");
-  const owner = ruleList(md, "Owner's queue");
-  // The owner answers product, strategy and billing questions; the platform keeps a few steps human.
-  assert.ok(alone.length >= 3 && owner.length >= 2, `${alone.length} and ${owner.length}`);
-  assert.ok(owner.some((i) => i.label === "Questions" && /billing/.test(i.text)));
-  assert.ok(owner.some((i) => i.label === "Human steps" && /admin password/.test(i.text)));
-  assert.deepEqual(ruleList("## Other\n- a\n", "Owner's queue"), []);
-  // A table reads like bullets: the header row is left out, a row is "first cell: rest".
-  const table = ruleList("## Owner's queue\n\n| Item | Covers |\n|---|---|\n| Spending money | purchases. |\n| Sign-ins | OAuth. |\n", "Owner's queue");
-  assert.deepEqual(table.map((i) => i.label), ["Spending money", "Sign-ins"]);
-  assert.equal(table[0].text, "Spending money: purchases.");
-});
-
-test("the owner's queue: any \"<name>'s queue\" heading, and the Claude tab names no person", () => {
-  const md = "## Decide without asking\n- Build: plan.\n\n## Owner's queue\n- Spending money: purchases.\n";
-  assert.deepEqual(ruleList(md, /^.+'s queue$/).map((i) => i.label), ["Spending money"]);
-  assert.deepEqual(ruleList(md, /^Nobody's$/), []);
-  const tab = readFileSync(join(ROOT, "pages", "claude-tab.mjs"), "utf8");
-  assert.match(tab, /Waits for the owner/);
-  assert.doesNotMatch(tab, /Waits for [A-Z]/);
 });
 
 test("rating: bands by direction, and positions put near at 0 and the goal at 1", () => {

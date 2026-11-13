@@ -175,7 +175,7 @@ export function build({ root = ROOT, now = new Date(), config = null } = {}) {
   const script = readFileSync(join(PAGES, "client.js"), "utf8");
   const chrome = pageChrome(page, scope);
   const pages = {};
-  if (page.pages.process) pages[page.pages.process] = renderProcess({ data, goalsDoc, processDoc, mapsDoc, defs: quality.defs, history: readRuns(quality.history), css, script, rulesMd: docs.rules, systemsDoc, tokensDoc, chrome, tabs: page.tabs });
+  if (page.pages.process) pages[page.pages.process] = renderProcess({ data, goalsDoc, processDoc, mapsDoc, defs: quality.defs, history: readRuns(quality.history), css, script, systemsDoc, tokensDoc, chrome, tabs: page.tabs });
   if (page.pages.metrics) pages[page.pages.metrics] = renderMetrics({ data, goalsDoc, history: readHistory(root, scope), css, script, chrome });
   return { code: 0, pages, out: page.out, warnings };
 }

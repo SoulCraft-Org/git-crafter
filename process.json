@@ -23,14 +23,6 @@
     {"title": "Martin Fowler: The Practical Test Pyramid", "url": "https://martinfowler.com/articles/practical-test-pyramid.html", "date": "2018-02-26"}
    ]
   },
-  "claude": {
-   "ideal": "One agent loop works with skills loaded on demand; a subagent must earn its place, and the cheapest passing model does each job.",
-   "sources": [
-    {"title": "Claude Code: best practices", "url": "https://code.claude.com/docs/en/best-practices", "date": "2026-11-04"},
-    {"title": "Claude docs: choosing the right model", "url": "https://platform.claude.com/docs/en/about-claude/models/choosing-a-model", "date": "2026-11-04"},
-    {"title": "Anthropic: when to fold subagents into your main agent loop", "url": "https://claude.com/resources/articles/building-agents-when-to-fold-subagents-into-your-main-agent-loop", "date": "2026-10-22"}
-   ]
-  },
   "tokens": {
    "ideal": "Each session keeps a stable prompt prefix so most input reads from cache, subagents return short results, and tokens per merged change fall.",
    "sources": [
