@@ -39,7 +39,7 @@ check("a hostile </script> in a finding stays inside the embedded JSON", () => {
     tabs: TABS,
     defs: [up],
     metrics: { "t.up": val(95) },
-    reviews: { design: { file: "design.yaml", date: "2026-11-02", score: 50, items: [{ page: "/", width: 1280, criterion: "typography", score: 3, finding: hostile, fix: "<b>x</b>", tracking: null }] } },
+    reviews: { pages: { file: "pages.yaml", date: "2026-11-02", score: 50, items: [{ page: "/", width: 1280, criterion: "typography", score: 3, finding: hostile, fix: "<b>x</b>", tracking: null }] } },
   });
   assert.ok(!html.includes("</script><script>alert"), "the finding closed the script element");
   const json = /<script type="application\/json" class="rv-data">([\s\S]*?)<\/script>/.exec(html)[1];
@@ -66,7 +66,7 @@ check("the 1,000 KB page budget blocks one byte over, counted in UTF-8", () => {
 });
 
 check("the contract fields render: means, group, funnel, stack, partial", () => {
-  const base = { tab: "tests", kind: "speed", unit: "PRs", goal: 10, near: 5, direction: "higher" };
+  const base = { tab: "actions", kind: "speed", unit: "PRs", goal: 10, near: 5, direction: "higher" };
   const defs = [
     { ...base, id: "c.funnel", label: "PR path", chart: "funnel", means: "Pull requests from session to merge", group: "Flow" },
     { ...base, id: "c.stack", label: "Token mix", unit: "tokens", chart: "stack", group: "Tokens" },
@@ -119,12 +119,12 @@ check("a ledger metric draws its blockers full width above its tab's rows and ke
 });
 
 check("deploys and credits draw full width on their own tabs and keep their rows", () => {
-  const dep = { id: "t.dep", tab: "deploy", kind: "speed", label: "Production deploys a week", unit: "deploys", goal: 14, near: 1, direction: "higher", chart: "deploys" };
+  const dep = { id: "t.dep", tab: "pages", kind: "speed", label: "Production deploys a week", unit: "deploys", goal: 14, near: 1, direction: "higher", chart: "deploys" };
   const cr = { id: "t.cr", tab: "credits", kind: "quality", label: "Free allowance idle", unit: "allowances", goal: 0, near: 1, direction: "lower", chart: "credits" };
   const deploys = [{ label: "2026-11-02 23:51", value: 45, unit: "merges", commit: "2549f97", commit_from: "tag", lead_hours: 2.3, rollback: false, failed: null, restore_hours: null }];
   const allowances = [{ label: "Blacksmith", lane: "ci", allowance: 3000, unit: "minutes", used: 1587, used_floor: true, unused: 513, status: "idle", replaces: true, could_take_over: "CI overflow", claim_needs: "a share" }];
-  const html = render({ defs: [dep, cr], metrics: { "t.dep": val(4, { detail: deploys }), "t.cr": val(1, { detail: allowances }) }, tabs: [...DEFAULT_TABS, ["credits", "Credits"]] });
-  for (const [tab, id, text] of [["deploy", "t.dep", "2549f97"], ["credits", "t.cr", "Blacksmith"]]) {
+  const html = render({ defs: [dep, cr], metrics: { "t.dep": val(4, { detail: deploys }), "t.cr": val(1, { detail: allowances }) }, tabs: [...TABS, ["credits", "Credits"]] });
+  for (const [tab, id, text] of [["pages", "t.dep", "2549f97"], ["credits", "t.cr", "Blacksmith"]]) {
     const section = new RegExp(`<section id="${tab}"[\\s\\S]*?<\\/section>\\n(<section id="|<\\/main>)`).exec(html)[0];
     const at = section.indexOf(`aria-labelledby="flow-${id}"`);
     assert.ok(at > 0 && at < section.indexOf('class="chips"'), `${tab}: no full-width figure above the rows`);
