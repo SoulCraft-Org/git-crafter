@@ -177,7 +177,7 @@ describe("sync, what it leaves alone", () => {
     mkdirSync(join(dir, "quality", "data"), { recursive: true });
     const entry = { value: 17, read_at: "2026-11-13T05:51:39.250Z" };
     writeFileSync(join(dir, "quality", "data", "latest.json"), JSON.stringify({ ...RUN, metrics: { "security.code_scanning_open": entry } }));
-    writeFileSync(join(dir, "quality.json"), JSON.stringify({ repo: REPO, tabs: ["security"], issue_sync: { label: "quality" } }));
+    writeFileSync(join(dir, "quality.json"), JSON.stringify({ repo: REPO, tabs: ["scanning"], issue_sync: { label: "quality" } }));
     const scanned = loadConfig({ root: dir, file: "quality.json", env: {} });
     // Default setup names its run for the event; only the path says CodeQL.
     const run = (status, ended, path = "dynamic/github-code-scanning/codeql") => () => ({ workflow_runs: [{ name: "Push on main", path, status, updated_at: `2026-11-13T${ended}Z` }] });

@@ -32,11 +32,16 @@ export const TABS = [
   ["issues", "Issues"],
   ["projects", "Projects"],
   ["pull-requests", "Pull requests"],
+  ["discussions", "Discussions"],
   ["actions", "Actions"],
   ["tests", "Tests"],
   ["security", "Security and quality"],
+  ["dependabot", "Dependabot"],
+  ["scanning", "Scanning"],
   ["insights", "Insights"],
   ["settings", "Settings"],
+  ["pages", "Pages"],
+  // The old tabs, empty now; the next PR of this stack removes them.
   ["design", "Design"],
   ["usability", "Usability"],
   ["deploy", "Deploy"],
@@ -44,7 +49,7 @@ export const TABS = [
 ];
 // Tabs that score a website a repo serves. Off unless a repo's config turns
 // them on: most repos have no site to review.
-export const WEB_TABS = ["design", "usability"];
+export const WEB_TABS = ["pages", "design", "usability"];
 export const DEFAULT_TABS = TABS.filter(([id]) => !WEB_TABS.includes(id));
 const TAB_IDS = new Set(TABS.map(([id]) => id));
 // Every tab scores all three, each a third of its score: a tab is held to an

@@ -497,7 +497,7 @@
   },
   {
     "id": "pull_requests.dependabot_open",
-    "tab": "pull-requests",
+    "tab": "dependabot",
     "kind": "speed",
     "group": "Queue",
     "label": "Open Dependabot PRs",
@@ -513,7 +513,7 @@
   },
   {
     "id": "actions.pinned_share",
-    "tab": "security",
+    "tab": "actions",
     "kind": "quality",
     "label": "Actions pinned to a SHA",
     "means": "Share of outside tools in our automatic jobs locked to one exact version; higher is better.",
@@ -529,7 +529,7 @@
   },
   {
     "id": "actions.permissions_share",
-    "tab": "security",
+    "tab": "actions",
     "kind": "quality",
     "label": "Workflows with explicit permissions",
     "means": "Share of automatic job files that spell out what they are allowed to do; higher is better.",
@@ -707,7 +707,7 @@
   },
   {
     "id": "security.dependabot_alerts_on",
-    "tab": "security",
+    "tab": "dependabot",
     "kind": "quality",
     "group": "GitHub features",
     "label": "Dependabot alerts",
@@ -723,7 +723,7 @@
   },
   {
     "id": "security.code_scanning_on",
-    "tab": "security",
+    "tab": "scanning",
     "kind": "quality",
     "group": "GitHub features",
     "label": "Code scanning",
@@ -739,7 +739,7 @@
   },
   {
     "id": "security.secret_scanning_on",
-    "tab": "security",
+    "tab": "scanning",
     "kind": "quality",
     "group": "GitHub features",
     "label": "Secret scanning and push protection",
@@ -755,7 +755,7 @@
   },
   {
     "id": "security.code_quality_on",
-    "tab": "security",
+    "tab": "code",
     "kind": "quality",
     "group": "GitHub features",
     "label": "Code quality",
@@ -771,7 +771,7 @@
   },
   {
     "id": "security.dependabot_open",
-    "tab": "security",
+    "tab": "dependabot",
     "kind": "quality",
     "label": "Open Dependabot vulnerabilities",
     "means": "Known vulnerabilities in the libraries the repo uses that are not fixed yet, by severity; fewer is better.",
@@ -787,7 +787,7 @@
   },
   {
     "id": "security.malware_open",
-    "tab": "security",
+    "tab": "dependabot",
     "kind": "quality",
     "group": "Open findings",
     "label": "Open malware alerts",
@@ -803,7 +803,7 @@
   },
   {
     "id": "security.code_scanning_open",
-    "tab": "security",
+    "tab": "scanning",
     "kind": "quality",
     "group": "Open findings",
     "label": "Open code scanning alerts",
@@ -819,7 +819,7 @@
   },
   {
     "id": "security.secret_scanning_open",
-    "tab": "security",
+    "tab": "scanning",
     "kind": "quality",
     "group": "Open findings",
     "label": "Open secret scanning alerts",
@@ -835,7 +835,7 @@
   },
   {
     "id": "security.code_quality_open",
-    "tab": "security",
+    "tab": "code",
     "kind": "quality",
     "group": "Open findings",
     "label": "Open code quality findings",
@@ -851,7 +851,7 @@
   },
   {
     "id": "security.headers",
-    "tab": "security",
+    "tab": "pages",
     "kind": "quality",
     "label": "Production security headers",
     "means": "How many standard safety settings the live site tells browsers to use; more is better.",
@@ -867,7 +867,7 @@
   },
   {
     "id": "security.token_default_read",
-    "tab": "security",
+    "tab": "actions",
     "kind": "quality",
     "group": "Actions hardening",
     "label": "GITHUB_TOKEN reads only by default",
@@ -883,7 +883,7 @@
   },
   {
     "id": "security.actions_policy_share",
-    "tab": "security",
+    "tab": "actions",
     "kind": "quality",
     "group": "Actions hardening",
     "label": "Actions policy settings that are on",
@@ -899,7 +899,7 @@
   },
   {
     "id": "security.prt_head_checkouts",
-    "tab": "security",
+    "tab": "actions",
     "kind": "quality",
     "group": "Actions hardening",
     "label": "Privileged jobs running pull request code",
@@ -915,7 +915,7 @@
   },
   {
     "id": "security.dependabot_cooldown",
-    "tab": "security",
+    "tab": "dependabot",
     "kind": "quality",
     "group": "Supply chain",
     "label": "Dependabot updates with a cooldown",
@@ -931,7 +931,7 @@
   },
   {
     "id": "security.lockfile_registry_share",
-    "tab": "security",
+    "tab": "dependabot",
     "kind": "quality",
     "group": "Supply chain",
     "label": "Lockfile packages from the registry",
@@ -947,7 +947,7 @@
   },
   {
     "id": "security.young_lockfile_packages",
-    "tab": "security",
+    "tab": "dependabot",
     "kind": "quality",
     "group": "Supply chain",
     "label": "Lockfile packages younger than the cooldown",
@@ -1075,7 +1075,7 @@
   },
   {
     "id": "settings.dependabot_security_updates",
-    "tab": "settings",
+    "tab": "dependabot",
     "kind": "quality",
     "label": "Dependabot security updates on",
     "means": "Whether GitHub automatically proposes fixes for security holes in our libraries; on is better.",
@@ -1091,7 +1091,7 @@
   },
   {
     "id": "settings.pages_private",
-    "tab": "settings",
+    "tab": "pages",
     "kind": "quality",
     "label": "Pages visibility private",
     "means": "Whether this page can be seen only by members of the repo's organization; private is better.",
@@ -1107,7 +1107,7 @@
   },
   {
     "id": "settings.dependabot_grouping",
-    "tab": "settings",
+    "tab": "dependabot",
     "kind": "speed",
     "label": "Dependabot updates grouped",
     "means": "Share of automatic update feeds that bundle their changes into fewer proposals; higher is better.",

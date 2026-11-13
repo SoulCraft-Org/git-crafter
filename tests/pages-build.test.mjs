@@ -27,7 +27,8 @@ const readJson = (name) => JSON.parse(readFileSync(join(ROOT, name), "utf8"));
 
 
 test("maps: a known-good file passes, a known-bad one fails on every rule, and Git Crafter's own maps.json is its own Quality page's", () => {
-  const { defs } = qualityDefs(ROOT);
+  // The starter config turns every tab on, Pages and its deploy ids included.
+  const { defs } = qualityDefs(ROOT, "templates/quality/config.json");
   assert.ok(defs && Object.keys(defs).length > 100, "Git Crafter's Quality page definitions read");
   const ids = new Set(Object.keys(defs));
   assert.deepEqual(checkMaps(readJson("tests/fixtures/maps/good.json"), ids, "good.json"), []);

@@ -193,7 +193,9 @@ check("every tab the template fills has an ideal and all three categories", () =
   const ideals = loadIdeals({ templateDir: fileURLToPath(new URL("./ideals/", import.meta.url)) });
   const { all } = loadDefs({ templateDir: dir, tabs: TABS });
   const filled = TABS.filter(([id]) => ideals[id] || all.some((d) => d.tab === id));
-  assert.deepEqual(tabGaps(filled, all.filter((d) => d.drop !== true), ideals), [], "a filled tab lacks its ideal or a category");
+  // The new tabs' ideals, and Scanning's speed metric, land later in this stack.
+  const known = [["dependabot", "ideal"], ["scanning", "ideal"], ["scanning", "speed"], ["pages", "ideal"]].map(([tab, missing]) => ({ tab, missing }));
+  assert.deepEqual(tabGaps(filled, all.filter((d) => d.drop !== true), ideals), known, "a filled tab lacks its ideal or a category");
   for (const d of all) assert.ok(!/\/Users\/|\/home\/[a-z]/.test(JSON.stringify(d.params ?? {})), `${d.id}: a home path in the template's params`);
   assert.ok(readFileSync(new URL("./render/client.js", import.meta.url), "utf8").includes("dataset.repo"), "the client reads the repo from the page");
 });
@@ -229,7 +231,7 @@ function echoOf(run, config, html) {
     assert.deepEqual([echo.root, echo.mode], [config.root, "ci"]);
     assert.ok(!echo.targets.includes("s.dropme") && !echo.targets.includes("s.web") && echo.targets.includes("s.fast"), "targets are the active ones");
     // Web tabs are off by default; the repo's links and name frame the page.
-    assert.ok(!html.includes('<section id="design"') && !html.includes('<section id="usability"'), "a web tab showed with no config");
+    assert.ok(!html.includes('<section id="pages"'), "a web tab showed with no config");
     assert.ok(html.includes("<title>Quality, Speed and Consumption: seed</title>") && html.includes('href="https://github.com/example/seed/commit/abc1234"'), "the repo's name and link");
 }
 
@@ -242,7 +244,7 @@ function idealOf(code, html) {
     assert.ok(code.includes('<p class="aim">Every change ships with its test.</p>') && code.includes("No consumption metric yet."), "each section's aim, and an empty one says so");
     assert.ok(code.includes('<details class="refs-fold"><summary>2 sources, newest 2026-10-01</summary><ol class="refs"><li><a href="https://example.org/repo-ideal">Newest guide&#39;s notes</a> <span class="small">2026-10-01</span></li><li><a href="https://example.org/older">Older guide</a> <span class="small">2025-06-30</span></li></ol></details>'), "the sources, folded, numbered, title as link, date beside it");
     assert.ok(code.indexOf('<ol class="refs">') < code.indexOf('id="code-quality"'), "the sources sit under the summary, above the sections");
-    assert.ok(/<section id="tests"[\s\S]*?No ideal state written for this tab yet\./.test(html), "a tab with no ideal says so");
+    assert.ok(/<section id="actions"[\s\S]*?No ideal state written for this tab yet\./.test(html), "a tab with no ideal says so");
     assert.ok(!/NaN|undefined|Infinity/.test(shown(html)), "NaN, undefined or Infinity on the page");
 }
 

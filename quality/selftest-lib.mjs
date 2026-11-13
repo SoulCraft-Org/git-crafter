@@ -55,8 +55,8 @@ export function seedRepo() {
       q({ id: "s.blind", label: "Blind" }),
       q({ id: "s.silent", label: "Never reported" }),
       q({ id: "s.dropme", label: "Dropped by the repo" }),
-      q({ id: "s.web", tab: "design", label: "A web metric" }),
-      q({ id: "s.echo", tab: "design", label: "What the collector got, on a tab the repo does not show" }),
+      q({ id: "s.web", tab: "pages", label: "A web metric" }),
+      q({ id: "s.echo", tab: "pages", label: "What the collector got, on a tab the repo does not show" }),
       { id: "s.fast", tab: "code", kind: "speed", unit: "s", goal: 60, near: 120, direction: "lower", goal_source: "seed", label: "Fast" },
     ],
     [join(root, "quality", "targets", "seed.json")]: [
