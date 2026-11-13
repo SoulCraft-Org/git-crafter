@@ -319,7 +319,7 @@
     "near": 765,
     "direction": "lower",
     "goal_source": "goal from issue #38 (2026-11-12); near is the 765 a pull request run spent before replay (run 43307560596's quota lines). The workflow token reports limit 5000 an hour (gh api rate_limit in runs 43307560596 and 43355450949)",
-    "source": "latest: gh api actions/workflows/pages.yml/runs (green pull_request runs from this repo), the newest one's jobs and their check-run annotations: each job's GitHub requests notice from quality/gh-replay.mjs, live REST plus GraphQL, summed",
+    "source": "latest: gh api actions/workflows/pages.yml/runs (green pull_request runs from this repo), of the newest 3 the first whose jobs printed a notice, its jobs and their check-run annotations: each job's GitHub requests notice from quality/gh-replay.mjs, live REST plus GraphQL, summed",
     "needs": "none",
     "chart": "bar"
   }
