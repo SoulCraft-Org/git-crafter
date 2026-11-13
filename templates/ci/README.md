@@ -23,8 +23,9 @@ flowchart LR
 | [ci.yml](ci.yml) | `<repo>/.github/workflows/ci.yml` | set `paths`, `short` and `standard` |
 | [pages.yml](pages.yml) | `<repo>/.github/workflows/pages.yml` | add the repo's doc globs to its `pull_request` paths |
 | [dependabot.yml](dependabot.yml) | `<repo>/.github/dependabot.yml` | or add its `github-actions` entry to the repo's own; it bumps both Git Crafter pins together |
+| [wiki.yml](wiki.yml) | `<repo>/.github/workflows/wiki.yml` | optional; publishes `wiki/` ([setup](../open/README.md#settings)) |
 
-[pages.yml](pages.yml) calls `actions/pages` with `pages: process quality` and both configs. It builds on a pull request and publishes only from `main`.
+[pages.yml](pages.yml) calls `actions/pages` with `pages: process quality` and both configs.
 
 ## Jobs
 
