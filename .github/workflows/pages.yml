@@ -43,8 +43,7 @@ name: pages
 # .github/ci-overflow.json: tools/ci_overflow.py sums this cycle's minutes on that lane from GitHub's run and job data
 # and hands the label to action, action-collect, action-render and build until the lane's stop, then ubuntu-latest.
 # Anything it cannot read is ubuntu-latest too. deploy stays on GitHub: it holds pages: write and an OIDC token.
-# gh-replay (#38): action-collect and build replay main's saved reads (quality/gh-replay.mjs); a pull request that
-# touches no collector (changes.collect) shows main's scored run.
+# gh-replay (#38): action-collect and build replay main's public reads; no collector changed shows main's scored run.
 on:
   push:
     branches: [main]

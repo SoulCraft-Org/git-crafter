@@ -1,5 +1,6 @@
-// gh for pages.yml (#38): setup puts a gh shim first on PATH; a push to main records each read, a pull request replays
-// main's save (data read as JSON by hashed name, never run), and report prints the live requests ci.pr_run_requests sums.
+// gh for pages.yml (#38): a push to main saves each public read; a pull request replays that save (data read as JSON by
+// hashed name, never run); report prints the live requests ci.pr_run_requests sums. Anyone signed in can download a
+// public repo's artifact, so DENY reads, admin-token reads and argv naming this PR or run are never saved.
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { appendFileSync, copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
@@ -22,7 +23,8 @@ export function keyOf(args, now = Date.now()) {
 /** The shim gh, written into `dir`. */
 export const writeShim = (dir) => writeFileSync(path.join(dir, "gh"), `#!/bin/sh\nexec node "${fileURLToPath(import.meta.url)}" shim "$@"\n`, { mode: 0o755 });
 const log = (env, kind, n) => appendFileSync(`${env.GH_REPLAY_DIR}.log`, `${kind} ${n}\n`);
-const saveFile = (args, env) => readOnly(args) && env.GH_TOKEN !== (env.ADMIN_READ_TOKEN || null) && !(env.GH_REPLAY_LIVE ?? "").split(",").some((t) => t && args.some((a) => a.includes(t))) && path.join(env.GH_REPLAY_DIR, "r", `${keyOf(args)}.json`);
+const DENY = /dependabot|code-scanning|secret-scanning|code-quality|security-advisories|vulnerabilityAlerts|collaborators|invitations|\/protection|secrets|actions\/permissions|private-vulnerability|billing|\/hooks|\/keys|traffic/i;
+const saveFile = (args, env) => readOnly(args) && !args.some((a) => DENY.test(a)) && env.GH_TOKEN?.trim() !== (env.ADMIN_READ_TOKEN?.trim() || null) && !(env.GH_REPLAY_LIVE ?? "").split(",").some((t) => t && args.some((a) => a.includes(t))) && path.join(env.GH_REPLAY_DIR, "r", `${keyOf(args)}.json`);
 const ran = (saved, args, env) => (saved ? { stdout: Buffer.from(saved.out, "base64"), stderr: saved.err, status: saved.status } : spawnSync(env.GH_REPLAY_REAL, args, { stdio: ["inherit", "pipe", "pipe"], maxBuffer: 2 ** 31 }));
 const kindOf = (args) => (args[1] === "rate_limit" ? null : args[0] === "api" && args[1] !== "graphql" ? "rest" : "graphql");
 const pagesOf = (args, out) => { try { return (args.includes("--slurp") && JSON.parse(out).length) || 1; } catch { return 1; } };
@@ -37,7 +39,6 @@ function shim(args, env) {
   if (keep(file, env, r)) writeFileSync(`${file}.${process.pid}`, JSON.stringify({ args, out: r.stdout.toString("base64"), err: r.stderr.toString(), status: r.status })), renameSync(`${file}.${process.pid}`, file);
   return r.status ?? 1;
 }
-/** The job's notice line from its calls.log rows ([kind, count]). */
 export function summary(rows, mode) {
   const sum = (k) => rows.filter((r) => r[0] === k).reduce((n, r) => n + Number(r[1]), 0);
   return `live ${sum("rest")} REST, ${sum("graphql")} GraphQL; ${sum("replayed")} replayed from main (${mode})`;
@@ -58,7 +59,6 @@ function setup(env) {
   appendFileSync(env.GITHUB_OUTPUT, `latest=${existsSync(path.join(dir, "latest.json"))}\n`);
   console.log(`gh-replay: ${mode}; main save under ${MAX_AGE_H} h old: ${got ? `run ${id}` : "none"}`);
 }
-// A main run adds its scored run to the save.
 function report(env) {
   const file = `${env.GH_REPLAY_DIR}.log`;
   const rows = existsSync(file) ? readFileSync(file, "utf8").trim().split("\n").filter(Boolean).map((l) => l.split(" ")) : [];
