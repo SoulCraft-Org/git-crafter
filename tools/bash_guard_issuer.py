@@ -53,17 +53,25 @@ def store_name(args):
     return None
 
 
+def file_on_stdin(c):
+    """Stdin is one file, < path: no here-string and no heredoc."""
+    stdin = [t for t in c["raw"] if STDIN_REDIRECT_RE.match(t)]
+    return not c["docs"] and len(stdin) == 1 and FILE_STDIN_RE.match(stdin[0]) is not None
+
+
+def text_flag(args):
+    """A flag that puts the value, or a file of many, in the command."""
+    return any(a.split("=")[0] in TEXT_FLAGS for a in args)
+
+
 def not_key_from_file(cmds, k, rule):
     """A secret the rule's store.not_keys names (data, never a credential)
     may read one file on stdin, alone in its pipeline: < path. Never a pipe,
     a here-string, a heredoc or a flag's text, which put the value in the
     command; never the file flag, which can read many."""
     c = cmds[k]
-    if k or len(cmds) != 1 or c["docs"] or store_name(c["args"]) not in rule["store"].get("not_keys", []):
-        return False
-    stdin = [t for t in c["raw"] if STDIN_REDIRECT_RE.match(t)]
-    return len(stdin) == 1 and FILE_STDIN_RE.match(stdin[0]) is not None \
-        and not any(a in TEXT_FLAGS or a.split("=")[0] in TEXT_FLAGS for a in c["args"])
+    named = store_name(c["args"]) in rule["store"].get("not_keys", [])
+    return len(cmds) == 1 and named and file_on_stdin(c) and not text_flag(c["args"])
 
 
 def store_ok(cmds, k, rule):
