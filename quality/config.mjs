@@ -129,16 +129,16 @@ const isIds = (b) => b === undefined || (Array.isArray(b) && b.every(isText));
 const isProject = (n) => n === undefined || (Number.isInteger(n) && n > 0);
 const isSync = (s) => isObj(s) && isText(s.label) && Object.keys(s).every((k) => ["label", "labels", "project", "quick", "waiting"].includes(k)) && isLabels(s.labels) && isProject(s.project) && isIds(s.quick) && isIds(s.waiting);
 
-// The settings for a run in `root`: the named config file, else
-// quality/config.json when the repo has one, else the defaults. Paths come
-// back absolute. ci, a run in CI, refuses a pack named by path. Throws on a
-// bad file: a usage error.
 // An issue_sync.labels key that names a removed tab, unless a pack brings it back, stops.
 function checkLabels(labels, tabs) {
   const gone = Object.keys(labels ?? {}).find((id) => Object.hasOwn(MOVED_TABS, id) && !tabs.some(([t]) => t === id));
   if (gone) throw new Error(`issue_sync.labels: ${unknownTab(gone)}`);
 }
 
+// The settings for a run in `root`: the named config file, else
+// quality/config.json when the repo has one, else the defaults. Paths come
+// back absolute. ci, a run in CI, refuses a pack named by path. Throws on a
+// bad file: a usage error.
 export function loadConfig({ root = process.cwd(), file = null, env = process.env, ci = false } = {}) {
   const path = configPath(root, file);
   const raw = readRaw(path, Boolean(file));
