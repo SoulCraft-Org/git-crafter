@@ -1,8 +1,9 @@
 name: wiki
 
 # Copy to .github/workflows/wiki.yml, with wiki/Home.md from templates/open/wiki/. Then two web-UI steps no API
-# covers (templates/open/README.md): limit wiki editing to people with push access, and create the wiki's first
-# page once, which creates its git repository. After that, wiki pages change only by pull request: this workflow
+# covers (templates/open/README.md): keep "Restrict editing to collaborators only" ticked under Settings, Features
+# (docs.github.com, Changing access permissions for wikis, read 2026-11-13), and create the wiki's first page once,
+# after which its git repository can be cloned (docs.github.com, Adding or editing wiki pages, read 2026-11-13). After that, wiki pages change only by pull request: this workflow
 # publishes wiki/ to the wiki on each push to main that touches it.
 # A wiki is a git repository at <repo>.wiki.git, and only pushes to its default branch go live (docs.github.com,
 # Adding or editing wiki pages, read 2026-11-13). Plain git only: no third-party action and no REST or GraphQL
