@@ -283,6 +283,16 @@ test('signalForm: a timeout, git -C and a discarded redirection do not hide a fi
   assert.ok(sigs.get('git-reset-hard').some((x) => x.re.test(signalForm('git -C "$W" merge -q --ff-only origin/main'))));
 });
 
+test('signalForm: option and -C patterns stay linear on a long run of repeats (#13, js/redos)', () => {
+  assert.equal(signalForm('timeout -k 5 -s KILL 60 npm test'), 'npm test');
+  assert.equal(signalForm("git -C 'a b' -C x\"y\" status"), 'git status');
+  const t0 = Date.now();
+  // The old timeout pattern took 23 ms at 12 repeats and doubled with each one more.
+  assert.equal(signalForm(`timeout -A${' -A -A'.repeat(40)}x`), `timeout -A${' -A -A'.repeat(40)}x`);
+  assert.equal(signalForm(`git -C ${'"" -C '.repeat(40)}x`), 'git -C x');
+  assert.ok(Date.now() - t0 < 1000, `40 repeats took ${Date.now() - t0} ms`);
+});
+
 test('reviewedPrs: the PR numbers a parallel reviewer\'s Agent call names', () => {
   assert.deepEqual(reviewedPrs('Review PR #394 public scans'), [394]);
   assert.deepEqual(reviewedPrs('Review PRs #391 and #392'), [391, 392]);

@@ -66,6 +66,7 @@ import { workflowRuns, runJobs, flakyChecks } from "./ci-runs.mjs";
 import { INSIGHT_METRICS } from "./ci-insights.mjs";
 import { SPEND_METRICS } from "./ci-spend.mjs";
 import { headroom, QUOTA_SOURCE, readQuota } from "../github/github-quota.mjs";
+import { prRunRequests } from "../lib/quota.mjs";
 
 export { workflowRuns, JOBS_BATCH, JOBS_BATCH_WITH_STEPS, runJobs, flakyChecks, prRuns, latestPriced, priceRuns } from "./ci-runs.mjs";
 export { reasonFor, settings } from "./ci-settings.mjs";
@@ -322,6 +323,17 @@ const METRICS = {
       if (!h) return skip("rate_limit had no core or graphql bucket");
       const token = mode === "ci" ? "the CI run's token (the workflow token unless the repo passes another)" : "the account's login";
       return { ...measured(h.value, h.detail.map(({ label, value }) => ({ label, value }))), note: `read with ${token}` };
+    },
+  },
+  "ci.pr_run_requests": {
+    source: "latest: gh api actions/workflows/pages.yml/runs, the newest green pull_request run from {repo}; its jobs' check-run annotations, each job's GitHub requests notice (quality/gh-replay.mjs report), live REST plus GraphQL, summed",
+    async run(L, { gh, repo }) {
+      const runs = (await gh.rest(`repos/${repo}/actions/workflows/pages.yml/runs?event=pull_request&status=success&per_page=10`)).workflow_runs ?? [];
+      const latest = runs.find((r) => r.head_repository?.full_name === repo);
+      if (!latest) return skip("no green pull request run of pages.yml from this repo");
+      const jobs = ((await gh.rest(`repos/${repo}/actions/runs/${latest.id}/jobs?per_page=100`)).jobs ?? []).filter((j) => j.conclusion && j.conclusion !== "skipped");
+      const got = prRunRequests(jobs, await mapLimit(jobs, 4, (j) => gh.rest(`repos/${repo}/check-runs/${j.id}/annotations`)));
+      return got ? { ...measured(got.value, got.detail), note: `run ${latest.id}` } : skip(`run ${latest.id}'s jobs printed no GitHub requests notice`);
     },
   },
 };

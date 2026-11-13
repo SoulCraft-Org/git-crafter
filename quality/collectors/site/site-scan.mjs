@@ -4,6 +4,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { PSI_ENDPOINT, PSI_QUOTA_SPENT, firstLine, now, once } from "./site-base.mjs";
+import { stripAll } from "../lib/strip.mjs";
 
 // ---------- source scan: raw px and hex outside the tokens ----------
 
@@ -20,10 +21,7 @@ function listFiles(dir, exts, out = []) {
 // Comments describe values; they do not paint them. Line comments only count
 // when they start a line, so a URL's "//" survives.
 function stripComments(text) {
-  return text
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/^\s*\/\/.*$/gm, "");
+  return stripAll(text.replace(/\/\*[\s\S]*?\*\//g, ""), /<!--[\s\S]*?-->/g).replace(/^\s*\/\/.*$/gm, "");
 }
 
 const PX = /(?<![\w.#])\d*\.?\d+px\b/g;

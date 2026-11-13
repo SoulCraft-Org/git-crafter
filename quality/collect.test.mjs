@@ -6,7 +6,7 @@ import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { FULL_RUN_GUESS, fullRunNeed, quotaGate, quotaLine, recordLocal, reserveFloor, reserveShort } from './collect-quota.mjs';
+import { FULL_RUN_GUESS, fullRunNeed, prRunRequests, quotaGate, quotaLine, recordLocal, reserveFloor, reserveShort } from './collect-quota.mjs';
 import { collectorFiles, gateFailures, parseArgs, POOL, remoteRepo, repoEnv, runCollectors, slowestLine } from './collect.mjs';
 import { loadDefs } from './score.mjs';
 
@@ -57,7 +57,7 @@ test('collectorFiles: a collector in a tab subfolder runs, and a name in two sub
 test('runCollectors: a collector that throws a path under home reports it as ~ (#393)', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'collectors-'));
   try {
-    writeFileSync(join(dir, 'leaky.mjs'), `export async function collect() { throw new Error(${JSON.stringify(`ENOENT: open '${homedir()}/x/usage.json'`)}); }`);
+    writeFileSync(join(dir, 'leaky.mjs'), `export async function collect() { throw new Error(${JSON.stringify(`ENOENT: open '${homedir()}/x/usage.json'`).replace(/[<>\u2028\u2029]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`)}); }`);
     const run = await runCollectors({ root: dir, mode: 'local', dirs: [dir], defs: [{ id: 'leaky.a', file: 'leaky.json' }], label: (d, f) => f });
     const reason = run.metrics['leaky.a'].could_not_check;
     assert.match(reason, /collector leaky\.mjs failed: ENOENT: open '~\/x\/usage\.json'/);
@@ -226,4 +226,11 @@ test("Git Crafter's Code gate: a seeded TODO marker fails, a seeded unused expor
 
 test('slowestLine: the run wall time and the slowest collectors, slowest first', () => {
   assert.equal(slowestLine({ 'a.mjs': 1.25, 'b.mjs': 30, 'c.mjs': 4 }, 31.04, 2), '31.0 s in all; slowest b.mjs 30.0, c.mjs 4.0');
+});
+
+test('prRunRequests sums each job\'s GitHub requests notice and skips a run with none', () => {
+  const note = (message) => ({ title: 'GitHub requests', message });
+  const got = prRunRequests([{ name: 'build' }, { name: 'changes' }, { name: 'action' }], [[note('live 12 REST, 3 GraphQL; 140 replayed from main (replay)')], [], [note('live 5 REST, 0 GraphQL; 0 replayed from main (replay)'), { title: 'other', message: 'live 9 REST, 9 GraphQL' }]]);
+  assert.deepEqual(got, { value: 20, detail: [{ label: 'build', value: 15 }, { label: 'action', value: 5 }] });
+  assert.equal(prRunRequests([{ name: 'build' }], [[]]), null);
 });
