@@ -1,5 +1,5 @@
 // Drawings only Git Crafter needs: the process trail (one per map), the
-// goal strip, and the systems and token maps,
+// goal strip, and the systems map,
 // plus their icons. Like quality/render/charts.mjs, which both pages share,
 // each takes numbers and labels and returns an SVG string; page.css and
 // site.css color them.
@@ -238,67 +238,4 @@ function sysBox(x, [bx, by], { bw, bh, goalPct, selected }) {
     fill !== null ? `<rect class="sy-fill s-${u.status}" x="${bx + 12}" y="${by + 44}" width="${r1(Math.max(gw * fill, 2))}" height="8" rx="2"/>` : ""
   }<path class="sy-tick" d="M${r1(bx + 12 + (gw * goalPct) / 100)} ${by + 40}v16"/>`;
   return `<a class="sy-node" href="#sy-${esc(x.id)}" data-sy="${esc(x.id)}"${x.id === selected ? ' aria-current="step"' : ""} aria-label="${esc(`${x.name}: ${u.tip}`)}" data-tip="${esc(u.tip)}"><rect class="sy-box" x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="8"/><use href="#c-${esc(x.icon)}" x="${bx + 10}" y="${by + 10}" width="16" height="16"/><text class="sy-n" x="${bx + 32}" y="${by + 23}">${esc(x.name)}</text>${gauge}${u.status ? `<use href="#g-${u.status}" x="${bx + 12}" y="${by + 58}" width="12" height="12"/>` : ""}<text class="sy-v" x="${bx + (u.status ? 28 : 12)}" y="${by + 68}">${esc(u.text)}</text></a>`;
-}
-
-// ---- The token flow ----------------------------------------------------------
-
-// Nodes on a grid by their at: [column, row], inside group bands whose header
-// carries the group's figures and its cache lifetime; one ring under every
-// group for the plan they all draw on. Every number arrives as text with its
-// tooltip, so this only places them.
-const TFLOW = { left: 20, col: 250, box: [200, 56], top: 76, row: 76, ring: 30 };
-const textW = (s) => String(s).length * 7.2;
-
-// flow: { groups: [{ id, label, figs: [{ text, tip }], cache: { text, tip } }],
-// nodes: [{ id, label, icon, group, at, tip, fig?: { text, tip } }],
-// edges: [{ from, to, word, tip }], ring: { label, text, tip } }
-export function tokenFlow(flow) {
-  const T = TFLOW;
-  const [bw, bh] = T.box;
-  const nodes = flow.nodes.filter((n) => Array.isArray(n.at));
-  if (!nodes.length) return "";
-  const pos = Object.fromEntries(nodes.map((n) => [n.id, [T.left + T.col * n.at[0], T.top + T.row * n.at[1]]]));
-  const maxCol = Math.max(...nodes.map((n) => n.at[0]));
-  const maxRow = Math.max(...nodes.map((n) => n.at[1]));
-  const bottom = T.top + T.row * maxRow + bh + 12;
-  const width = T.left * 2 + T.col * maxCol + bw;
-  const ringY = bottom + 16;
-  const height = flow.ring ? ringY + T.ring + 4 : bottom + 4;
-  const groups = flow.groups
-    .map((g) => {
-      const cols = nodes.filter((n) => n.group === g.id).map((n) => n.at[0]);
-      if (!cols.length) return "";
-      const gx = T.left + T.col * Math.min(...cols) - 10;
-      const gw = T.col * (Math.max(...cols) - Math.min(...cols)) + bw + 20;
-      const figs = g.figs.map((f, i) => `<g class="tf-fig" data-tip="${esc(f.tip)}" tabindex="0"><text x="${gx + 12}" y="${44 + 16 * i}">${esc(f.text)}</text></g>`).join("");
-      const cx = gx + gw - 12;
-      const cache = g.cache ? `<g class="tf-cache" data-tip="${esc(g.cache.tip)}" tabindex="0"><use href="#c-clock" x="${r1(cx - textW(g.cache.text) - 18)}" y="13" width="14" height="14"/><text x="${cx}" y="24">${esc(g.cache.text)}</text></g>` : "";
-      const drop = flow.ring ? `<path class="tf-draw" d="M${r1(gx + gw / 2)} ${bottom}V${ringY - 3}" marker-end="url(#tf-arrow)"/>` : "";
-      return `<rect class="tf-band" x="${gx}" y="4" width="${gw}" height="${bottom - 4}" rx="10"/><text class="tf-g" x="${gx + 12}" y="24">${esc(g.label)}</text>${figs}${cache}${drop}`;
-    })
-    .join("");
-  const edges = flow.edges
-    .filter((e) => pos[e.from] && pos[e.to])
-    .map((e) => {
-      const [ax, ay] = pos[e.from];
-      const [bx, by] = pos[e.to];
-      const ty = by + bh / 2;
-      const sx = ay === by ? ax + bw : ax + bw / 2;
-      const path = ay === by ? `M${sx} ${ty}H${bx - 4}` : `M${sx} ${ay + bh}V${ty}H${bx - 4}`;
-      const word = e.word ? `<text class="tf-w" x="${r1((sx + bx) / 2)}" y="${ty - 6}">${esc(e.word)}</text>` : "";
-      return `<g${e.tip ? ` data-tip="${esc(e.tip)}" tabindex="0"` : ""}><path class="tf-edge" d="${path}" marker-end="url(#tf-arrow)"/>${word}</g>`;
-    })
-    .join("");
-  const boxes = nodes
-    .map((n) => {
-      const [x, y] = pos[n.id];
-      const tip = [n.tip, n.fig?.tip].filter(Boolean).join("; ");
-      return `<g class="tf-node"${tip ? ` data-tip="${esc(tip)}" tabindex="0"` : ""}><rect class="tf-box" x="${x}" y="${y}" width="${bw}" height="${bh}" rx="8"/><use href="#c-${esc(n.icon)}" x="${x + 10}" y="${y + 10}" width="16" height="16"/><text class="tf-n" x="${x + 32}" y="${y + 23}">${esc(n.label)}</text>${n.fig ? `<text class="tf-v" x="${x + 12}" y="${y + 44}">${esc(n.fig.text)}</text>` : ""}</g>`;
-    })
-    .join("");
-  const ring = flow.ring
-    ? `<g class="tf-ring" data-tip="${esc(flow.ring.tip)}" tabindex="0"><rect x="10" y="${ringY}" width="${width - 20}" height="${T.ring}" rx="15"/><text class="tf-n" x="26" y="${ringY + 20}">${esc(flow.ring.label)}</text><text class="tf-v" x="${width - 26}" y="${ringY + 20}" text-anchor="end">${esc(flow.ring.text)}</text></g>`
-    : "";
-  const defs = `<defs><marker id="tf-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 8 4 0 8z" class="tf-head"/></marker></defs>`;
-  return `<svg class="tflow" viewBox="0 0 ${width} ${height}" role="group" aria-label="How work and tokens flow from the orchestrator to workers, subagents and workflows">${defs}${groups}${edges}${boxes}${ring}</svg>`;
 }

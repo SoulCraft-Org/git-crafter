@@ -29,7 +29,7 @@ export const SCOPE = {
   site: { repo: SITE_REPO, root: null, data: ["quality/data/local.json"], targets: "quality/targets" },
   // maps: the repo's own process maps (maps.json is Git Crafter's, and the format's
   // example). A repo's config names its own; it never gets Git Crafter's.
-  docs: { goals: "goals.json", process: "process.json", maps: "maps.json", systems: "systems.json", tokens: "tokens.json", rules: "rules/delegation.md" },
+  docs: { goals: "goals.json", process: "process.json", maps: "maps.json", systems: "systems.json", rules: "rules/delegation.md" },
   data: "data/org.json",
   history: "data/history",
   public: true, // Git Crafter's own public.private_refs
@@ -100,7 +100,6 @@ export function readDocs(root, docs, quality = null) {
     process: json(path(docs.process)),
     maps: docs.maps ? resolveMaps(json(path(docs.maps)), loadLibrary(undefined, packMaps(root, quality))) : null,
     systems: optional(docs.systems) ? json(optional(docs.systems)) : null,
-    tokens: optional(docs.tokens) ? json(optional(docs.tokens)) : null,
     rules: optional(docs.rules) ? readFileSync(optional(docs.rules), "utf8") : "",
   };
 }

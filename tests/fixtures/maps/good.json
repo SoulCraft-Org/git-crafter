@@ -8,7 +8,7 @@
    "why": "A change, from plan to merged",
    "critical_path": ["plan", "review"],
    "steps": [
-    { "id": "plan", "name": "Plan", "tools": ["Plan mode"], "rule": "Plan first.", "rule_ref": "CONTRIBUTING.md", "metric": "claude.hours_session_to_pr" },
+    { "id": "plan", "name": "Plan", "tools": ["Plan mode"], "rule": "Plan first.", "rule_ref": "CONTRIBUTING.md", "metric": "pull_requests.green_to_merge_minutes" },
     { "id": "review", "name": "Review", "tools": ["gh pr checks"], "rule": "Review the head.", "rule_ref": "https://example.com/review", "metric": "pull_requests.fixed_after_review", "gates_from": "workflows" },
     { "id": "learn", "name": "Learn", "short": "Learn", "icon": "measure", "tools": ["The Quality page"], "rule": "Read the numbers.", "rule_ref": "README.md", "metric": "docs.broken_links" }
    ]
@@ -29,7 +29,7 @@
    "critical_path": ["intake", "fix", "close"],
    "steps": [
     { "id": "intake", "name": "Intake", "at": [0, 0], "tools": ["gh issue"], "rule": "Read it once.", "rule_ref": "README.md", "metric": "docs.broken_links" },
-    { "id": "fix", "name": "Fix", "at": [1, 0], "tools": ["Claude Code"], "rule": "Fix it now.", "rule_ref": "README.md", "metric": "claude.hours_session_to_pr" },
+    { "id": "fix", "name": "Fix", "at": [1, 0], "tools": ["Claude Code"], "rule": "Fix it now.", "rule_ref": "README.md", "metric": "pull_requests.green_to_merge_minutes" },
     { "id": "defer", "name": "Defer", "at": [1, 1], "tools": ["The board"], "rule": "Park it with a date.", "rule_ref": "README.md", "metric": "pull_requests.fixed_after_review" },
     { "id": "close", "name": "Close", "at": [2, 0], "tools": ["gh"], "rule": "Close with a link.", "rule_ref": "README.md", "metric": "deploy.failure_rate_last10" }
    ]

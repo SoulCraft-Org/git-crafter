@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 // Builds Git Crafter's two pages into pages/dist/: index.html (Process) and
 // metrics.html (Metrics and goals), from goals.json, process.json, the
-// repo's own maps (Git Crafter's: maps.json), systems.json and tokens.json (each
-// optional), data/org.json, the repo's own Quality run (each map step's
+// repo's own maps (Git Crafter's: maps.json), systems.json (each optional), data/org.json, the repo's own Quality run (each map step's
 // value) and data/history/*.json. CI runs it (pages.yml);
 // it reads files and writes two, nothing else.
 //
@@ -158,7 +157,7 @@ export function build({ root = ROOT, now = new Date(), config = null } = {}) {
   const loaded = loadDocs(root, config);
   if (loaded.error) return { code: 2, errs: [loaded.error] };
   const { scope, docs } = loaded;
-  const { goals: goalsDoc, process: processDoc, maps: mapsDoc, systems: systemsDoc, tokens: tokensDoc } = docs;
+  const { goals: goalsDoc, process: processDoc, maps: mapsDoc, systems: systemsDoc } = docs;
   // The Quality page's definitions check each map step's id and rate it. A
   // Quality config the engine cannot read is that page's error, not the
   // maps': the ids go unchecked, with a warning, and the page still builds.
@@ -175,7 +174,7 @@ export function build({ root = ROOT, now = new Date(), config = null } = {}) {
   const script = readFileSync(join(PAGES, "client.js"), "utf8");
   const chrome = pageChrome(page, scope);
   const pages = {};
-  if (page.pages.process) pages[page.pages.process] = renderProcess({ data, goalsDoc, processDoc, mapsDoc, defs: quality.defs, history: readRuns(quality.history), css, script, systemsDoc, tokensDoc, chrome, tabs: page.tabs });
+  if (page.pages.process) pages[page.pages.process] = renderProcess({ data, goalsDoc, processDoc, mapsDoc, defs: quality.defs, history: readRuns(quality.history), css, script, systemsDoc, chrome, tabs: page.tabs });
   if (page.pages.metrics) pages[page.pages.metrics] = renderMetrics({ data, goalsDoc, history: readHistory(root, scope), css, script, chrome });
   return { code: 0, pages, out: page.out, warnings };
 }

@@ -11,7 +11,7 @@
  ],
  "critical_path": ["keys", "scan", "model", "report", "alerts"],
  "steps": [
-  {"id": "keys", "name": "Keys", "tools": ["Secret scanning", "Push protection"], "rule": "Push protection blocks a commit that holds a key before it reaches the repo.", "rule_ref": "https://code.claude.com/docs/en/permissions", "metric": "security.secret_scanning_on"},
+  {"id": "keys", "name": "Keys", "tools": ["Secret scanning", "Push protection"], "rule": "Push protection blocks a commit that holds a key before it reaches the repo.", "rule_ref": "https://docs.github.com/en/code-security/secret-scanning/introduction/about-push-protection", "metric": "security.secret_scanning_on"},
   {"id": "scan", "name": "Scan", "tools": ["Secret scanning", "Code scanning in CI"], "rule": "A scan runs on every push and finishes in minutes.", "rule_ref": "https://docs.github.com/en/code-security/getting-started/github-security-features", "metric": "security.latest_scan_minutes", "gates_from": "workflows"},
   {"id": "model", "name": "Model", "tools": ["THREAT-MODEL.md"], "rule": "The threat model is reviewed whenever the attack surface changes.", "rule_ref": "https://docs.github.com/en/code-security/getting-started/github-security-features", "metric": "security.threat_model_current"},
   {"id": "report", "name": "Report", "tools": ["SECURITY.md", "Private vulnerability reporting"], "rule": "A security policy gives reporters a private path.", "rule_ref": "https://docs.github.com/en/code-security/getting-started/adding-a-security-policy-to-your-repository", "metric": "security.policy_on"},

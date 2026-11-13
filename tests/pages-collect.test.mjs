@@ -509,10 +509,10 @@ test("the site's data from disk: the first file that measured an id wins, a miss
     assert.equal(got.pagesUrl, null, "no gh, no Pages URL, no crash");
     assert.equal(got.defs_error, undefined);
     // An older targets file of full definitions: the overlay refuses it, and the numbers still read.
-    writeFileSync(join(dir, "quality", "targets", "blockers.json"), JSON.stringify([{ id: "blockers.costly", tab: "blockers", kind: "quality", label: "Costly" }]));
+    writeFileSync(join(dir, "quality", "targets", "ci.json"), JSON.stringify([{ id: "ci.latest_pr_dollars", tab: "ci", kind: "consumption", label: "Dollars" }]));
     const old = readSiteFromDisk(dir, site, null, () => "abc1234\n");
     assert.deepEqual([old.defs, old.data.metrics["ci.latest_flow"].value], [[], 7], "the numbers read, unrated");
-    assert.match(old.defs_error, /^quality\/targets: blockers\.json: blockers\.costly: overrides the template metric/);
+    assert.match(old.defs_error, /^quality\/targets: ci\.json: ci\.latest_pr_dollars: overrides the template metric/);
     assert.throws(() => readSiteFromDisk(dir, { ...site, data: ["quality/data/gone.json"] }), /none of/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -637,16 +637,16 @@ test("the pages action pins each remote step by full SHA with its version commen
 });
 
 test("under --config a doc the repo does not name is Git Crafter's own, except the maps; one it names is the repo's", () => {
-  const s = configScope({ repos: ["one"], docs: { maps: "quality/process/maps.json", tokens: null } });
+  const s = configScope({ repos: ["one"], docs: { maps: "quality/process/maps.json", systems: null } });
   assert.equal(s.docs.goals, join(ROOT, "goals.json"));
   assert.equal(s.docs.process, join(ROOT, "process.json"));
   assert.equal(s.docs.rules, join(ROOT, "rules", "delegation.md"));
   assert.equal(s.docs.maps, "quality/process/maps.json");
   assert.equal(configScope({ repos: ["one"] }).docs.maps, null, "a repo never gets Git Crafter's maps");
-  assert.equal(s.docs.tokens, null, "a repo can turn a doc off");
+  assert.equal(s.docs.systems, null, "a repo can turn a doc off");
   const docs = readDocsFrom(join(tmpdir(), "no-such-repo"), { ...s.docs, maps: null });
   assert.equal(docs.goals.outcomes.length, readJson("goals.json").outcomes.length, "an absolute path ignores the repo root");
-  assert.equal(docs.tokens, null);
+  assert.equal(docs.systems, null);
   assert.equal(docs.maps, null);
 });
 
