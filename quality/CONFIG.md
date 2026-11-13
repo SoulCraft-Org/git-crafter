@@ -33,8 +33,8 @@ A pack adds Quality tabs and Process maps from another repo ([`packs.mjs`](packs
 
 | Pack file | Adds |
 | --- | --- |
-| `pack.json` | `{ "tabs": [["id", "Name"]] }` |
-| `targets/`, `ideals/`, `maps/` | beside the template's |
+| `pack.json` | `{ "tabs": [["id", "Name"]] }`, each id new |
+| `targets/`, `ideals/`, `maps/` | beside the template's, never over it |
 | `collectors/` | run with `lib` ([contract](collectors/README.md)) |
 
 Fixture: [`fixtures/pack/`](fixtures/pack/), drawn by [`packs.test.mjs`](packs.test.mjs).

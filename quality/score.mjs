@@ -226,20 +226,26 @@ export function checkIdeal(doc, where) {
 }
 
 // The ideal per tab: the template's and each pack's, then a repo's file for
-// the same tab in its place. A file for a tab no list knows is a usage error.
+// the same tab in its place. A file for a tab no list knows is a usage error,
+// and so is a pack's for a template tab or another pack's, as a pack map is.
 export function loadIdeals({ templateDir, packDirs = [], repoDir = null, tabIds = TAB_IDS }) {
   const ideals = {};
   for (const dir of [templateDir, ...packDirs, repoDir && repoDir !== templateDir ? repoDir : null]) {
-    if (!dir || !existsSync(dir)) continue;
-    for (const file of readdirSync(dir).filter((f) => f.endsWith(".json")).sort()) {
-      const tab = file.replace(/\.json$/, "");
-      if (!tabIds.has(tab)) throw new Error(`ideals/${file}: no tab "${tab}"`);
-      const doc = JSON.parse(readFileSync(join(dir, file), "utf8"));
-      checkIdeal(doc, `ideals/${file}`);
-      ideals[tab] = doc;
-    }
+    if (dir && existsSync(dir)) readIdeals(dir, ideals, { tabIds, pack: packDirs.includes(dir) });
   }
   return ideals;
+}
+
+// Adds each ideal file in dir to ideals by tab; a pack's may not take a tab that has one.
+function readIdeals(dir, ideals, { tabIds, pack }) {
+  for (const file of readdirSync(dir).filter((f) => f.endsWith(".json")).sort()) {
+    const tab = file.replace(/\.json$/, "");
+    if (!tabIds.has(tab)) throw new Error(`ideals/${file}: no tab "${tab}"`);
+    if (pack && (TAB_IDS.has(tab) || ideals[tab])) throw new Error(`${dir}/${file}: tab "${tab}" already has an ideal; a pack sets only its own tabs' ideals`);
+    const doc = JSON.parse(readFileSync(join(dir, file), "utf8"));
+    checkIdeal(doc, `ideals/${file}`);
+    ideals[tab] = doc;
+  }
 }
 
 // What a tab lacks against the rule that each one has an ideal and is scored

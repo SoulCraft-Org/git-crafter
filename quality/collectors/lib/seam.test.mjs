@@ -14,7 +14,17 @@ const TREES = ['quality/collectors/', 'config/quality/collectors/'];
 const LIB = 'quality/collectors/lib/';
 // The Claude tabs' folders, bound for their own repo (plan PR 2).
 const CLAUDE = ['claude', 'desktop-app', 'blockers', 'tokens', 'instructions'].map((d) => `quality/collectors/${d}/`);
-const SPEC = /(?:\bfrom\s*|\bimport\s*\(\s*|^\s*import\s+)['"](\.{1,2}\/[^'"]+)['"]/gm;
+// A relative module path in each shape a collector can load one: import, from,
+// import(), require() (createRequire's), and a resolve() (import.meta's,
+// require's, createRequire's), in any quote with no ${}.
+const SPEC = /(?:\bfrom\s*|\bimport\s*\(\s*|^\s*import\s+|\brequire\s*\(\s*|\.resolve\s*\(\s*)(['"`])(\.{1,2}\/[^'"`$]+)\1/gm;
+// An import() whose path is built, not written: the test cannot read where it goes.
+const BUILT = /\bimport\s*\(\s*(?!(['"`])[^'"`$]*\1\s*\))/;
+// The files allowed a built import(), each loading a package, never an engine file.
+const BUILT_OK = ['quality/collectors/site/site-base.mjs'];
+
+// The relative paths a source text loads.
+const specsOf = (text) => [...text.matchAll(SPEC)].map((m) => m[2]);
 
 // Every .mjs file under a folder, repo-relative.
 function mjsFiles(dir) {
@@ -27,7 +37,7 @@ function mjsFiles(dir) {
 
 // Each relative import in the collector trees as { file, target }, both repo-relative.
 function imports() {
-  return TREES.flatMap(mjsFiles).flatMap((file) => [...readFileSync(join(ROOT, file), 'utf8').matchAll(SPEC)].map((m) => ({ file, target: relative(ROOT, resolve(ROOT, dirname(file), m[1])) })));
+  return TREES.flatMap(mjsFiles).flatMap((file) => specsOf(readFileSync(join(ROOT, file), 'utf8')).map((spec) => ({ file, target: relative(ROOT, resolve(ROOT, dirname(file), spec)) })));
 }
 
 // True when file may import target: lib/ is the door, and a file stays in its own tree.
@@ -37,9 +47,26 @@ function allowed({ file, target }) {
 }
 
 test('seam: the test reads imports in both quote styles and dynamic ones', () => {
-  const found = imports();
-  assert.ok(found.some((i) => i.file.endsWith('guard-speed.mjs') && i.target === `${LIB}readers.mjs`), 'a dynamic import is read');
-  assert.ok(found.length > 300, `read ${found.length} imports`);
+  assert.ok(imports().some((i) => i.file.endsWith('guard-speed.mjs') && i.target === `${LIB}readers.mjs`), 'a dynamic import is read');
+});
+
+test('seam: the test reads each shape a collector can load a module in', () => {
+  const shapes = {
+    "import { a } from '../x.mjs';": '../x.mjs',
+    'import "./side.mjs";': './side.mjs',
+    'await import(`../t.mjs`);': '../t.mjs',
+    "const require = createRequire(import.meta.url); require('../c.cjs');": '../c.cjs',
+    "createRequire(import.meta.url).resolve('../r.mjs');": '../r.mjs',
+    "import.meta.resolve('../m.mjs');": '../m.mjs',
+  };
+  for (const [text, spec] of Object.entries(shapes)) assert.deepEqual(specsOf(text), [spec], text);
+  for (const text of ['import(`../${name}.mjs`)', 'import(join(dir, "x.mjs"))', 'import(pathToFileURL(p).href)']) assert.ok(BUILT.test(text), text);
+  assert.ok(!BUILT.test('import("../x.mjs")'), 'a written path is not built');
+});
+
+test('seam: no collector file outside lib/ builds an import() path, except those that load a package', () => {
+  const built = TREES.flatMap(mjsFiles).filter((file) => !file.startsWith(LIB) && BUILT.test(readFileSync(join(ROOT, file), 'utf8')));
+  assert.deepEqual(built, BUILT_OK);
 });
 
 test('seam: no collector file imports an engine file except through collectors/lib/', () => {

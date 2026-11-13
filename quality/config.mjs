@@ -65,9 +65,22 @@ export const CONFIG_DEFAULTS = {
 };
 const PATHS = ["targets", "collectors", "ideals", "reviews", "data", "history", "out", "tokens_css"];
 
+const TAB_ID = /^[a-z][a-z0-9-]*$/;
+
+// Throws unless each pack tab id fits TAB_ID and is no template tab's id or another pack tab's.
+function checkPackTabs(packTabs) {
+  const seen = new Set(TABS.map(([id]) => id));
+  for (const [id] of packTabs) {
+    if (!TAB_ID.test(id)) throw new Error(`packs: tab id "${id}" must be lower-case letters, digits and dashes`);
+    if (seen.has(id)) throw new Error(`packs: tab "${id}" is already a tab; rename the pack's`);
+    seen.add(id);
+  }
+}
+
 // The tabs a page shows, as [id, name] pairs; packTabs, the packs' own, join
 // the default list and may be named by id.
 export function resolveTabs({ tabs = null, web = false } = {}, packTabs = []) {
+  checkPackTabs(packTabs);
   const names = new Map([...TABS, ...packTabs]);
   if (tabs === null) return [...TABS.filter(([id]) => web || !WEB_TABS.includes(id)), ...packTabs];
   if (!Array.isArray(tabs) || !tabs.length) throw new Error("tabs must be a list of tab ids");
@@ -76,7 +89,7 @@ export function resolveTabs({ tabs = null, web = false } = {}, packTabs = []) {
       if (!names.has(t)) throw new Error(`tabs: unknown tab "${t}"; a tab of the repo's own is ["id", "Name"]`);
       return [t, names.get(t)];
     }
-    if (Array.isArray(t) && t.length === 2 && t.every((x) => typeof x === "string" && x.trim()) && /^[a-z][a-z0-9-]*$/.test(t[0])) return t;
+    if (Array.isArray(t) && t.length === 2 && t.every((x) => typeof x === "string" && x.trim()) && TAB_ID.test(t[0])) return t;
     throw new Error(`tabs: ${JSON.stringify(t)} is neither a template tab id nor ["id", "Name"]`);
   });
   const ids = out.map(([id]) => id);
