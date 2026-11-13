@@ -260,9 +260,23 @@ export function apply(step, { gh, board = null, repo, sync, dryRun = false, log 
   }
 }
 
+// The metric CodeQL measures; its read is stale while CodeQL still runs on the commit (#51).
+export const CODEQL_METRIC = "security.code_scanning_open";
+
+// True when a CodeQL run on sha is queued or in progress. One request; a failed read is false, so the alert still syncs.
+export function codeqlRunning(gh, repo, sha) {
+  try {
+    const runs = gh([`repos/${repo}/actions/runs?head_sha=${sha}&per_page=100`])?.workflow_runs ?? [];
+    return runs.some((r) => /codeql/i.test(`${r.path ?? ""} ${r.name ?? ""}`) && r.status !== "completed");
+  } catch {
+    return false;
+  }
+}
+
 // Plans and applies the sync for config; returns the steps taken.
 // gq(query, variables) is the board's GraphQL client, or null with no token.
-export function sync(config, { gh = ghCli(), gq = null, dryRun = false, log = console.log } = {}) {
+// sha is the commit built; while CodeQL runs on it, the CODEQL_METRIC step waits.
+export function sync(config, { gh = ghCli(), gq = null, dryRun = false, log = console.log, sha = process.env.GITHUB_SHA } = {}) {
   const rows = statuses(config);
   if (!rows) return log("no quality run yet; nothing to sync"), [];
   const open = openByMetric(gh, config.repo);
@@ -270,7 +284,12 @@ export function sync(config, { gh = ghCli(), gq = null, dryRun = false, log = co
   const { project } = config.issue_sync;
   const board = project && gq ? readBoard(gq, config.repo.split("/")[0], project) : null;
   // A hand-written issue covers its metrics: the sync never touches them.
-  const planned = rows.filter((row) => !open.get(row.def.id)?.hand).map((row) => plan(row, open, config.issue_sync, page, board?.cards ?? null)).filter(Boolean);
+  let planned = rows.filter((row) => !open.get(row.def.id)?.hand).map((row) => plan(row, open, config.issue_sync, page, board?.cards ?? null)).filter(Boolean);
+  const scan = planned.find((s) => s.row.def.id === CODEQL_METRIC && s.op !== "log");
+  if (scan && sha && codeqlRunning(gh, config.repo, sha)) {
+    log(`CodeQL still runs on ${sha.slice(0, 7)}: ${CODEQL_METRIC} waits for the next run`);
+    planned = planned.filter((s) => s !== scan);
+  }
   const opens = planned.filter((s) => s.op === "open" || (s.op === "card" && !s.card));
   const steps = planned.filter((s) => !opens.includes(s) || opens.indexOf(s) < OPEN_CAP);
   if (opens.length > OPEN_CAP) log(`held back ${opens.length - OPEN_CAP} new issue(s) or card(s) past the cap of ${OPEN_CAP}; the next run opens them`);
