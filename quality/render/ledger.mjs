@@ -3,7 +3,7 @@
 // ledger(detail, def) and places the result full width at the top of the
 // tab, as it does the CI pipeline; this file escapes its own text.
 //
-// detail is one item per blocker, from quality/collectors/blockers/blockers.mjs:
+// detail is one item per blocker, from the Claude pack's blockers collector:
 // { label, group (Quality, Speed, Tokens), fires, false_alarm (a percent),
 // hours, tokens (each over the last N events its source names, or null when
 // not measured), verdict (helps, costs, not-measured) }. Two ranked bar

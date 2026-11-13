@@ -4,7 +4,7 @@ import { workflowsOr, prtJobs, fixedAlerts, openAlerts, PAID } from "./github-he
 import path from "node:path";
 import { existsSync, readFileSync } from "node:fs";
 import YAML from "yaml";
-import { lockPackages, readJson, registryOf, gitAt, denyCovers } from "./github-lock.mjs";
+import { lockPackages, readJson, registryOf, gitAt } from "./github-lock.mjs";
 import { youngPackages } from "./github-young.mjs";
 
 export const SECURITY_HARDENING_METRICS = {
@@ -122,19 +122,7 @@ export const SECURITY_HARDENING_METRICS = {
 };
 
 export const SECURITY_REVIEW_METRICS = {
-  // Claude Code (Anthropic docs: Claude Code settings and security).
-  "security.claude_deny_coverage": {
-    source: ".claude/settings.json: permissions.deny Read(...) rules against params.credential_patterns",
-    async run(L, { root, cfg }) {
-      if (!cfg.credentialPatterns.length) return skip(`params.credential_patterns in ${TARGETS_FILE} is empty: list the paths Claude Code should never read`);
-      if (!existsSync(root)) return skip(`root ${root} does not exist`);
-      const settings = readJson(path.join(root, ".claude", "settings.json"));
-      const rules = (settings?.permissions?.deny ?? []).map((r) => /^Read\((.+)\)$/.exec(String(r))?.[1]).filter(Boolean);
-      const detail = cfg.credentialPatterns.map((p) => flag(p, rules.some((r) => denyCovers(r, p))));
-      if (!settings) detail.push(count("no .claude/settings.json in the repo", 0));
-      return measured(pct(detail.filter((d) => d.value).length, cfg.credentialPatterns.length), detail);
-    },
-  },
+  // Claude Code (Anthropic docs: Claude Code security).
   "security.claude_review_share": {
     source: "gh api graphql: the last 20 merged pullRequests: a head check run from an app in params.review_apps named like params.security_review, or a review or comment by a Bot whose login is in params.review_authors and whose first line starts with it",
     async run(L, { cfg }) {

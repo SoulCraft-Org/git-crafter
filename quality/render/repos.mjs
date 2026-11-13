@@ -2,7 +2,7 @@
 // 2026-11-03). page.mjs calls repos(detail) and places the result full width
 // at the top of the tab, as it does the ledger; this file escapes its own text.
 //
-// detail is one item per repo, from quality/collectors/tokens/tokens.mjs: { label,
+// detail is one item per repo, from the Claude pack's tokens collector: { label,
 // value (tokens), share, cache_read_share, merged, tokens_per_pr,
 // waste_share, latest_rework, per_hour }, each null when not measured. A
 // stacked bar shows each repo's share of the tokens; the table gives every

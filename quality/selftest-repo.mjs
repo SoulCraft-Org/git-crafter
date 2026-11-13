@@ -119,10 +119,10 @@ check("a run file holds only current ids, each blank with its reason; an older f
 });
 
 check("a week-by-week line drops reads measured before a redefinition, and says so", () => {
-  const def = { id: "t.wait", tab: "blockers", kind: "speed", label: "Wait", unit: "s", goal: 1, near: 2, direction: "lower", goal_source: "fixture" };
+  const def = { id: "t.wait", tab: "code", kind: "speed", label: "Wait", unit: "s", goal: 1, near: 2, direction: "lower", goal_source: "fixture" };
   const at = (d, v, unit) => ({ generated_at: `${d}T12:00:00Z`, metrics: { "t.wait": { value: v, unit, read_at: `${d}T12:00:00Z`, source: "fixture" } } });
   const history = [at("2026-10-27", 900, "ms"), at("2026-11-03", 0.9, "s"), at("2026-11-10", 0.8, "s")];
-  const html = render({ defs: [def], metrics: { "t.wait": val(0.8) }, history });
+  const html = render({ defs: [{ ...def, tab: "blockers" }], metrics: { "t.wait": val(0.8) }, history, tabs: [...DEFAULT_TABS, ["blockers", "Blockers"]] });
   const row = /<details class="metric[^"]*" id="m-t\.wait">[\s\S]*?<\/details>/.exec(html)[0];
   assert.ok(row.includes("Week by week; 1 older read left out, measured before the metric was redefined"), "the note");
   assert.ok(row.includes('aria-label="Wait, week by week: 2026-11-02 0.9 s, 2026-11-09 0.8 s"'), "only the two reads in seconds are drawn");
@@ -163,7 +163,8 @@ check("a repo's overrides take only goal, near, goal_source, params, drop and ga
 check("a repo's config: tabs, web tabs, unknown keys, collector names", () => {
   assert.deepEqual(resolveTabs({}).map(([id]) => id), TABS.map(([id]) => id).filter((id) => !WEB_TABS.includes(id)));
   assert.deepEqual(resolveTabs({ web: true }), TABS);
-  assert.deepEqual(resolveTabs({ tabs: ["claude", ["evals", "Evals"]] }), [["claude", "Claude"], ["evals", "Evals"]]);
+  assert.deepEqual(resolveTabs({ tabs: ["code", ["evals", "Evals"]] }), [["code", "Code"], ["evals", "Evals"]]);
+  assert.throws(() => resolveTabs({ tabs: ["claude"] }), /unknown tab "claude"/, "the Claude tabs load only from a pack");
   assert.throws(() => resolveTabs({ tabs: ["wiki"] }), /unknown tab "wiki"/);
   assert.throws(() => resolveTabs({ tabs: ["code", "code"] }), /listed twice/);
   const dir = mkdtempSync(join(tmpdir(), "quality-config-"));
@@ -193,7 +194,7 @@ check("every tab the template fills has an ideal and all three categories", () =
   const { all } = loadDefs({ templateDir: dir, tabs: TABS });
   const filled = TABS.filter(([id]) => ideals[id] || all.some((d) => d.tab === id));
   assert.deepEqual(tabGaps(filled, all.filter((d) => d.drop !== true), ideals), [], "a filled tab lacks its ideal or a category");
-  assert.ok(filled.some(([id]) => id === "claude-settings") && DEFAULT_TABS.some(([id]) => id === "claude-settings"), "Claude settings is a default tab the template fills");
+  assert.ok(filled.some(([id]) => id === "credits") && DEFAULT_TABS.some(([id]) => id === "credits"), "Credits is a default tab the template fills");
   for (const d of all) assert.ok(!/\/Users\/|\/home\/[a-z]/.test(JSON.stringify(d.params ?? {})), `${d.id}: a home path in the template's params`);
   assert.ok(readFileSync(new URL("./render/client.js", import.meta.url), "utf8").includes("dataset.repo"), "the client reads the repo from the page");
 });
@@ -242,7 +243,7 @@ function idealOf(code, html) {
     assert.ok(code.includes('<p class="aim">Every change ships with its test.</p>') && code.includes("No consumption metric yet."), "each section's aim, and an empty one says so");
     assert.ok(code.includes('<details class="refs-fold"><summary>2 sources, newest 2026-10-01</summary><ol class="refs"><li><a href="https://example.org/repo-ideal">Newest guide&#39;s notes</a> <span class="small">2026-10-01</span></li><li><a href="https://example.org/older">Older guide</a> <span class="small">2025-06-30</span></li></ol></details>'), "the sources, folded, numbered, title as link, date beside it");
     assert.ok(code.indexOf('<ol class="refs">') < code.indexOf('id="code-quality"'), "the sources sit under the summary, above the sections");
-    assert.ok(/<section id="claude"[\s\S]*?No ideal state written for this tab yet\./.test(html), "a tab with no ideal says so");
+    assert.ok(/<section id="tests"[\s\S]*?No ideal state written for this tab yet\./.test(html), "a tab with no ideal says so");
     assert.ok(!/NaN|undefined|Infinity/.test(shown(html)), "NaN, undefined or Infinity on the page");
 }
 

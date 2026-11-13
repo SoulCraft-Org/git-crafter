@@ -61,12 +61,12 @@ function headCommit(root) {
 // is last in folder order. Eight start every slow one in the first seconds.
 // GitHub allows 100 concurrent requests and 900 REST points a minute
 // (docs.github.com, "Rate limits for the REST API", read 2026-11-11). Whatever
-// the pool, gh calls in flight stay at or under 37:
+// the pool, gh calls in flight stay at or under 34:
 //   16  every ghClient call in the process (github-core GH_AT_ONCE), which
-//       covers ci, github, insights, settings, tests, lead-time, code and
+//       covers ci, github, insights, settings, tests, code and
 //       deploy's Pages reads
 //   16  tools.mjs, READS x GITHUB_GROUPS (4 x 4)
-//    5  blockers, claude, tokens, deploy's issue list and credits' one billing
+//    2  deploy's issue list and credits' one billing
 //       reader, each one gh call at a time
 // That run spent 290 REST points, about 400 a minute at a 45 s wall.
 export const POOL = 8;

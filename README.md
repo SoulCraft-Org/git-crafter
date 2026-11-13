@@ -6,7 +6,7 @@ Templates for AI agents to run an open-source or open-weight repo with Claude Co
 
 | Part | Gives a repo |
 |---|---|
-| [Quality, Speed and Consumption page](https://soulcraft-org.github.io/git-crafter/quality/) | 21 categories, each scored against an ideal from current, dated sources |
+| [Quality, Speed and Consumption page](https://soulcraft-org.github.io/git-crafter/quality/) | 15 categories, each scored against an ideal from current, dated sources |
 | [Process page](https://soulcraft-org.github.io/git-crafter/) | Process maps: each step's tool, rule and metric |
 | [CI standard](templates/ci/README.md) | One reusable workflow on GitHub's standard hosted runners |
 | [Rules](rules/) and [guards](tools/) | What Claude sessions may do, and a bash guard that blocks one-way doors |
@@ -24,13 +24,13 @@ Both pages are public.
 | 2 | A ruleset on `main` requiring `ci / ci-ok` | [templates/ci](templates/ci/README.md) |
 | 3 | Settings, Pages: source "GitHub Actions" | [templates/ci](templates/ci/README.md) |
 
-## The 21 categories
+## The 15 categories
 
 Each tab scores Quality, Speed and Consumption, a third each, against goals that name their source ([quality/SCORING.md](quality/SCORING.md)).
 
 | Tab ids | What each measures, which to drop |
 |---|---|
-| `code` `documentation` `issues` `projects` `pull-requests` `actions` `tests` `security` `insights` `settings` `design` `usability` `claude` `claude-settings` `desktop-app` `blockers` `tokens` `instructions` `deploy` `credits` `tools` | [templates/quality](templates/quality/README.md) |
+| `code` `documentation` `issues` `projects` `pull-requests` `actions` `tests` `security` `insights` `settings` `design` `usability` `deploy` `credits` `tools` | [templates/quality](templates/quality/README.md) |
 
 ## The maps
 

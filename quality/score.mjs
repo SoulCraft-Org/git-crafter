@@ -18,13 +18,12 @@ import { checkPlainFields, checkWordCounts, IDEAL_MAX_WORDS, isDay, isPlain, isP
 export { overlayTargets };
 
 // The template's tabs: GitHub's repo tab order, then Tests, the two web tabs,
-// and what Claude and the pipeline around it cost. CI keeps the id "actions",
+// and what the pipeline costs. CI keeps the id "actions",
 // GitHub's name, so the github collector's metric ids stand. Issues
 // holds the issue metrics, Projects the project board, Security and quality,
 // named after GitHub's own tab, GitHub's security features, and Settings what
-// the repo's Settings pages hold (rules, access, secrets, what bills). The
-// Claude desktop app tab reads what the app's own sessions load and use,
-// beside the settings they run under. Insights, also GitHub's own tab, holds
+// the repo's Settings pages hold (rules, access, secrets, what bills).
+// Insights, also GitHub's own tab, holds
 // one metric per Insights view. A repo's config picks from these and may add
 // its own (config.mjs).
 export const TABS = [
@@ -40,12 +39,6 @@ export const TABS = [
   ["settings", "Settings"],
   ["design", "Design"],
   ["usability", "Usability"],
-  ["claude", "Claude"],
-  ["claude-settings", "Claude settings"],
-  ["desktop-app", "Claude desktop app"],
-  ["blockers", "Blockers"],
-  ["tokens", "Tokens"],
-  ["instructions", "Instructions"],
   ["deploy", "Deploy"],
   ["credits", "Credits"],
   ["tools", "Tools"],

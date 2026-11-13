@@ -66,7 +66,7 @@ check("the 1,000 KB page budget blocks one byte over, counted in UTF-8", () => {
 });
 
 check("the contract fields render: means, group, funnel, stack, partial", () => {
-  const base = { tab: "claude", kind: "speed", unit: "PRs", goal: 10, near: 5, direction: "higher" };
+  const base = { tab: "tests", kind: "speed", unit: "PRs", goal: 10, near: 5, direction: "higher" };
   const defs = [
     { ...base, id: "c.funnel", label: "PR path", chart: "funnel", means: "Pull requests from session to merge", group: "Flow" },
     { ...base, id: "c.stack", label: "Token mix", unit: "tokens", chart: "stack", group: "Tokens" },
@@ -134,10 +134,11 @@ check("deploys and credits draw full width on their own tabs and keep their rows
   assert.ok(!/NaN|undefined|Infinity/.test(shown(html)), "NaN, undefined or Infinity on the page");
 });
 
-check("the Blockers tab opens with its worst gaps and shows each row's gap", () => {
+check("a pack's Blockers tab opens with its worst gaps and shows each row's gap", () => {
   const miss = { id: "t.miss", tab: "blockers", kind: "quality", label: "Rules said twice", unit: "sentences", goal: 0, near: 3, direction: "lower" };
   const share = { id: "t.share", tab: "blockers", kind: "quality", label: "False alarms", unit: "%", goal: 5, near: 15, direction: "lower" };
-  const html = render({ defs: [miss, share], metrics: { "t.miss": val(12), "t.share": val(62.7) } });
+  const tabs = [...DEFAULT_TABS, ["blockers", "Blockers"]];
+  const html = render({ defs: [miss, share], metrics: { "t.miss": val(12), "t.share": val(62.7) }, tabs });
   const tab = /<section id="blockers"[\s\S]*?<\/section>\n(<section id="|<\/main>)/.exec(html)[0];
   const at = tab.indexOf('<section class="gaps"');
   assert.ok(at > 0 && at < tab.indexOf('class="chips"'), "no worst gaps above the rows");

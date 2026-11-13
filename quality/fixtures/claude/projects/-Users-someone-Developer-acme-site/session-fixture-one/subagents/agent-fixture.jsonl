@@ -1,2 +1,0 @@
-{"type":"user","timestamp":"2026-10-30T10:10:00.000Z","sessionId":"session-fixture-one","isSidechain":true,"message":{"role":"user","content":"DECOY-MESSAGE-TEXT"}}
-{"type":"assistant","timestamp":"2026-10-30T10:15:00.000Z","sessionId":"session-fixture-one","isSidechain":true,"requestId":"req-fixture-3","message":{"id":"msg-fixture-3","role":"assistant","content":[{"type":"text","text":"DECOY-MESSAGE-TEXT"}],"usage":{"input_tokens":2,"output_tokens":300,"cache_creation_input_tokens":200,"cache_read_input_tokens":3000},"model":"claude-haiku-5-5"}}

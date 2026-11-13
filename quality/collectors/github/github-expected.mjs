@@ -60,7 +60,6 @@ export const EXPECTED = {
   "security.prt_head_checkouts": 0,
   "security.dependabot_cooldown": 0, // neither update entry sets a cooldown
   "security.lockfile_registry_share": "no package-lock.json with a packages map at the root",
-  "security.claude_deny_coverage": 0, // the fixture repo has no .claude/settings.json
   "security.young_lockfile_packages": "no package-lock.json with a packages map at the root",
   "security.threat_model_current": "params.threat_model_covers in targets/github.json is empty: list the paths the threat model covers, such as the Worker's",
   "security.claude_review_share": 50, // #20 by Claude's app, #18 by Claude's bot; #19 forged, #17 another app

@@ -7,9 +7,9 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { after, describe, it } from "node:test";
-import { collect, denyCovers, lockPackages, pulledBy, registryOf, runsPullRequestCode } from "./github.mjs";
+import { lockPackages, pulledBy, registryOf, runsPullRequestCode } from "./github.mjs";
 import { adminGh, clientFor } from "./github-core.mjs";
-import { HERE, FIXTURES, TARGETS, TEMPLATE_PARAMS, REST, GRAPHQL, PARAMS, NOW, REPO, HOUR_MS, fakeGh, fakeFetch, run } from "./github-test-lib.mjs";
+import { HERE, FIXTURES, REST, GRAPHQL, PARAMS, NOW, REPO, HOUR_MS, fakeGh, run } from "./github-test-lib.mjs";
 import { EXPECTED } from "./github-expected.mjs";
 describe("Security and quality: GitHub's five features, their findings, fix time and cost", () => {
   const withRest = (extra) => fakeGh({ rest: { ...REST, ...extra } });
@@ -508,19 +508,8 @@ describe("Security and quality: Actions hardening, supply chain and Claude Code"
     assert.match(none["security.claude_review_share"].could_not_check, /no merged PR .* params\.review_paths names/);
   });
 
-  it("counts the credential paths the repo's Claude Code settings deny reading", async () => {
-    const settings = { permissions: { deny: ["Read(./.env)", "Read(./.env.*)", "Read(**/*.pem)", "Read(~/.ssh/**)", "Bash(curl *)"] } };
-    const out = await run({ root: repoWith({ ".claude/settings.json": settings }) });
-    // Covered: ./.env, ./.env.*, ./**/*.pem, ~/.ssh/**; not ./secrets/**, ./**/*.key, ~/.aws/**: 4 of 7.
-    assert.equal(out["security.claude_deny_coverage"].value, 57.1);
-    assert.equal(denyCovers("**/.env", "./.env"), true, "a glob that takes the path in");
-    assert.equal(denyCovers("./.env", "./.env.*"), false, "a narrower rule does not cover a wider pattern");
-    const none = await run({ params: { ...PARAMS, credential_patterns: [] } });
-    assert.match(none["security.claude_deny_coverage"].could_not_check, /params\.credential_patterns .* is empty/);
-  });
-
   // Git Crafter's own settings (#191): they only narrow what a session may read, so they grant nothing.
-  it("Git Crafter's .claude/settings.json is deny-only and covers every template credential path", async () => {
+  it("Git Crafter's .claude/settings.json is deny-only", () => {
     const root = path.join(HERE, "..", "..", "..");
     const file = path.join(root, ".claude", "settings.json");
     assert.ok(existsSync(file), "Git Crafter has a .claude/settings.json");
@@ -532,9 +521,6 @@ describe("Security and quality: Actions hardening, supply chain and Claude Code"
     assert.ok(Number.isInteger(settings.autoCompactWindow ?? 250000), "autoCompactWindow is a token count");
     assert.deepEqual(Object.keys(settings.permissions), ["deny"], "no allow or ask list");
     assert.ok(settings.permissions.deny.every((r) => /^Read\(.+\)$/.test(r)), "every rule is a Read(...) deny");
-    const targets = TARGETS.filter((t) => t.id === "security.claude_deny_coverage");
-    const out = await collect({ root, mode: "local", params: TEMPLATE_PARAMS, targets, gh: fakeGh(), fetch: fakeFetch(), now: NOW, repo: REPO });
-    assert.equal(out["security.claude_deny_coverage"].value, 100);
   });
 
   it("holds the default branch to a pull request, no force pushes and no deletion", async () => {

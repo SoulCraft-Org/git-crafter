@@ -1,5 +1,5 @@
 {
- "comment": "Git Crafter's own Quality, Speed and Consumption page: the template measuring this repo, deployed beside the Process page at quality/ (pages.yml). Every template tab is on. In this public repo the account tabs (claude, claude-settings, desktop-app, blockers, tokens, instructions, credits) read not measured: their data stays on one Mac account, and a private overlay measures them. Only what differs from the template lives here: config/quality/targets/ holds this repo's params and the metrics it turns off because it has no such thing. Dropped, and why: code growth over the last merged PRs (a goal with no outside standard that falls whenever a feature lands; copies, dead code, complexity, cycles and the size limits measure least code instead); Worker timing, CPU, bundle and build (no Worker); security headers (GitHub Pages serves fixed headers a repo cannot set); client JS and the end-to-end and axe routes (no bundle and no e2e suite: design.total_bytes and usability.axe_violations read the built pages); test coverage and the e2e shard (no vitest or e2e suite); docs.runbooks_verified (no runbooks); security.claude_review_share (the sensitive-path review, #838, comments as github-actions, which it does not count); pull_requests.commits_via_pr (an org ruleset requires a pull request with no bypass, so the share cannot move). Design and Usability read the built Process and Metrics pages in pages/dist (targets/web.json). Deploy reads the github-pages deployments (targets/deploy.json, params.platform pages). Two metrics are this repo's own: guards.call_ms, the bash guard's time per command, read by config/quality/collectors/guard-speed.mjs (targets/guard-speed.json), and engine.page_seconds, the pages.yml step that collects and builds this page, read in CI by config/quality/collectors/page-speed.mjs (targets/page-speed.json). repo and name come from GITHUB_REPOSITORY, so the same file serves this repo and its public copy. Keys: quality/config.mjs.",
+ "comment": "Git Crafter's own Quality, Speed and Consumption page: the template measuring this repo, deployed beside the Process page at quality/ (pages.yml). Every template tab is on. In this public repo the credits tab reads not measured: its data stays on one Mac account, and a private overlay measures it. Only what differs from the template lives here: config/quality/targets/ holds this repo's params and the metrics it turns off because it has no such thing. Dropped, and why: code growth over the last merged PRs (a goal with no outside standard that falls whenever a feature lands; copies, dead code, complexity, cycles and the size limits measure least code instead); Worker timing, CPU, bundle and build (no Worker); security headers (GitHub Pages serves fixed headers a repo cannot set); client JS and the end-to-end and axe routes (no bundle and no e2e suite: design.total_bytes and usability.axe_violations read the built pages); test coverage and the e2e shard (no vitest or e2e suite); docs.runbooks_verified (no runbooks); security.claude_review_share (the sensitive-path review, #838, comments as github-actions, which it does not count); pull_requests.commits_via_pr (an org ruleset requires a pull request with no bypass, so the share cannot move). Design and Usability read the built Process and Metrics pages in pages/dist (targets/web.json). Deploy reads the github-pages deployments (targets/deploy.json, params.platform pages). Two metrics are this repo's own: guards.call_ms, the bash guard's time per command, read by config/quality/collectors/guard-speed.mjs (targets/guard-speed.json), and engine.page_seconds, the pages.yml step that collects and builds this page, read in CI by config/quality/collectors/page-speed.mjs (targets/page-speed.json). repo and name come from GITHUB_REPOSITORY, so the same file serves this repo and its public copy. Keys: quality/config.mjs.",
  "tabs": [
   "code",
   "documentation",
@@ -13,12 +13,6 @@
   "settings",
   "design",
   "usability",
-  "claude",
-  "claude-settings",
-  "desktop-app",
-  "blockers",
-  "tokens",
-  "instructions",
   "deploy",
   "credits",
   "tools"
@@ -42,17 +36,14 @@
   "project": 2,
   "quick": [
    "deploy.latest_failed", "ci.main_red_minutes", "docs.broken_links", "docs.dead_paths", "docs.dead_scripts",
-   "code.missing_refs", "simplicity.broken_refs", "usability.broken_links", "usability.axe_violations",
+   "code.missing_refs", "usability.broken_links", "usability.axe_violations",
    "design.contrast_violations", "security.dependabot_open", "security.code_scanning_open", "security.secret_scanning_open",
-   "security.malware_open", "claude_settings.valid", "instructions.protected_clauses_missing"
+   "security.malware_open"
   ],
   "waiting": [
-   "blockers.costly", "blockers.guard_blocks_per_100_calls", "blockers.guard_false_alarm_share", "blockers.pushes_per_merged_pr",
-   "claude.context_per_call", "claude.hours_session_to_pr", "claude.subagent_cost_share", "claude_settings.prompts_per_100_calls",
    "design.raw_px", "pull_requests.fixed_after_review", "pull_requests.green_at_head", "pull_requests.over_400_lines",
-   "credits.actions_pool_used", "credits.usage_read_share", "desktop_app.turns_closed", "desktop_app.subagent_start_tokens",
-   "docs.over_read_goal", "docs.tokens_past_read_goal", "issues.open_bugs", "tools.adopters_latest_share",
-   "claude.first_push_green_share", "claude.compactions_per_10_prs"
+   "credits.actions_pool_used", "credits.usage_read_share",
+   "docs.over_read_goal", "docs.tokens_past_read_goal", "issues.open_bugs", "tools.adopters_latest_share"
   ]
  }
 }

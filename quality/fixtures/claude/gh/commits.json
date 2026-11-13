@@ -1,6 +1,0 @@
-{
-  "1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a": [
-    { "__typename": "CheckRun", "name": "site-tests", "conclusion": "FAILURE", "status": "COMPLETED" },
-    { "__typename": "CheckRun", "name": "content-gates", "conclusion": "SUCCESS", "status": "COMPLETED" }
-  ]
-}

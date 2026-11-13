@@ -7,7 +7,7 @@
  "history": null,
  "out": "pages/dist/action",
  "pages": { "process": "process.html" },
- "tabs": ["build", "ci", "testing", "claude", "tokens"],
+ "tabs": ["build", "ci", "testing"],
  "heading": "git-crafter",
  "collector": "Git Crafter actions/pages",
  "nav": [{ "page": "process", "label": "Process", "icon": "plan" }]

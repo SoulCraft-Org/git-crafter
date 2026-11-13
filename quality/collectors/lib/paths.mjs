@@ -47,7 +47,7 @@ export async function ownRepo(root, params = {}, exec = gitOut) {
 }
 
 // A path param: "~/" is under home, an absolute path is itself, any other is
-// under the repo root (the rule instructions.mjs's params follow).
+// under the repo root.
 export function resolvePath(p, { home = os.homedir(), root = '.' } = {}) {
   const s = String(p ?? '');
   return s.startsWith('~/') ? path.join(home, s.slice(2)) : path.isAbsolute(s) ? s : path.join(root, s);

@@ -39,15 +39,6 @@
       "registries": [
         "https://registry.npmjs.org/"
       ],
-      "credential_patterns": [
-        "./.env",
-        "./.env.*",
-        "./secrets/**",
-        "./**/*.pem",
-        "./**/*.key",
-        "~/.ssh/**",
-        "~/.aws/**"
-      ],
       "threat_model": "THREAT-MODEL.md",
       "threat_model_covers": [],
       "threat_model_grace_days": 0,
@@ -985,22 +976,6 @@
     "source": "state: git log at the root: the latest commit to params.threat_model (a path, or a list of paths that must all exist) against the latest to params.threat_model_covers, less params.threat_model_grace_days; could_not_check on a shallow clone or with no covered paths",
     "needs": "none",
     "chart": "number"
-  },
-  {
-    "id": "security.claude_deny_coverage",
-    "tab": "security",
-    "kind": "quality",
-    "group": "Claude Code",
-    "label": "Credential paths Claude cannot read",
-    "means": "Share of credential paths, such as .env and keys, that the repo's Claude Code settings deny reading; higher is better.",
-    "unit": "%",
-    "goal": 100,
-    "near": 80,
-    "direction": "higher",
-    "goal_source": "Anthropic, Claude Code settings: permissions.deny with Read(./.env) and Read(./.env.*) keeps secrets out of Claude's reach",
-    "source": "state: .claude/settings.json permissions.deny Read(...) rules against params.credential_patterns",
-    "needs": "none",
-    "chart": "table"
   },
   {
     "id": "security.claude_review_share",
