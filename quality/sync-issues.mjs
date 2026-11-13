@@ -260,14 +260,24 @@ export function apply(step, { gh, board = null, repo, sync, dryRun = false, log 
   }
 }
 
-// The metric CodeQL measures; its read is stale while CodeQL still runs on the commit (#51).
+// The metric CodeQL measures; a count read before CodeQL finished on the commit is stale (#51).
 export const CODEQL_METRIC = "security.code_scanning_open";
 
-// True when a CodeQL run on sha is queued or in progress. One request; a failed read is false, so the alert still syncs.
-export function codeqlRunning(gh, repo, sha) {
+// A count stamped less than this long after a scan ended may predate it: the stamp follows the read,
+// and the collect step ran 42 s and 38 s on the two merges measured for #51.
+const SCAN_SETTLE_MS = 60_000;
+
+// A code scanning run: default setup's path, or a workflow named for CodeQL; never Code Quality's.
+const isScan = (r) => /codeql/i.test(`${r.path ?? ""} ${r.name ?? ""}`) && !/code-quality/i.test(r.path ?? "");
+
+// True when the count read at readAt may predate a scan of sha: a scan run is unfinished, or it ended
+// after the read or less than SCAN_SETTLE_MS before it. With no readAt, only an unfinished run counts.
+// One request; a failed read is false, so the alert still syncs.
+export function codeqlStale(gh, repo, sha, readAt) {
   try {
     const runs = gh([`repos/${repo}/actions/runs?head_sha=${sha}&per_page=100`])?.workflow_runs ?? [];
-    return runs.some((r) => /codeql/i.test(`${r.path ?? ""} ${r.name ?? ""}`) && r.status !== "completed");
+    const read = Date.parse(readAt);
+    return runs.some((r) => isScan(r) && (r.status !== "completed" || Date.parse(r.updated_at) > read - SCAN_SETTLE_MS));
   } catch {
     return false;
   }
@@ -275,7 +285,7 @@ export function codeqlRunning(gh, repo, sha) {
 
 // Plans and applies the sync for config; returns the steps taken.
 // gq(query, variables) is the board's GraphQL client, or null with no token.
-// sha is the commit built; while CodeQL runs on it, the CODEQL_METRIC step waits.
+// sha is the commit built; a CODEQL_METRIC count that may predate its scan waits for the next run.
 export function sync(config, { gh = ghCli(), gq = null, dryRun = false, log = console.log, sha = process.env.GITHUB_SHA } = {}) {
   const rows = statuses(config);
   if (!rows) return log("no quality run yet; nothing to sync"), [];
@@ -286,8 +296,8 @@ export function sync(config, { gh = ghCli(), gq = null, dryRun = false, log = co
   // A hand-written issue covers its metrics: the sync never touches them.
   let planned = rows.filter((row) => !open.get(row.def.id)?.hand).map((row) => plan(row, open, config.issue_sync, page, board?.cards ?? null)).filter(Boolean);
   const scan = planned.find((s) => s.row.def.id === CODEQL_METRIC && s.op !== "log");
-  if (scan && sha && codeqlRunning(gh, config.repo, sha)) {
-    log(`CodeQL still runs on ${sha.slice(0, 7)}: ${CODEQL_METRIC} waits for the next run`);
+  if (scan && sha && codeqlStale(gh, config.repo, sha, scan.row.entry?.read_at)) {
+    log(`${CODEQL_METRIC} may predate CodeQL on ${sha.slice(0, 7)}: it waits for the next run`);
     planned = planned.filter((s) => s !== scan);
   }
   const opens = planned.filter((s) => s.op === "open" || (s.op === "card" && !s.card));

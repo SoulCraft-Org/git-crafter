@@ -172,21 +172,32 @@ describe("sync, what it leaves alone", () => {
     assert.ok(lines.includes(`held back ${Object.keys(misses).length - OPEN_CAP} new issue(s) or card(s) past the cap of ${OPEN_CAP}; the next run opens them`));
   });
 
-  it("waits on code scanning alerts while CodeQL runs on the commit, with one read; a done run or a failed read syncs as today", () => {
+  it("waits on a code scanning count that may predate CodeQL on the commit, with one read; a later read or a failed one syncs as today", () => {
     const dir = join(root, "codeql");
     mkdirSync(join(dir, "quality", "data"), { recursive: true });
-    writeFileSync(join(dir, "quality", "data", "latest.json"), JSON.stringify({ ...RUN, metrics: { "security.code_scanning_open": { value: 17 } } }));
+    const entry = { value: 17, read_at: "2026-11-13T05:51:39.250Z" };
+    writeFileSync(join(dir, "quality", "data", "latest.json"), JSON.stringify({ ...RUN, metrics: { "security.code_scanning_open": entry } }));
     writeFileSync(join(dir, "quality.json"), JSON.stringify({ repo: REPO, tabs: ["security"], issue_sync: { label: "quality" } }));
     const scanned = loadConfig({ root: dir, file: "quality.json", env: {} });
-    const runsOf = (status) => (args) => (args[0].includes("/actions/runs?head_sha=abc1234") ? (status ? { workflow_runs: [{ name: "CodeQL", path: "dynamic/github-code-scanning/codeql", status }] } : null) : undefined);
-    for (const [answer, opens] of [[runsOf("in_progress"), 0], [runsOf("completed"), 1], [() => { throw new Error("HTTP 403"); }, 1]]) {
+    // Default setup names its run for the event; only the path says CodeQL.
+    const run = (status, ended, path = "dynamic/github-code-scanning/codeql") => () => ({ workflow_runs: [{ name: "Push on main", path, status, updated_at: `2026-11-13T${ended}Z` }] });
+    const cases = [
+      ["unfinished", run("in_progress", "05:51:00"), 0],
+      ["ended after the read", run("completed", "05:52:20"), 0],
+      ["ended in the read's second", run("completed", "05:51:39"), 0],
+      ["ended 49 s before the read", run("completed", "05:50:50"), 0],
+      ["ended 69 s before the read", run("completed", "05:50:30"), 1],
+      ["only a Code Quality run", run("in_progress", "05:51:00", "dynamic/github-code-quality/codeql"), 1],
+      ["a failed read", () => { throw new Error("HTTP 403"); }, 1],
+    ];
+    for (const [name, answer, opens] of cases) {
       const { gh: base, calls } = fakeGh();
       const gh = (args, body) => (args[0].includes("/actions/runs") ? (calls.push({ args }), answer(args)) : base(args, body));
       const lines = [];
       sync(scanned, { gh, sha: "abc1234def", log: (l) => lines.push(l) });
-      assert.equal(writes(calls).length, opens);
-      assert.equal(calls.filter((c) => c.args[0].includes("/actions/runs")).length, 1, "one runs read per sync");
-      if (!opens) assert.ok(lines.includes("CodeQL still runs on abc1234: security.code_scanning_open waits for the next run"));
+      assert.equal(writes(calls).length, opens, name);
+      assert.equal(calls.filter((c) => c.args[0].includes("/actions/runs?head_sha=abc1234def")).length, 1, `${name}: one runs read per sync`);
+      assert.equal(lines.includes("security.code_scanning_open may predate CodeQL on abc1234: it waits for the next run"), !opens, name);
     }
   });
 
