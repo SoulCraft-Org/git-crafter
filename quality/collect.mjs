@@ -19,8 +19,8 @@
 // on the login shares that quota, so a run that empties it stalls them all.
 //
 // FILE is the repo's config (config.mjs), default quality/config.json when
-// the repo has one. A collector is any *.mjs in Git Crafter's quality/collectors/
-// or the repo's collectors folder, or one subfolder down, that exports
+// the repo has one. A collector is any *.mjs in Git Crafter's quality/collectors/,
+// a pack's collectors folder (packs.mjs) or the repo's, or one subfolder down, that exports
 // collect(); helpers and
 // *.test.mjs are skipped. The contract is in quality/collectors/README.md. A collector
 // that throws turns each of its metrics into could_not_check, so one broken
@@ -43,7 +43,8 @@ import { ghClient } from "./collectors/github/github-core.mjs";
 import * as lib from "./collectors/lib/index.mjs";
 import { redactText } from "./collectors/lib/redact.mjs";
 import { loadConfig, QUALITY } from "./config.mjs";
-import { currentMetrics, loadDefs } from "./score.mjs";
+import { configDefs } from "./packs.mjs";
+import { currentMetrics } from "./score.mjs";
 
 function headCommit(root) {
   if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA;
@@ -261,11 +262,11 @@ async function main() {
     process.exit(2);
   }
   const mode = args.local ? "local" : "ci";
-  const config = await orExit(() => loadConfig({ file: args.config }));
+  const config = await orExit(() => loadConfig({ file: args.config, ci: mode === "ci" }));
   const loaded = await orExit(() => {
     repoEnv(config, process.env, { mode });
     if (args.from) return copyRun(args, config);
-    return loadDefs({ templateDir: join(QUALITY, "targets"), repoDir: config.targets, tabs: config.tabs });
+    return configDefs(config, join(QUALITY, "targets"));
   });
   if (args.from) return;
   const root = config.root;
@@ -276,7 +277,7 @@ async function main() {
   const { metrics, ran, seconds } = await orExit(() => runCollectors({
     root,
     mode,
-    dirs: [join(QUALITY, "collectors"), config.collectors],
+    dirs: [join(QUALITY, "collectors"), ...config.packs.map((p) => p.collectors), config.collectors],
     // A dropped metric that still gates is collected, then left out of the run.
     defs: [...new Set([...loaded.defs, ...loaded.gated])],
     all: loaded.all,

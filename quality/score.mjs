@@ -142,14 +142,27 @@ export function loadTargets(dir, { tabIds = TAB_IDS } = {}) {
 // left out. Returns the defs, each targets file's params (overlayTargets),
 // every id the files define, so a caller can tell off from unknown, and the
 // gated ones on a shown tab: a dropped metric may still gate, unscored.
-export function loadDefs({ templateDir, repoDir = null, tabs = DEFAULT_TABS, tabIds = new Set([...TAB_IDS, ...tabs.map(([id]) => id)]) }) {
+export function loadDefs({ templateDir, packDirs = [], repoDir = null, tabs = DEFAULT_TABS, tabIds = new Set([...TAB_IDS, ...tabs.map(([id]) => id)]) }) {
   const repoFiles = repoDir && repoDir !== templateDir ? readTargetFiles(repoDir) : [];
-  const { entries, params } = overlayTargets(readTargetFiles(templateDir), repoFiles);
+  const { entries, params } = overlayTargets(baseFiles(templateDir, packDirs), repoFiles);
   for (const def of entries) checkDef(def, `${def.overridden_in ? `${def.overridden_in} over the template's ${def.file}` : def.file}: ${def.id ?? "(no id)"}`, tabIds);
   const on = new Set(tabs.map(([id]) => id));
   const defs = entries.filter((d) => d.drop !== true && on.has(d.tab));
   const gated = entries.filter((d) => (d.gate === true || d.gate === "warn") && on.has(d.tab));
   return { defs, params, all: entries, gated };
+}
+
+// The template's targets files, then each pack's (packs.mjs), which add
+// tabs of their own; a pack file named like one before it is a usage error.
+function baseFiles(templateDir, packDirs) {
+  const files = readTargetFiles(templateDir);
+  for (const dir of packDirs) {
+    for (const f of readTargetFiles(dir)) {
+      if (files.some((g) => g.file === f.file)) throw new Error(`pack targets ${f.file} is named like another targets file; rename the pack's`);
+      files.push(f);
+    }
+  }
+  return files;
 }
 
 // ---- Ideal states ---------------------------------------------------------

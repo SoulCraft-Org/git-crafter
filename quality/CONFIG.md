@@ -13,6 +13,7 @@ A repo's Quality page settings (`config.mjs`), and how its targets lie over the 
 | `targets` | `<repo>/quality/targets` | the repo's overrides and own metrics |
 | `collectors` | `<repo>/quality/collectors` | the repo's own collectors; a template collector's name is a usage error |
 | `ideals` | `<repo>/quality/ideals` | the repo's ideal states, one file per tab, in place of the template's |
+| `packs` | `[]` | tabs from other repos, each `"owner/repo@<40-hex sha>"`, or a folder in a `--local` run ([`packs.mjs`](packs.mjs)) |
 | `reviews`, `data`, `history`, `out` | `<repo>/quality/<key>`; `out` is `<repo>/quality/dist` | folders |
 | `tokens_css` | `render/tokens.css` | the color tokens the page draws with |
 | `budget` | 1,000,000, per `config.mjs` (read 2026-11-04) | page bytes; one over is exit 1 |

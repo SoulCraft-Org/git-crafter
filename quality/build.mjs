@@ -17,8 +17,9 @@ import { pathToFileURL } from "node:url";
 
 import { parseArgs } from "./collect.mjs";
 import { CONFIG_DEFAULTS, loadConfig, QUALITY } from "./config.mjs";
+import { configDefs } from "./packs.mjs";
 import { render } from "./render/page.mjs";
-import { currentMetrics, loadAllReviews, loadData, loadDefs, loadIdeals, mergeMetrics, newestReviews, TABS, tabGaps } from "./score.mjs";
+import { currentMetrics, loadAllReviews, loadData, loadIdeals, mergeMetrics, newestReviews, TABS, tabGaps } from "./score.mjs";
 
 // The drawing lives in quality/render/ (charts, layout, styles, client
 // script); these two stay exported here for the self-test.
@@ -37,7 +38,7 @@ export function sizeCheck(html, budget = PAGE_BUDGET) {
 // `template` is Git Crafter's quality/ folder; the self-test points it at a seed.
 export function readInputs(config, { template = QUALITY } = {}) {
   const tabIds = new Set(config.tabs.map(([id]) => id));
-  const { defs } = loadDefs({ templateDir: join(template, "targets"), repoDir: config.targets, tabs: config.tabs });
+  const { defs } = configDefs(config, join(template, "targets"));
   const ideals = loadIdeals({ templateDir: join(template, "ideals"), repoDir: config.ideals, tabIds: new Set([...TABS.map(([id]) => id), ...tabIds]) });
   // A review of a template tab the repo turned off stays on disk and off the
   // page, never a usage error.
