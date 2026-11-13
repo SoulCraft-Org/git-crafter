@@ -18,9 +18,9 @@ it("gh-replay records on main, then a pull request replays it without calling gh
   writeShim(tmp);
   const env = (mode) => ({ ...process.env, PATH: `${path.dirname(process.execPath)}:${process.env.PATH}`, GH_REPLAY_REAL: path.join(tmp, "real"), GH_REPLAY_DIR: path.join(tmp, "save"), GH_REPLAY_MODE: mode, GH_REPLAY_LIVE: "pulls/7" });
   const gh = (mode, ...args) => spawnSync(path.join(tmp, "gh"), args, { env: env(mode) }).stdout.toString();
-  for (const mode of ["record", "replay"]) assert.equal(gh(mode, "api", "repos/o/r/runs"), "real api repos/o/r/runs\n"), gh(mode, "api", "repos/o/r/dependabot/alerts");
+  for (const mode of ["record", "replay"]) assert.equal(gh(mode, "api", "repos/o/r/actions/runs"), "real api repos/o/r/actions/runs\n"), ["dependabot/alerts", "actions/cache/storage-limit", "made/up"].forEach((p) => gh(mode, "api", `repos/o/r/${p}`));
   gh("replay", "api", "repos/o/r/pulls/7/files");
-  assert.equal(readdirSync(path.join(tmp, "save", "r")).length, 1, "a non-public read (dependabot) wrote no save");
-  assert.equal(readFileSync(path.join(tmp, "calls"), "utf8"), "x\nx\nx\nx\n", "only the public read replayed; dependabot and the PR's own read ran live");
-  assert.equal(summary(readFileSync(path.join(tmp, "save.log"), "utf8").trim().split("\n").map((l) => l.split(" ")), "replay"), "live 4 REST, 0 GraphQL; 1 replayed from main (replay)");
+  assert.equal(readdirSync(path.join(tmp, "save", "r")).length, 1, "only a PUBLIC family is saved: dependabot, the cache limit and an unlisted path wrote none");
+  assert.equal(readFileSync(path.join(tmp, "calls"), "utf8"), "x\n".repeat(8), "only the public read replayed; the three unsaved reads and the PR's own read ran live");
+  assert.equal(summary(readFileSync(path.join(tmp, "save.log"), "utf8").trim().split("\n").map((l) => l.split(" ")), "replay"), "live 8 REST, 0 GraphQL; 1 replayed from main (replay)");
 });

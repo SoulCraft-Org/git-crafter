@@ -1,6 +1,6 @@
 // gh for pages.yml (#38): a push to main saves each public read; a pull request replays that save (data read as JSON by
-// hashed name, never run); report prints the live requests ci.pr_run_requests sums. Anyone signed in can download a
-// public repo's artifact, so DENY reads, admin-token reads and argv naming this PR or run are never saved.
+// hashed name, never run); report prints the live requests ci.pr_run_requests sums. Anyone signed in can download a public
+// repo's artifact, so a REST read is saved only on a PUBLIC family (each 200 to a tokenless curl, 2026-11-13), never DENY.
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { appendFileSync, copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
@@ -21,11 +21,11 @@ export function keyOf(args, now = Date.now()) {
 }
 /** The shim gh, written into `dir`. */
 export const writeShim = (dir) => writeFileSync(path.join(dir, "gh"), `#!/bin/sh\nexec node "${fileURLToPath(import.meta.url)}" shim "$@"\n`, { mode: 0o755 });
-const log = (env, kind, n) => appendFileSync(`${env.GH_REPLAY_DIR}.log`, `${kind} ${n}\n`);
+const PUBLIC = /^(?!.*\/logs\b)\/?repos\/[^/]+\/[^/?]+(\/(actions\/(runs|workflows)|check-runs|commits|compare|contents|deployments|environments(?=\?|$)|git|issues|labels|pulls|releases|rules\/branches|rulesets|tags|community\/profile)([/?].*)?)?(\?.*)?$/;
 const DENY = /dependabot|code-scanning|secret-scanning|code-quality|security-advisories|vulnerabilityAlerts|collaborators|invitations|\/protection|secrets|actions\/permissions|private-vulnerability|billing|\/hooks|\/keys|traffic/i;
-const saveFile = (args, env) => readOnly(args) && !args.some((a) => DENY.test(a)) && env.GH_TOKEN?.trim() !== (env.ADMIN_READ_TOKEN?.trim() || null) && !(env.GH_REPLAY_LIVE ?? "").split(",").some((t) => t && args.some((a) => a.includes(t))) && path.join(env.GH_REPLAY_DIR, "r", `${keyOf(args)}.json`);
-const ran = (saved, args, env) => (saved ? { stdout: Buffer.from(saved.out, "base64"), stderr: saved.err, status: saved.status } : spawnSync(env.GH_REPLAY_REAL, args, { stdio: ["inherit", "pipe", "pipe"], maxBuffer: 2 ** 31 }));
 const kindOf = (args) => (args[1] === "rate_limit" ? null : args[0] === "api" && args[1] !== "graphql" ? "rest" : "graphql");
+const saveFile = (args, env) => readOnly(args) && (kindOf(args) === "graphql" || PUBLIC.test(args[1])) && !args.some((a) => DENY.test(a)) && env.GH_TOKEN?.trim() !== (env.ADMIN_READ_TOKEN?.trim() || null) && !(env.GH_REPLAY_LIVE ?? "").split(",").some((t) => t && args.some((a) => a.includes(t))) && path.join(env.GH_REPLAY_DIR, "r", `${keyOf(args)}.json`);
+const log = (env, kind, n) => appendFileSync(`${env.GH_REPLAY_DIR}.log`, `${kind} ${n}\n`), ran = (saved, args, env) => (saved ? { stdout: Buffer.from(saved.out, "base64"), stderr: saved.err, status: saved.status } : spawnSync(env.GH_REPLAY_REAL, args, { stdio: ["inherit", "pipe", "pipe"], maxBuffer: 2 ** 31 }));
 const pagesOf = (args, out) => { try { return (args.includes("--slurp") && JSON.parse(out).length) || 1; } catch { return 1; } };
 const keep = (file, env, r) => file && env.GH_REPLAY_MODE === "record" && (r.status === 0 || /\(HTTP (404|410|422)\)/.test(r.stderr));
 function shim(args, env) {
