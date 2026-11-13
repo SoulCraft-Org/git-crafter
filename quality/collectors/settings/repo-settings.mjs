@@ -12,7 +12,6 @@ export const githubApi = true;
 const TARGETS_FILE = "targets/repo-settings.json";
 const TARGETS = JSON.parse(readFileSync(new URL("../../targets/repo-settings.json", import.meta.url), "utf8"));
 const TEMPLATE = Object.assign({}, ...TARGETS.map((t) => t.params ?? {}));
-const SETUP_ROWS = JSON.parse(readFileSync(new URL("../../../templates/setup.json", import.meta.url), "utf8")).rows;
 
 // A ConfigError naming the param when `ok` is false.
 function need(ok, param, shape) {
@@ -22,24 +21,12 @@ function need(ok, param, shape) {
 const isScalar = (v) => ["boolean", "string", "number"].includes(typeof v);
 const isMap = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
 
-/**
- * The General settings templates/setup.json sets, as { field: value }: each
- * row that is not optional, check-only or per-repo and whose check reads one
- * top-level field of gh api repos/{owner}/{repo}.
- */
-export function setupExpected(rows = SETUP_ROWS) {
-  const general = rows.filter((r) => r.api !== false && !r.optional && (r.check?.get ?? r.path) === "repos/{owner}/{repo}");
-  const plain = general.filter((r) => /^\w+$/.test(r.check.field ?? "") && isScalar(r.check.value) && !/^\{\w+\}$/.test(String(r.check.value)));
-  return Object.fromEntries(plain.map((r) => [r.check.field, r.check.value]));
-}
-
-// The params this collector reads, checked; params.expected lies over setup.json's when expected_from_setup is true.
-function settings({ expected, expected_from_setup: fromSetup = false, blocked_paths: blockedPaths, included_cache_gb: includedCacheGb }) {
+// The params this collector reads, checked.
+function settings({ expected, blocked_paths: blockedPaths, included_cache_gb: includedCacheGb }) {
   need(isMap(expected) && Object.values(expected).every(isScalar), "expected", "map repo fields to true, false, a string or a number");
-  need(typeof fromSetup === "boolean", "expected_from_setup", "be true or false");
   need(Array.isArray(blockedPaths) && blockedPaths.every((p) => typeof p === "string"), "blocked_paths", "be a list of strings");
   need(typeof includedCacheGb === "number" && includedCacheGb > 0, "included_cache_gb", "be a number above 0");
-  return { expected: { ...(fromSetup ? setupExpected() : {}), ...expected }, blockedPaths, includedCacheGb };
+  return { expected, blockedPaths, includedCacheGb };
 }
 
 // One protection: null when the repo has nothing for it to guard, { hidden } when the token cannot see it.
@@ -97,10 +84,10 @@ const METRICS = {
     },
   },
   "settings.general_drift": {
-    source: "state: gh api repos/{repo}, each field named in params.expected (over templates/setup.json's General rows when params.expected_from_setup) against its value there",
+    source: "state: gh api repos/{repo}, each field named in params.expected against its value there",
     async run(R, cfg) {
       const keys = Object.keys(cfg.expected);
-      if (!keys.length) return skip(`params.expected in ${TARGETS_FILE} is empty: name the General settings this repo holds itself to, or set expected_from_setup`);
+      if (!keys.length) return skip(`params.expected in ${TARGETS_FILE} is empty: name the General settings this repo holds itself to`);
       const repo = await R.repo();
       const unseen = keys.find((k) => repo[k] === undefined);
       if (unseen) return skip(`gh api repos answered without ${unseen}: ${NEEDS["github-admin"]}`);

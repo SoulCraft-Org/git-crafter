@@ -1,368 +1,50 @@
 {
   "_README": [
-    "Every GitHub repo switch the Git Crafter templates assume, one row each, read by",
-    "tools/apply_setup.mjs (templates/open/README.md says how to run it). A row's method,",
-    "path and body set the switch; its check reads it back: field of the GET at get",
-    "(default: path) against value, exists (the GET answers 2xx), graphql (a query, field",
-    "under its answer) or ruleset (an active ruleset of target reaching ref holds each rule",
-    "type with at least those parameters). {owner} and {repo} fill paths; a string that is",
-    "only {key} takes that key of the --values file, or the repo's node_id.",
-    "optional: off by default; the values file's optional_on list turns a row on.",
-    "api: false: GitHub's API cannot set it; reason says why, and a check, when present, reads it.",
-    "when no_org_ruleset: an organization ruleset of that target governs instead, so the row",
-    "is not set here. API facts: GitHub Docs, REST repositories, rulesets, Actions permissions,",
-    "code scanning and immutable releases, read 2026-11-13. paid_off: paid features left off."
+    "Every GitHub repo switch the Git Crafter templates assume, one row each; templates/open/README.md says how to apply them.",
+    "A row's method, path and body set the switch with gh api. {owner} and {repo} fill the path; a string that is only {key} takes your value, or the repo's node_id.",
+    "Its check reads it back: field of the GET at get (default: path) against value, exists (the GET answers 2xx), graphql (a query, field under its answer)",
+    "or ruleset (an active ruleset of target reaching ref holds each rule type with at least those parameters).",
+    "optional: off by default. api: false: GitHub's API cannot set it; reason says why, and a check, when present, reads it.",
+    "when no_org_ruleset: an organization ruleset of that target governs instead, so the row is not set.",
+    "API facts: GitHub Docs, REST repositories, rulesets, Actions permissions, code scanning and immutable releases, read 2026-11-13. paid_off: paid features left off."
   ],
   "rows": [
-    {
-      "id": "repo.wiki",
-      "why": "Long how-to pages live beside the code, editable by maintainers",
-      "method": "PATCH",
-      "path": "repos/{owner}/{repo}",
-      "body": { "has_wiki": true },
-      "check": { "field": "has_wiki", "value": true }
-    },
-    {
-      "id": "repo.discussions",
-      "why": "Ideas and questions start in Discussions before an issue",
-      "method": "POST",
-      "path": "graphql",
-      "body": {
-        "query": "mutation($id: ID!) { updateRepository(input: {repositoryId: $id, hasDiscussionsEnabled: true}) { repository { hasDiscussionsEnabled } } }",
-        "variables": { "id": "{node_id}" }
-      },
-      "check": { "get": "repos/{owner}/{repo}", "field": "has_discussions", "value": true }
-    },
-    {
-      "id": "repo.projects",
-      "why": "The Project board tracks cards and issues for the repo",
-      "method": "PATCH",
-      "path": "repos/{owner}/{repo}",
-      "body": { "has_projects": true },
-      "check": { "field": "has_projects", "value": true }
-    },
-    {
-      "id": "repo.update_branch",
-      "why": "A stale pull request branch updates with one button",
-      "method": "PATCH",
-      "path": "repos/{owner}/{repo}",
-      "body": { "allow_update_branch": true },
-      "check": { "field": "allow_update_branch", "value": true }
-    },
-    {
-      "id": "repo.web_signoff",
-      "why": "Web edits carry the DCO sign-off line",
-      "method": "PATCH",
-      "path": "repos/{owner}/{repo}",
-      "body": { "web_commit_signoff_required": true },
-      "check": { "field": "web_commit_signoff_required", "value": true }
-    },
-    {
-      "id": "repo.squash_merge",
-      "why": "Each pull request lands as one commit on main",
-      "method": "PATCH",
-      "path": "repos/{owner}/{repo}",
-      "body": { "allow_squash_merge": true },
-      "check": { "field": "allow_squash_merge", "value": true }
-    },
-    {
-      "id": "repo.no_merge_commit",
-      "why": "Squash only: no merge commits",
-      "method": "PATCH",
-      "path": "repos/{owner}/{repo}",
-      "body": { "allow_merge_commit": false },
-      "check": { "field": "allow_merge_commit", "value": false }
-    },
-    {
-      "id": "repo.no_rebase_merge",
-      "why": "Squash only: no rebase merges",
-      "method": "PATCH",
-      "path": "repos/{owner}/{repo}",
-      "body": { "allow_rebase_merge": false },
-      "check": { "field": "allow_rebase_merge", "value": false }
-    },
-    {
-      "id": "repo.delete_branch",
-      "why": "Merged branches delete themselves",
-      "method": "PATCH",
-      "path": "repos/{owner}/{repo}",
-      "body": { "delete_branch_on_merge": true },
-      "check": { "field": "delete_branch_on_merge", "value": true }
-    },
-    {
-      "id": "repo.no_auto_merge",
-      "why": "A reviewer merges at the head commit; auto-merge skips that",
-      "method": "PATCH",
-      "path": "repos/{owner}/{repo}",
-      "body": { "allow_auto_merge": false },
-      "check": { "field": "allow_auto_merge", "value": false }
-    },
-    {
-      "id": "security.private_reporting",
-      "why": "Researchers report a vulnerability privately, not in a public issue",
-      "method": "PUT",
-      "path": "repos/{owner}/{repo}/private-vulnerability-reporting",
-      "check": { "field": "enabled", "value": true }
-    },
-    {
-      "id": "security.secret_scanning",
-      "why": "GitHub alerts on a known secret committed to the repo",
-      "method": "PATCH",
-      "path": "repos/{owner}/{repo}",
-      "body": { "security_and_analysis": { "secret_scanning": { "status": "enabled" } } },
-      "check": { "field": "security_and_analysis.secret_scanning.status", "value": "enabled" }
-    },
-    {
-      "id": "security.push_protection",
-      "why": "A push holding a known secret is refused",
-      "method": "PATCH",
-      "path": "repos/{owner}/{repo}",
-      "body": { "security_and_analysis": { "secret_scanning_push_protection": { "status": "enabled" } } },
-      "check": { "field": "security_and_analysis.secret_scanning_push_protection.status", "value": "enabled" }
-    },
-    {
-      "id": "security.dependabot_alerts",
-      "why": "Alerts name each dependency with a known vulnerability",
-      "method": "PUT",
-      "path": "repos/{owner}/{repo}/vulnerability-alerts",
-      "check": { "exists": true }
-    },
-    {
-      "id": "security.dependabot_updates",
-      "why": "Dependabot opens the pull request that fixes an alert",
-      "method": "PUT",
-      "path": "repos/{owner}/{repo}/automated-security-fixes",
-      "check": { "field": "enabled", "value": true }
-    },
-    {
-      "id": "security.code_scanning",
-      "why": "CodeQL default setup scans each push and pull request",
-      "method": "PATCH",
-      "path": "repos/{owner}/{repo}/code-scanning/default-setup",
-      "body": { "state": "configured" },
-      "check": { "field": "state", "value": "configured" }
-    },
-    {
-      "id": "actions.token_read_only",
-      "why": "Workflow tokens start read-only; a job asks for more",
-      "method": "PUT",
-      "path": "repos/{owner}/{repo}/actions/permissions/workflow",
-      "body": { "default_workflow_permissions": "read", "can_approve_pull_request_reviews": false },
-      "check": { "field": "default_workflow_permissions", "value": "read" }
-    },
-    {
-      "id": "actions.no_pr_approval",
-      "why": "A workflow cannot approve its own pull request",
-      "method": "PUT",
-      "path": "repos/{owner}/{repo}/actions/permissions/workflow",
-      "body": { "default_workflow_permissions": "read", "can_approve_pull_request_reviews": false },
-      "check": { "field": "can_approve_pull_request_reviews", "value": false }
-    },
-    {
-      "id": "actions.fork_approval",
-      "why": "An outside contributor's workflow run waits for a maintainer",
-      "method": "PUT",
-      "path": "repos/{owner}/{repo}/actions/permissions/fork-pr-contributor-approval",
-      "body": { "approval_policy": "all_external_contributors" },
-      "check": { "field": "approval_policy", "value": "all_external_contributors" }
-    },
-    {
-      "id": "values.topics",
-      "why": "Topics let people find the repo by subject",
-      "method": "PUT",
-      "path": "repos/{owner}/{repo}/topics",
-      "body": { "names": "{topics}" },
-      "check": { "get": "repos/{owner}/{repo}", "field": "topics", "value": "{topics}" }
-    },
-    {
-      "id": "values.homepage",
-      "why": "The About panel links the repo's site",
-      "method": "PATCH",
-      "path": "repos/{owner}/{repo}",
-      "body": { "homepage": "{homepage}" },
-      "check": { "field": "homepage", "value": "{homepage}" }
-    },
-    {
-      "id": "values.description",
-      "why": "The About panel says what the repo is in one line",
-      "method": "PATCH",
-      "path": "repos/{owner}/{repo}",
-      "body": { "description": "{description}" },
-      "check": { "field": "description", "value": "{description}" }
-    },
-    {
-      "id": "rules.default_branch",
-      "why": "Main takes squashed pull requests with every review thread resolved",
-      "when": "no_org_ruleset",
-      "method": "POST",
-      "path": "repos/{owner}/{repo}/rulesets",
-      "body": {
-        "name": "default branch: squash only, threads resolved",
-        "target": "branch",
-        "enforcement": "active",
-        "bypass_actors": [],
-        "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] } },
-        "rules": [
-          { "type": "deletion" },
-          { "type": "non_fast_forward" },
-          {
-            "type": "pull_request",
-            "parameters": {
-              "allowed_merge_methods": ["squash"],
-              "required_review_thread_resolution": true,
-              "required_approving_review_count": 0,
-              "dismiss_stale_reviews_on_push": false,
-              "require_code_owner_review": false,
-              "require_last_push_approval": false
-            }
-          }
-        ]
-      },
-      "check": {
-        "ruleset": {
-          "target": "branch",
-          "ref": "~DEFAULT_BRANCH",
-          "rules": {
-            "deletion": {},
-            "non_fast_forward": {},
-            "pull_request": { "allowed_merge_methods": ["squash"], "required_review_thread_resolution": true }
-          }
-        }
-      }
-    },
-    {
-      "id": "rules.release_tags",
-      "why": "A release tag can never move or be deleted",
-      "when": "no_org_ruleset",
-      "method": "POST",
-      "path": "repos/{owner}/{repo}/rulesets",
-      "body": {
-        "name": "release tags: no move, no delete",
-        "target": "tag",
-        "enforcement": "active",
-        "bypass_actors": [],
-        "conditions": { "ref_name": { "include": ["refs/tags/v*"], "exclude": [] } },
-        "rules": [{ "type": "deletion" }, { "type": "update" }]
-      },
-      "check": { "ruleset": { "target": "tag", "ref": "refs/tags/v1.0.0", "rules": { "deletion": {}, "update": {} } } }
-    },
-    {
-      "id": "rules.merge_queue",
-      "why": "Busy repos merge in a queue that tests each merge first",
-      "optional": true,
-      "method": "POST",
-      "path": "repos/{owner}/{repo}/rulesets",
-      "body": {
-        "name": "default branch: merge queue",
-        "target": "branch",
-        "enforcement": "active",
-        "bypass_actors": [],
-        "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] } },
-        "rules": [
-          {
-            "type": "merge_queue",
-            "parameters": {
-              "merge_method": "SQUASH",
-              "grouping_strategy": "ALLGREEN",
-              "check_response_timeout_minutes": 60,
-              "max_entries_to_build": 5,
-              "max_entries_to_merge": 5,
-              "min_entries_to_merge": 1,
-              "min_entries_to_merge_wait_minutes": 5
-            }
-          }
-        ]
-      },
-      "check": { "ruleset": { "target": "branch", "ref": "~DEFAULT_BRANCH", "rules": { "merge_queue": { "merge_method": "SQUASH" } } } }
-    },
-    {
-      "id": "releases.immutable",
-      "why": "Releases lock their assets and tag, and GitHub attests each one",
-      "method": "PUT",
-      "path": "repos/{owner}/{repo}/immutable-releases",
-      "check": { "field": "enabled", "value": true }
-    },
-    {
-      "id": "repo.sponsor_button",
-      "why": "The Sponsor button links the destinations in .github/FUNDING.yml",
-      "optional": true,
-      "method": "POST",
-      "path": "graphql",
-      "body": {
-        "query": "mutation($id: ID!) { updateRepository(input: {repositoryId: $id, hasSponsorshipsEnabled: true}) { repository { hasSponsorshipsEnabled } } }",
-        "variables": { "id": "{node_id}" }
-      },
-      "check": {
-        "graphql": "query($owner: String!, $repo: String!) { repository(owner: $owner, name: $repo) { hasSponsorshipsEnabled } }",
-        "field": "data.repository.hasSponsorshipsEnabled",
-        "value": true
-      }
-    },
-    {
-      "id": "repo.template",
-      "why": "Starter repos only: new repos start from this one",
-      "optional": true,
-      "method": "PATCH",
-      "path": "repos/{owner}/{repo}",
-      "body": { "is_template": true },
-      "check": { "field": "is_template", "value": true }
-    },
-    {
-      "id": "manual.artifact_attestations",
-      "why": "A published build artifact carries a signed provenance attestation",
-      "optional": true,
-      "api": false,
-      "reason": "A workflow step, not a repo switch: actions/attest, with id-token: write and attestations: write"
-    },
-    {
-      "id": "manual.social_preview",
-      "why": "Links to the repo show its own image",
-      "optional": true,
-      "api": false,
-      "reason": "No REST or GraphQL call uploads it; Settings, General, Social preview: under 1 MB, 1280 by 640",
-      "check": {
-        "graphql": "query($owner: String!, $repo: String!) { repository(owner: $owner, name: $repo) { usesCustomOpenGraphImage } }",
-        "field": "data.repository.usesCustomOpenGraphImage",
-        "value": true
-      }
-    },
-    {
-      "id": "manual.wiki_restricted",
-      "why": "Only collaborators edit the wiki",
-      "api": false,
-      "reason": "The default; keep it. No API sets it or writes the wiki's first page: web UI only"
-    },
-    {
-      "id": "manual.push_limit",
-      "why": "One push updates at most 5 branches and tags (Docs' suggestion)",
-      "api": false,
-      "reason": "Web UI only, in public preview; Settings, General, Pushes"
-    },
-    {
-      "id": "manual.discussion_categories",
-      "why": "Ideas, Q&A and Show and tell categories sort Discussions",
-      "api": false,
-      "reason": "No REST or GraphQL call creates or edits a Discussions category"
-    },
-    {
-      "id": "manual.grouped_security_updates",
-      "why": "Dependabot fixes several alerts in one pull request",
-      "api": false,
-      "reason": "No REST endpoint reads or sets it (terraform-provider-github issue 3334); Settings, Advanced Security"
-    },
-    {
-      "id": "manual.home_page_sections",
-      "why": "The home page lists releases, packages and deployments",
-      "api": false,
-      "reason": "Update a repository has no field for the About panel's Include in the home page boxes"
-    },
-    {
-      "id": "manual.lfs_in_archives",
-      "why": "Source archives carry Git LFS files, billed as LFS bandwidth",
-      "optional": true,
-      "api": false,
-      "reason": "Update a repository has no field for it; Settings, General, Archives"
-    }
+    { "id": "repo.wiki", "why": "Long how-to pages live beside the code, editable by maintainers", "method": "PATCH", "path": "repos/{owner}/{repo}", "body": { "has_wiki": true }, "check": { "field": "has_wiki", "value": true } },
+    { "id": "repo.discussions", "why": "Ideas and questions start in Discussions before an issue", "method": "POST", "path": "graphql", "body": { "query": "mutation($id: ID!) { updateRepository(input: {repositoryId: $id, hasDiscussionsEnabled: true}) { repository { hasDiscussionsEnabled } } }", "variables": { "id": "{node_id}" } }, "check": { "get": "repos/{owner}/{repo}", "field": "has_discussions", "value": true } },
+    { "id": "repo.projects", "why": "The Project board tracks cards and issues for the repo", "method": "PATCH", "path": "repos/{owner}/{repo}", "body": { "has_projects": true }, "check": { "field": "has_projects", "value": true } },
+    { "id": "repo.update_branch", "why": "A stale pull request branch updates with one button", "method": "PATCH", "path": "repos/{owner}/{repo}", "body": { "allow_update_branch": true }, "check": { "field": "allow_update_branch", "value": true } },
+    { "id": "repo.web_signoff", "why": "Web edits carry the DCO sign-off line", "method": "PATCH", "path": "repos/{owner}/{repo}", "body": { "web_commit_signoff_required": true }, "check": { "field": "web_commit_signoff_required", "value": true } },
+    { "id": "repo.squash_merge", "why": "Each pull request lands as one commit on main", "method": "PATCH", "path": "repos/{owner}/{repo}", "body": { "allow_squash_merge": true }, "check": { "field": "allow_squash_merge", "value": true } },
+    { "id": "repo.no_merge_commit", "why": "Squash only: no merge commits", "method": "PATCH", "path": "repos/{owner}/{repo}", "body": { "allow_merge_commit": false }, "check": { "field": "allow_merge_commit", "value": false } },
+    { "id": "repo.no_rebase_merge", "why": "Squash only: no rebase merges", "method": "PATCH", "path": "repos/{owner}/{repo}", "body": { "allow_rebase_merge": false }, "check": { "field": "allow_rebase_merge", "value": false } },
+    { "id": "repo.delete_branch", "why": "Merged branches delete themselves", "method": "PATCH", "path": "repos/{owner}/{repo}", "body": { "delete_branch_on_merge": true }, "check": { "field": "delete_branch_on_merge", "value": true } },
+    { "id": "repo.no_auto_merge", "why": "A reviewer merges at the head commit; auto-merge skips that", "method": "PATCH", "path": "repos/{owner}/{repo}", "body": { "allow_auto_merge": false }, "check": { "field": "allow_auto_merge", "value": false } },
+    { "id": "security.private_reporting", "why": "Researchers report a vulnerability privately, not in a public issue", "method": "PUT", "path": "repos/{owner}/{repo}/private-vulnerability-reporting", "check": { "field": "enabled", "value": true } },
+    { "id": "security.secret_scanning", "why": "GitHub alerts on a known secret committed to the repo", "method": "PATCH", "path": "repos/{owner}/{repo}", "body": { "security_and_analysis": { "secret_scanning": { "status": "enabled" } } }, "check": { "field": "security_and_analysis.secret_scanning.status", "value": "enabled" } },
+    { "id": "security.push_protection", "why": "A push holding a known secret is refused", "method": "PATCH", "path": "repos/{owner}/{repo}", "body": { "security_and_analysis": { "secret_scanning_push_protection": { "status": "enabled" } } }, "check": { "field": "security_and_analysis.secret_scanning_push_protection.status", "value": "enabled" } },
+    { "id": "security.dependabot_alerts", "why": "Alerts name each dependency with a known vulnerability", "method": "PUT", "path": "repos/{owner}/{repo}/vulnerability-alerts", "check": { "exists": true } },
+    { "id": "security.dependabot_updates", "why": "Dependabot opens the pull request that fixes an alert", "method": "PUT", "path": "repos/{owner}/{repo}/automated-security-fixes", "check": { "field": "enabled", "value": true } },
+    { "id": "security.code_scanning", "why": "CodeQL default setup scans each push and pull request", "method": "PATCH", "path": "repos/{owner}/{repo}/code-scanning/default-setup", "body": { "state": "configured" }, "check": { "field": "state", "value": "configured" } },
+    { "id": "actions.token_read_only", "why": "Workflow tokens start read-only; a job asks for more", "method": "PUT", "path": "repos/{owner}/{repo}/actions/permissions/workflow", "body": { "default_workflow_permissions": "read", "can_approve_pull_request_reviews": false }, "check": { "field": "default_workflow_permissions", "value": "read" } },
+    { "id": "actions.no_pr_approval", "why": "A workflow cannot approve its own pull request", "method": "PUT", "path": "repos/{owner}/{repo}/actions/permissions/workflow", "body": { "default_workflow_permissions": "read", "can_approve_pull_request_reviews": false }, "check": { "field": "can_approve_pull_request_reviews", "value": false } },
+    { "id": "actions.fork_approval", "why": "An outside contributor's workflow run waits for a maintainer", "method": "PUT", "path": "repos/{owner}/{repo}/actions/permissions/fork-pr-contributor-approval", "body": { "approval_policy": "all_external_contributors" }, "check": { "field": "approval_policy", "value": "all_external_contributors" } },
+    { "id": "values.topics", "why": "Topics let people find the repo by subject", "method": "PUT", "path": "repos/{owner}/{repo}/topics", "body": { "names": "{topics}" }, "check": { "get": "repos/{owner}/{repo}", "field": "topics", "value": "{topics}" } },
+    { "id": "values.homepage", "why": "The About panel links the repo's site", "method": "PATCH", "path": "repos/{owner}/{repo}", "body": { "homepage": "{homepage}" }, "check": { "field": "homepage", "value": "{homepage}" } },
+    { "id": "values.description", "why": "The About panel says what the repo is in one line", "method": "PATCH", "path": "repos/{owner}/{repo}", "body": { "description": "{description}" }, "check": { "field": "description", "value": "{description}" } },
+    { "id": "rules.default_branch", "why": "Main takes squashed pull requests with every review thread resolved", "when": "no_org_ruleset", "method": "POST", "path": "repos/{owner}/{repo}/rulesets", "body": { "name": "default branch: squash only, threads resolved", "target": "branch", "enforcement": "active", "bypass_actors": [], "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] } }, "rules": [{ "type": "deletion" }, { "type": "non_fast_forward" }, { "type": "pull_request", "parameters": { "allowed_merge_methods": ["squash"], "required_review_thread_resolution": true, "required_approving_review_count": 0, "dismiss_stale_reviews_on_push": false, "require_code_owner_review": false, "require_last_push_approval": false } }] }, "check": { "ruleset": { "target": "branch", "ref": "~DEFAULT_BRANCH", "rules": { "deletion": {}, "non_fast_forward": {}, "pull_request": { "allowed_merge_methods": ["squash"], "required_review_thread_resolution": true } } } } },
+    { "id": "rules.release_tags", "why": "A release tag can never move or be deleted", "when": "no_org_ruleset", "method": "POST", "path": "repos/{owner}/{repo}/rulesets", "body": { "name": "release tags: no move, no delete", "target": "tag", "enforcement": "active", "bypass_actors": [], "conditions": { "ref_name": { "include": ["refs/tags/v*"], "exclude": [] } }, "rules": [{ "type": "deletion" }, { "type": "update" }] }, "check": { "ruleset": { "target": "tag", "ref": "refs/tags/v1.0.0", "rules": { "deletion": {}, "update": {} } } } },
+    { "id": "rules.merge_queue", "why": "Busy repos merge in a queue that tests each merge first", "optional": true, "method": "POST", "path": "repos/{owner}/{repo}/rulesets", "body": { "name": "default branch: merge queue", "target": "branch", "enforcement": "active", "bypass_actors": [], "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] } }, "rules": [{ "type": "merge_queue", "parameters": { "merge_method": "SQUASH", "grouping_strategy": "ALLGREEN", "check_response_timeout_minutes": 60, "max_entries_to_build": 5, "max_entries_to_merge": 5, "min_entries_to_merge": 1, "min_entries_to_merge_wait_minutes": 5 } }] }, "check": { "ruleset": { "target": "branch", "ref": "~DEFAULT_BRANCH", "rules": { "merge_queue": { "merge_method": "SQUASH" } } } } },
+    { "id": "releases.immutable", "why": "Releases lock their assets and tag, and GitHub attests each one", "method": "PUT", "path": "repos/{owner}/{repo}/immutable-releases", "check": { "field": "enabled", "value": true } },
+    { "id": "repo.sponsor_button", "why": "The Sponsor button links the destinations in .github/FUNDING.yml", "optional": true, "method": "POST", "path": "graphql", "body": { "query": "mutation($id: ID!) { updateRepository(input: {repositoryId: $id, hasSponsorshipsEnabled: true}) { repository { hasSponsorshipsEnabled } } }", "variables": { "id": "{node_id}" } }, "check": { "graphql": "query($owner: String!, $repo: String!) { repository(owner: $owner, name: $repo) { hasSponsorshipsEnabled } }", "field": "data.repository.hasSponsorshipsEnabled", "value": true } },
+    { "id": "repo.template", "why": "Starter repos only: new repos start from this one", "optional": true, "method": "PATCH", "path": "repos/{owner}/{repo}", "body": { "is_template": true }, "check": { "field": "is_template", "value": true } },
+    { "id": "manual.artifact_attestations", "why": "A published build artifact carries a signed provenance attestation", "optional": true, "api": false, "reason": "A workflow step, not a repo switch: actions/attest, with id-token: write and attestations: write" },
+    { "id": "manual.social_preview", "why": "Links to the repo show its own image", "optional": true, "api": false, "reason": "No REST or GraphQL call uploads it; Settings, General, Social preview: under 1 MB, 1280 by 640", "check": { "graphql": "query($owner: String!, $repo: String!) { repository(owner: $owner, name: $repo) { usesCustomOpenGraphImage } }", "field": "data.repository.usesCustomOpenGraphImage", "value": true } },
+    { "id": "manual.wiki_restricted", "why": "Only collaborators edit the wiki", "api": false, "reason": "The default; keep it. No API sets it or writes the wiki's first page: web UI only" },
+    { "id": "manual.push_limit", "why": "One push updates at most 5 branches and tags (Docs' suggestion)", "api": false, "reason": "Web UI only, in public preview; Settings, General, Pushes" },
+    { "id": "manual.discussion_categories", "why": "Ideas, Q&A and Show and tell categories sort Discussions", "api": false, "reason": "No REST or GraphQL call creates or edits a Discussions category" },
+    { "id": "manual.grouped_security_updates", "why": "Dependabot fixes several alerts in one pull request", "api": false, "reason": "No REST endpoint reads or sets it (terraform-provider-github issue 3334); Settings, Advanced Security" },
+    { "id": "manual.home_page_sections", "why": "The home page lists releases, packages and deployments", "api": false, "reason": "Update a repository has no field for the About panel's Include in the home page boxes" },
+    { "id": "manual.lfs_in_archives", "why": "Source archives carry Git LFS files, billed as LFS bandwidth", "optional": true, "api": false, "reason": "Update a repository has no field for it; Settings, General, Archives" }
   ],
   "paid_off": [
     { "id": "secret_scanning_ai_detection", "feature": "AI-detected secrets", "reason": "Needs GitHub Secret Protection, a paid product" },

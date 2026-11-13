@@ -1,7 +1,0 @@
-{
- "comment": "Git Crafter's own values for tools/apply_setup.mjs --values: the per-repo rows of templates/setup.json (topics, homepage, description), as the repo holds them on 2026-11-13 (gh api repos). optional_on lists the optional rows this repo turns on; it turns on none.",
- "description": "Templates, process maps and Quality, Speed and Consumption pages for repos run with Claude Code desktop or OpenCode",
- "homepage": "https://soulcraft-org.github.io/git-crafter/",
- "topics": ["ai-agents", "claude-code", "git-crafter", "github-actions", "opencode", "process-maps", "quality-metrics"],
- "optional_on": []
-}

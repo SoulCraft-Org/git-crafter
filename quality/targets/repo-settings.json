@@ -15,11 +15,10 @@
     "needs": "github-admin",
     "chart": "table",
     "params": {
-      "comment": "repo: owner/name, else GITHUB_REPOSITORY. blocked_paths: the file names a push ruleset must restrict, exactly as the rule lists them; a repo that tracks one of these names its own list. expected: the General settings this repo holds itself to, as fields of gh api repos/{repo} and their values; empty means the repo names none and settings.general_drift is not measured. expected_from_setup: true takes the General rows of templates/setup.json (setupExpected in the collector) as the standard, with expected laid over them. included_cache_gb: the Actions cache size a repo gets with its plan.",
+      "comment": "repo: owner/name, else GITHUB_REPOSITORY. blocked_paths: the file names a push ruleset must restrict, exactly as the rule lists them; a repo that tracks one of these names its own list. expected: the General settings this repo holds itself to, as fields of gh api repos/{repo} and their values; empty means the repo names none and settings.general_drift is not measured. included_cache_gb: the Actions cache size a repo gets with its plan.",
       "repo": "",
       "blocked_paths": [".env", "**/.env", "*.pem", "**/*.pem", "*.key", "**/*.key"],
       "expected": {},
-      "expected_from_setup": false,
       "included_cache_gb": 10
     }
   },
@@ -35,7 +34,7 @@
     "near": 0.5,
     "direction": "lower",
     "goal_source": "template goal: a repo names the General settings it holds itself to and none drifts; GitHub docs, REST API endpoints for repositories, Get a repository, lists the fields (read 2026-11-10)",
-    "source": "state: gh api repos/{repo}, each field named in params.expected (over templates/setup.json's General rows when params.expected_from_setup) against its value there",
+    "source": "state: gh api repos/{repo}, each field named in params.expected against its value there",
     "needs": "github-admin",
     "chart": "table"
   },

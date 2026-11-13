@@ -7,7 +7,6 @@
   "quality/collect.mjs",
   "quality/selftest.mjs",
   "tools/collect_org.mjs",
-  "tools/apply_setup.mjs",
   "**/*.test.mjs",
   "pages/client.js",
   "quality/render/client.js",

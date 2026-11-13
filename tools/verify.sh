@@ -41,6 +41,5 @@ echo "== pages";        node --test "${COVER[@]}" --test-reporter-destination="$
 echo "== quality";      node quality/selftest.mjs
                         node --test "${COVER[@]}" --test-reporter-destination="$cov/quality.lcov" 'quality/**/*.test.mjs' 'config/**/*.test.mjs'
                         node "$LCOV" Quality "$cov/quality.lcov"
-echo "== setup list";   node --test tools/apply_setup.test.mjs
 echo "== verify";       node --test tests/verify.test.mjs
 echo "verify: ok"

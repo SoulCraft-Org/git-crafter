@@ -6,7 +6,7 @@ Files and settings that open a Git Crafter repo to outside contributors, with AI
 flowchart LR
   T[templates/open] -->|copy, fill the angle brackets| R[your repo root]
   P[merge_policy.json] -->|narrow ai_mergeable| R
-  S[templates/setup.json] -->|tools/apply_setup.mjs| G[GitHub repo]
+  S[templates/setup.json] -->|gh api, row by row| G[GitHub repo]
   R --> C[Community profile 100%]
   G --> C
 ```
@@ -26,15 +26,17 @@ flowchart LR
 
 ## Settings
 
-[`setup.json`](../setup.json) lists each repo switch these files assume, one row each; [`apply_setup.mjs`](../../tools/apply_setup.mjs) sets them with `gh api` (GitHub Docs and the gh manual, read 2026-11-12 and 2026-11-13). Run it from a Git Crafter clone, signed in to `gh` as the repo admin.
+[`setup.json`](../setup.json) lists each repo switch these files assume, one row each (GitHub Docs and the gh manual, read 2026-11-12 and 2026-11-13). Apply each row signed in to `gh` as the repo admin.
 
-| Step | Command |
+| Row | Do |
 |---|---|
-| Show what would change | `node tools/apply_setup.mjs --repo <owner>/<repo> --values values.json` |
-| Set each change, then read it back | the same, with `--apply` |
-| Exit 1 if a required row differs | the same, with `--check` |
+| `method`, `path`, `body` | `gh api -X <method> <path> --input body.json`, the row's `body` in `body.json`; no `body`, no `--input` |
+| `{owner}`, `{repo}`, `{topics}`, `{homepage}`, `{description}` | your values; `{node_id}` is `gh api repos/<owner>/<repo> -q .node_id` |
+| `check` | `gh api` its `get`, or `path`: `field` should equal `value` |
+| `api: false` | its `reason` names the web UI step |
+| `when: no_org_ruleset` | skip it if your org sets a ruleset of that target |
 
-`values.json` holds your `topics`, `homepage`, `description` and `optional_on`, the optional rows to turn on ([Git Crafter's](../../config/setup-values.json)). A `by hand` row names its web UI step. The list leaves out three:
+The list leaves out three:
 
 | Setting | Call |
 |---|---|
@@ -44,7 +46,7 @@ flowchart LR
 
 ## Options, off by default
 
-Name a row in `optional_on` to turn it on.
+Each is an `optional: true` row: apply it only if your repo needs it.
 
 | Option | For | Row, and what else it needs |
 |---|---|---|
