@@ -12,7 +12,7 @@ import { join, resolve } from "node:path";
 
 import { loadDefs, TABS } from "./score.mjs";
 
-const PINNED = /^([\w.-]+)\/([\w.-]+)@([0-9a-f]{40})$/;
+const PINNED = /^(?!\.)([\w.-]+)\/(?!\.)([\w.-]+)@([0-9a-f]{40})$/;
 const REMOTE = /^[\w.-]+\/[\w.-]+@/;
 
 // The folder a pack is read from, or a usage error naming why the entry is refused.

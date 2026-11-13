@@ -29,6 +29,7 @@ test("packs: a full SHA is taken; a tag, a branch or a short SHA is refused with
     assert.throws(() => resolvePacks([spec], { root: "/r", env: {} }), /full 40-hex commit SHA after @, not a tag or branch/, spec);
   }
   assert.throws(() => resolvePacks([""], { root: "/r", env: {} }), /packs must list/);
+  for (const spec of [`../..@${SHA}`, `./x@${SHA}`, `o/.x@${SHA}`]) assert.throws(() => resolvePacks([spec], { root: "/r", env: {}, ci: true }), /packs: /, spec);
 });
 
 test("packs: a local path is a --local run's only; CI refuses it", () => {
