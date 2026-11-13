@@ -66,7 +66,7 @@ import { workflowRuns, runJobs, flakyChecks } from "./ci-runs.mjs";
 import { INSIGHT_METRICS } from "./ci-insights.mjs";
 import { SPEND_METRICS } from "./ci-spend.mjs";
 import { headroom, QUOTA_SOURCE, readQuota } from "../github/github-quota.mjs";
-import { prRunRequests } from "../../collect-quota.mjs";
+import { prRunRequests } from "../lib/quota.mjs";
 
 export { workflowRuns, JOBS_BATCH, JOBS_BATCH_WITH_STEPS, runJobs, flakyChecks, prRuns, latestPriced, priceRuns } from "./ci-runs.mjs";
 export { reasonFor, settings } from "./ci-settings.mjs";
