@@ -41,7 +41,7 @@ export function fakeGh({ rest = REST, graphql = GRAPHQL } = {}, calls = []) {
 }
 
 // A fetch stand-in that answers every request 200 with the fixture's response headers.
-export const fakeFetch = (headers = HEADERS) => async () => {
+const fakeFetch = (headers = HEADERS) => async () => {
   const { _comment, ...h } = headers;
   return new Response(null, { status: 200, headers: h });
 };
