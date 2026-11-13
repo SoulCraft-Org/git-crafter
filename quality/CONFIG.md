@@ -23,7 +23,7 @@ A repo's Quality page settings (`config.mjs`), and how its targets lie over the 
 
 ## Packs
 
-A pack adds Quality tabs and Process maps from another repo ([`packs.mjs`](packs.mjs)). Its collectors run in CI, so it is pinned like an action.
+A pack adds Quality tabs and Process maps from another repo ([`packs.mjs`](packs.mjs)). Its collectors run in CI, so it is pinned like an action. `actions/pages` fetches packs only from its `quality-config` file.
 
 | Entry | Means |
 | --- | --- |
@@ -60,4 +60,4 @@ flowchart LR
 | `{ "id": "…", "gate": "warn" }` | a miss prints a warning; the pull request passes |
 | an id the template lacks | the repo's own metric, a full definition |
 | any other field on a template id | usage error: tab, kind, direction and label stay the template's |
-| a collector whose metrics are all off, by `drop` or by a tab the repo hides | does not run |
+| a collector whose metrics are all off, by `drop` or a hidden tab | does not run |
