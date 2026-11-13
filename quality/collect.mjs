@@ -40,6 +40,7 @@ import { pathToFileURL } from "node:url";
 
 import { quotaLine, quotaStart, readQuotaOrNull, recordLocal, reserveFloor, reserveShort } from "./collect-quota.mjs";
 import { ghClient } from "./collectors/github/github-core.mjs";
+import * as lib from "./collectors/lib/index.mjs";
 import { redactText } from "./collectors/lib/redact.mjs";
 import { loadConfig, QUALITY } from "./config.mjs";
 import { currentMetrics, loadDefs } from "./score.mjs";
@@ -78,8 +79,9 @@ export function collectorFiles(dirs) {
   const files = [];
   for (const top of [...new Set(dirs.filter(Boolean).map((d) => resolve(d)))]) {
     if (!existsSync(top)) continue;
-    // A collectors folder may keep each tab's files in a subfolder of its own.
-    const subs = readdirSync(top, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => join(top, e.name)).sort();
+    // A collectors folder may keep each tab's files in a subfolder of its own;
+    // lib/ holds the shared helpers, never a collector.
+    const subs = readdirSync(top, { withFileTypes: true }).filter((e) => e.isDirectory() && e.name !== "lib").map((e) => join(top, e.name)).sort();
     for (const dir of [top, ...subs]) {
       for (const file of readdirSync(dir).filter((f) => f.endsWith(".mjs") && !f.endsWith(".test.mjs")).sort()) {
         if (seen.has(file)) throw new Error(`collector ${file} is in both ${seen.get(file)} and ${dir}; rename the repo's own`);
@@ -95,7 +97,7 @@ export function collectorFiles(dirs) {
 // targets of its own targets file (collectors/github/github.mjs → targets/github.json),
 // and every file's params by file name, so a collector that needs another
 // tab's settings (the docs' doc set, say) reads them where they live instead
-// of a copy that drifts: collect({ root, mode, data, params, targets, allParams }); data is the
+// of a copy that drifts: collect({ root, mode, data, params, targets, allParams, lib }); data is the
 // repo's data folder (config data), absolute. A collector whose targets are all
 // off (dropped, or on a tab the repo does not show) does not run; one with no
 // targets file runs, and its ids reach the page only if a targets file
@@ -121,7 +123,7 @@ export async function runCollectors({ root, mode, dirs, defs, all = defs, params
         console.error(`${file}: skipped, ${reserve}`);
         return unread(own, reserve, source);
       }
-      const got = await mod.collect({ root, mode, data: resolve(root, data), params: { ...params[`${stem}.json`] }, targets: own, allParams: structuredClone(params) });
+      const got = await mod.collect({ root, mode, data: resolve(root, data), params: { ...params[`${stem}.json`] }, targets: own, allParams: structuredClone(params), lib });
       seconds[file] = (Date.now() - started) / 1000;
       console.error(`${file}: ${seconds[file].toFixed(1)} s`);
       return { metrics: entries(got, source), area: mod.area ?? stem };

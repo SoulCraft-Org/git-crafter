@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { after, test } from 'node:test';
-import { loadTargets } from '../../score.mjs';
+import { loadTargets } from '../lib/score.mjs';
 import { ConfigError } from '../github/github.mjs';
 import { area, checkNoUsageApi, claimSteps, collect, metricIds, readUse, usage } from './credits.mjs';
 

@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { after, test } from 'node:test';
-import { loadTargets } from '../../score.mjs';
+import { loadTargets } from '../lib/score.mjs';
 import { area, collect, median, metricIds, parseJsonList, parseLog, resolveDeploys } from './deploy.mjs';
 
 // Only this collector's targets files, so another collector's file never fails these tests.

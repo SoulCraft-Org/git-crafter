@@ -35,7 +35,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
-import { managedClaudeMd, PROJECTS_DIR, projectMatch, resolvePath } from '../claude/claude.mjs';
+import { managedClaudeMd, PROJECTS_DIR, projectMatch, resolvePath } from '../lib/paths.mjs';
 import { expandGlobs } from '../docs/docs.mjs';
 import { redact } from '../lib/redact.mjs';
 

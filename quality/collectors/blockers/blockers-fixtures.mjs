@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { after } from 'node:test';
-import { loadTargets } from '../../score.mjs';
+import { loadTargets } from '../lib/score.mjs';
 // Only this collector's targets files, so another collector's file never fails these tests.
 export function ownTargets(...files) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'own-targets-'));

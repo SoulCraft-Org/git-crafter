@@ -40,58 +40,14 @@ import { joinGithub } from './claude-github.mjs';
 import { allCouldNotCheck, computeMetrics } from './claude-metrics.mjs';
 import { metricIds, num, TEMPLATE, TOKEN_KEYS, usageCounts } from './claude-lib.mjs';
 import { redact } from '../lib/redact.mjs';
+import { PROJECTS_DIR, projectMatch, resolvePath } from '../lib/paths.mjs';
 
+export { managedClaudeMd, ownRepo, PROJECTS_DIR, projectMatch, remoteRepo, resolvePath } from '../lib/paths.mjs';
 export { classifyChecks } from './claude-github.mjs';
 export { lastN, metricIds, priceCall, SUBAGENT_USAGE_FROM, usageCounts, versionAtLeast } from './claude-lib.mjs';
 
 export const area = 'claude';
 
-// The project folder Claude Code keeps a checkout's sessions in is the
-// checkout's absolute path with every character other than a letter or digit
-// turned into a dash (observed in ~/.claude/projects; the docs name the folder,
-// not the rule). A worktree's folder adds its own path to the main checkout's,
-// so the main checkout's name matches both.
-export function projectMatch(root) {
-  const main = path.resolve(root).replace(/\/\.claude\/worktrees\/[^/]+.*$/, '');
-  return main.replace(/[^A-Za-z0-9]/g, '-');
-}
-
-// The managed policy CLAUDE.md, by platform (code.claude.com/docs/en/memory,
-// read 2026-11-03).
-export function managedClaudeMd(platform = process.platform) {
-  if (platform === 'darwin') return '/Library/Application Support/ClaudeCode/CLAUDE.md';
-  if (platform === 'win32') return 'C:\\Program Files\\ClaudeCode\\CLAUDE.md';
-  return '/etc/claude-code/CLAUDE.md';
-}
-
-// GitHub owner and name from a remote URL, or null.
-export function remoteRepo(url) {
-  const m = /github\.com[:/]([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/.exec(String(url).trim());
-  return m ? { owner: m[1], name: m[2] } : null;
-}
-
-// owner/name of the repo being measured: params.repo, else the one GitHub
-// Actions names (GITHUB_REPOSITORY), else the root's origin remote; '' when
-// none answers.
-export async function ownRepo(root, params = {}, exec = defaultExec) {
-  if (params.repo) return String(params.repo);
-  if (process.env.GITHUB_REPOSITORY) return process.env.GITHUB_REPOSITORY;
-  try {
-    const r = remoteRepo(await exec('git', ['-C', root, 'remote', 'get-url', 'origin']));
-    return r ? `${r.owner}/${r.name}` : '';
-  } catch {
-    return '';
-  }
-}
-
-// A path param: "~/" is under home, an absolute path is itself, any other is
-// under the repo root (the rule instructions.mjs's params follow).
-export function resolvePath(p, { home = os.homedir(), root = '.' } = {}) {
-  const s = String(p ?? '');
-  return s.startsWith('~/') ? path.join(home, s.slice(2)) : path.isAbsolute(s) ? s : path.join(root, s);
-}
-// Where Claude Code keeps session transcripts, unless params.projects_dir says otherwise.
-export const PROJECTS_DIR = '~/.claude/projects';
 const transcriptsOf = (dir, match) => `${dir}/*${match}*/**/*.jsonl`;
 const CI_REASON = 'transcripts live on the machine that ran the sessions; refreshed by a --local collect there';
 const REPO = /^[\w.-]+\/[\w.-]+$/;

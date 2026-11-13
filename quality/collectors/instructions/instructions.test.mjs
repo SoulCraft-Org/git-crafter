@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { after, test } from 'node:test';
-import { CHARTS, loadTargets } from '../../score.mjs';
+import { CHARTS, loadTargets } from '../lib/score.mjs';
 import { area, collect, frontmatter, globRegex, metricIds, normClause, PARAMS } from './instructions.mjs';
 
 const now = new Date('2026-11-03T12:00:00Z');

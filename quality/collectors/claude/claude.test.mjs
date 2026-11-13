@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { CHARTS, loadTargets, TEXT_FIELDS } from '../../score.mjs';
+import { CHARTS, loadTargets, TEXT_FIELDS } from '../lib/score.mjs';
 import { area, classifyChecks, collect, LAST, lastN, metricIds, priceCall, projectMatch, resolvePath } from './claude.mjs';
 import { redactText } from '../lib/redact.mjs';
 

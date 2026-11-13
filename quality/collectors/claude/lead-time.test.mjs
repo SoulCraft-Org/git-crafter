@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { loadTargets, scoreMetric } from '../../score.mjs';
+import { loadTargets, scoreMetric } from '../lib/score.mjs';
 import { area, collect, ID, leadTime, liveTimes, STEPS } from './lead-time.mjs';
 
 const T0 = Date.parse('2026-11-01T00:00:00Z');
