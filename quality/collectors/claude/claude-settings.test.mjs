@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { after, test } from 'node:test';
-import { loadTargets } from '../../score.mjs';
+import { loadTargets } from '../lib/score.mjs';
 import { area, collect, decisions, metricIds, ruleProblem, settingsProblems } from './claude-settings.mjs';
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'claude-settings-'));

@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { after, test } from 'node:test';
-import { CHARTS } from '../../score.mjs';
+import { CHARTS } from '../lib/score.mjs';
 import { causes, prRefs } from '../github/github.mjs';
 import { area, classifyBlock, collect, config, ENFORCEMENT, gitKind, metricIds, pushes, reviewRounds, similar, verdict, words } from './blockers.mjs';
 import { managedClaudeMd } from '../claude/claude.mjs';

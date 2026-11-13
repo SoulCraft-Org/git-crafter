@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { GhError } from "../../../quality/collectors/github/github-core.mjs";
+import { GhError } from "../../../quality/collectors/lib/index.mjs";
 import { collect, settingsOf } from "./page-speed.mjs";
 
 const ID = "engine.page_seconds";

@@ -11,7 +11,7 @@ flowchart LR
 
 | Part | Shape |
 | --- | --- |
-| Module | `export const area`; `export async function collect({ root, mode, params, targets })`. `collect.mjs` calls it with all four |
+| Module | `export const area`; `export async function collect(args)`, args as below |
 | Repo values | read only from `params`: owner and repo, paths, URLs, project folders. The template's own `params` are the defaults, for tests and a bare call. A collector never reads the repo's targets folder itself |
 | Returns | `{ [id]: { value, detail?: [{ label, value, unit? }], source, read_at } }` or `{ [id]: { could_not_check, source } }` |
 | Never | throws for a missing tool, token or file, or scores a miss as 0. It holds no org name, person's name or home path: those go in `params` |
@@ -20,7 +20,7 @@ flowchart LR
 | Stale input | A metric read from a build output is not measured when that output is older than its source |
 | Failure | A collector that throws or fails to import marks every metric in its targets file `could_not_check` |
 | Packages | `yaml` and `typescript`, from Git Crafter's root `package.json`. A repo's own collector resolves its packages from the repo |
-| Layout | one subfolder per tab, `collectors/<tab>/`, each its own code area; shared helpers in `collectors/lib/`. `collect.mjs` runs any `*.mjs` that exports `collect()`, at the top or one subfolder down |
+| Layout | one subfolder per tab, `collectors/<tab>/`, each its own code area; the engine's one door, `collectors/lib/`. `collect.mjs` runs any `*.mjs` that exports `collect()`, at the top or one subfolder down |
 | Test | `collectors/<tab>/<area>.test.mjs` under `node --test`, fixtures in `fixtures/<area>/`: a good fixture and a missing input |
 
 ## Arguments
@@ -33,6 +33,7 @@ flowchart LR
 | `params` | always an object: the union of its targets file's `params`, the template's first, then the repo's override, key by key |
 | `targets` | that file's active entries |
 | `allParams` | every targets file's merged `params` by file name (`allParams["docs.json"]`), for a setting another tab owns, so no copy drifts |
+| `lib` | engine helpers ([`lib/index.mjs`](lib/index.mjs)) |
 
 ## Targets files
 

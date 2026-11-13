@@ -22,7 +22,7 @@
 // read, and a missing package reads as could_not_check: the helpers here come
 // from run.mjs, which imports none, so the Pages action's two-page collect
 // loads this file without node_modules (issue #715).
-import { firstLine, measured, runCommand, unknown } from "../../../quality/collectors/run.mjs";
+import { firstLine, measured, runCommand, unknown } from "../../../quality/collectors/lib/index.mjs";
 
 export const area = "guard-speed";
 const ID = "guards.call_ms";
@@ -64,8 +64,8 @@ async function runnerReading({ params, allParams, gh }) {
 // { run, got } from the suite job's log in the newest successful run, or the
 // reason there is none. The GitHub readers load packages, so they load here.
 async function readRun(gh, repo, branch, suite) {
-  const { newestJob } = await import("../../../quality/collectors/code/code-test.mjs");
-  const client = gh ?? (await import("../../../quality/collectors/ci/ci.mjs")).ciClient();
+  const { newestJob } = await import("../../../quality/collectors/lib/readers.mjs");
+  const client = gh ?? (await import("../../../quality/collectors/lib/readers.mjs")).ciClient();
   const found = await newestJob(client, repo, branch, suite);
   if (typeof found === "string") return found;
   const got = guardSpeedFromLog(await client.text(`repos/${repo}/actions/jobs/${found.job.id}/logs`));

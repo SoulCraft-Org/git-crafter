@@ -8,7 +8,7 @@ import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { GhError, NEEDS } from "../github/github-core.mjs";
-import { loadTargets } from "../../score.mjs";
+import { loadTargets } from "../lib/score.mjs";
 import { area, collect, METRIC_IDS } from "./repo-settings.mjs";
 import { reaches, secretsRead } from "./repo-settings-reads.mjs";
 

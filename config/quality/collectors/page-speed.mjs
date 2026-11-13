@@ -8,7 +8,7 @@
 // default branch; the run that is collecting now is still in progress, so it
 // is never one of them. The median leaves out one slow runner. Nothing here
 // throws: a read that fails is could_not_check with the reason, never 0.
-import { GhError, ghClient, repoOf } from "../../../quality/collectors/github/github-core.mjs";
+import { GhError, ghClient, repoOf } from "../../../quality/collectors/lib/index.mjs";
 
 export const area = "page-speed";
 const ID = "engine.page_seconds";

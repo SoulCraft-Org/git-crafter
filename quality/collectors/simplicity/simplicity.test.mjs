@@ -9,7 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { loadTargets } from '../../score.mjs';
+import { loadTargets } from '../lib/score.mjs';
 import { area, collect, figureDates, fileRefs, metricIds, noteFlags, resolves, sentences } from './simplicity.mjs';
 
 // Only this collector's targets files, so another collector's file never fails these tests.
