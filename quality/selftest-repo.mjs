@@ -164,7 +164,12 @@ check("a repo's config: tabs, web tabs, unknown keys, collector names", () => {
   assert.deepEqual(resolveTabs({}).map(([id]) => id), TABS.map(([id]) => id).filter((id) => !WEB_TABS.includes(id)));
   assert.deepEqual(resolveTabs({ web: true }), TABS);
   assert.deepEqual(resolveTabs({ tabs: ["code", ["evals", "Evals"]] }), [["code", "Code"], ["evals", "Evals"]]);
-  assert.throws(() => resolveTabs({ tabs: ["claude"] }), /unknown tab "claude"/, "the Claude tabs load only from a pack");
+  // A removed tab id names where its metrics went (#97).
+  for (const [id, home] of [["claude", "Colorado-Startups\/claudius"], ["credits", "SoulCraft-Org\/compute-crafter"], ["tools", '"dependabot"'], ["tests", '"actions", or "code"'], ["design", '"pages"']]) {
+    assert.throws(() => resolveTabs({ tabs: [id] }), new RegExp(`tab "${id}" is gone; its metrics moved to (the pack )?${home}`), id);
+  }
+  assert.throws(() => checkDef({ ...up, tab: "deploy" }, "t"), /tab "deploy" is gone; its metrics moved to "pages"/);
+  assert.deepEqual(resolveTabs({ tabs: ["credits"] }, [["credits", "Credits"]]), [["credits", "Credits"]], "a pack's tab of that id loads");
   assert.throws(() => resolveTabs({ tabs: ["wiki"] }), /unknown tab "wiki"/);
   assert.throws(() => resolveTabs({ tabs: ["code", "code"] }), /listed twice/);
   const dir = mkdtempSync(join(tmpdir(), "quality-config-"));
@@ -192,10 +197,10 @@ check("every tab the template fills has an ideal and all three categories", () =
   const dir = fileURLToPath(new URL("./targets/", import.meta.url));
   const ideals = loadIdeals({ templateDir: fileURLToPath(new URL("./ideals/", import.meta.url)) });
   const { all } = loadDefs({ templateDir: dir, tabs: TABS });
-  const filled = TABS.filter(([id]) => ideals[id] || all.some((d) => d.tab === id));
-  // The new tabs' ideals, and Scanning's speed metric, land later in this stack.
-  const known = [["dependabot", "ideal"], ["scanning", "ideal"], ["scanning", "speed"], ["pages", "ideal"]].map(([tab, missing]) => ({ tab, missing }));
-  assert.deepEqual(tabGaps(filled, all.filter((d) => d.drop !== true), ideals), known, "a filled tab lacks its ideal or a category");
+  // Discussions waits on its readers and Scanning on a speed metric: later PRs.
+  // The four new tabs' ideals land in the next PR of this stack.
+  const known = [["discussions", "ideal"], ["discussions", "quality"], ["discussions", "speed"], ["discussions", "consumption"], ["dependabot", "ideal"], ["scanning", "ideal"], ["scanning", "speed"], ["pages", "ideal"]].map(([tab, missing]) => ({ tab, missing }));
+  assert.deepEqual(tabGaps(TABS, all.filter((d) => d.drop !== true), ideals), known, "a tab lacks its ideal or a category");
   for (const d of all) assert.ok(!/\/Users\/|\/home\/[a-z]/.test(JSON.stringify(d.params ?? {})), `${d.id}: a home path in the template's params`);
   assert.ok(readFileSync(new URL("./render/client.js", import.meta.url), "utf8").includes("dataset.repo"), "the client reads the repo from the page");
 });
