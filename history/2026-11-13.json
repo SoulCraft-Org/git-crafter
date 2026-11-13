@@ -1,0 +1,3771 @@
+{
+  "generated_at": "2026-11-13T03:31:54.138Z",
+  "commit": "a348fed6f36049943edfa4817fb359ae01f1816f",
+  "mode": "ci",
+  "collectors": [
+    "blockers",
+    "ci",
+    "claude_settings",
+    "claude",
+    "lead_time",
+    "code",
+    "credits",
+    "desktop_app",
+    "docs",
+    "github",
+    "insights",
+    "instructions",
+    "settings",
+    "simplicity",
+    "deploy",
+    "design",
+    "usability",
+    "tests",
+    "tokens",
+    "tools",
+    "guard-speed",
+    "page-speed"
+  ],
+  "metrics": {
+    "blockers.costly": {
+      "could_not_check": "transcripts and the guard log live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "blockers"
+    },
+    "blockers.guard_false_alarm_share": {
+      "could_not_check": "transcripts and the guard log live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "%"
+    },
+    "blockers.enforcement_reverts": {
+      "could_not_check": "transcripts and the guard log live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "PRs"
+    },
+    "blockers.guard_blocks_per_100_calls": {
+      "could_not_check": "transcripts and the guard log live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "blocks"
+    },
+    "blockers.latest_block_seconds": {
+      "could_not_check": "transcripts and the guard log live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "s"
+    },
+    "blockers.git_commit_seconds": {
+      "could_not_check": "transcripts and the guard log live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "s"
+    },
+    "blockers.git_push_seconds": {
+      "could_not_check": "transcripts and the guard log live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "s"
+    },
+    "blockers.pushes_per_merged_pr": {
+      "could_not_check": "transcripts and the guard log live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "pushes"
+    },
+    "blockers.latest_block_tokens": {
+      "could_not_check": "transcripts and the guard log live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "tokens"
+    },
+    "blockers.hook_tokens_per_session": {
+      "could_not_check": "transcripts and the guard log live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "tokens"
+    },
+    "blockers.review_tokens_per_pr": {
+      "could_not_check": "transcripts and the guard log live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "tokens"
+    },
+    "ci.latest_flow": {
+      "value": 2.4,
+      "detail": [
+        {
+          "label": "claude-review",
+          "value": 0.2,
+          "unit": "minutes",
+          "stage": "ci",
+          "kind": "workflow",
+          "runs": "On every pull request touching .github/workflows/**, actions/**, tools/bash_guard*, rules/**, skills/**, .claude/**: gate on ubuntu-slim, then review on ubuntu-latest, if there is work",
+          "file": ".github/workflows/claude-review.yml",
+          "pass_rate": 100,
+          "light_share": 100
+        },
+        {
+          "label": "cloud-test",
+          "value": 1.8,
+          "unit": "minutes",
+          "stage": "ci",
+          "kind": "workflow",
+          "runs": "On every pull request touching .github/workflows/cloud-test.yml, .github/cloud-test.json: cloud-test on ubuntu-slim: uses actions/checkout, uses actions/setup-node, Install Git Crafter's packages, Run the allowlisted script",
+          "file": ".github/workflows/cloud-test.yml",
+          "pass_rate": 75
+        },
+        {
+          "label": "guard-parity",
+          "value": 0.8,
+          "unit": "minutes",
+          "stage": "ci",
+          "kind": "workflow",
+          "runs": "On every pull request touching tools/bash_guard*, tools/tests/**, .github/workflows/guard-parity.yml: guard-parity on ubuntu-slim: uses actions/checkout, Compare the base's engine with the head's",
+          "file": ".github/workflows/guard-parity.yml",
+          "pass_rate": 50
+        },
+        {
+          "label": "pages",
+          "value": 2.1,
+          "unit": "minutes",
+          "stage": "ci",
+          "kind": "workflow",
+          "runs": "On every pull request touching pages/**, goals.json, process.json, maps.json, data/**, tools/**, knip.json, quality/**, config/quality.json, config/quality/**, package.json, package-lock.json, actions/**, tests/action-config.json, .github/workflows/pages.yml, **/*.md: runner on ubuntu-slim and changes on ubuntu-slim, …",
+          "file": ".github/workflows/pages.yml",
+          "pass_rate": 56.3,
+          "light_share": 6.3
+        },
+        {
+          "label": "pr-body",
+          "value": 0.2,
+          "unit": "minutes",
+          "stage": "ci",
+          "kind": "workflow",
+          "runs": "On every pull request: pr-body on ubuntu-slim: uses actions/checkout, The description links its issue or card, and the change is within the lines goal",
+          "file": ".github/workflows/pr-body.yml",
+          "pass_rate": 95
+        },
+        {
+          "label": "public-export",
+          "value": 0.9,
+          "unit": "minutes",
+          "stage": "ci",
+          "kind": "workflow",
+          "runs": "On every pull request: public-export on ubuntu-slim: uses actions/checkout, run, uses actions/setup-node, Export the public tree, Generic scan, Private-term scan, Install the tree's packages, Collect, Pages build",
+          "file": ".github/workflows/public-export.yml",
+          "pass_rate": 100,
+          "light_share": 50
+        },
+        {
+          "label": "secret-scan",
+          "value": 0.3,
+          "unit": "minutes",
+          "stage": "ci",
+          "kind": "workflow",
+          "runs": "On every pull request: secret-scan on ubuntu-slim: uses actions/checkout, Install gitleaks (pinned release, SHA-256 checked), Self-test (the scan's range, with a planted fake key), Scan the commits this run answers for",
+          "file": ".github/workflows/secret-scan.yml",
+          "pass_rate": 100
+        },
+        {
+          "label": "verify",
+          "value": 2.4,
+          "unit": "minutes",
+          "stage": "ci",
+          "kind": "workflow",
+          "runs": "On every pull request: runner calls ./.github/workflows/ci-overflow.yml, then ci calls ./.github/workflows/ci-standard.yml",
+          "file": ".github/workflows/verify.yml",
+          "pass_rate": 68.8
+        },
+        {
+          "label": "Review and merge",
+          "value": 4.7,
+          "unit": "minutes",
+          "stage": "review",
+          "kind": "manual",
+          "runs": "A person reviews the pull request, then merges it; timed from all checks green to the merge",
+          "file": "branch rules on the default branch",
+          "pass_rate": 100
+        },
+        {
+          "label": "pages",
+          "value": 2.4,
+          "unit": "minutes",
+          "stage": "merge",
+          "kind": "workflow",
+          "runs": "On every push to main: runner on ubuntu-slim and docs-gate on ubuntu-slim, if there is work and code-gate on ubuntu-slim, if there is work, then action on a runner chosen at run time, if there is work and action-collect on a runner chosen at run time, if there is work and build on a runner chosen at run time, if there…",
+          "file": ".github/workflows/pages.yml",
+          "pass_rate": 50
+        },
+        {
+          "label": "public-export",
+          "value": 0.3,
+          "unit": "minutes",
+          "stage": "merge",
+          "kind": "workflow",
+          "runs": "On every push to main: public-export on ubuntu-slim: uses actions/checkout, run, uses actions/setup-node, Export the public tree, Generic scan, Private-term scan, Install the tree's packages, Collect, Pages build",
+          "file": ".github/workflows/public-export.yml",
+          "pass_rate": 100,
+          "light_share": 100
+        },
+        {
+          "label": "secret-scan",
+          "value": 0.4,
+          "unit": "minutes",
+          "stage": "merge",
+          "kind": "workflow",
+          "runs": "On every push to main: secret-scan on ubuntu-slim: uses actions/checkout, Install gitleaks (pinned release, SHA-256 checked), Self-test (the scan's range, with a planted fake key), Scan the commits this run answers for",
+          "file": ".github/workflows/secret-scan.yml",
+          "pass_rate": 100
+        },
+        {
+          "label": "verify",
+          "value": 2.9,
+          "unit": "minutes",
+          "stage": "merge",
+          "kind": "workflow",
+          "runs": "On every push to main: runner calls ./.github/workflows/ci-overflow.yml, then ci calls ./.github/workflows/ci-standard.yml",
+          "file": ".github/workflows/verify.yml",
+          "pass_rate": 100
+        }
+      ],
+      "source": ".claude/settings.json, the git hooks in params.hooks_dir, .github/workflows, params.stages; gh api actions/workflows/{id}/runs (the latest pull request head that went all green; each stage's latest run, pass rates from the last 20 runs per workflow), pulls and check-runs (the latest of the last 20 merges)",
+      "read_at": "2026-11-13T03:31:51.599Z",
+      "unit": "minutes"
+    },
+    "ci.main_red_minutes": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "workflows green on main",
+          "value": 4,
+          "unit": ""
+        }
+      ],
+      "source": "gh api actions/workflows/{id}/runs: each active workflow whose file still runs on a push to the default branch, its runs there, newest first; red from the end of the first failure after its latest success",
+      "read_at": "2026-11-13T03:31:29.118Z",
+      "unit": "minutes"
+    },
+    "ci.latest_pr_dollars": {
+      "value": 0.22,
+      "detail": [
+        {
+          "label": "pages",
+          "value": 0.156
+        },
+        {
+          "label": "pr-body",
+          "value": 0.008
+        },
+        {
+          "label": "public-export",
+          "value": 0.01
+        },
+        {
+          "label": "secret-scan",
+          "value": 0.01
+        },
+        {
+          "label": "verify",
+          "value": 0.036
+        }
+      ],
+      "source": "latest: gh api pulls (the latest of the last 20 merged) and actions/workflows/{id}/runs (its branch runs and merge commit runs); their REST jobs, one call per run at most, each read once and most already read for the queue sample: each job's billed minutes times its runs-on label's rate from GitHub docs, Actions runner pricing; #34; #41, the latest merged pull request, has runs its merge started still going (public-export, verify); #34 priced",
+      "read_at": "2026-11-13T03:31:31.526Z",
+      "unit": "dollars"
+    },
+    "issues.latest_fix_ci_minutes": {
+      "value": 22,
+      "detail": [
+        {
+          "label": "pages",
+          "value": 6
+        },
+        {
+          "label": "pr-body",
+          "value": 1
+        },
+        {
+          "label": "public-export",
+          "value": 2
+        },
+        {
+          "label": "secret-scan",
+          "value": 2
+        },
+        {
+          "label": "verify",
+          "value": 11
+        }
+      ],
+      "source": "latest: GraphQL pullRequests closingIssuesReferences: the latest merged pull request that closed an issue; its runs (gh api actions/workflows/{id}/runs) and their REST jobs' billed runner minutes (one call per run at most, each read once), over the issues it closed; #11 closed 1 issue; #41, the latest merged pull request that closed an issue, has runs its merge started still going (public-export, verify); #11 priced",
+      "read_at": "2026-11-13T03:31:31.110Z",
+      "unit": "minutes"
+    },
+    "projects.latest_card_ci_minutes": {
+      "could_not_check": "no Done card links a merged pull request yet",
+      "source": "latest: the board named by github.json's params.project_title (gh api graphql, projectsV2): of the five cards most recently moved to the done column that link merged pull requests, the newest whose runs can be priced; their runs (gh api actions/workflows/{id}/runs) and REST jobs' billed runner minutes (one call per run at most, each read once), summed and divided by those pull requests",
+      "unit": "minutes"
+    },
+    "security.latest_scan_minutes": {
+      "value": 7,
+      "detail": [
+        {
+          "label": "secret-scan",
+          "value": 1
+        },
+        {
+          "label": "CodeQL - Code Quality",
+          "value": 2
+        },
+        {
+          "label": "CodeQL",
+          "value": 4
+        }
+      ],
+      "source": "latest: gh api actions/runs/{id}/jobs: each workflow named like params.security_workflows, the repo's own (its latest run that did real work, of its newest 10 of the last 20 runs per workflow) and GitHub's dynamic ones such as CodeQL default setup (its latest passed run); billed runner minutes, summed",
+      "read_at": "2026-11-13T03:31:35.934Z",
+      "unit": "minutes"
+    },
+    "ci.light_run_share": {
+      "value": 21.9,
+      "detail": [
+        {
+          "label": "branch-cleanup",
+          "value": 100
+        },
+        {
+          "label": "claude-review",
+          "value": 100
+        },
+        {
+          "label": "cloud-test",
+          "value": 0
+        },
+        {
+          "label": "guard-parity",
+          "value": 0
+        },
+        {
+          "label": "pages",
+          "value": 4.9
+        },
+        {
+          "label": "pr-body",
+          "value": 0
+        },
+        {
+          "label": "public-export",
+          "value": 60.7
+        },
+        {
+          "label": "secret-scan",
+          "value": 0
+        },
+        {
+          "label": "verify",
+          "value": 0
+        }
+      ],
+      "source": "GraphQL check runs and steps of the last 20 runs per workflow, weighted by each workflow and event's runs since the start of the shortest full list of 100",
+      "read_at": "2026-11-13T03:31:51.598Z",
+      "unit": "%"
+    },
+    "ci.latest_main_push_minutes": {
+      "value": 10,
+      "detail": [
+        {
+          "label": "pages",
+          "value": 3
+        },
+        {
+          "label": "public-export",
+          "value": 1
+        },
+        {
+          "label": "secret-scan",
+          "value": 1
+        },
+        {
+          "label": "verify",
+          "value": 5
+        }
+      ],
+      "source": "latest: gh api actions/workflows/{id}/runs, the push runs of the latest commit on the default branch whose runs all ended; their REST jobs' billed runner minutes (gh api actions/runs/{id}/jobs, one call per run at most, each read once), summed; a348fed, this run's push, still going, passed over; 2967fa3 priced",
+      "read_at": "2026-11-13T03:31:29.757Z",
+      "unit": "minutes"
+    },
+    "ci.queue_seconds_p90": {
+      "value": 5,
+      "detail": [
+        {
+          "label": "claude-review",
+          "value": 6.3
+        },
+        {
+          "label": "cloud-test",
+          "value": 6.1
+        },
+        {
+          "label": "guard-parity",
+          "value": 4.5
+        },
+        {
+          "label": "pages",
+          "value": 4.3
+        },
+        {
+          "label": "pr-body",
+          "value": 5.3
+        },
+        {
+          "label": "public-export",
+          "value": 4.7
+        },
+        {
+          "label": "secret-scan",
+          "value": 4.2
+        },
+        {
+          "label": "verify",
+          "value": 4
+        }
+      ],
+      "source": "last 10 completed runs per workflow, the queue sample the CI tab already reads (gh api actions/runs/{id}/jobs): each job's started_at less created_at",
+      "read_at": "2026-11-13T03:31:33.326Z",
+      "unit": "seconds"
+    },
+    "ci.failed_run_share": {
+      "value": 13.9,
+      "detail": [
+        {
+          "label": "claude-review",
+          "value": 0
+        },
+        {
+          "label": "cloud-test",
+          "value": 25
+        },
+        {
+          "label": "guard-parity",
+          "value": 50
+        },
+        {
+          "label": "pages",
+          "value": 44.4
+        },
+        {
+          "label": "pr-body",
+          "value": 5
+        },
+        {
+          "label": "public-export",
+          "value": 0
+        },
+        {
+          "label": "secret-scan",
+          "value": 0
+        },
+        {
+          "label": "verify",
+          "value": 27.8
+        }
+      ],
+      "source": "gh api actions/workflows/{id}/runs (last 20 runs per workflow): runs that ended failure, timed_out, startup_failure, over those that passed or failed, on any event",
+      "read_at": "2026-11-13T03:31:29.200Z",
+      "unit": "%"
+    },
+    "insights.failed_minutes_share": {
+      "value": 1.8,
+      "detail": [
+        {
+          "label": "claude-review",
+          "value": 0
+        },
+        {
+          "label": "cloud-test",
+          "value": 0
+        },
+        {
+          "label": "guard-parity",
+          "value": 33.3
+        },
+        {
+          "label": "pages",
+          "value": 2.9
+        },
+        {
+          "label": "pr-body",
+          "value": 0
+        },
+        {
+          "label": "public-export",
+          "value": 0
+        },
+        {
+          "label": "secret-scan",
+          "value": 0
+        },
+        {
+          "label": "verify",
+          "value": 0
+        }
+      ],
+      "source": "GraphQL check runs of the last 20 runs per workflow: each job's minutes rounded up as GitHub bills them, summed for runs that ended cancelled, timed_out, startup_failure, or failed outside a pull request or merge queue, over all",
+      "read_at": "2026-11-13T03:31:51.598Z",
+      "unit": "%"
+    },
+    "ci.runner_cents_per_minute": {
+      "value": 0.32,
+      "detail": [
+        {
+          "label": "claude-review",
+          "value": 0.2
+        },
+        {
+          "label": "cloud-test",
+          "value": 0.2
+        },
+        {
+          "label": "guard-parity",
+          "value": 0.2
+        },
+        {
+          "label": "pages",
+          "value": 0.48
+        },
+        {
+          "label": "pr-body",
+          "value": 0.2
+        },
+        {
+          "label": "public-export",
+          "value": 0.2
+        },
+        {
+          "label": "secret-scan",
+          "value": 0.2
+        },
+        {
+          "label": "verify",
+          "value": 0.24
+        }
+      ],
+      "source": "last 10 completed runs per workflow, the queue sample (gh api actions/runs/{id}/jobs): each job's billed minutes times its runs-on label's list rate, over the minutes",
+      "read_at": "2026-11-13T03:31:33.326Z",
+      "unit": "cents"
+    },
+    "ci.api_headroom": {
+      "value": 24.1,
+      "detail": [
+        {
+          "label": "REST requests left of 5000",
+          "value": 24.1
+        },
+        {
+          "label": "GraphQL points left of 5000",
+          "value": 91.3
+        }
+      ],
+      "source": "latest: gh api rate_limit (counts against no limit), the share of each hourly bucket still unused, the lower of REST and GraphQL; read with the CI run's token (the workflow token unless the repo passes another)",
+      "read_at": "2026-11-13T03:31:22.976Z",
+      "unit": "%"
+    },
+    "claude_settings.valid": {
+      "value": 0,
+      "source": "state: each file in params.files that exists, parsed as strict JSON; top-level and permissions keys against the settings index (code.claude.com/docs/en/settings-reference, read 2026-11-04); permissions.defaultMode against the modes (code.claude.com/docs/en/permission-modes); each allow, ask and deny rule against the rule syntax (code.claude.com/docs/en/permissions, read 2026-11-04; ruleProblem() in quality/collectors/claude/claude-settings.mjs); .claude/settings.json",
+      "detail": [
+        {
+          "label": ".claude/settings.json: no problem",
+          "value": 0,
+          "unit": ""
+        }
+      ],
+      "unit": "problems"
+    },
+    "claude_settings.prompts_per_100_calls": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "this repo's transcripts: the permissionDecision of each tool result, newest 1,000 that carry one; a prompt is a source starting user (user_temporary, user_permanent). ExitPlanMode and AskUserQuestion are left out: asking is their job. N = 1,000 tool calls, so new work replaces old within hours",
+      "unit": "prompts"
+    },
+    "claude.pr_merge_share": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "%"
+    },
+    "claude.first_push_green_share": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "%"
+    },
+    "claude.escaped_bugs_per_10_prs": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "bugs"
+    },
+    "claude.code_prs_with_tests_share": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "%"
+    },
+    "claude.hours_session_to_pr": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "h"
+    },
+    "claude.tokens_per_merged_pr": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "tokens"
+    },
+    "claude.cache_read_share": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "%"
+    },
+    "claude.cost_per_merged_pr_usd": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "USD"
+    },
+    "claude.context_per_call": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "tokens"
+    },
+    "claude.compactions_per_10_prs": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "compactions"
+    },
+    "claude.subagent_cost_share": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*-home-runner-work-git-crafter-git-crafter*/**/*.jsonl",
+      "unit": "%"
+    },
+    "code.long_files": {
+      "value": 0,
+      "detail": [],
+      "source": ".ts, .mjs, .astro, .css, .py and .sh files over 300 code lines",
+      "read_at": "2026-11-13T03:31:24.097Z",
+      "unit": "files"
+    },
+    "code.long_functions": {
+      "value": 0,
+      "detail": [],
+      "source": "TypeScript compiler API and Python's ast over 36 of 36 .py file(s), functions over 50 code lines",
+      "read_at": "2026-11-13T03:31:24.096Z",
+      "unit": "functions"
+    },
+    "code.complex_functions": {
+      "value": 0,
+      "detail": [],
+      "source": "TypeScript compiler API and Python's ast over 36 of 36 .py file(s), McCabe complexity over 10",
+      "read_at": "2026-11-13T03:31:24.096Z",
+      "unit": "functions"
+    },
+    "code.dead_files": {
+      "value": 0,
+      "detail": [],
+      "source": "knip --reporter json (the repo's knip config)",
+      "read_at": "2026-11-13T03:31:25.369Z",
+      "unit": "files"
+    },
+    "code.dead_exports": {
+      "value": 0,
+      "detail": [],
+      "source": "knip --reporter json (the repo's knip config)",
+      "read_at": "2026-11-13T03:31:25.369Z",
+      "unit": "exports"
+    },
+    "code.dead_dependencies": {
+      "value": 0,
+      "detail": [],
+      "source": "knip --reporter json (the repo's knip config)",
+      "read_at": "2026-11-13T03:31:25.369Z",
+      "unit": "dependencies"
+    },
+    "code.dead_functions": {
+      "value": 0,
+      "detail": [],
+      "source": "top-level functions of .py files that no .py file in the areas, tests included, reads, imports or names and Python's ast over 36 of 36 .py file(s)",
+      "read_at": "2026-11-13T03:31:24.346Z",
+      "unit": "functions"
+    },
+    "code.missing_refs": {
+      "value": 0,
+      "detail": [],
+      "source": "comments and strings naming files that git log shows were committed and are now gone",
+      "read_at": "2026-11-13T03:31:24.342Z",
+      "unit": "references"
+    },
+    "code.export_comments_pct": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "tools",
+          "value": 100
+        },
+        {
+          "label": "quality",
+          "value": 100
+        },
+        {
+          "label": "quality/collectors/blockers",
+          "value": 100
+        },
+        {
+          "label": "quality/collectors/ci",
+          "value": 100
+        },
+        {
+          "label": "quality/collectors/claude",
+          "value": 100
+        },
+        {
+          "label": "quality/collectors/code",
+          "value": 100
+        },
+        {
+          "label": "quality/collectors/credits",
+          "value": 100
+        },
+        {
+          "label": "quality/collectors/desktop-app",
+          "value": 100
+        },
+        {
+          "label": "quality/collectors/docs",
+          "value": 100
+        },
+        {
+          "label": "quality/collectors/github",
+          "value": 100
+        },
+        {
+          "label": "quality/collectors/insights",
+          "value": 100
+        },
+        {
+          "label": "quality/collectors/instructions",
+          "value": 100
+        },
+        {
+          "label": "quality/collectors/lib",
+          "value": 100
+        },
+        {
+          "label": "quality/collectors/settings",
+          "value": 100
+        },
+        {
+          "label": "quality/collectors/simplicity",
+          "value": 100
+        },
+        {
+          "label": "quality/collectors/site",
+          "value": 100
+        },
+        {
+          "label": "quality/collectors/tests",
+          "value": 100
+        },
+        {
+          "label": "quality/collectors/tokens",
+          "value": 100
+        },
+        {
+          "label": "quality/collectors/tools",
+          "value": 100
+        },
+        {
+          "label": "quality/render",
+          "value": 100
+        },
+        {
+          "label": "pages",
+          "value": 100
+        },
+        {
+          "label": "config/quality/collectors",
+          "value": 100
+        }
+      ],
+      "source": "exported functions with a comment on the line above, and public Python functions with a docstring or one: TypeScript compiler API and Python's ast over 36 of 36 .py file(s); 1203 of 1203",
+      "read_at": "2026-11-13T03:31:24.096Z",
+      "unit": "%"
+    },
+    "code.naming_pct": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "kebab-case modules (159)",
+          "value": 100
+        },
+        {
+          "label": "kebab-case pages (17)",
+          "value": 100
+        },
+        {
+          "label": "snake_case tools (53)",
+          "value": 100
+        }
+      ],
+      "source": "code files in the areas, and the folders that hold them, named by their folder's convention (params.naming); 229 of 229",
+      "read_at": "2026-11-13T03:31:24.358Z",
+      "unit": "%"
+    },
+    "code.mapped_areas_pct": {
+      "value": 100,
+      "detail": [],
+      "source": "areas named in a table row or a mermaid block of a README.md at their folder or above, or of a doc it links beside it; 23 of 23",
+      "read_at": "2026-11-13T03:31:24.357Z",
+      "unit": "%"
+    },
+    "code.import_cycles": {
+      "value": 0,
+      "detail": [],
+      "source": "relative imports and re-exports (TypeScript compiler API) and sibling-module imports of .py files; groups of two or more files that import each other",
+      "read_at": "2026-11-13T03:31:24.346Z",
+      "unit": "cycles"
+    },
+    "code.test_coverage_pct": {
+      "value": 93.6,
+      "detail": [
+        {
+          "label": "pages lines",
+          "value": 97
+        },
+        {
+          "label": "pages branches",
+          "value": 83.3
+        },
+        {
+          "label": "quality lines",
+          "value": 95.8
+        },
+        {
+          "label": "quality branches",
+          "value": 89.6
+        },
+        {
+          "label": "config/quality/collectors lines",
+          "value": 96.9
+        },
+        {
+          "label": "config/quality/collectors branches",
+          "value": 82.5
+        }
+      ],
+      "source": "node --test --experimental-test-coverage lcov printed by verify.yml job short, run 43308171948 (2026-11-12), lines and branches together: 23292 of 24289 lines and 10607 of 11941 branches covered in pages, quality, config/quality/collectors",
+      "read_at": "2026-11-13T03:31:35.920Z",
+      "unit": "%"
+    },
+    "code.code_tokens": {
+      "value": 206273,
+      "detail": [
+        {
+          "label": "tools",
+          "value": 206273,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/github",
+          "value": 118948,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality",
+          "value": 91166,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/code",
+          "value": 85631,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/render",
+          "value": 76786,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/site",
+          "value": 74713,
+          "unit": "tokens"
+        },
+        {
+          "label": "pages",
+          "value": 72775,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/blockers",
+          "value": 67561,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/ci",
+          "value": 63737,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/claude",
+          "value": 48037,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/docs",
+          "value": 44429,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/tests",
+          "value": 27777,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/tools",
+          "value": 27299,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/credits",
+          "value": 25057,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/desktop-app",
+          "value": 22637,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/tokens",
+          "value": 20231,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/instructions",
+          "value": 18205,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/simplicity",
+          "value": 13994,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/settings",
+          "value": 13526,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/insights",
+          "value": 9475,
+          "unit": "tokens"
+        },
+        {
+          "label": "config/quality/collectors",
+          "value": 8177,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/lib",
+          "value": 2564,
+          "unit": "tokens"
+        },
+        {
+          "label": "actions",
+          "value": 0,
+          "unit": "tokens"
+        }
+      ],
+      "source": "state: bytes of the code files in the largest area of params.areas, tests included, over params.bytes_per_token: tools",
+      "read_at": "2026-11-13T03:31:35.924Z",
+      "unit": "tokens"
+    },
+    "code.largest_file_tokens": {
+      "value": 23189,
+      "detail": [
+        {
+          "label": "tests/pages-collect.test.mjs",
+          "value": 23189,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/github/github-more.test.mjs",
+          "value": 21486,
+          "unit": "tokens"
+        },
+        {
+          "label": "tests/pages-build.test.mjs",
+          "value": 21298,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/docs/docs.test.mjs",
+          "value": 19159,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/github/github-security.test.mjs",
+          "value": 18195,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/code/code.test.mjs",
+          "value": 18165,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/blockers/blockers-replay.test.mjs",
+          "value": 15440,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/tests/tests.test.mjs",
+          "value": 14884,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/code/code-inputs.test.mjs",
+          "value": 14007,
+          "unit": "tokens"
+        },
+        {
+          "label": "quality/collectors/claude/claude.test.mjs",
+          "value": 12633,
+          "unit": "tokens"
+        }
+      ],
+      "source": "state: bytes of the largest code file in params.areas and params.size_extra, tests included, over params.bytes_per_token: tests/pages-collect.test.mjs",
+      "read_at": "2026-11-13T03:31:35.924Z",
+      "unit": "tokens"
+    },
+    "credits.idle_replaceable": {
+      "could_not_check": "reads local files named in params; refreshed by a --local collect",
+      "source": "systems.json (limits)",
+      "unit": "allowances"
+    },
+    "credits.unclaimed_free": {
+      "could_not_check": "reads local files named in params; refreshed by a --local collect",
+      "source": "systems.json (limits)",
+      "unit": "allowances"
+    },
+    "credits.highest_used_share": {
+      "could_not_check": "reads local files named in params; refreshed by a --local collect",
+      "source": "systems.json (limits)",
+      "unit": "%"
+    },
+    "credits.actions_pool_used": {
+      "could_not_check": "reads local files named in params; refreshed by a --local collect",
+      "source": "systems.json (limits)",
+      "unit": "%"
+    },
+    "credits.usage_read_share": {
+      "could_not_check": "reads local files named in params; refreshed by a --local collect",
+      "source": "systems.json (limits)",
+      "unit": "%"
+    },
+    "credits.registry_age_days": {
+      "could_not_check": "reads local files named in params; refreshed by a --local collect",
+      "source": "systems.json (limits)",
+      "unit": "days"
+    },
+    "deploy.waiting_merges": {
+      "value": 0,
+      "detail": [],
+      "source": "GitHub Pages: gh api repos/SoulCraft-Org/git-crafter/deployments?environment=github-pages and each deploy's statuses; gh api repos/{repo}/compare/{live sha}...{branch}: merges production does not hold now, less the commit this run deploys and those before it",
+      "read_at": "2026-11-13T03:31:22.723Z",
+      "unit": "merges"
+    },
+    "deploy.oldest_waiting_hours": {
+      "value": 0,
+      "source": "GitHub Pages: gh api repos/SoulCraft-Org/git-crafter/deployments?environment=github-pages and each deploy's statuses; gh api repos/{repo}/compare/{live sha}...{branch}: merges production does not hold now, less the commit this run deploys and those before it; hours since the oldest was merged, 0 when none waits",
+      "read_at": "2026-11-13T03:31:22.723Z",
+      "unit": "h"
+    },
+    "deploy.latest_lead_hours": {
+      "value": 0.2,
+      "detail": [
+        {
+          "label": "ac7e182",
+          "value": 0.2,
+          "unit": "h"
+        },
+        {
+          "label": "5ca8845",
+          "value": 0,
+          "unit": "h"
+        },
+        {
+          "label": "2967fa3",
+          "value": 0,
+          "unit": "h"
+        }
+      ],
+      "source": "GitHub Pages: gh api repos/SoulCraft-Org/git-crafter/deployments?environment=github-pages and each deploy's statuses; hours from the earliest merge the latest shipping deploy carried to that deploy going live; the deploy of 2026-11-12 21:15 (2967fa3)",
+      "read_at": "2026-11-13T03:31:22.723Z",
+      "unit": "h"
+    },
+    "deploy.latest_failed": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "2026-11-12 21:15 2967fa3",
+          "value": 0,
+          "unit": ""
+        }
+      ],
+      "source": "GitHub Pages: gh api repos/SoulCraft-Org/git-crafter/deployments?environment=github-pages and each deploy's statuses; a deploy failed when its newest status is failure or error; restored at the next successful deploy; the last 10 ended deploys",
+      "read_at": "2026-11-13T03:31:22.723Z",
+      "unit": ""
+    },
+    "deploy.failure_rate_last10": {
+      "value": 10,
+      "detail": [
+        {
+          "label": "2026-11-12 19:40",
+          "value": 1,
+          "unit": "merges",
+          "commit": "266730f",
+          "commit_from": "deployment",
+          "lead_hours": 0,
+          "rollback": false,
+          "failed": null,
+          "restore_hours": null
+        },
+        {
+          "label": "2026-11-12 20:12",
+          "value": 1,
+          "unit": "merges",
+          "commit": "2608aed",
+          "commit_from": "deployment",
+          "lead_hours": 0,
+          "rollback": false,
+          "failed": null,
+          "restore_hours": null
+        },
+        {
+          "label": "2026-11-12 20:19",
+          "value": 1,
+          "unit": "merges",
+          "commit": "6a16de9",
+          "commit_from": "deployment",
+          "lead_hours": 0,
+          "rollback": false,
+          "failed": null,
+          "restore_hours": null
+        },
+        {
+          "label": "2026-11-12 20:23",
+          "value": 1,
+          "unit": "merges",
+          "commit": "5c6a85c",
+          "commit_from": "deployment",
+          "lead_hours": 0,
+          "rollback": false,
+          "failed": null,
+          "restore_hours": null
+        },
+        {
+          "label": "2026-11-12 20:31",
+          "value": 1,
+          "unit": "merges",
+          "commit": "79b1c31",
+          "commit_from": "deployment",
+          "lead_hours": 0,
+          "rollback": false,
+          "failed": null,
+          "restore_hours": null
+        },
+        {
+          "label": "2026-11-12 20:47",
+          "value": 4,
+          "unit": "merges",
+          "commit": "8431844",
+          "commit_from": "deployment",
+          "lead_hours": 0,
+          "rollback": false,
+          "failed": null,
+          "restore_hours": null
+        },
+        {
+          "label": "2026-11-12 20:50",
+          "value": 2,
+          "unit": "merges",
+          "commit": "f0329fb",
+          "commit_from": "deployment",
+          "lead_hours": 0,
+          "rollback": false,
+          "failed": null,
+          "restore_hours": null
+        },
+        {
+          "label": "2026-11-12 21:00",
+          "value": 2,
+          "unit": "merges",
+          "commit": "3d160b9",
+          "commit_from": "deployment",
+          "lead_hours": 0,
+          "rollback": false,
+          "failed": null,
+          "restore_hours": null
+        },
+        {
+          "label": "2026-11-12 21:05",
+          "value": 0,
+          "unit": "merges",
+          "commit": "ac7e182",
+          "commit_from": "deployment",
+          "lead_hours": null,
+          "rollback": false,
+          "failed": "its Pages deployment ended in failure",
+          "restore_hours": 0.2
+        },
+        {
+          "label": "2026-11-12 21:15",
+          "value": 3,
+          "unit": "merges",
+          "commit": "2967fa3",
+          "commit_from": "deployment",
+          "lead_hours": 0.2,
+          "rollback": false,
+          "failed": null,
+          "restore_hours": null
+        }
+      ],
+      "source": "GitHub Pages: gh api repos/SoulCraft-Org/git-crafter/deployments?environment=github-pages and each deploy's statuses; a deploy failed when its newest status is failure or error; restored at the next successful deploy; the last 10 ended deploys",
+      "read_at": "2026-11-13T03:31:22.723Z",
+      "unit": "%"
+    },
+    "deploy.latest_restore_hours": {
+      "value": 0.2,
+      "detail": [
+        {
+          "label": "2026-11-12 21:05 ac7e182",
+          "value": 0.2,
+          "unit": "h"
+        }
+      ],
+      "source": "GitHub Pages: gh api repos/SoulCraft-Org/git-crafter/deployments?environment=github-pages and each deploy's statuses; a deploy failed when its newest status is failure or error; restored at the next successful deploy; the last 10 ended deploys",
+      "read_at": "2026-11-13T03:31:22.723Z",
+      "unit": "h"
+    },
+    "deploy.latest_build_minutes": {
+      "value": 10,
+      "detail": [
+        {
+          "label": "pages",
+          "value": 3,
+          "unit": "min"
+        },
+        {
+          "label": "public-export",
+          "value": 1,
+          "unit": "min"
+        },
+        {
+          "label": "secret-scan",
+          "value": 1,
+          "unit": "min"
+        },
+        {
+          "label": "verify",
+          "value": 5,
+          "unit": "min"
+        }
+      ],
+      "source": "latest: every workflow run the push to main of the latest successful Pages deploy's sha started (gh api actions/runs?head_sha=&event=push, then runs/{id}/jobs), each job rounded up to the whole minute as GitHub bills it; the deploy of 2026-11-12 21:15 (2967fa3)",
+      "read_at": "2026-11-13T03:31:22.723Z",
+      "unit": "min"
+    },
+    "design.raw_hex": {
+      "value": 0,
+      "source": "regex over pages, quality/render (.css) with comments stripped; excludes quality/render/tokens.css: the token file that defines every color",
+      "read_at": "2026-11-13T03:31:22.700Z",
+      "unit": "values"
+    },
+    "design.raw_px": {
+      "value": 0,
+      "source": "regex over pages, quality/render (.css) with comments stripped; excludes quality/render/tokens.css: the token file that defines every color",
+      "read_at": "2026-11-13T03:31:22.700Z",
+      "unit": "values"
+    },
+    "design.contrast_violations": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "/",
+          "value": 0
+        },
+        {
+          "label": "/metrics.html",
+          "value": 0
+        }
+      ],
+      "source": "Playwright (Chrome) on https://static.invalid, key pages at 1280 and 375 px: axe-core 4.14.0 color-contrast, distinct failing elements per page across every width",
+      "read_at": "2026-11-13T03:31:42.272Z",
+      "unit": "elements"
+    },
+    "design.lcp_mobile": {
+      "value": 0.27,
+      "detail": [
+        {
+          "label": "/ (lab)",
+          "value": 0.27
+        },
+        {
+          "label": "/metrics.html (lab)",
+          "value": 0.15
+        }
+      ],
+      "source": "lab fallback, our numbers and not Google's: Playwright on Chromium 157.0.8103.50, one cold load per page with Lighthouse's mobile settings applied through CDP (throttling.mobileSlow4G: 4x CPU slowdown, 562.5 ms request latency, 1474.56 Kbps down, 675 Kbps up; 412 x 823 px at 1.75x), for /, /metrics.html, where PageSpeed Insights did not answer: /, /metrics.html (not a public URL (a built static site)). 2 of 2 key pages measured; value is the worst page, / (lab)",
+      "read_at": "2026-11-13T03:31:53.324Z",
+      "unit": "s"
+    },
+    "design.cls_mobile": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "/ (lab)",
+          "value": 0
+        },
+        {
+          "label": "/metrics.html (lab)",
+          "value": 0
+        }
+      ],
+      "source": "lab fallback, our numbers and not Google's: Playwright on Chromium 157.0.8103.50, one cold load per page with Lighthouse's mobile settings applied through CDP (throttling.mobileSlow4G: 4x CPU slowdown, 562.5 ms request latency, 1474.56 Kbps down, 675 Kbps up; 412 x 823 px at 1.75x), for /, /metrics.html, where PageSpeed Insights did not answer: /, /metrics.html (not a public URL (a built static site)). 2 of 2 key pages measured; value is the worst page, / (lab)",
+      "read_at": "2026-11-13T03:31:53.324Z",
+      "unit": "score"
+    },
+    "design.total_bytes": {
+      "value": 407.8,
+      "detail": [
+        {
+          "label": "/@1280",
+          "value": 407.8
+        },
+        {
+          "label": "/@375",
+          "value": 407.8
+        },
+        {
+          "label": "/metrics.html@1280",
+          "value": 177.7
+        },
+        {
+          "label": "/metrics.html@375",
+          "value": 177.7
+        }
+      ],
+      "source": "Playwright (Chrome) on https://static.invalid, key pages at 1280 and 375 px: all response bytes (body plus headers) to the load event plus network idle, fresh context; value is the heaviest page and width",
+      "read_at": "2026-11-13T03:31:42.272Z",
+      "unit": "KiB"
+    },
+    "desktop_app.connectors_broken": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "the desktop_app collector",
+      "unit": "servers"
+    },
+    "desktop_app.plugins_unused": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "the desktop_app collector",
+      "unit": "plugins"
+    },
+    "desktop_app.connectors_unused": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "the desktop_app collector",
+      "unit": "servers"
+    },
+    "desktop_app.turns_closed": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "the desktop_app collector",
+      "unit": "%"
+    },
+    "desktop_app.sub_sessions_closed": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "the desktop_app collector",
+      "unit": "%"
+    },
+    "desktop_app.subagents_killed": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "the desktop_app collector",
+      "unit": "%"
+    },
+    "desktop_app.connectors_pending": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "the desktop_app collector",
+      "unit": "servers"
+    },
+    "desktop_app.parallel_share": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "the desktop_app collector",
+      "unit": "%"
+    },
+    "desktop_app.listing_tokens": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "the desktop_app collector",
+      "unit": "tokens"
+    },
+    "desktop_app.subagent_start_tokens": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "the desktop_app collector",
+      "unit": "tokens"
+    },
+    "docs.dead_paths": {
+      "value": 3,
+      "detail": [
+        {
+          "label": "repo paths checked",
+          "value": 156
+        },
+        {
+          "label": "templates/open/CONTRIBUTING.md:46 tools/merge_policy.json",
+          "value": 1
+        },
+        {
+          "label": "templates/open/MAINTAINERS.md:7 tools/merge_policy.json",
+          "value": 1
+        },
+        {
+          "label": "templates/open/SECURITY.md:17 tools/merge_policy.json",
+          "value": 1
+        }
+      ],
+      "source": "each word of inline code and code blocks under a top-level repo entry, git-ignored paths and records skipped (a heuristic), quality/collectors/docs/docs.mjs over 43 docs (params.doc_set)",
+      "read_at": "2026-11-13T03:31:21.876Z",
+      "unit": "paths"
+    },
+    "docs.dead_scripts": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "npm script references checked",
+          "value": 0
+        }
+      ],
+      "source": "npm run, test and start in inline code and code blocks, against package.json; with -w, that workspace alone; records skipped, quality/collectors/docs/docs.mjs over 43 docs (params.doc_set)",
+      "read_at": "2026-11-13T03:31:21.876Z",
+      "unit": "scripts"
+    },
+    "docs.broken_links": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "relative links checked",
+          "value": 187
+        }
+      ],
+      "source": "relative markdown links and #anchors, quality/collectors/docs/docs.mjs over 43 docs (params.doc_set)",
+      "read_at": "2026-11-13T03:31:21.876Z",
+      "unit": "links"
+    },
+    "docs.lint_warn": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "docs checked",
+          "value": 43,
+          "unit": "docs"
+        },
+        {
+          "label": "docs outside lint scope",
+          "value": 0,
+          "unit": "docs"
+        }
+      ],
+      "source": "python3 tools/voice_lint.py <43 docs>",
+      "read_at": "2026-11-13T03:31:21.876Z",
+      "unit": "findings"
+    },
+    "docs.markup_faults": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "headings and images checked",
+          "value": 101
+        }
+      ],
+      "source": "100 headings (a skipped level, a second H1, a heading repeated at its level) and 1 images (no alt text, or over 150 characters) outside code, quality/collectors/docs/docs.mjs over 43 docs (params.doc_set)",
+      "read_at": "2026-11-13T03:31:21.876Z",
+      "unit": "faults"
+    },
+    "docs.stale_markers": {
+      "value": 0,
+      "detail": [],
+      "source": "TODO, TBD, FIXME, not yet, coming soon outside code and comments, quality/collectors/docs/docs.mjs over 43 docs (params.doc_set)",
+      "read_at": "2026-11-13T03:31:21.876Z",
+      "unit": "markers"
+    },
+    "docs.stale_dates": {
+      "value": 0,
+      "detail": [],
+      "source": "0 \"current as of\", \"last verified\" dates outside code, each against the last commit to its doc's area (params.areas), quality/collectors/docs/docs.mjs over 43 docs (params.doc_set)",
+      "read_at": "2026-11-13T03:31:21.876Z",
+      "unit": "dates"
+    },
+    "docs.oldest_lag_days": {
+      "value": 0.5,
+      "detail": [
+        {
+          "label": "quality/collectors/FOLDERS.md",
+          "value": 0.5
+        },
+        {
+          "label": "quality/collectors/README.md",
+          "value": 0.5
+        },
+        {
+          "label": "THREAT-MODEL.md",
+          "value": 0.5
+        },
+        {
+          "label": "rules/gates.md",
+          "value": 0.3
+        },
+        {
+          "label": "templates/ci/DECISIONS.md",
+          "value": 0.3
+        },
+        {
+          "label": ".claude/agents/Explore.md",
+          "value": 0.2
+        },
+        {
+          "label": ".claude/agents/general-purpose.md",
+          "value": 0.2
+        },
+        {
+          "label": ".claude/agents/Plan.md",
+          "value": 0.2
+        },
+        {
+          "label": ".claude/agents/reviewer.md",
+          "value": 0.2
+        },
+        {
+          "label": "CONTRIBUTING.md",
+          "value": 0.2
+        },
+        {
+          "label": "rules/delegation.md",
+          "value": 0.2
+        },
+        {
+          "label": "rules/keys.md",
+          "value": 0.2
+        },
+        {
+          "label": "SECURITY.md",
+          "value": 0.2
+        },
+        {
+          "label": "skills/merging/orchestrating.md",
+          "value": 0.2
+        },
+        {
+          "label": "skills/merging/reviewing.md",
+          "value": 0.2
+        },
+        {
+          "label": "templates/agents/CLAUDE.md",
+          "value": 0.2
+        },
+        {
+          "label": "templates/ci/README.md",
+          "value": 0.2
+        },
+        {
+          "label": "tools/THREAT-MODEL.md",
+          "value": 0.2
+        },
+        {
+          "label": "quality/README.md",
+          "value": 0.1
+        },
+        {
+          "label": "quality/SCORING.md",
+          "value": 0.1
+        },
+        {
+          "label": "rules/writing-and-gates.md",
+          "value": 0.1
+        },
+        {
+          "label": "SUPPORT.md",
+          "value": 0.1
+        },
+        {
+          "label": "pages/maps/README.md",
+          "value": 0
+        },
+        {
+          "label": "quality/CONFIG.md",
+          "value": 0
+        },
+        {
+          "label": "quality/ideals/README.md",
+          "value": 0
+        },
+        {
+          "label": "quality/render/README.md",
+          "value": 0
+        },
+        {
+          "label": "README.md",
+          "value": 0
+        },
+        {
+          "label": "rules/comfy.md",
+          "value": 0
+        },
+        {
+          "label": "rules/compute-detail.md",
+          "value": 0
+        },
+        {
+          "label": "rules/compute.md",
+          "value": 0
+        },
+        {
+          "label": "rules/keys-detail.md",
+          "value": 0
+        },
+        {
+          "label": "skills/merging/outside.md",
+          "value": 0
+        },
+        {
+          "label": "skills/merging/SKILL.md",
+          "value": 0
+        },
+        {
+          "label": "templates/agents/AGENTS.md",
+          "value": 0
+        },
+        {
+          "label": "templates/open/.github/PULL_REQUEST_TEMPLATE.md",
+          "value": 0
+        },
+        {
+          "label": "templates/open/CONTRIBUTING.md",
+          "value": 0
+        },
+        {
+          "label": "templates/open/GOVERNANCE.md",
+          "value": 0
+        },
+        {
+          "label": "templates/open/MAINTAINERS.md",
+          "value": 0
+        },
+        {
+          "label": "templates/open/README.md",
+          "value": 0
+        },
+        {
+          "label": "templates/open/SECURITY.md",
+          "value": 0
+        },
+        {
+          "label": "templates/process/README.md",
+          "value": 0
+        },
+        {
+          "label": "templates/quality/README.md",
+          "value": 0
+        }
+      ],
+      "source": "git log -1 --format=%ct -- <doc>, and -- <area> (params.areas); the doc that trails its area most, quality/collectors/FOLDERS.md",
+      "read_at": "2026-11-13T03:31:21.876Z",
+      "unit": "days"
+    },
+    "docs.unmapped": {
+      "value": 0,
+      "detail": [],
+      "source": "each doc against params.areas, and each area path through git ls-files, quality/collectors/docs/docs.mjs over 43 docs (params.doc_set)",
+      "read_at": "2026-11-13T03:31:21.876Z",
+      "unit": "docs and paths"
+    },
+    "docs.folder_coverage": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "actions/ (folder map)",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "config/ (folder map)",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "data/ (folder map)",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "pages/ (folder map)",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "quality/ (README and folder map)",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "rules/ (folder map)",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "skills/ (folder map)",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "templates/ (folder map)",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "tests/ (folder map)",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "tools/ (folder map)",
+          "value": 1,
+          "unit": ""
+        }
+      ],
+      "source": "top-level folders (not dot or git-ignored) with a README, or a row under \"Folder map\" in README.md",
+      "read_at": "2026-11-13T03:31:21.876Z",
+      "unit": "%"
+    },
+    "docs.community_files": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "Code of conduct (CODE_OF_CONDUCT.md)",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "Contributing guide (CONTRIBUTING.md)",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "License (LICENSE)",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "Pull request template (.github/PULL_REQUEST_TEMPLATE.md)",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "README (README.md)",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "Support file (SUPPORT.md)",
+          "value": 1,
+          "unit": ""
+        }
+      ],
+      "source": "each of 6 community health files (params.community_files) at any of its paths",
+      "read_at": "2026-11-13T03:31:21.876Z",
+      "unit": "%"
+    },
+    "docs.over_read_goal": {
+      "value": 0,
+      "detail": [],
+      "source": "docs over 2 minutes at 238 words a minute, counted by top-level folder, quality/collectors/docs/docs.mjs over 43 docs (params.doc_set)",
+      "read_at": "2026-11-13T03:31:21.876Z",
+      "unit": "docs"
+    },
+    "docs.interactive_share": {
+      "value": 77.8,
+      "detail": [
+        {
+          "label": "mermaid diagram",
+          "value": 22,
+          "unit": ""
+        },
+        {
+          "label": "mermaid chart (pie, xychart-beta)",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "<details> block",
+          "value": 0,
+          "unit": ""
+        }
+      ],
+      "source": "27 reader docs (the doc set less params.agent_docs) with a mermaid diagram, a mermaid chart or a <details> block outside code; detail counts elements, quality/collectors/docs/docs.mjs over 43 docs (params.doc_set)",
+      "read_at": "2026-11-13T03:31:21.876Z",
+      "unit": "%"
+    },
+    "docs.text_only": {
+      "value": 0,
+      "detail": [],
+      "source": "docs under 50% visual lines, by top-level folder, quality/collectors/docs/docs.mjs over 43 docs (params.doc_set)",
+      "read_at": "2026-11-13T03:31:21.876Z",
+      "unit": "docs"
+    },
+    "docs.tokens_past_read_goal": {
+      "value": 0,
+      "detail": [],
+      "source": "bytes / 4 of each doc, the share of its words past 476 (2 minutes at 238 words a minute), summed; detail is the heaviest docs, quality/collectors/docs/docs.mjs over 43 docs (params.doc_set)",
+      "read_at": "2026-11-13T03:31:21.876Z",
+      "unit": "tokens"
+    },
+    "issues.open_bugs": {
+      "value": 1,
+      "detail": [
+        {
+          "label": "quality",
+          "value": 0
+        },
+        {
+          "label": "pages",
+          "value": 0
+        },
+        {
+          "label": "guard",
+          "value": 0
+        },
+        {
+          "label": "ci",
+          "value": 1
+        },
+        {
+          "label": "documentation",
+          "value": 0
+        },
+        {
+          "label": "security",
+          "value": 0
+        },
+        {
+          "label": "accessibility",
+          "value": 0
+        }
+      ],
+      "source": "gh api graphql: repository.issues (open: issueType, labels); on a user's repo, labels",
+      "read_at": "2026-11-13T03:31:24.132Z",
+      "unit": "bugs"
+    },
+    "issues.parked_open": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "no type",
+          "value": 0
+        }
+      ],
+      "source": "state: gh api graphql: repository.issues (open: createdAt, issueType), against params.issue_types and params.park_hours",
+      "read_at": "2026-11-13T03:31:24.132Z",
+      "unit": "issues"
+    },
+    "issues.area_labeled": {
+      "value": 72.7,
+      "detail": [
+        {
+          "label": "with an area label",
+          "value": 8,
+          "unit": ""
+        },
+        {
+          "label": "without",
+          "value": 3,
+          "unit": ""
+        }
+      ],
+      "source": "gh api graphql: repository.issues (labels)",
+      "read_at": "2026-11-13T03:31:23.236Z",
+      "unit": "%"
+    },
+    "issues.stray_labels": {
+      "value": 0,
+      "source": "state: gh api repos/SoulCraft-Org/git-crafter/labels (archived_at) and gh api graphql: repository.labels (issues and pullRequests totalCount), against params.bug_label and params.area_labels",
+      "read_at": "2026-11-13T03:31:23.174Z",
+      "unit": "labels"
+    },
+    "issues.intake_ready": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "every issue form parses, with a name, a description and a body",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "every form sets a type: Bug, Task",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "config.yml turns blank issues off",
+          "value": 1,
+          "unit": ""
+        }
+      ],
+      "source": "state: .github/ISSUE_TEMPLATE, each YAML issue form parsed (name, description, body, type) and config.yml (blank_issues_enabled); the type check is against params.issue_types",
+      "read_at": "2026-11-13T03:31:22.679Z",
+      "unit": "%"
+    },
+    "issues.closed_by_pr": {
+      "could_not_check": "no bug closed as completed yet",
+      "source": "gh api graphql: repository.issues, last 20 bugs closed as completed (issueType; on a user's repo, labels; ClosedEvent closer)",
+      "unit": "%"
+    },
+    "issues.reopened": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "reopened at least once",
+          "value": 0,
+          "unit": ""
+        },
+        {
+          "label": "closed issues read",
+          "value": 4,
+          "unit": ""
+        }
+      ],
+      "source": "gh api graphql: repository.issues, last 20 closed as completed (REOPENED_EVENT)",
+      "read_at": "2026-11-13T03:31:23.236Z",
+      "unit": "%"
+    },
+    "issues.latest_close_hours": {
+      "value": 8.3,
+      "detail": [
+        {
+          "label": "#13",
+          "value": 8.3,
+          "unit": "hours"
+        }
+      ],
+      "source": "gh api graphql: repository.issues, the latest closed as completed (createdAt, closedAt)",
+      "read_at": "2026-11-13T03:31:23.236Z",
+      "unit": "hours"
+    },
+    "issues.oldest_open_days": {
+      "value": 0.5,
+      "detail": [
+        {
+          "label": "#8",
+          "value": 0.5
+        }
+      ],
+      "source": "gh api graphql: repository.issues (open)",
+      "read_at": "2026-11-13T03:31:23.236Z",
+      "unit": "days"
+    },
+    "issues.latest_card_words": {
+      "value": 15,
+      "detail": [
+        {
+          "label": "the latest issue #47, opened 2026-11-13",
+          "value": 15,
+          "unit": "words"
+        },
+        {
+          "label": "newer issues with an empty body, passed over",
+          "value": 0,
+          "unit": ""
+        }
+      ],
+      "source": "gh api graphql: of the 20 newest issues (body), the latest with a body; words outside tables, fenced code and diagrams, inline code and HTML comments (proseWords in github.mjs)",
+      "read_at": "2026-11-13T03:31:22.964Z",
+      "unit": "words"
+    },
+    "issues.card_visual_share": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "with a visual",
+          "value": 11,
+          "unit": ""
+        },
+        {
+          "label": "issues read",
+          "value": 11,
+          "unit": ""
+        }
+      ],
+      "source": "gh api graphql: the 20 newest issues (body); the share with a table, a diagram GitHub draws (Mermaid, GeoJSON, TopoJSON, STL) or an image (hasVisual in github.mjs)",
+      "read_at": "2026-11-13T03:31:22.964Z",
+      "unit": "%"
+    },
+    "pull_requests.green_at_head": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "green",
+          "value": 20,
+          "unit": ""
+        },
+        {
+          "label": "red or pending",
+          "value": 0,
+          "unit": ""
+        },
+        {
+          "label": "no checks (left out)",
+          "value": 0,
+          "unit": ""
+        }
+      ],
+      "source": "gh api graphql: last 20 merged pullRequests (head statusCheckRollup: SUCCESS, or each check's latest run passed)",
+      "read_at": "2026-11-13T03:31:25.814Z",
+      "unit": "%"
+    },
+    "pull_requests.reviewed": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "reviewed at the merged head",
+          "value": 20,
+          "unit": ""
+        },
+        {
+          "label": "reviewed another commit, or after merge",
+          "value": 0,
+          "unit": ""
+        },
+        {
+          "label": "not reviewed",
+          "value": 0,
+          "unit": ""
+        }
+      ],
+      "source": "gh api graphql: last 20 merged pullRequests (headRefOid, mergedAt; reviews' commit.oid, submittedAt, author type; members' Review: MERGE|BLOCK at <sha> comments)",
+      "read_at": "2026-11-13T03:31:25.814Z",
+      "unit": "%"
+    },
+    "pull_requests.fixed_after_review": {
+      "value": 15,
+      "detail": [
+        {
+          "label": "fixed after the first review",
+          "value": 3,
+          "unit": ""
+        },
+        {
+          "label": "merged as first reviewed",
+          "value": 17,
+          "unit": ""
+        },
+        {
+          "label": "no review before merge (left out)",
+          "value": 0,
+          "unit": ""
+        }
+      ],
+      "source": "gh api graphql: last 20 merged pullRequests (headRefOid; reviews' commit.oid, submittedAt, author type; members' Review: MERGE|BLOCK at <sha> comments)",
+      "read_at": "2026-11-13T03:31:25.814Z",
+      "unit": "%"
+    },
+    "pull_requests.reverted": {
+      "value": 0,
+      "source": "gh api graphql: last 20 merged pullRequests (title, mergedAt); a revert is titled Revert \"<title>\"",
+      "read_at": "2026-11-13T03:31:25.814Z",
+      "unit": "PRs"
+    },
+    "pull_requests.merged_off_default": {
+      "value": 0,
+      "source": "gh api graphql: last 20 merged pullRequests (baseRefName, baseRepository.defaultBranchRef.name, stack)",
+      "read_at": "2026-11-13T03:31:25.814Z",
+      "unit": "PRs"
+    },
+    "pull_requests.latest_body_words": {
+      "value": 31,
+      "detail": [
+        {
+          "label": "#41",
+          "value": 31,
+          "unit": "words"
+        },
+        {
+          "label": "newer merges with an empty description, passed over",
+          "value": 0,
+          "unit": ""
+        }
+      ],
+      "source": "gh api graphql: of the last 20 merged pullRequests (body), the latest with a description; words outside tables, fenced code and diagrams, inline code and HTML comments (proseWords in github.mjs)",
+      "read_at": "2026-11-13T03:31:25.814Z",
+      "unit": "words"
+    },
+    "pull_requests.body_table_share": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "with a table",
+          "value": 20,
+          "unit": ""
+        },
+        {
+          "label": "merged PRs read",
+          "value": 20,
+          "unit": ""
+        }
+      ],
+      "source": "gh api graphql: last 20 merged pullRequests (body), the share with a markdown table outside fenced code (hasTable in github.mjs)",
+      "read_at": "2026-11-13T03:31:25.814Z",
+      "unit": "%"
+    },
+    "pull_requests.linked_issue_share": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "linking an issue",
+          "value": 20,
+          "unit": ""
+        },
+        {
+          "label": "merged PRs read",
+          "value": 20,
+          "unit": ""
+        }
+      ],
+      "source": "gh api graphql: the body of each of the last 20 merged pullRequests (N = 20, a template choice: enough for a median, few enough that new merges replace them); a closing keyword (close, fix or resolve) or Part of before an issue reference, outside fenced blocks (linksIssue in github.mjs)",
+      "read_at": "2026-11-13T03:31:25.814Z",
+      "unit": "%"
+    },
+    "pull_requests.latest_lines": {
+      "value": 112,
+      "detail": [
+        {
+          "label": "#41",
+          "value": 112,
+          "unit": "lines"
+        },
+        {
+          "label": "lockfile and snapshot lines left out",
+          "value": 8,
+          "unit": "lines"
+        },
+        {
+          "label": "moved lines left out",
+          "value": 0,
+          "unit": "lines"
+        }
+      ],
+      "source": "gh api graphql: the latest merged pullRequest (additions, deletions, files, mergeCommit); git diff of its merge commit for moved lines",
+      "read_at": "2026-11-13T03:31:25.814Z",
+      "unit": "lines"
+    },
+    "pull_requests.over_400_lines": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "over 400 lines",
+          "value": 0,
+          "unit": ""
+        },
+        {
+          "label": "400 lines or fewer",
+          "value": 20,
+          "unit": ""
+        }
+      ],
+      "source": "gh api graphql: last 20 merged pullRequests (additions, deletions, files, mergeCommit); git diff of each merge commit for moved lines",
+      "read_at": "2026-11-13T03:31:25.814Z",
+      "unit": "%"
+    },
+    "pull_requests.latest_merge_hours": {
+      "value": 0.2,
+      "detail": [
+        {
+          "label": "#41, open to merge",
+          "value": 0.2
+        },
+        {
+          "label": "open to all green",
+          "value": 0.2
+        },
+        {
+          "label": "all green to review",
+          "value": 0
+        },
+        {
+          "label": "review to merge",
+          "value": 0
+        }
+      ],
+      "source": "gh api graphql: the latest merged pullRequest (createdAt, mergedAt; head check times; reviews)",
+      "read_at": "2026-11-13T03:31:25.814Z",
+      "unit": "hours"
+    },
+    "pull_requests.green_to_merge_minutes": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "#41",
+          "value": 0,
+          "unit": "minutes"
+        },
+        {
+          "label": "#34",
+          "value": 0,
+          "unit": "minutes"
+        },
+        {
+          "label": "#32",
+          "value": 0,
+          "unit": "minutes"
+        },
+        {
+          "label": "#36",
+          "value": 0,
+          "unit": "minutes"
+        },
+        {
+          "label": "#30",
+          "value": 0,
+          "unit": "minutes"
+        },
+        {
+          "label": "#29",
+          "value": 0,
+          "unit": "minutes"
+        },
+        {
+          "label": "#27",
+          "value": 0,
+          "unit": "minutes"
+        },
+        {
+          "label": "#22",
+          "value": 0,
+          "unit": "minutes"
+        },
+        {
+          "label": "#25",
+          "value": 0,
+          "unit": "minutes"
+        },
+        {
+          "label": "#24",
+          "value": 0,
+          "unit": "minutes"
+        }
+      ],
+      "source": "gh api graphql: the last 10 merged pullRequests (N = 10, a template choice), median of mergedAt minus the last check's completion on the merged head, for each PR whose head rollup is SUCCESS",
+      "read_at": "2026-11-13T03:31:25.814Z",
+      "unit": "minutes"
+    },
+    "pull_requests.open_now": {
+      "value": 4,
+      "detail": [
+        {
+          "label": "under a day",
+          "value": 4
+        },
+        {
+          "label": "1 to 3 days",
+          "value": 0
+        },
+        {
+          "label": "3 to 7 days",
+          "value": 0
+        },
+        {
+          "label": "a week or more",
+          "value": 0
+        }
+      ],
+      "source": "gh api graphql: open pullRequests (createdAt)",
+      "read_at": "2026-11-13T03:31:24.200Z",
+      "unit": "PRs"
+    },
+    "pull_requests.green_waiting_minutes": {
+      "value": 1,
+      "detail": [
+        {
+          "label": "#43, awaiting review",
+          "value": 1,
+          "unit": "minutes"
+        },
+        {
+          "label": "#44, awaiting review",
+          "value": 0.7,
+          "unit": "minutes"
+        },
+        {
+          "label": "#45, awaiting review",
+          "value": 0.4,
+          "unit": "minutes"
+        },
+        {
+          "label": "with a pending review request",
+          "value": 0,
+          "unit": "PRs"
+        }
+      ],
+      "source": "gh api graphql: open pullRequests (isDraft, author; head statusCheckRollup and check times; reviews, reviewDecision, reviewRequests; members' Review: MERGE|BLOCK at <sha> comments)",
+      "read_at": "2026-11-13T03:31:24.200Z",
+      "unit": "minutes"
+    },
+    "pull_requests.conflicting": {
+      "value": 0,
+      "source": "gh api graphql: open pullRequests (mergeable), read again after 5 s while GitHub is still computing it",
+      "read_at": "2026-11-13T03:31:24.200Z",
+      "unit": "PRs"
+    },
+    "pull_requests.oldest_open_days": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "#40",
+          "value": 0
+        },
+        {
+          "label": "#43",
+          "value": 0
+        },
+        {
+          "label": "#44",
+          "value": 0
+        },
+        {
+          "label": "#45",
+          "value": 0
+        }
+      ],
+      "source": "gh api graphql: open pullRequests (createdAt)",
+      "read_at": "2026-11-13T03:31:24.201Z",
+      "unit": "days"
+    },
+    "pull_requests.dependabot_open": {
+      "value": 0,
+      "detail": [],
+      "source": "gh api graphql: open pullRequests (author dependabot, labels)",
+      "read_at": "2026-11-13T03:31:24.201Z",
+      "unit": "PRs"
+    },
+    "actions.pinned_share": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "ci-overflow.yml",
+          "value": 100
+        },
+        {
+          "label": "ci-standard.yml",
+          "value": 100
+        },
+        {
+          "label": "claude-review.yml",
+          "value": 100
+        },
+        {
+          "label": "cloud-test.yml",
+          "value": 100
+        },
+        {
+          "label": "guard-parity.yml",
+          "value": 100
+        },
+        {
+          "label": "pages.yml",
+          "value": 100
+        },
+        {
+          "label": "pr-body.yml",
+          "value": 100
+        },
+        {
+          "label": "public-export.yml",
+          "value": 100
+        },
+        {
+          "label": "push-ruleset-proof.yml",
+          "value": 100
+        },
+        {
+          "label": "secret-scan.yml",
+          "value": 100
+        }
+      ],
+      "source": ".github/workflows/*.yml (jobs.*.uses and jobs.*.steps[].uses, parsed as YAML) and the uses: lines .github/workflows/actions.lock records for each",
+      "read_at": "2026-11-13T03:31:22.682Z",
+      "unit": "%"
+    },
+    "actions.permissions_share": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "branch-cleanup.yml",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "ci-overflow.yml",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "ci-standard.yml",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "claude-review.yml",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "cloud-test.yml",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "guard-parity.yml",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "pages.yml",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "pr-body.yml",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "public-export.yml",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "push-ruleset-proof.yml",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "secret-scan.yml",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "verify.yml",
+          "value": 1,
+          "unit": ""
+        }
+      ],
+      "source": ".github/workflows/*.yml (permissions: blocks)",
+      "read_at": "2026-11-13T03:31:22.682Z",
+      "unit": "%"
+    },
+    "actions.locked_share": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "ci-overflow.yml",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "ci-standard.yml",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "claude-review.yml",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "cloud-test.yml",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "guard-parity.yml",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "pages.yml",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "pr-body.yml",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "public-export.yml",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "push-ruleset-proof.yml",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "secret-scan.yml",
+          "value": 1,
+          "unit": ""
+        }
+      ],
+      "source": ".github/workflows/actions.lock (workflows) against each .github/workflows/*.yml that calls an outside action in a step",
+      "read_at": "2026-11-13T03:31:22.682Z",
+      "unit": "%"
+    },
+    "projects.cards_by_column": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "Later",
+          "value": 0
+        },
+        {
+          "label": "Waiting on data",
+          "value": 0
+        },
+        {
+          "label": "Todo",
+          "value": 21
+        },
+        {
+          "label": "In Progress",
+          "value": 0
+        },
+        {
+          "label": "Done",
+          "value": 0
+        },
+        {
+          "label": "In Progress, no open pull request",
+          "value": 0
+        }
+      ],
+      "source": "gh api graphql: repositoryOwner.projectsV2 \"Git Crafter\" items (Status, linked pull requests and their state)",
+      "read_at": "2026-11-13T03:31:25.024Z",
+      "unit": "cards"
+    },
+    "projects.done_with_pr": {
+      "could_not_check": "no Done cards yet",
+      "source": "gh api graphql: repositoryOwner.projectsV2 \"Git Crafter\" done items (linked pull requests)",
+      "unit": "%"
+    },
+    "projects.workflows_on": {
+      "could_not_check": "gh api failed: You do not have permission to access workflows",
+      "source": "gh api graphql: repositoryOwner.projectsV2 \"Git Crafter\" workflows (enabled), against params.project_workflows",
+      "unit": "%"
+    },
+    "projects.cards_at_a_glance": {
+      "value": 66.7,
+      "detail": [
+        {
+          "label": "with a picture",
+          "value": 14,
+          "unit": ""
+        },
+        {
+          "label": "within 75 words",
+          "value": 21,
+          "unit": ""
+        },
+        {
+          "label": "open cards",
+          "value": 21,
+          "unit": ""
+        }
+      ],
+      "source": "gh api graphql: repositoryOwner.projectsV2 \"Git Crafter\" open draft and issue cards (body): a picture (hasPicture) and at most params.card_words words of prose (proseWords)",
+      "read_at": "2026-11-13T03:31:25.025Z",
+      "unit": "%"
+    },
+    "projects.bug_cards": {
+      "value": 0,
+      "source": "gh api graphql: repositoryOwner.projectsV2 \"Git Crafter\" open issue cards (labels, issueType), against params.bug_label and params.issue_types",
+      "read_at": "2026-11-13T03:31:25.025Z",
+      "unit": "cards"
+    },
+    "projects.closed_not_done": {
+      "value": 0,
+      "source": "gh api graphql: repositoryOwner.projectsV2 \"Git Crafter\" issue cards (issue state, Status)",
+      "read_at": "2026-11-13T03:31:25.025Z",
+      "unit": "cards"
+    },
+    "projects.oldest_doing_days": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "cards in progress",
+          "value": 0,
+          "unit": ""
+        }
+      ],
+      "source": "gh api graphql: repositoryOwner.projectsV2 \"Git Crafter\" items in the in-progress column (Status updatedAt)",
+      "read_at": "2026-11-13T03:31:25.025Z",
+      "unit": "days"
+    },
+    "projects.latest_cycle_hours": {
+      "could_not_check": "no Done card with a linked PR yet",
+      "source": "gh api graphql: repositoryOwner.projectsV2 \"Git Crafter\" the latest done item with a linked PR (Status updatedAt, linked PR createdAt)",
+      "unit": "hours"
+    },
+    "security.policy_on": {
+      "value": 1,
+      "source": "gh api graphql: repository.isSecurityPolicyEnabled (a SECURITY.md in the repo, or the organization's)",
+      "read_at": "2026-11-13T03:31:23.028Z",
+      "unit": "on/off"
+    },
+    "security.dependabot_alerts_on": {
+      "value": 1,
+      "source": "gh api graphql: repository.hasVulnerabilityAlertsEnabled",
+      "read_at": "2026-11-13T03:31:23.212Z",
+      "unit": "on/off"
+    },
+    "security.code_scanning_on": {
+      "value": 1,
+      "source": "gh api repos/SoulCraft-Org/git-crafter/code-scanning/default-setup (state) and code-scanning/analyses",
+      "read_at": "2026-11-13T03:31:23.005Z",
+      "unit": "on/off"
+    },
+    "security.secret_scanning_on": {
+      "value": 1,
+      "detail": [
+        {
+          "label": "secret scanning",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "push protection",
+          "value": 1,
+          "unit": ""
+        }
+      ],
+      "source": "gh api repos/SoulCraft-Org/git-crafter (security_and_analysis: secret_scanning and secret_scanning_push_protection)",
+      "read_at": "2026-11-13T03:31:23.154Z",
+      "unit": "on/off"
+    },
+    "security.dependabot_open": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "critical",
+          "value": 0
+        },
+        {
+          "label": "high",
+          "value": 0
+        },
+        {
+          "label": "medium",
+          "value": 0
+        },
+        {
+          "label": "low",
+          "value": 0
+        }
+      ],
+      "source": "gh api repos/SoulCraft-Org/git-crafter/dependabot/alerts --paginate (open alerts that are vulnerabilities, by security_advisory.severity; malware left out)",
+      "read_at": "2026-11-13T03:31:23.417Z",
+      "unit": "alerts"
+    },
+    "security.malware_open": {
+      "value": 0,
+      "source": "gh api repos/SoulCraft-Org/git-crafter/dependabot/alerts --paginate (open alerts whose security_advisory.classification is malware)",
+      "read_at": "2026-11-13T03:31:23.417Z",
+      "unit": "alerts"
+    },
+    "security.code_scanning_open": {
+      "value": 17,
+      "detail": [
+        {
+          "label": "critical",
+          "value": 0
+        },
+        {
+          "label": "high",
+          "value": 15
+        },
+        {
+          "label": "medium",
+          "value": 2
+        },
+        {
+          "label": "low",
+          "value": 0
+        }
+      ],
+      "source": "gh api repos/SoulCraft-Org/git-crafter/code-scanning/alerts --paginate (open alerts, by rule.security_severity_level or rule.severity)",
+      "read_at": "2026-11-13T03:31:24.218Z",
+      "unit": "alerts"
+    },
+    "security.secret_scanning_open": {
+      "value": 0,
+      "detail": [],
+      "source": "gh api repos/SoulCraft-Org/git-crafter/secret-scanning/alerts --paginate (open alerts, by secret_type_display_name)",
+      "read_at": "2026-11-13T03:31:24.547Z",
+      "unit": "alerts"
+    },
+    "security.token_default_read": {
+      "value": 1,
+      "detail": [
+        {
+          "label": "GITHUB_TOKEN reads only, by default",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "Actions may approve pull requests",
+          "value": 0,
+          "unit": ""
+        }
+      ],
+      "source": "gh api repos/SoulCraft-Org/git-crafter/actions/permissions/workflow (default_workflow_permissions, can_approve_pull_request_reviews)",
+      "read_at": "2026-11-13T03:31:23.298Z",
+      "unit": "on/off"
+    },
+    "security.actions_policy_share": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "Only selected actions may run",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "Actions must be pinned to a full commit SHA",
+          "value": 1,
+          "unit": ""
+        }
+      ],
+      "source": "gh api repos/SoulCraft-Org/git-crafter/actions/permissions (allowed_actions, sha_pinning_required)",
+      "read_at": "2026-11-13T03:31:23.368Z",
+      "unit": "%"
+    },
+    "security.prt_head_checkouts": {
+      "value": 0,
+      "source": ".github/workflows/*.yml: jobs of a pull_request_target or workflow_run workflow that check out the pull request's code: an actions/checkout of its head ref or repo, gh pr checkout, or a git fetch or checkout of refs/pull/*",
+      "read_at": "2026-11-13T03:31:22.682Z",
+      "unit": "jobs"
+    },
+    "security.dependabot_cooldown": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "github-actions /",
+          "value": 14,
+          "unit": "days"
+        },
+        {
+          "label": "npm /",
+          "value": 14,
+          "unit": "days"
+        }
+      ],
+      "source": ".github/dependabot.yml: updates[].cooldown, the shortest of default-days and semver-*-days, against params.cooldown_days",
+      "read_at": "2026-11-13T03:31:22.680Z",
+      "unit": "%"
+    },
+    "security.lockfile_registry_share": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "from an allowed registry",
+          "value": 66,
+          "unit": ""
+        }
+      ],
+      "source": "package-lock.json at the root: each package's resolved URL against params.registries, parsed: https, the registry's host, under its path",
+      "read_at": "2026-11-13T03:31:22.680Z",
+      "unit": "%"
+    },
+    "security.young_lockfile_packages": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "entries added within the cooldown",
+          "value": 66,
+          "unit": ""
+        },
+        {
+          "label": "downloads asked for Last-Modified (no body)",
+          "value": 66,
+          "unit": ""
+        },
+        {
+          "label": "full documents fetched to confirm",
+          "value": 0,
+          "unit": ""
+        }
+      ],
+      "source": "package-lock.json at the root against itself params.cooldown_days ago (git); for each entry added since on an allowed registry, a HEAD of its download for Last-Modified, then the registry's full document only where that is recent; no redirects, at most params.max_registry_reads requests",
+      "read_at": "2026-11-13T03:31:23.374Z",
+      "unit": "packages"
+    },
+    "security.threat_model_current": {
+      "value": 1,
+      "detail": [
+        {
+          "label": "THREAT-MODEL.md, tools/THREAT-MODEL.md 2026-11-12; the covered code 2026-11-13",
+          "value": 0.5,
+          "unit": "days behind"
+        }
+      ],
+      "source": "git log at the root: the latest commit to any params.threat_model file against the latest to params.threat_model_covers",
+      "read_at": "2026-11-13T03:31:22.680Z",
+      "unit": "on/off"
+    },
+    "security.claude_deny_coverage": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "./.env",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "./.env.*",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "./secrets/**",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "./**/*.pem",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "./**/*.key",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "~/.ssh/**",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "~/.aws/**",
+          "value": 1,
+          "unit": ""
+        }
+      ],
+      "source": ".claude/settings.json: permissions.deny Read(...) rules against params.credential_patterns",
+      "read_at": "2026-11-13T03:31:22.680Z",
+      "unit": "%"
+    },
+    "security.oldest_open_alert_days": {
+      "value": 0.5,
+      "detail": [
+        {
+          "label": "oldest: code scanning",
+          "value": 0.5,
+          "unit": "days"
+        },
+        {
+          "label": "open alerts read",
+          "value": 85,
+          "unit": ""
+        }
+      ],
+      "source": "gh api dependabot/alerts, and code-scanning/alerts and secret-scanning/alerts while those features are on, and code-quality/findings unless it answers that code quality is off: the oldest open one's age at read time",
+      "read_at": "2026-11-13T03:31:24.946Z",
+      "unit": "days"
+    },
+    "security.features_dollars_per_month": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "Code Security: 0 active committers",
+          "value": 0
+        },
+        {
+          "label": "Secret Protection: 0 active committers",
+          "value": 0
+        }
+      ],
+      "source": "gh api orgs/{owner}/settings/billing/advanced-security (active committers billed, per product) times the list price: Code Security $30, Secret Protection $19 per active committer a month (github.com/security/plans, read 2026-11-03)",
+      "read_at": "2026-11-13T03:31:24.944Z",
+      "unit": "dollars"
+    },
+    "settings.main_protected": {
+      "value": 1,
+      "detail": [
+        {
+          "label": "requires a pull request",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "blocks force pushes",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "blocks deletion",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "ruleset rules on the default branch",
+          "value": 5,
+          "unit": ""
+        }
+      ],
+      "source": "gh api repos/SoulCraft-Org/git-crafter/branches/{branch}/protection and repos/SoulCraft-Org/git-crafter/rules/branches/{branch}, {branch} the default branch: a pull request required, force pushes blocked, deletion blocked",
+      "read_at": "2026-11-13T03:31:24.802Z",
+      "unit": "on/off"
+    },
+    "settings.required_checks": {
+      "value": 1,
+      "detail": [
+        {
+          "label": "ci / ci-ok",
+          "value": 1,
+          "unit": ""
+        }
+      ],
+      "source": "gh api repos/SoulCraft-Org/git-crafter/branches/{branch}/protection and repos/SoulCraft-Org/git-crafter/rules/branches/{branch} (required_status_checks), {branch} the default branch",
+      "read_at": "2026-11-13T03:31:24.802Z",
+      "unit": "checks"
+    },
+    "settings.dependabot_security_updates": {
+      "value": 1,
+      "source": "gh api repos/SoulCraft-Org/git-crafter (security_and_analysis.dependabot_security_updates)",
+      "read_at": "2026-11-13T03:31:23.154Z",
+      "unit": "on/off"
+    },
+    "settings.pages_private": {
+      "could_not_check": "a public repo publishes a public Pages site: private Pages needs a private repo on GitHub Enterprise Cloud",
+      "source": "gh api repos/SoulCraft-Org/git-crafter/pages (public); repos/SoulCraft-Org/git-crafter (private, owner type) and orgs/{owner} (plan), as only GitHub Enterprise Cloud publishes private Pages",
+      "unit": "on/off"
+    },
+    "settings.dependabot_grouping": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "github-actions",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "npm",
+          "value": 1,
+          "unit": ""
+        }
+      ],
+      "source": ".github/dependabot.yml (updates[].groups)",
+      "read_at": "2026-11-13T03:31:22.680Z",
+      "unit": "%"
+    },
+    "insights.community_health_pct": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "Description",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "README",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "License",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "Contributing guide",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "Code of conduct",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "Pull request template",
+          "value": 1,
+          "unit": ""
+        }
+      ],
+      "source": "state: gh api repos/SoulCraft-Org/git-crafter/community/profile, GitHub's health percentage and the files it found",
+      "read_at": "2026-11-13T03:31:24.218Z",
+      "unit": "%"
+    },
+    "insights.oldest_leftover_hours": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "leftover branches",
+          "value": 0,
+          "unit": ""
+        }
+      ],
+      "source": "state: GraphQL refs under refs/heads (the first 1000) with their pull requests: a branch whose pull request closed or merged, or one older than params.branch_grace_hours with none; the default branch, open pull requests and params.keep_branches do not count; each timed from its pull request's close, or from its last commit",
+      "read_at": "2026-11-13T03:31:24.156Z",
+      "unit": "hours"
+    },
+    "instructions.protected_clauses_missing": {
+      "could_not_check": "the files Claude loads live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "the instructions collector",
+      "unit": "clauses"
+    },
+    "instructions.unused": {
+      "could_not_check": "the files Claude loads live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "the instructions collector",
+      "unit": "items"
+    },
+    "instructions.lines_before_action": {
+      "could_not_check": "the files Claude loads live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "the instructions collector",
+      "unit": "lines"
+    },
+    "claude.instruction_tokens": {
+      "could_not_check": "the files Claude loads live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "the instructions collector",
+      "unit": "tokens"
+    },
+    "instructions.memory_index_tokens": {
+      "could_not_check": "the files Claude loads live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "the instructions collector",
+      "unit": "tokens"
+    },
+    "instructions.description_tokens": {
+      "could_not_check": "the files Claude loads live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "the instructions collector",
+      "unit": "tokens"
+    },
+    "lead_time.hours": {
+      "could_not_check": "not scored: session start to PR open not read (transcripts live on the machine that ran the sessions; refreshed by a --local collect there); the 3 steps read add up to 0.3 h",
+      "detail": [
+        {
+          "label": "PR open to all green",
+          "value": 0.21,
+          "unit": "h",
+          "part": 2
+        },
+        {
+          "label": "all green to merge",
+          "value": 0.05,
+          "unit": "h",
+          "part": 3
+        },
+        {
+          "label": "merge to live",
+          "value": 0.04,
+          "unit": "h",
+          "part": 4
+        }
+      ],
+      "missing": [
+        {
+          "label": "session start to PR open",
+          "reason": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there"
+        }
+      ],
+      "source": "gh api graphql: the last 10 merged pullRequests timed end to end (N = 10, a template choice: a median that turns over within a day), each step's median in hours, summed; live is the first successful github-pages deployment created at or after the merge; session start from this Mac's transcripts, local runs only; 10 PRs",
+      "read_at": "2026-11-13T03:31:21.010Z",
+      "unit": "h"
+    },
+    "settings.protections_missing": {
+      "could_not_check": "a ruleset's bypass list is hidden from this token: needs an admin token; refreshed by a --local collect run",
+      "source": "state: gh api repos/SoulCraft-Org/git-crafter/rulesets and each active one (bypass_actors, tag rules deletion and update, push rule file_path_restriction against params.blocked_paths), branches/the default branch/protection (enforce_admins), tags (the first listed), environments (deployment_branch_policy); a row with nothing to guard is left out",
+      "unit": "missing"
+    },
+    "settings.general_drift": {
+      "could_not_check": "gh api repos answered without allow_squash_merge: needs an admin token; refreshed by a --local collect run",
+      "source": "state: gh api repos/SoulCraft-Org/git-crafter, each field named in params.expected against its value there",
+      "unit": "settings"
+    },
+    "settings.outside_access": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "outside collaborators",
+          "value": 0,
+          "unit": ""
+        },
+        {
+          "label": "pending invitations",
+          "value": 0,
+          "unit": ""
+        }
+      ],
+      "source": "state: gh api repos/SoulCraft-Org/git-crafter/collaborators?affiliation=outside and repos/SoulCraft-Org/git-crafter/invitations, counted",
+      "read_at": "2026-11-13T03:31:24.657Z",
+      "unit": "people"
+    },
+    "settings.unused_secrets": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "secrets stored",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "read by a workflow",
+          "value": 1,
+          "unit": ""
+        }
+      ],
+      "source": "state: gh api repos/SoulCraft-Org/git-crafter/actions/secrets and each environment's secrets (names only), against secrets.NAME in .github/workflows/*.yml of the checkout",
+      "read_at": "2026-11-13T03:31:24.651Z",
+      "unit": "secrets"
+    },
+    "settings.person_waits": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "rules requiring an approval",
+          "value": 0,
+          "unit": ""
+        },
+        {
+          "label": "rules requiring a code owner's review",
+          "value": 0,
+          "unit": ""
+        },
+        {
+          "label": "rules requiring approval of the last push",
+          "value": 0,
+          "unit": ""
+        },
+        {
+          "label": "rules naming required reviewers",
+          "value": 0,
+          "unit": ""
+        },
+        {
+          "label": "environments with required reviewers",
+          "value": 0,
+          "unit": ""
+        },
+        {
+          "label": "environments with a wait timer",
+          "value": 0,
+          "unit": ""
+        }
+      ],
+      "source": "state: pull_request rules of the active rulesets on the default branch and of branches/the default branch/protection (approvals, code owner review, last-push approval, required reviewers), and each environment's protection_rules (required_reviewers, wait_timer)",
+      "read_at": "2026-11-13T03:31:25.231Z",
+      "unit": "rules"
+    },
+    "settings.metered_on": {
+      "could_not_check": "a public repo is not billed for Actions cache or a Copilot review, so nothing here can bill it",
+      "source": "state: gh api repos/SoulCraft-Org/git-crafter/actions/cache/storage-limit (max_cache_size_gb against params.included_cache_gb) and the active rulesets' copilot_code_review rules; not measured for a public repo",
+      "unit": "settings"
+    },
+    "settings.open_repo_missing": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "Every outside contributor's run waits for approval",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "Private vulnerability reporting is on",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "Secret scanning push protection is on",
+          "value": 1,
+          "unit": ""
+        },
+        {
+          "label": "Discussions are on, for ideas before issues",
+          "value": 1,
+          "unit": ""
+        }
+      ],
+      "source": "state: gh api repos/SoulCraft-Org/git-crafter (has_discussions, security_and_analysis.secret_scanning_push_protection), repos/SoulCraft-Org/git-crafter/actions/permissions/fork-pr-contributor-approval (approval_policy) and repos/SoulCraft-Org/git-crafter/private-vulnerability-reporting (enabled); not measured for a private repo",
+      "read_at": "2026-11-13T03:31:24.949Z",
+      "unit": "settings"
+    },
+    "settings.admin_read_age_hours": {
+      "could_not_check": "no signed-in run is recorded yet: run collect.mjs --local",
+      "source": "state: generated_at of local.json in the repo's data folder, the last collect.mjs --local run, against the time of this run",
+      "unit": "hours"
+    },
+    "simplicity.restated_rules": {
+      "could_not_check": "rules and memory live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "quality/collectors/simplicity/simplicity.mjs",
+      "unit": "sentences"
+    },
+    "simplicity.broken_refs": {
+      "could_not_check": "rules and memory live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "quality/collectors/simplicity/simplicity.mjs",
+      "unit": "references"
+    },
+    "simplicity.copy_drift": {
+      "could_not_check": "rules and memory live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "quality/collectors/simplicity/simplicity.mjs",
+      "unit": "copies"
+    },
+    "simplicity.undated_figures": {
+      "could_not_check": "rules and memory live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "quality/collectors/simplicity/simplicity.mjs",
+      "unit": "figures"
+    },
+    "simplicity.memory_stale_refs": {
+      "could_not_check": "rules and memory live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "quality/collectors/simplicity/simplicity.mjs",
+      "unit": "notes"
+    },
+    "tests.main_pass_rate": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "Passed",
+          "value": 19,
+          "unit": "runs"
+        },
+        {
+          "label": "Failed",
+          "value": 0,
+          "unit": "runs"
+        },
+        {
+          "label": "Cancelled, left out",
+          "value": 0,
+          "unit": "runs"
+        },
+        {
+          "label": "No site change, test job skipped, left out",
+          "value": 0,
+          "unit": "runs"
+        }
+      ],
+      "source": "last N runs: gh api runs of each workflow in params.workflows (newest 100 runs a workflow), with GraphQL check runs: the last 20 runs on main of each workflow that runs there; a run counts when a test job ran, and cancelled runs and runs that skipped every test job are left out. N is 20 (ci.mjs's LAST_RUNS): enough to turn over within hours where the test workflows run many times a day",
+      "read_at": "2026-11-13T03:31:29.631Z",
+      "unit": "%"
+    },
+    "tests.skipped": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "Not counted, on a condition: skipIf, runIf or a skip at run time",
+          "value": 9,
+          "unit": ""
+        }
+      ],
+      "source": "state: git ls-files in params.suites; skip, todo and fixme markers in code lines, a marked block by its cases. skipIf, runIf and run-time skips are read from code, not CI, and shown apart",
+      "read_at": "2026-11-13T03:31:24.341Z",
+      "unit": "tests"
+    },
+    "tests.site_tests_p50": {
+      "value": 1.6,
+      "detail": [
+        {
+          "label": "Pull requests",
+          "value": 1.6
+        },
+        {
+          "label": "Pushes to main",
+          "value": 1.6
+        }
+      ],
+      "source": "last N passing jobs: gh api runs of the suite workflow in params.workflows (newest 100 runs a workflow), with GraphQL check runs: the last 20 passing test jobs. N is 20 (ci.mjs's LAST_RUNS): enough to turn over within hours where the test workflows run many times a day",
+      "read_at": "2026-11-13T03:31:29.631Z",
+      "unit": "minutes"
+    },
+    "tests.ci_minutes_latest_main": {
+      "value": 3,
+      "detail": [
+        {
+          "label": "ci / short, run 43308171948",
+          "value": 3
+        }
+      ],
+      "source": "latest: the latest completed run of each workflow in params.workflows whose test jobs ran, on main where the workflow runs there, else its latest pull request run (newest 100 runs a workflow); GitHub bills each job by the whole minute",
+      "read_at": "2026-11-13T03:31:29.631Z",
+      "unit": "minutes"
+    },
+    "tokens.latest_pr_rework_tokens": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*/**/*.jsonl",
+      "unit": "tokens"
+    },
+    "tokens.waste_share": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*/**/*.jsonl",
+      "unit": "%"
+    },
+    "tokens.plan_used": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*/**/*.jsonl",
+      "unit": "%"
+    },
+    "tokens.latest_subagent_return_tokens": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*/**/*.jsonl",
+      "unit": "tokens"
+    },
+    "tokens.review_fix_rounds_per_pr": {
+      "could_not_check": "transcripts live on the machine that ran the sessions; refreshed by a --local collect there",
+      "source": "~/.claude/projects/*/**/*.jsonl",
+      "unit": "rounds"
+    },
+    "tools.deps_latest_share": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "axe-core",
+          "installed": "4.14.0",
+          "eligible": "4.14.0",
+          "newest": "4.14.0",
+          "released": "2026-10-05",
+          "majors_behind": 0,
+          "waiting_days": null,
+          "status": "current",
+          "value": 0,
+          "where": "."
+        },
+        {
+          "label": "knip",
+          "installed": "6.44.0",
+          "eligible": "6.44.0",
+          "newest": "6.45.1",
+          "released": "2026-10-29",
+          "majors_behind": 0,
+          "waiting_days": null,
+          "status": "current",
+          "value": 0,
+          "where": "."
+        },
+        {
+          "label": "playwright-core",
+          "installed": "1.64.1",
+          "eligible": "1.64.1",
+          "newest": "1.65.0",
+          "released": "2026-10-14",
+          "majors_behind": 0,
+          "waiting_days": null,
+          "status": "current",
+          "value": 0,
+          "where": "."
+        },
+        {
+          "label": "typescript",
+          "installed": "6.0.3",
+          "eligible": "6.0.3",
+          "newest": "6.0.3",
+          "released": "2026-04-16",
+          "majors_behind": 0,
+          "waiting_days": null,
+          "status": "current",
+          "value": 0,
+          "where": ".",
+          "held": "major 7 held by a Dependabot ignore"
+        },
+        {
+          "label": "yaml",
+          "installed": "2.9.1",
+          "eligible": "2.9.1",
+          "newest": "2.9.1",
+          "released": "2026-09-11",
+          "majors_behind": 0,
+          "waiting_days": null,
+          "status": "current",
+          "value": 0,
+          "where": "."
+        }
+      ],
+      "source": "package.json (root and workspaces) and package-lock.json against npm view <name> time --json; eligible is the newest stable release at least 14 days old (params.release_age_days); 5 of 5 direct dependencies read",
+      "read_at": "2026-11-13T03:31:25.238Z",
+      "unit": "%"
+    },
+    "tools.majors_behind": {
+      "value": 0,
+      "detail": [],
+      "source": "package.json (root and workspaces) and package-lock.json against npm view <name> time --json; eligible is the newest stable release at least 14 days old (params.release_age_days); direct dependencies whose eligible release is a newer major, less a major held by a Dependabot ignore (typescript)",
+      "read_at": "2026-11-13T03:31:25.238Z",
+      "unit": "dependencies"
+    },
+    "tools.actions_latest_share": {
+      "value": 88.9,
+      "detail": [
+        {
+          "label": "actions/upload-artifact",
+          "value": 1,
+          "unit": "",
+          "pinned": "cf430e030ddb",
+          "eligible": "v7.0.2 (cf430e030ddb, 2026-10-07)",
+          "status": "current",
+          "files": "ci-overflow.yml, pages.yml, pages.yml, pages.yml, pages.yml, pages.yml"
+        },
+        {
+          "label": "actions/checkout",
+          "value": 1,
+          "unit": "",
+          "pinned": "3d3c42e5aac5",
+          "eligible": "v7.0.1 (3d3c42e5aac5, 2026-07-20)",
+          "status": "current",
+          "files": "ci-standard.yml, ci-standard.yml, claude-review.yml, cloud-test.yml, guard-parity.yml, pages.yml, pages.yml, pages.yml, pages.yml, pages.yml, pages.yml, pages.yml, pages.yml, pages.yml, pr-body.yml, public-export.yml, push-ruleset-proof.yml, secret-scan.yml"
+        },
+        {
+          "label": "actions/setup-node",
+          "value": 1,
+          "unit": "",
+          "pinned": "949feb2413d6",
+          "eligible": "v7.1.0 (949feb2413d6, 2026-10-08)",
+          "status": "current",
+          "files": "ci-standard.yml, cloud-test.yml, pages.yml, pages.yml, pages.yml, pages.yml, pages.yml, pages.yml, pages.yml, public-export.yml"
+        },
+        {
+          "label": "actions/setup-python",
+          "value": 1,
+          "unit": "",
+          "pinned": "6d4fd22b2046",
+          "eligible": "v7.1.0 (6d4fd22b2046, 2026-10-22)",
+          "status": "current",
+          "files": "ci-standard.yml"
+        },
+        {
+          "label": "anthropics/claude-code-action",
+          "value": 0,
+          "unit": "",
+          "pinned": "d70510b174a1",
+          "eligible": "v1.0.265 (6d5ae526d25c, 2026-10-30)",
+          "status": "behind",
+          "files": "claude-review.yml"
+        },
+        {
+          "label": "actions/create-github-app-token",
+          "value": 1,
+          "unit": "",
+          "pinned": "64ab729a6294",
+          "eligible": "v3.3.0 (64ab729a6294, 2026-10-12)",
+          "status": "current",
+          "files": "pages.yml, pages.yml"
+        },
+        {
+          "label": "actions/upload-pages-artifact",
+          "value": 1,
+          "unit": "",
+          "pinned": "fc324d354710",
+          "eligible": "v5.0.0 (fc324d354710, 2026-04-10)",
+          "status": "current",
+          "files": "pages.yml"
+        },
+        {
+          "label": "actions/deploy-pages",
+          "value": 1,
+          "unit": "",
+          "pinned": "368f82528645",
+          "eligible": "v5.0.1 (368f82528645, 2026-09-01)",
+          "status": "current",
+          "files": "pages.yml"
+        },
+        {
+          "label": "actions/download-artifact",
+          "value": 1,
+          "unit": "",
+          "pinned": "9000827ccba6",
+          "eligible": "v8.0.2 (9000827ccba6, 2026-10-07)",
+          "status": "current",
+          "files": "pages.yml"
+        }
+      ],
+      "source": "uses: pins in .github/workflows against gh api repos/<owner>/<repo>/releases (the newest stable release at least 14 days old (params.release_age_days)) and the release tag's commit; actions owned by SoulCraft-Org (params.own_action_owners, default the repo's owner) are left out, as they have no releases; 9 of 9 read",
+      "read_at": "2026-11-13T03:31:25.238Z",
+      "unit": "%"
+    },
+    "tools.adopters_latest_share": {
+      "could_not_check": "no version tag of SoulCraft-Org/git-crafter is 7 days old yet; the first, v4.0.0, is younger",
+      "source": "each repo in params.adopters: its .github/workflows uses: pins of SoulCraft-Org/git-crafter (gh api contents) against this repo's newest tag at least 7 days old (params.adopter_cooldown_days, default 7: one weekly Dependabot run), aged by its commit's date (gh api tags and git/commits)",
+      "unit": "%"
+    },
+    "tools.node_lts": {
+      "value": 1,
+      "detail": [
+        {
+          "label": "cloud-test.yml:49: .nvmrc 26",
+          "value": 26,
+          "unit": ""
+        },
+        {
+          "label": "pages.yml:182: .nvmrc 26",
+          "value": 26,
+          "unit": ""
+        },
+        {
+          "label": "pages.yml:222: .nvmrc 26",
+          "value": 26,
+          "unit": ""
+        },
+        {
+          "label": "pages.yml:255: .nvmrc 26",
+          "value": 26,
+          "unit": ""
+        },
+        {
+          "label": "pages.yml:289: .nvmrc 26",
+          "value": 26,
+          "unit": ""
+        },
+        {
+          "label": "pages.yml:344: .nvmrc 26",
+          "value": 26,
+          "unit": ""
+        },
+        {
+          "label": "pages.yml:392: .nvmrc 26",
+          "value": 26,
+          "unit": ""
+        },
+        {
+          "label": "pages.yml:555: .nvmrc 26",
+          "value": 26,
+          "unit": ""
+        },
+        {
+          "label": "public-export.yml:87: .nvmrc 26",
+          "value": 26,
+          "unit": ""
+        },
+        {
+          "label": "Current LTS line",
+          "value": 26,
+          "unit": ""
+        }
+      ],
+      "source": "each actions/setup-node step's node-version or node-version-file in .github/workflows (9) against https://nodejs.org/dist/index.json, the newest line with an LTS codename",
+      "read_at": "2026-11-13T03:31:25.238Z",
+      "unit": ""
+    },
+    "tools.oldest_update_wait_days": {
+      "value": 0,
+      "detail": [],
+      "source": "package.json (root and workspaces) and package-lock.json against npm view <name> time --json; eligible is the newest stable release at least 14 days old (params.release_age_days); days since the first update past each installed version cleared the 14-day rule, the longest; 0 when none waits",
+      "read_at": "2026-11-13T03:31:25.238Z",
+      "unit": "days"
+    },
+    "tools.open_dependency_prs": {
+      "value": 0,
+      "detail": [],
+      "source": "gh pr list -R SoulCraft-Org/git-crafter --label dependencies (params.dependency_label; Dependabot's default label) --state open",
+      "read_at": "2026-11-13T03:31:25.238Z",
+      "unit": "PRs"
+    },
+    "tools.oldest_dependency_pr_days": {
+      "value": 0,
+      "detail": [],
+      "source": "gh pr list -R SoulCraft-Org/git-crafter --label dependencies (params.dependency_label; Dependabot's default label) --state open; days since the oldest opened, 0 when none is open",
+      "read_at": "2026-11-13T03:31:25.238Z",
+      "unit": "days"
+    },
+    "tools.latest_dependency_pr_ci_minutes": {
+      "could_not_check": "no merged PR labeled dependencies yet",
+      "source": "the last 10 merged PRs labeled dependencies: gh api actions/runs?head_sha=<PR head>&event=pull_request and runs/{id}/jobs, each job rounded up to the whole minute as GitHub bills it (docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions); N = 10 (params.last_n)",
+      "unit": "min"
+    },
+    "tools.npm_ci_seconds": {
+      "value": 4,
+      "detail": [
+        {
+          "label": "ci / short",
+          "value": 4,
+          "unit": "s"
+        }
+      ],
+      "source": "latest: the newest successful push run of any workflow on main with an install step (npm ci, pnpm install or yarn install), the slowest such step (gh api actions/runs and runs/{id}/jobs); run 43308171948 (2967fa3)",
+      "read_at": "2026-11-13T03:31:25.238Z",
+      "unit": "s"
+    },
+    "usability.reading_grade": {
+      "value": 9.6,
+      "detail": [
+        {
+          "label": "/",
+          "value": 9.6
+        },
+        {
+          "label": "/metrics.html",
+          "value": 7.9
+        }
+      ],
+      "source": "Playwright (Chrome) on https://static.invalid, key pages at 1280 px: Flesch-Kincaid grade of the main element's prose (lines ending in sentence punctuation); value is the hardest page",
+      "read_at": "2026-11-13T03:31:42.272Z",
+      "unit": "grade"
+    },
+    "usability.long_sentences": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "/",
+          "value": 0
+        },
+        {
+          "label": "/metrics.html",
+          "value": 0
+        }
+      ],
+      "source": "Playwright (Chrome) on https://static.invalid, key pages at 1280 px: sentences over 30 words (params.long_sentence_words) in the main element's prose",
+      "read_at": "2026-11-13T03:31:42.272Z",
+      "unit": "sentences"
+    },
+    "usability.axe_violations": {
+      "value": 0,
+      "source": "Playwright (Chrome) on https://static.invalid, key pages at 1280 and 375 px: axe-core 4.14.0 default rules except color-contrast and target-size, distinct failing elements; detail is by rule, with its first failing element",
+      "read_at": "2026-11-13T03:31:42.272Z",
+      "unit": "elements"
+    },
+    "usability.target_size_375": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "/",
+          "value": 0
+        },
+        {
+          "label": "/metrics.html",
+          "value": 0
+        }
+      ],
+      "source": "Playwright (Chrome) on https://static.invalid, key pages at 375 px: axe-core 4.14.0 target-size (WCAG 2.2 SC 2.5.8, 24 px), switched on; failing elements",
+      "read_at": "2026-11-13T03:31:42.272Z",
+      "unit": "elements"
+    },
+    "usability.broken_links": {
+      "value": 0,
+      "source": "GET crawl of https://static.invalid from /, same origin, at most 200 fetches, /api/ and /cdn-cgi/ and /quality/ skipped (3 fetched, every reachable page): internal link targets answering 4xx or 5xx, once per target; a target that redirects off the site counts as answered, whatever the other host says; detail label is target ← first page linking it",
+      "read_at": "2026-11-13T03:31:23.115Z",
+      "unit": "targets"
+    },
+    "usability.keyboard_task_share": {
+      "value": 100,
+      "detail": [
+        {
+          "label": "Read the metrics and goals",
+          "value": 1,
+          "unit": ""
+        }
+      ],
+      "source": "Playwright (Chrome) on https://static.invalid, 1280 px: each task's shortest route from / in the crawl, followed by Tab and Enter from a fresh load",
+      "read_at": "2026-11-13T03:31:53.822Z",
+      "unit": "%"
+    },
+    "usability.task_clicks": {
+      "value": 1,
+      "detail": [
+        {
+          "label": "Read the metrics and goals",
+          "value": 1
+        }
+      ],
+      "source": "GET crawl of https://static.invalid from /, same origin, at most 200 fetches, /api/ and /cdn-cgi/ and /quality/ skipped: shortest path from / in the crawled link graph to each of params.tasks; an external goal adds the click on its link; a task with several goals takes the fewest clicks; value is the longest task",
+      "read_at": "2026-11-13T03:31:23.115Z",
+      "unit": "clicks"
+    },
+    "usability.words_before_action": {
+      "value": 12,
+      "detail": [
+        {
+          "label": "/",
+          "value": 0
+        },
+        {
+          "label": "/metrics.html",
+          "value": 12
+        }
+      ],
+      "source": "Playwright (Chrome) on https://static.invalid, key pages at 1280 px: visible words in main before its first visible link, button or field; value is the wordiest page",
+      "read_at": "2026-11-13T03:31:42.272Z",
+      "unit": "words"
+    },
+    "usability.tbt_mobile": {
+      "value": 0,
+      "detail": [
+        {
+          "label": "/ (lab)",
+          "value": 0
+        },
+        {
+          "label": "/metrics.html (lab)",
+          "value": 0
+        }
+      ],
+      "source": "lab fallback, our numbers and not Google's: Playwright on Chromium 157.0.8103.50, one cold load per page with Lighthouse's mobile settings applied through CDP (throttling.mobileSlow4G: 4x CPU slowdown, 562.5 ms request latency, 1474.56 Kbps down, 675 Kbps up; 412 x 823 px at 1.75x), for /, /metrics.html, where PageSpeed Insights did not answer: /, /metrics.html (not a public URL (a built static site)). 2 of 2 key pages measured; value is the worst page, / (lab)",
+      "read_at": "2026-11-13T03:31:53.324Z",
+      "unit": "ms"
+    },
+    "usability.form_page_kib": {
+      "could_not_check": "params.form_pages names no form page",
+      "source": "params.form_pages",
+      "unit": "KiB"
+    },
+    "guards.call_ms": {
+      "could_not_check": "the guard runs on the machine that runs the sessions; timed by a --local collect there",
+      "source": "latest: median wall time of 10 runs of python3 -I tools/bash_guard.py judging one harmless command, on the machine that runs the sessions",
+      "unit": "ms"
+    },
+    "guards.runner_call_ms": {
+      "value": 67,
+      "detail": [
+        {
+          "label": "median",
+          "value": 67,
+          "unit": "ms"
+        },
+        {
+          "label": "p95",
+          "value": 104,
+          "unit": "ms"
+        }
+      ],
+      "source": "latest: median of the guard speed line tools/tests/guard_speed.py prints in verify.yml job short, newest successful run on the default branch: run 43308171948 (2026-11-12), 40 calls",
+      "read_at": "2026-11-13T03:31:30.755Z",
+      "unit": "ms"
+    },
+    "engine.page_seconds": {
+      "value": 38,
+      "detail": [
+        {
+          "label": "2026-11-12T21:13Z 2967fa3",
+          "value": 38,
+          "unit": "s"
+        },
+        {
+          "label": "2026-11-12T20:59Z 3d160b9",
+          "value": 38,
+          "unit": "s"
+        },
+        {
+          "label": "2026-11-12T20:48Z f0329fb",
+          "value": 34,
+          "unit": "s"
+        },
+        {
+          "label": "2026-11-12T20:46Z 8431844",
+          "value": 38,
+          "unit": "s"
+        },
+        {
+          "label": "2026-11-12T20:29Z 79b1c31",
+          "value": 37,
+          "unit": "s"
+        }
+      ],
+      "source": "last 5 successful pushes to main: median seconds of the pages.yml build job's step \"Git Crafter's own Quality, Speed and Consumption page\" (gh api actions/runs/{id}/jobs)",
+      "read_at": "2026-11-13T03:31:31.147Z",
+      "unit": "s"
+    }
+  }
+}
