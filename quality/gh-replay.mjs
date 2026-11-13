@@ -73,22 +73,27 @@ export function summary(rows, mode) {
   const sum = (k) => rows.filter((r) => r[0] === k).reduce((n, r) => n + Number(r[1]), 0);
   return `live ${sum("rest")} REST, ${sum("graphql")} GraphQL; ${sum("replayed")} replayed from main (${mode})`;
 }
+/** Download main's save into `dir` from the newest run that has one; return its run id and the REST requests spent. */
+function fetchSave(real, dir, env) {
+  // The two newest successful main runs under 24 h old that record a save: a push, or the daily schedule (#55). One request.
+  const jq = `limit(2; .workflow_runs[] | select((.event == "push" or .event == "schedule") and .head_repository.full_name == "${env.GITHUB_REPOSITORY}") | select(now - (.updated_at | fromdateiso8601) < ${MAX_AGE_H * 3600}) | .id)`;
+  const ids = spawnSync(real, ["api", `repos/${env.GITHUB_REPOSITORY}/actions/workflows/${path.basename(env.GITHUB_WORKFLOW_REF.split("@")[0])}/runs?branch=main&status=success&per_page=10`, "--jq", jq]).stdout.toString().split("\n").filter(Boolean);
+  // A download lists the run's artifacts, then fetches one: 2 requests, or 1 when the run saved nothing, so the fallback adds 1 (#61).
+  let n = 1;
+  for (const run of ids) {
+    const ok = spawnSync(real, ["run", "download", run, "-n", "main-reads", "-D", dir, "-R", env.GITHUB_REPOSITORY]).status === 0;
+    n += ok ? 2 : 1;
+    if (ok) return [run, n];
+  }
+  return ["", n];
+}
 function setup(env) {
   const dir = path.join(env.RUNNER_TEMP, "gh-replay");
   const real = spawnSync("sh", ["-c", "command -v gh"]).stdout.toString().trim();
   const pr = JSON.parse(readFileSync(env.GITHUB_EVENT_PATH, "utf8")).pull_request;
   const mode = pr ? "replay" : env.GITHUB_EVENT_NAME === "push" && env.GITHUB_REF === "refs/heads/main" ? "record" : "count";
   mkdirSync(path.join(dir, "r"), { recursive: true }), mkdirSync(`${dir}-bin`), writeShim(`${dir}-bin`);
-  // The two newest successful main runs under 24 h old that record a save: a push, or the daily schedule (#55). One request.
-  const jq = `limit(2; .workflow_runs[] | select((.event == "push" or .event == "schedule") and .head_repository.full_name == "${env.GITHUB_REPOSITORY}") | select(now - (.updated_at | fromdateiso8601) < ${MAX_AGE_H * 3600}) | .id)`;
-  const ids = pr ? spawnSync(real, ["api", `repos/${env.GITHUB_REPOSITORY}/actions/workflows/${path.basename(env.GITHUB_WORKFLOW_REF.split("@")[0])}/runs?branch=main&status=success&per_page=10`, "--jq", jq]).stdout.toString().split("\n").filter(Boolean) : [];
-  // A download lists the run's artifacts, then fetches one: 2 requests, or 1 when the run saved nothing, so the fallback adds 1 (#61).
-  let [id, n] = ["", 1];
-  for (const run of ids) {
-    const ok = spawnSync(real, ["run", "download", run, "-n", "main-reads", "-D", dir, "-R", env.GITHUB_REPOSITORY]).status === 0;
-    n += ok ? 2 : 1;
-    if (ok) { id = run; break; }
-  }
+  const [id, n] = pr ? fetchSave(real, dir, env) : ["", 0];
   if (pr) log({ GH_REPLAY_DIR: dir }, "rest", n);
   const live = [env.GITHUB_SHA, env.GITHUB_RUN_ID, pr?.head.sha, ...(pr ? ["pulls/", "issues/", "pull/"].map((p) => p + pr.number) : [])];
   appendFileSync(env.GITHUB_ENV, `GH_REPLAY_REAL=${real}\nGH_REPLAY_DIR=${dir}\nGH_REPLAY_MODE=${mode}\nGH_REPLAY_LIVE=${live.filter(Boolean).join(",")}\n`);
