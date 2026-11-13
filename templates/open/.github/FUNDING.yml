@@ -1,0 +1,16 @@
+# The Sponsor button's destinations. Uncomment each one this repo uses and fill its placeholder.
+# One name per platform; github takes up to four sponsored developers and one
+# organization; custom takes up to four URLs, and one with a colon goes in quotes. Keys: GitHub Docs, "Displaying a
+# sponsor button in your repository", read 2026-11-13.
+# github: [USERNAME]
+# community_bridge: PROJECT-NAME
+# issuehunt: USERNAME
+# ko_fi: USERNAME
+# liberapay: USERNAME
+# open_collective: USERNAME
+# patreon: USERNAME
+# tidelift: PLATFORM-NAME/PACKAGE-NAME
+# polar: USERNAME
+# buy_me_a_coffee: USERNAME
+# thanks_dev: u/gh/USERNAME
+# custom: ["https://LINK1", "https://LINK2"]

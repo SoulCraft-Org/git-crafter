@@ -1,0 +1,16 @@
+# Groups for GitHub's generated release notes (gh release create <tag> --generate-notes). The labels are GitHub's
+# defaults for a new repo and labels.json's, except `dependencies`: Dependabot creates it with its first pull request
+# (GitHub Docs, Dependabot options reference, read 2026-11-13). Add a group per label your repo adds. "*" catches each pull request no group above matched, so
+# it stays last. Format: GitHub Docs, "Automatically generated release notes", read 2026-11-13.
+changelog:
+  categories:
+    - title: Fixes
+      labels: [bug]
+    - title: Features
+      labels: [enhancement, "idea: accepted"]
+    - title: Documentation
+      labels: [documentation]
+    - title: Dependencies
+      labels: [dependencies]
+    - title: Other changes
+      labels: ["*"]
