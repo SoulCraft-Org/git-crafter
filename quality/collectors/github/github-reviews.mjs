@@ -108,6 +108,13 @@ export function movedPairs(files) {
   return pairs;
 }
 
+// One line of a file's diff header: the first hunk ends it; a line may rename the file or mark it removed whole.
+function readHeader(f, l) {
+  if (l.startsWith("@@")) f.head = false;
+  else if (l.startsWith("deleted file mode")) f.deleted = true;
+  else if (/^(\+\+\+ b\/|rename to )/.test(l)) f.filename = l.replace(/^(\+\+\+ b\/|rename to )/, "");
+}
+
 /**
  * The changed files in `git diff --unified=0` output, each as
  * { filename, additions, deletions, patch }, the shape sizeMiss and readLines read,
@@ -123,11 +130,8 @@ export function diffFiles(text) {
       f = { filename: l.replace(/^diff --git a\/.* b\//, ""), additions: 0, deletions: 0, lines: [], head: true };
       files.push(f);
     } else if (!f) continue;
-    else if (f.head) {
-      if (l.startsWith("@@")) f.head = false;
-      else if (l.startsWith("deleted file mode")) f.deleted = true;
-      else if (/^(\+\+\+ b\/|rename to )/.test(l)) f.filename = l.replace(/^(\+\+\+ b\/|rename to )/, "");
-    } else if (l[0] === "+" || l[0] === "-") {
+    else if (f.head) readHeader(f, l);
+    else if (l[0] === "+" || l[0] === "-") {
       f[l[0] === "+" ? "additions" : "deletions"]++;
       f.lines.push(l);
     }
