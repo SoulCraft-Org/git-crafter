@@ -2,7 +2,7 @@ name: ci
 
 # The Git Crafter CI standard (templates/ci/README.md): this repo calls Git Crafter's reusable workflow, which runs each
 # job on GitHub's standard hosted runners. Copy this file to .github/workflows/ci.yml and set the paths and
-# commands. It pins a Git Crafter release by full commit SHA with its version comment, such as # v4.0.0; Dependabot's
+# commands. It pins a Git Crafter release by full commit SHA with its version comment, such as # v6.0.0; Dependabot's
 # github-actions entry bumps it.
 on:
   pull_request:
@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   ci:
-    uses: SoulCraft-Org/git-crafter/.github/workflows/ci-standard.yml@48dfa90244df995ed774c0b0579ecba0566994cd # v4.0.1
+    uses: SoulCraft-Org/git-crafter/.github/workflows/ci-standard.yml@dd999dcac64873f77165609f3cc9fde4da49d332 # v6.0.0
     with:
       paths: |
         src/**
