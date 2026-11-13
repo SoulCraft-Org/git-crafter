@@ -1,0 +1,22 @@
+# Groups for GitHub's generated release notes (gh release create <tag> --generate-notes). Each group names labels that
+# exist on Git Crafter; Dependabot adds and creates `dependencies` itself. "*" catches each pull request no group above
+# matched, so it stays last. Format: GitHub Docs, "Automatically generated
+# release notes", read 2026-11-13.
+changelog:
+  categories:
+    - title: Security
+      labels: [security]
+    - title: Fixes
+      labels: [bug]
+    - title: Features
+      labels: [enhancement]
+    - title: Quality page and CI
+      labels: [quality, ci]
+    - title: Pages and accessibility
+      labels: [pages, accessibility]
+    - title: Documentation
+      labels: [documentation]
+    - title: Dependencies
+      labels: [dependencies]
+    - title: Other changes
+      labels: ["*"]
