@@ -1,5 +1,7 @@
 // One pass over a markdown doc for the Documentation collector (docs.mjs).
 
+import { stripAll } from '../lib/strip.mjs';
+
 const FENCE = /^ {0,3}(`{3,}|~{3,})/;
 const HEADING = /^ {0,3}(#{1,6})\s+(.*?)(\s+#+)?\s*$/;
 const LIST = /^\s*([-*+]|\d+[.)])\s+/;
@@ -58,7 +60,7 @@ function stripComments(st, raw) {
     st.comment = false;
     line = line.slice(end + 3);
   }
-  line = line.replace(/<!--[\s\S]*?-->/g, '');
+  line = stripAll(line, /<!--[\s\S]*?-->/g);
   const open = line.indexOf('<!--');
   if (open >= 0) {
     st.comment = true;
@@ -196,9 +198,7 @@ function countWords(s) {
 // GitHub's heading anchors: links to their text, tags and punctuation out,
 // lowercase, spaces to hyphens.
 export function slugify(heading) {
-  return heading
-    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/<[^>]+>/g, '')
+  return stripAll(heading.replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1'), /<[^>]+>/g)
     .toLowerCase()
     .replace(/[^\p{L}\p{N}\p{M}\p{Pc} -]/gu, '')
     .replace(/ /g, '-');

@@ -2,6 +2,7 @@
 
 import { join, resolve } from "node:path";
 import { UA, firstLine, now, once } from "./site-base.mjs";
+import { stripAll } from "../lib/strip.mjs";
 
 // ---------- crawl ----------
 
@@ -13,7 +14,7 @@ const decode = (s) => s.replace(/&(amp|quot|apos|lt|gt|#38|#39|#x27);/g, (_, e) 
 export function extractLinks(html, pageUrl) {
   const links = new Set();
   const re = /<a\b[^>]*?\shref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
-  for (const m of html.replace(/<!--[\s\S]*?-->/g, "").matchAll(re)) {
+  for (const m of stripAll(html, /<!--[\s\S]*?-->/g).matchAll(re)) {
     const raw = decode((m[1] ?? m[2] ?? m[3] ?? "").trim());
     if (!raw || raw.startsWith("#") || /^(mailto|tel|sms|javascript|data):/i.test(raw)) continue;
     try {

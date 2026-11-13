@@ -52,8 +52,8 @@ const FALSE_ALARM = new Set(['replayed', 'same', 'unfixed', 'marked']);
 export function signalForm(step) {
   return String(step)
     .replace(DISCARDED, ' ')
-    .replace(/^timeout( -[a-zA-Z]+( \S+)?)* \d+[smhd]? /, '')
-    .replace(/^git( -C ('[^']*'|"[^"]*"|\S+))+(?= )/, 'git')
+    .replace(/^timeout( -[a-zA-Z]+( [^\s-]\S*)?)* \d+[smhd]? /, '')
+    .replace(/^git( -C ('[^']*'|"[^"]*"|[^\s'"])\S*)+(?= )/, 'git')
     .replace(/\s+/g, ' ')
     .trim();
 }
