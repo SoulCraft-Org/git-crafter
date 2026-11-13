@@ -596,7 +596,7 @@
     "near": 80,
     "direction": "higher",
     "goal_source": "template goal: every finished card links the change that finished it",
-    "source": "state: gh api graphql: projectsV2 items in the last of params.project_columns, linked pull requests, the PR itself, or a PR URL in a draft card",
+    "source": "state: gh api graphql: projectsV2 items in the last of params.project_columns, linked pull requests, the PR itself, or a PR URL in a draft card; a card whose body carries the Quality sync marker <!-- quality-metric: id --> is left out, since it closes when its metric recovers, often with no pull request",
     "needs": "project-scope",
     "chart": "gauge",
     "group": "Board"
