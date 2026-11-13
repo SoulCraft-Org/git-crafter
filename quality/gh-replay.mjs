@@ -6,8 +6,7 @@ import { spawnSync } from "node:child_process";
 import { appendFileSync, copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-const MAX_AGE_H = 24;
-const ISO = /\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?Z?)?/g;
+const [MAX_AGE_H, ISO] = [24, /\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?Z?)?/g];
 /** Whether gh `args` only reads: gh api with no write method, input or field (GraphQL takes fields, never a mutation), or pr/issue list. */
 export function readOnly(args) {
   if (args[0] === "pr" || args[0] === "issue") return args[1] === "list";
@@ -39,6 +38,7 @@ function shim(args, env) {
   if (keep(file, env, r)) writeFileSync(`${file}.${process.pid}`, JSON.stringify({ args, out: r.stdout.toString("base64"), err: r.stderr.toString(), status: r.status })), renameSync(`${file}.${process.pid}`, file);
   return r.status ?? 1;
 }
+/** The GitHub requests notice: live REST and GraphQL calls, and reads replayed from main, summed from the log `rows`. */
 export function summary(rows, mode) {
   const sum = (k) => rows.filter((r) => r[0] === k).reduce((n, r) => n + Number(r[1]), 0);
   return `live ${sum("rest")} REST, ${sum("graphql")} GraphQL; ${sum("replayed")} replayed from main (${mode})`;
