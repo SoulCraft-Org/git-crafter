@@ -26,7 +26,15 @@ function pinFaults(file, yml, lockText) {
   return faults;
 }
 
-for (const name of ["ci-standard.yml", "ci-overflow.yml"]) {
+test("verify.yml runs GitHub's dependency review on a pull request only", () => {
+  const yml = read(".github/workflows/verify.yml");
+  const job = yml.slice(yml.indexOf("\n  dependency-review:\n"));
+  assert.ok(job.length > 1, "a dependency-review job");
+  assert.match(job, /^ {4}if: github\.event_name == 'pull_request'$/m);
+  assert.match(job, /^ {6}- uses: actions\/dependency-review-action@[0-9a-f]{40} # v\d+\.\d+\.\d+$/m);
+});
+
+for (const name of ["ci-standard.yml", "ci-overflow.yml", "verify.yml"]) {
   test(`${name} pins each remote step by full SHA with its version comment, and actions.lock keys it`, () => {
     const file = `.github/workflows/${name}`;
     const yml = read(file);
