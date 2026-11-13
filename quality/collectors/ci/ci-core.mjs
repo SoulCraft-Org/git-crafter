@@ -18,6 +18,9 @@ export const LOG_SAMPLE = 12;
 
 export const LAST = `last ${LAST_RUNS} runs per workflow`;
 
+// GitHub's dynamic Code Quality workflow: a code product the Code tab owns, so no security scan (#62).
+export const CODE_QUALITY = "CodeQL - Code Quality";
+
 // List prices per minute of the standard GitHub-hosted runners, from
 // docs.github.com "Actions runner pricing" (read 2026-11-03,
 // https://docs.github.com/en/billing/reference/actions-runner-pricing):

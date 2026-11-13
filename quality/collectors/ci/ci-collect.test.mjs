@@ -346,6 +346,28 @@ describe("repo settings", () => {
     assert.equal(got["ci.flaky_reruns"].value, EXPECTED["ci.flaky_reruns"]);
   });
 
+  it("counts GitHub's dynamic Code Quality run on the Code tab, not as a security scan, with no extra request", async () => {
+    const list = `repos/${REPO}/actions/workflows?per_page=100`;
+    const dynamic = [
+      { id: 4, name: "CodeQL", path: "dynamic/github-code-scanning/codeql" },
+      { id: 5, name: "CodeQL - Code Quality", path: "dynamic/github-code-quality/codeql" },
+    ];
+    const rest = {
+      ...REST,
+      [list]: { workflows: [...REST[list].workflows, ...dynamic] },
+      [RUNS_OF(4)]: { workflow_runs: [run(401, 4, "CodeQL", "dynamic", "c1", "success", T("10:00:00"), T("10:05:00"))] },
+      [RUNS_OF(5)]: { workflow_runs: [run(501, 5, "CodeQL - Code Quality", "dynamic", "c1", "success", T("10:00:00"), T("10:04:00"))] },
+      [`repos/${REPO}/actions/runs/401/jobs?per_page=100`]: { jobs: [job(4011, "Analyze", "10:00:00", "10:00:30", "10:03:30", "success", [])] }, // 3 billed
+      [`repos/${REPO}/actions/runs/501/jobs?per_page=100`]: { jobs: [job(5011, "Analyze", "10:00:00", "10:00:30", "10:02:30", "success", [])] }, // 2 billed
+    };
+    const calls = [];
+    const got = await collectWith({ gh: fakeGh({ rest }, calls) });
+    assert.deepEqual(got["security.latest_scan_minutes"].detail.map((d) => [d.label, d.value]), [["dependency-scan", 1], ["CodeQL", 3]]);
+    assert.equal(got["security.latest_scan_minutes"].value, 4, "dependency-scan 1 plus CodeQL 3; Code Quality is left out");
+    assert.equal(got["code.quality_scan_minutes"].value, 2);
+    assert.equal(calls.filter((c) => c === `repos/${REPO}/actions/runs/501/jobs?per_page=100`).length, 1, "both metrics share one read of the Code Quality jobs");
+  });
+
   it("times how long the default branch has been red: from the first failure after its latest pass", async () => {
     const more = [
       run(20, 1, "unit-tests", "push", "m3", "failure", T("15:00:00"), T("15:05:00")),
