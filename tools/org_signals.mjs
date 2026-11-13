@@ -108,7 +108,7 @@ export function alertMetrics({ repos, alerts, readAt, source = `gh api orgs/${OR
 // name starts with a letter and is not a placeholder, is one private reference.
 // goals.json: goal 0.
 export { ORG_CONFIG };
-// Only the org's own folders are exempt: everything else ships in the public export.
+// Only the org's own folders are exempt: everything else ships in this public repo.
 export const PUBLIC_EXEMPT = ["config/", "data/"];
 export const HOME_PLACEHOLDERS = new Set(["someone", "Shared", "runner"]);
 export const PUBLIC_SRC = `git ls-files outside ${PUBLIC_EXEMPT.join(" and ")}; names from ${ORG_CONFIG ?? "the org config"} private`;

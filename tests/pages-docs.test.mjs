@@ -214,7 +214,7 @@ test("every Delegating route and every account's delegate route names a metric t
   assert.ok(rows.length >= 5, "the Delegating table was found");
   const moves = rows.map((l) => l.split("|").at(-2).trim().replace(/`/g, ""));
   assert.deepEqual(moves.filter((id) => !known(id)), [], "each row's Moves cell is one metric id");
-  // The public export drops config/accounts/; the placeholder file stands in for it.
+  // This repo tracks no config/accounts/ (.gitignore); the placeholder file stands in for it.
   const dir = join(ROOT, "config/accounts");
   const accounts = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(".json")).map((f) => `config/accounts/${f}`) : ["config/account.example.json"];
   for (const f of accounts) {
@@ -336,7 +336,7 @@ test("a repo with only library maps and template defaults builds, every section 
 });
 
 test("Git Crafter's maps use all eleven library maps and add Spend, and its own Quality run reads every step's metric (#330)", (t) => {
-  // The public export leaves out this Mac's run (tools/export_public.sh), so only the org's checkout holds it.
+  // This repo tracks no Mac's run (.gitignore), so only a local checkout holds it.
   if (!existsSync(join(ROOT, "data/quality/local.json"))) return t.skip("no data/quality/local.json in this tree");
   const maps = readJson("maps.json").maps;
   assert.deepEqual(maps.map((m) => m.use ?? m.id), ["delivery", "deploy", "board", "guard", "adopt", "measure", "code", "triage", "decide", "document", "secure", "spend"]);
