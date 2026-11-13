@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { loadTargets } from "./score.mjs";
+import { stripAll } from "./collectors/lib/strip.mjs";
 
 export const up = { id: "t.up", tab: "code", kind: "quality", label: "Pass rate", unit: "%", goal: 90, near: 70, direction: "higher", goal_source: "fixture" };
 export const down = { id: "t.down", tab: "code", kind: "speed", label: "Build time", unit: "s", goal: 60, near: 120, direction: "lower", goal_source: "fixture" };
@@ -16,7 +17,7 @@ export const val = (value, extra = {}) => ({ value, source: "fixture", read_at: 
 
 // The page as a reader sees it: markup without the client script's source and
 // the review JSON (whose escaping has its own check).
-export const shown = (html) => html.replace(/<script[\s\S]*?<\/script>/g, "");
+export const shown = (html) => stripAll(html, /<script\b[\s\S]*?<\/script\b[^>]*>/gi);
 
 // One targets file in a fresh temp folder, for loadTargets.
 export const writeTargets = (list) => {

@@ -57,7 +57,7 @@ test('collectorFiles: a collector in a tab subfolder runs, and a name in two sub
 test('runCollectors: a collector that throws a path under home reports it as ~ (#393)', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'collectors-'));
   try {
-    writeFileSync(join(dir, 'leaky.mjs'), `export async function collect() { throw new Error(${JSON.stringify(`ENOENT: open '${homedir()}/x/usage.json'`)}); }`);
+    writeFileSync(join(dir, 'leaky.mjs'), `export async function collect() { throw new Error(${JSON.stringify(`ENOENT: open '${homedir()}/x/usage.json'`).replace(/[<>\u2028\u2029]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`)}); }`);
     const run = await runCollectors({ root: dir, mode: 'local', dirs: [dir], defs: [{ id: 'leaky.a', file: 'leaky.json' }], label: (d, f) => f });
     const reason = run.metrics['leaky.a'].could_not_check;
     assert.match(reason, /collector leaky\.mjs failed: ENOENT: open '~\/x\/usage\.json'/);
