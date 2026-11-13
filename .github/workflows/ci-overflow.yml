@@ -404,7 +404,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: python3 -I "$RUNNER_TEMP/ci_overflow.py" choose --config "$RUNNER_TEMP/ci-overflow.json" --state-out "$RUNNER_TEMP/ci-overflow/state.json"
       # The meter's state for the next run; only main's is read back.
-      - uses: actions/upload-artifact@v7.0.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.choose.outputs.artifact != ''
         continue-on-error: true
         with:

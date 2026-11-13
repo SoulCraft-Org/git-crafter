@@ -83,7 +83,7 @@ jobs:
       run_standard: ${{ steps.changes.outputs.run_standard }}
       conform: ${{ steps.conform.outcome }}
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -998,7 +998,7 @@ jobs:
     runs-on: ubuntu-slim
     timeout-minutes: 15
     steps: &steps
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - id: detect
@@ -1007,7 +1007,7 @@ jobs:
           if [ -f package-lock.json ]; then echo lockfile=true; else echo lockfile=false; fi >> "$GITHUB_OUTPUT"
       # npm's download cache through setup-node, and npm ci on every run: no job restores a node_modules tree.
       - if: inputs.node-version != '' || steps.detect.outputs.nvmrc == 'true' || steps.detect.outputs.lockfile == 'true'
-        uses: actions/setup-node@v7.1.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ inputs.node-version }}
           node-version-file: ${{ inputs.node-version == '' && steps.detect.outputs.nvmrc == 'true' && '.nvmrc' || '' }}
@@ -1015,7 +1015,7 @@ jobs:
       - if: steps.detect.outputs.lockfile == 'true'
         run: npm ci
       - if: inputs.python-version != ''
-        uses: actions/setup-python@v7.1.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ inputs.python-version }}
           cache: ${{ inputs.pip-requirements != '' && 'pip' || '' }}
