@@ -191,6 +191,9 @@ export const ACTION_METRICS = {
   },
 };
 
+// The hidden line quality/sync-issues.mjs puts in each card it makes for a metric.
+const SYNC_MARK = /<!-- quality-metric: [\w.-]+ -->/;
+
 export const PROJECT_METRICS = {
   // Projects -----------------------------------------------------------------
   // A session takes one card, so a count of cards in progress limits nothing. What
@@ -204,15 +207,19 @@ export const PROJECT_METRICS = {
       return measured(idle.length, [...tally(board.items.map((i) => i.status), cfg.columns), { label: `${board.doing}, no open pull request`, value: idle.length }]);
     },
   },
+  // A card quality/sync-issues.mjs made for a missed metric closes when the metric
+  // recovers, often with no pull request (#53): it is left out.
   "projects.done_with_pr": {
-    source: 'gh api graphql: repositoryOwner.projectsV2 "{project}" done items (linked pull requests)',
+    source: 'gh api graphql: repositoryOwner.projectsV2 "{project}" done items (linked pull requests), less those whose body carries the sync marker <!-- quality-metric: id -->',
     async run(L, { cfg }) {
       const board = await projectOr(L, cfg);
       if (board.could_not_check) return board;
-      const done = board.items.filter((i) => i.status === board.done);
-      if (!done.length) return skip(`no ${board.done} cards yet`);
+      const finished = board.items.filter((i) => i.status === board.done);
+      const done = finished.filter((i) => !SYNC_MARK.test(i.body));
+      const synced = finished.length - done.length;
+      if (!done.length) return skip(`no ${board.done} cards yet${synced ? `, other than ${synced} the Quality sync made` : ""}`);
       const withPull = done.filter((i) => i.pulls.some((p) => p.merged)).length;
-      return measured(pct(withPull, done.length), [count("with a merged PR", withPull), count("without", done.length - withPull)]);
+      return measured(pct(withPull, done.length), [count("with a merged PR", withPull), count("without", done.length - withPull), count("made by the Quality sync, left out", synced)]);
     },
   },
   "projects.workflows_on": {

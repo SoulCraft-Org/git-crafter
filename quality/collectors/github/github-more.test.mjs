@@ -641,6 +641,19 @@ describe("PR descriptions", () => {
     assert.equal(out["projects.cards_at_a_glance"].detail.at(-1).value, 4, "Later, Todo and In Progress cards are open");
   });
 
+  it("leaves a Done card the Quality sync made out of projects.done_with_pr", async () => {
+    const at = "2026-11-01T00:00:00Z";
+    const item = (content, linked = []) => ({ createdAt: at, status: { name: "Done", updatedAt: at }, linked: { pullRequests: { nodes: linked } }, content });
+    const nodes = [
+      item({ __typename: "DraftIssue", body: "Shipped." }, [{ number: 40, merged: true, state: "MERGED", createdAt: at }]),
+      item({ __typename: "DraftIssue", body: "<!-- quality-metric: ci.api_headroom -->\nRecovered with a settings switch." }),
+    ];
+    const graphql = { ...GRAPHQL, ProjectItems: { node: { items: { pageInfo: { hasNextPage: false, endCursor: null }, nodes } } } };
+    const out = await run({ params: { ...PARAMS, project_columns: ["Todo", "In Progress", "Done"] }, gh: fakeGh({ graphql }) });
+    assert.equal(out["projects.done_with_pr"].value, 100, "the sync-made card, with no pull request, no longer counts");
+    assert.deepEqual(out["projects.done_with_pr"].detail.map((d) => d.value), [1, 0, 1]);
+  });
+
   it("reads the card metrics from issues only, in every mode, never the board's drafts", async () => {
     const local = await run();
     assert.deepEqual(local["issues.latest_card_words"].detail, [
