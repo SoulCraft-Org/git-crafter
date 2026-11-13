@@ -4,15 +4,16 @@
   "code",
   "documentation",
   "issues",
-  "pull-requests",
-  "discussions",
-  "actions",
   "projects",
+  "pull-requests",
+  "actions",
+  "tests",
   "security",
-  "dependabot",
-  "scanning",
   "insights",
   "settings",
-  "pages"
+  "design",
+  "usability",
+  "deploy",
+  "tools"
  ]
 }

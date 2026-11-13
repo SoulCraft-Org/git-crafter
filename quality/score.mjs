@@ -17,42 +17,39 @@ import { checkPlainFields, checkWordCounts, IDEAL_MAX_WORDS, isDay, isPlain, isP
 
 export { overlayTargets };
 
-// The template's tabs, one per GitHub tab in GitHub's order (owner,
-// 2026-11-12). Security's own pages Dependabot and Scanning get a tab each;
-// Pages is a Settings page with a tab of its own. Settings holds every
-// Settings page no other tab owns. A repo's config picks from these and may
-// add its own (config.mjs).
+// The template's tabs: GitHub's repo tab order, then Tests, the two web tabs,
+// and what the pipeline costs. CI keeps the id "actions",
+// GitHub's name, so the github collector's metric ids stand. Issues
+// holds the issue metrics, Projects the project board, Security and quality,
+// named after GitHub's own tab, GitHub's security features, and Settings what
+// the repo's Settings pages hold (rules, access, secrets, what bills).
+// Insights, also GitHub's own tab, holds
+// one metric per Insights view. A repo's config picks from these and may add
+// its own (config.mjs).
 export const TABS = [
   ["code", "Code"],
   ["documentation", "Documentation"],
   ["issues", "Issues"],
+  ["projects", "Projects"],
   ["pull-requests", "Pull requests"],
   ["discussions", "Discussions"],
   ["actions", "Actions"],
-  ["projects", "Projects"],
+  ["tests", "Tests"],
   ["security", "Security and quality"],
   ["dependabot", "Dependabot"],
   ["scanning", "Scanning"],
   ["insights", "Insights"],
   ["settings", "Settings"],
   ["pages", "Pages"],
+  // The old tabs, empty now; the next PR of this stack removes them.
+  ["design", "Design"],
+  ["usability", "Usability"],
+  ["deploy", "Deploy"],
+  ["tools", "Tools"],
 ];
 // Tabs that score a website a repo serves. Off unless a repo's config turns
 // them on: most repos have no site to review.
-export const WEB_TABS = ["pages"];
-// A tab id the template no longer has, and where its metrics went: a config,
-// target, ideal or review that names one stops with this (exit 2).
-export const MOVED_TABS = {
-  tests: '"actions", or "code" for test coverage',
-  tools: '"dependabot"',
-  deploy: '"pages"',
-  design: '"pages"',
-  usability: '"pages"',
-  credits: "the pack SoulCraft-Org/compute-crafter",
-  ...Object.fromEntries(["claude", "claude-settings", "desktop-app", "blockers", "tokens", "instructions"].map((id) => [id, "the pack Colorado-Startups/claudius"])),
-};
-// Why a tab id is unknown: where it moved, or how to add a tab of one's own.
-export const unknownTab = (id) => (Object.hasOwn(MOVED_TABS, id) ? `tab "${id}" is gone; its metrics moved to ${MOVED_TABS[id]}` : `unknown tab "${id}"`);
+export const WEB_TABS = ["pages", "design", "usability"];
 export const DEFAULT_TABS = TABS.filter(([id]) => !WEB_TABS.includes(id));
 const TAB_IDS = new Set(TABS.map(([id]) => id));
 // Every tab scores all three, each a third of its score: a tab is held to an
@@ -94,7 +91,7 @@ function checkTextFields(obj, fields, where) {
 
 const identityRules = (def, tabIds) => [
   [typeof def.id !== "string" || !def.id.includes("."), 'id must be "<area>.<name>"'],
-  [!tabIds.has(def.tab), unknownTab(def.tab)],
+  [!tabIds.has(def.tab), `unknown tab "${def.tab}"`],
   [!KINDS.has(def.kind), "kind must be quality, speed or consumption"],
   [!DIRECTIONS.has(def.direction), "direction must be higher or lower"],
   [typeof def.goal !== "number" || typeof def.near !== "number", "goal and near must be numbers"],
@@ -240,7 +237,7 @@ export function loadIdeals({ templateDir, packDirs = [], repoDir = null, tabIds 
 function readIdeals(dir, ideals, { tabIds, pack }) {
   for (const file of readdirSync(dir).filter((f) => f.endsWith(".json")).sort()) {
     const tab = file.replace(/\.json$/, "");
-    if (!tabIds.has(tab)) throw new Error(`ideals/${file}: ${Object.hasOwn(MOVED_TABS, tab) ? unknownTab(tab) : `no tab "${tab}"`}`);
+    if (!tabIds.has(tab)) throw new Error(`ideals/${file}: no tab "${tab}"`);
     if (pack && (TAB_IDS.has(tab) || ideals[tab])) throw new Error(`${dir}/${file}: tab "${tab}" already has an ideal; a pack sets only its own tabs' ideals`);
     const doc = JSON.parse(readFileSync(join(dir, file), "utf8"));
     checkIdeal(doc, `ideals/${file}`);
@@ -383,7 +380,7 @@ function reviewScore(items) {
 // One review file as { tab, entry }, or null when it scores nothing.
 function readReview(dir, file, tabIds) {
   const doc = parseYaml(readFileSync(join(dir, file), "utf8"));
-  if (!doc || !tabIds.has(doc.review)) throw new Error(`${file}: ${Object.hasOwn(MOVED_TABS, doc?.review ?? "") ? unknownTab(doc.review) : `review must name a tab, got "${doc?.review}"`}`);
+  if (!doc || !tabIds.has(doc.review)) throw new Error(`${file}: review must name a tab, got "${doc?.review}"`);
   // The date places the review in the trend; without it the gauge and the
   // trend would disagree. YAML may read it as a Date, so normalize first.
   const date = reviewDate(doc, file);

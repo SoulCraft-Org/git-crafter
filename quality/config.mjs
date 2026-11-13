@@ -8,9 +8,8 @@
 //   name        the page title's name. Default: the repo's name
 //   tabs        the tab ids to show, in order. Default: the template's tabs
 //               (score.mjs TABS) less the web tabs. An entry [id, name] adds a
-//               tab of the repo's own. A removed tab id (score.mjs MOVED_TABS)
-//               stops with where its metrics went
-//   web         true shows the web tab (Pages) in the default list
+//               tab of the repo's own
+//   web         true shows the web tabs (Design, Usability) in the default list
 //   targets     the repo's targets folder, laid over the template's by id
 //               (score.mjs overlayTargets)
 //   collectors  the repo's own collectors, run beside the template's
@@ -40,7 +39,7 @@ import { basename, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { resolvePacks } from "./packs.mjs";
-import { MOVED_TABS, TABS, unknownTab, WEB_TABS } from "./score.mjs";
+import { TABS, WEB_TABS } from "./score.mjs";
 
 export const QUALITY = fileURLToPath(new URL(".", import.meta.url));
 const DEFAULT_CONFIG = "quality/config.json";
@@ -87,7 +86,7 @@ export function resolveTabs({ tabs = null, web = false } = {}, packTabs = []) {
   if (!Array.isArray(tabs) || !tabs.length) throw new Error("tabs must be a list of tab ids");
   const out = tabs.map((t) => {
     if (typeof t === "string") {
-      if (!names.has(t)) throw new Error(`tabs: ${unknownTab(t)}; a tab of the repo's own is ["id", "Name"]`);
+      if (!names.has(t)) throw new Error(`tabs: unknown tab "${t}"; a tab of the repo's own is ["id", "Name"]`);
       return [t, names.get(t)];
     }
     if (Array.isArray(t) && t.length === 2 && t.every((x) => typeof x === "string" && x.trim()) && TAB_ID.test(t[0])) return t;
@@ -151,8 +150,6 @@ export function loadConfig({ root = process.cwd(), file = null, env = process.en
     packs,
     tabs: resolveTabs(c, packs.flatMap((p) => p.tabs)),
   };
-  const gone = Object.keys(c.issue_sync?.labels ?? {}).find((id) => Object.hasOwn(MOVED_TABS, id) && !settings.tabs.some(([t]) => t === id));
-  if (gone) throw new Error(`issue_sync.labels: ${unknownTab(gone)}`);
   for (const k of PATHS) settings[k] = absolute(root, c[k]);
   settings.tokens_css ??= join(QUALITY, "render", "tokens.css");
   return settings;

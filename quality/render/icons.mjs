@@ -14,15 +14,14 @@ const SYMBOLS = {
   "pull-requests": '<circle cx="4.5" cy="3.5" r="1.5"/><circle cx="4.5" cy="12.5" r="1.5"/><circle cx="11.5" cy="12.5" r="1.5"/><path d="M4.5 5v6M11.5 11V7.25c0-1.5-.9-2.25-2.25-2.25H7.25M8.75 3.5 7.25 5l1.5 1.5"/>',
   // The Actions tab, named as GitHub names it; its icon is the play mark.
   actions: '<circle cx="8" cy="8" r="6.25"/><path d="M6.5 5.25v5.5L10.75 8z" fill="currentColor"/>',
+  tests: '<path d="M6 1.75h4M6.75 1.75v4.5L2.9 12.6a1.1 1.1 0 0 0 .95 1.65h8.3a1.1 1.1 0 0 0 .95-1.65L9.25 6.25v-4.5M4.5 10h7"/>',
   security: '<path d="M8 1.75 13.25 3.75v4c0 3.25-2.25 5.5-5.25 6.5-3-1-5.25-3.25-5.25-6.5v-4z"/><path d="m5.75 8 1.5 1.5 3-3"/>',
-  // Discussions: a speech bubble.
-  discussions: '<path d="M2.25 3.25h11.5v7.5H7l-3 2.5v-2.5H2.25z"/>',
-  // Scanning: a magnifying glass.
-  scanning: '<circle cx="7" cy="7" r="4.25"/><path d="m10.25 10.25 3.5 3.5"/>',
   // Insights: a line graph on its axes, as GitHub draws the tab.
   insights: '<path d="M2.25 2.5v11h11.5"/><path d="m4.75 10 2.75-3.25 2.25 2 3.25-4.25"/>',
   // Settings: a cog, a hub with eight teeth.
   settings: '<circle cx="8" cy="8" r="2.5"/><path d="M8 1.75v2M8 12.25v2M1.75 8h2M12.25 8h2M3.6 3.6 5 5M11 11l1.4 1.4M3.6 12.4 5 11M11 5l1.4-1.4"/>',
+  design: '<path d="M8 1.75 12.25 7.5 8 14.25 3.75 7.5z"/><path d="M8 1.75v5.25"/><circle cx="8" cy="8.5" r="1.25"/>',
+  usability: '<path d="M4 1.75v11l2.75-2.5 2 4.25 1.75-.75-2-4.25h3.75z"/>',
   claude: '<path d="M8 1.5c.6 3.4 3 5.9 6.5 6.5-3.5.6-5.9 3-6.5 6.5-.6-3.5-3-5.9-6.5-6.5 3.5-.6 5.9-3.1 6.5-6.5z"/>',
   // Claude settings: two sliders.
   "claude-settings": '<path d="M2 5h12M2 11h12M5.5 3v4M10.5 9v4"/>',
@@ -33,12 +32,12 @@ const SYMBOLS = {
   // Tokens: a stack of coins, as on Git Crafter's Token use outcome.
   instructions: '<path d="M4 2.75h6.5L13 5.25v8H4z"/><path d="M6.25 7.5h4.5M6.25 10h4.5"/>',
   tokens: '<ellipse cx="8" cy="4.5" rx="5" ry="2"/><path d="M3 4.5v3.5c0 1.1 2.25 2 5 2s5-.9 5-2V4.5M3 8v3.5c0 1.1 2.25 2 5 2s5-.9 5-2V8"/>',
-  // Pages: an arrow up from a base, a change going out.
-  pages: '<path d="M8 11.5V2.75M4.75 6 8 2.75 11.25 6M2.75 13.25h10.5"/>',
+  // Deploy: an arrow up from a base, a change going out.
+  deploy: '<path d="M8 11.5V2.75M4.75 6 8 2.75 11.25 6M2.75 13.25h10.5"/>',
   // Credits: a ticket with a notch.
   credits: '<path d="M1.75 4.5h12.5v2.25a1.25 1.25 0 0 0 0 2.5v2.25H1.75V9.25a1.25 1.25 0 0 0 0-2.5zM10 4.5v7"/>',
-  // Dependabot: a wrench, as each update mends a dependency.
-  dependabot: '<path d="M10.5 1.75a3.25 3.25 0 0 0-3.1 4.25L2.25 11.15a1.5 1.5 0 0 0 2.1 2.1L9.5 8.1a3.25 3.25 0 0 0 4.25-3.1l-1.9 1.15-1.5-.4-.4-1.5z"/>',
+  // Tools: a wrench.
+  tools: '<path d="M10.5 1.75a3.25 3.25 0 0 0-3.1 4.25L2.25 11.15a1.5 1.5 0 0 0 2.1 2.1L9.5 8.1a3.25 3.25 0 0 0 4.25-3.1l-1.9 1.15-1.5-.4-.4-1.5z"/>',
   // Any tab added to TABS before it gets its own icon.
   tab: '<rect x="2.5" y="2.5" width="11" height="11" rx="2"/>',
 };
