@@ -7,3 +7,7 @@ export { managedClaudeMd, ownRepo, PROJECTS_DIR, projectMatch, remoteRepo, resol
 export { CHARTS, loadTargets, scoreMetric, TEXT_FIELDS } from './score.mjs';
 export { GhError, ghClient, percentile, repoOf } from '../github/github-core.mjs';
 export { firstLine, measured, runCommand, unknown } from '../run.mjs';
+export { expandGlobs } from '../docs/docs-files.mjs';
+export { PULL_FIELDS } from '../github/github-queries.mjs';
+export { causes, prRefs } from '../github/github-refs.mjs';
+export { greenAt, reverts } from '../github/github-reviews.mjs';

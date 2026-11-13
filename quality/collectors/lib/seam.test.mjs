@@ -8,6 +8,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { runCollectors } from '../../collect.mjs';
+import * as lib from './index.mjs';
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const TREES = ['quality/collectors/', 'config/quality/collectors/'];
@@ -87,4 +88,11 @@ test('seam: collect() receives lib, the engine helpers, and lib/ holds no collec
   assert.deepEqual(ran, ['probe']);
   const lib = await runCollectors({ root: dir, mode: 'local', dirs: [join(ROOT, LIB, '..')], defs: [], only: 'index' }).catch((e) => e.message);
   assert.match(lib, /no collector index\.mjs/);
+});
+
+// Every engine name the Claude pack's collectors (Colorado-Startups/claudius) import by path.
+const PACK_NAMES = ['causes', 'expandGlobs', 'ghClient', 'greenAt', 'loadTargets', 'managedClaudeMd', 'ownRepo', 'percentile', 'PROJECTS_DIR', 'projectMatch', 'prRefs', 'PULL_FIELDS', 'redact', 'remoteRepo', 'resolvePath', 'reverts'];
+
+test('seam: lib carries every engine name the Claude pack imports', () => {
+  assert.deepEqual(PACK_NAMES.filter((n) => lib[n] === undefined), []);
 });
