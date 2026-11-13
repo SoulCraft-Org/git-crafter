@@ -229,6 +229,9 @@ function latestFullRun(sample) {
 
 // ---------------------------------------------------------------- metrics
 
+// ci.pr_run_requests reads at most this many runs: a docs-only run skips the collect, so no job prints a notice.
+const PR_RUNS_READ = 3;
+
 const METRICS = {
   "ci.flaky_reruns": {
     source: `gh api actions/workflows/{id}/runs (${LAST}) and runs/{id}/attempts/1 for every rerun that passed`,
@@ -327,14 +330,17 @@ const METRICS = {
     },
   },
   "ci.pr_run_requests": {
-    source: "latest: gh api actions/workflows/pages.yml/runs, the newest green pull_request run from {repo}; its jobs' check-run annotations, each job's GitHub requests notice (quality/gh-replay.mjs report), live REST plus GraphQL, summed",
+    source: `latest: gh api actions/workflows/pages.yml/runs, the newest green pull_request run from {repo} whose jobs printed a notice, of the newest ${PR_RUNS_READ}; its jobs' check-run annotations, each job's GitHub requests notice (quality/gh-replay.mjs report), live REST plus GraphQL, summed`,
     async run(L, { gh, repo }) {
       const runs = (await gh.rest(`repos/${repo}/actions/workflows/pages.yml/runs?event=pull_request&status=success&per_page=10`)).workflow_runs ?? [];
-      const latest = runs.find((r) => r.head_repository?.full_name === repo);
-      if (!latest) return skip("no green pull request run of pages.yml from this repo");
-      const jobs = ((await gh.rest(`repos/${repo}/actions/runs/${latest.id}/jobs?per_page=100`)).jobs ?? []).filter((j) => j.conclusion && j.conclusion !== "skipped");
-      const got = prRunRequests(jobs, await mapLimit(jobs, 4, (j) => gh.rest(`repos/${repo}/check-runs/${j.id}/annotations`)));
-      return got ? { ...measured(got.value, got.detail), note: `run ${latest.id}` } : skip(`run ${latest.id}'s jobs printed no GitHub requests notice`);
+      const ours = runs.filter((r) => r.head_repository?.full_name === repo).slice(0, PR_RUNS_READ);
+      if (!ours.length) return skip("no green pull request run of pages.yml from this repo");
+      for (const r of ours) {
+        const jobs = ((await gh.rest(`repos/${repo}/actions/runs/${r.id}/jobs?per_page=100`)).jobs ?? []).filter((j) => j.conclusion && j.conclusion !== "skipped");
+        const got = prRunRequests(jobs, await mapLimit(jobs, 4, (j) => gh.rest(`repos/${repo}/check-runs/${j.id}/annotations`)));
+        if (got) return { ...measured(got.value, got.detail), note: `run ${r.id}` };
+      }
+      return skip(`the jobs of runs ${ours.map((r) => r.id).join(", ")} printed no GitHub requests notice`);
     },
   },
 };

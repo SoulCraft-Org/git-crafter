@@ -294,6 +294,33 @@ describe("fail open", () => {
   });
 });
 
+describe("ci.pr_run_requests", () => {
+  const only = TARGETS.filter((t) => t.id === "ci.pr_run_requests");
+  const notice = { title: "GitHub requests", message: "live 12 REST, 3 GraphQL; 140 replayed from main (replay)" };
+  // Runs 91 to 94, newest first; `noted` names the runs whose one job printed a notice.
+  const prRest = (noted) => ({
+    [`repos/${REPO}/actions/workflows/pages.yml/runs?event=pull_request&status=success&per_page=10`]: { workflow_runs: [91, 92, 93, 94].map((id) => ({ id, head_repository: { full_name: REPO } })) },
+    ...Object.fromEntries([91, 92, 93, 94].flatMap((id) => [
+      [`repos/${REPO}/actions/runs/${id}/jobs?per_page=100`, { jobs: [{ id: id * 10, name: "build", conclusion: "success" }, { id: id * 10 + 1, name: "deploy", conclusion: "skipped" }] }],
+      [`repos/${REPO}/check-runs/${id * 10}/annotations`, noted.includes(id) ? [notice] : []],
+    ])),
+  });
+
+  it("reads the newest run whose jobs printed a notice", async () => {
+    const got = (await collectWith({ targets: only, gh: fakeGh({ rest: prRest([92, 93]) }) }))["ci.pr_run_requests"];
+    assert.equal(got.value, 15);
+    assert.match(got.source, /; run 92$/);
+  });
+
+  it("skips after 3 runs with no notice and never reads a 4th", async () => {
+    const calls = [];
+    const got = (await collectWith({ targets: only, gh: fakeGh({ rest: prRest([94]) }, calls) }))["ci.pr_run_requests"];
+    assert.equal(got.value, undefined);
+    assert.match(got.could_not_check, /runs 91, 92, 93 printed no GitHub requests notice/);
+    assert.ok(!calls.some((c) => /\/94\/jobs|\/940\//.test(c)), "run 94 is not read");
+  });
+});
+
 // ---------------------------------------------------------------- settings
 
 describe("targets/ci.json", () => {
