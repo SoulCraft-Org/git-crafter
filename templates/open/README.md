@@ -59,4 +59,4 @@ Each is an `optional: true` row: apply it only if your repo needs it.
 |---|---|---|
 | Community profile `health_percentage` | 100 | `gh api repos/<owner>/<repo>/community/profile -q .health_percentage` |
 | Merge policy self-test | PASS | `python3 -I tools/merge_policy.py --self-test` |
-| OpenSSF Scorecard, from [`scorecard.yml`](../ci/scorecard.yml) | 8 or more, a goal | `curl -s https://api.scorecard.dev/projects/github.com/<owner>/<repo> \| jq .score` |
+| OpenSSF Scorecard, from [`scorecard.yml`](../ci/scorecard.yml) | 8 or more, a goal. A repo one person authors and merges tops out near 7.7: Code-Review counts a second account's approvals, and Maintained reads 0 for its first 90 days (Colorado-Startups/claudius, 2026-11-14) | `curl -s https://api.scorecard.dev/projects/github.com/<owner>/<repo> \| jq .score` |
