@@ -59,4 +59,4 @@ Each is an `optional: true` row: apply it only if your repo needs it.
 |---|---|---|
 | Community profile `health_percentage` | 100 | `gh api repos/<owner>/<repo>/community/profile -q .health_percentage` |
 | Merge policy self-test | PASS | `python3 -I tools/merge_policy.py --self-test` |
-| OpenSSF Scorecard, from [`scorecard.yml`](../ci/scorecard.yml) | 8 or more, a goal. A repo one person authors and merges tops out near 7.7, once Maintained reads 10 after its first 90 days and SAST covers every commit: Code-Review counts only a second account's approvals (Colorado-Startups/claudius, 2026-11-14) | `curl -s https://api.scorecard.dev/projects/github.com/<owner>/<repo> \| jq .score` |
+| OpenSSF Scorecard, from [`scorecard.yml`](../ci/scorecard.yml) | Advisory, not a goal: an agent-run repo cannot reach 10 on it now. Code-Review counts no bot or AI review, and Maintained scores 0 for a repo's first 90 days (ossf/scorecard docs/checks.md, read 2026-11-14) | `curl -s https://api.scorecard.dev/projects/github.com/<owner>/<repo> \| jq .score` |
