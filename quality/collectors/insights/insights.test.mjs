@@ -152,6 +152,10 @@ describe("the metric functions", () => {
   it("do not score an answer that lacks the number", () => {
     assert.match(communityHealth({ files: {} }).could_not_check, /without a health percentage/);
     assert.match(idleAccess([], NOW, 90).could_not_check, /nobody with write access/);
+    // Org owners are left out before the count; a repo whose only pushers are owners reads 0, not a skip.
+    const owned = idleAccess([], NOW, 90, 2);
+    assert.equal(owned.value, 0);
+    assert.deepEqual(owned.detail.map((d) => d.label), ["people with write access", "org owners left out"]);
   });
 
   it("read a repo with only its default branch as no leftover branch and no wait", () => {

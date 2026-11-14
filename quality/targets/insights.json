@@ -65,7 +65,7 @@
     "near": 1,
     "direction": "lower",
     "goal_source": "Microsoft Learn, Microsoft cloud security benchmark PA-4 (read 2026-11-10): review access regularly and remove what goes unused, with accounts unused for 90 days flagged; GitHub docs, Viewing people with access to your repository: the list serves offboarding and security reviews",
-    "source": "state: gh api repos/{repo}/collaborators (people who can push, the first 100) and each one's latest default-branch commit: those with none in params.idle_days days (90, the benchmark's line)",
+    "source": "state: gh api repos/{repo}/collaborators (people who can push, the first 100) and each one's latest default-branch commit: those with none in params.idle_days days (90, the benchmark's line); org owners left out, since GitHub recommends at least two and no repo review can remove one",
     "needs": "github-admin",
     "chart": "number"
   }
