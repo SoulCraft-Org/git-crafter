@@ -139,7 +139,7 @@ export function loadTargets(dir, { tabIds = TAB_IDS } = {}) {
 
 // A dropped metric that gates nothing is never shown, scored or collected, so its tab need not be listed: a
 // repo's public config can leave out a pack tab whose every metric it drops (#116).
-const offPage = (def) => def.drop === true && !def.gate;
+const offPage = (def) => def.drop === true && !def.gate && typeof def.tab === "string" && def.tab.trim() !== "";
 
 // The definitions a page scores: the template's targets, the repo's laid over
 // them, every one checked, then those dropped or on a tab the repo turned off
