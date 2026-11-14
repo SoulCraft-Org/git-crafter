@@ -60,11 +60,11 @@ export function oldestLeftoverHours(left) {
   return measured(round1(Math.max(0, ...left.map((b) => b.hours))), [count("leftover branches", left.length)]);
 }
 
-/** People whose latest default-branch commit is missing or older than `days`; `latest` holds one date or null per person. */
-export function idleAccess(latest, now, days) {
-  if (!latest.length) return skip("nobody with write access was listed");
+/** People whose latest default-branch commit is missing or older than `days`; `latest` holds one date or null per person, org owners already left out (`owners` of them). */
+export function idleAccess(latest, now, days, owners = 0) {
+  if (!latest.length && !owners) return skip("nobody with write access was listed");
   const idle = latest.filter((date) => !date || now - Date.parse(date) > days * DAY).length;
-  return measured(idle, [count("people with write access", latest.length)]);
+  return measured(idle, [count("people with write access", latest.length), ...(owners ? [count("org owners left out", owners)] : [])]);
 }
 
 // The repo's leftover branches, read once per collect for both branch metrics; null when it has no default branch.
@@ -87,11 +87,24 @@ function readLeftover(ctx) {
 const NO_BASE = "the repo has no default branch";
 const BRANCH_SOURCE = `state: GraphQL refs under refs/heads (the first ${BRANCH_LIMIT}) with their pull requests: a branch whose pull request closed or merged, or one older than params.branch_grace_hours with none; the default branch, open pull requests and params.keep_branches do not count`;
 
-// The date of each person's latest default-branch commit, or null: people who can push, bots left out.
-async function latestCommits({ gh, repo }) {
-  const people = (await gh.restAll(`repos/${repo}/collaborators?per_page=${PEOPLE}`)).filter((p) => p.type !== "Bot" && p.permissions?.push);
+// The org's owners, or none when the repo's owner is a user or the read is refused. An owner's access is the
+// org's, not the repo's: no repo review can take it away, and GitHub recommends "that at least two people within
+// each organization have the owner role" (docs, Maintaining ownership continuity for your organization, read
+// 2026-11-14), so a second owner who never commits is not idle access to remove.
+async function orgOwners({ gh, repo }) {
+  const owners = await gh.restAll(`orgs/${repo.split("/")[0]}/members?role=admin&per_page=${PEOPLE}`).catch(() => []);
+  return new Set((Array.isArray(owners) ? owners : []).map((o) => o.login));
+}
+
+// The date of each person's latest default-branch commit, or null: people who can push, bots and org owners left
+// out; with how many owners were left out.
+async function latestCommits(ctx) {
+  const { gh, repo } = ctx;
+  const owners = await orgOwners(ctx);
+  const pushers = (await gh.restAll(`repos/${repo}/collaborators?per_page=${PEOPLE}`)).filter((p) => p.type !== "Bot" && p.permissions?.push);
+  const people = pushers.filter((p) => !owners.has(p.login));
   const latest = async (p) => (await gh.rest(`repos/${repo}/commits?author=${encodeURIComponent(p.login)}&per_page=1`))?.[0]?.commit?.committer?.date ?? null;
-  return mapLimit(people.slice(0, PEOPLE), 8, latest);
+  return { latest: await mapLimit(people.slice(0, PEOPLE), 8, latest), owners: pushers.length - people.length };
 }
 
 /** The three metrics, in the shape insights.mjs's METRICS table holds. */
@@ -111,10 +124,11 @@ export const ACCESS_METRICS = {
     },
   },
   "insights.idle_access": {
-    source: `state: gh api repos/{repo}/collaborators (people who can push, the first ${PEOPLE}) and each one's latest default-branch commit (gh api repos/{repo}/commits?author=): those with none in params.idle_days days`,
+    source: `state: gh api repos/{repo}/collaborators (people who can push, the first ${PEOPLE}) and each one's latest default-branch commit (gh api repos/{repo}/commits?author=): those with none in params.idle_days days; org owners (gh api orgs/{org}/members?role=admin) left out`,
     async run(ctx) {
       const days = Number(ctx.params.idle_days) > 0 ? Number(ctx.params.idle_days) : 90;
-      return idleAccess(await latestCommits(ctx), ctx.now, days);
+      const { latest, owners } = await latestCommits(ctx);
+      return idleAccess(latest, ctx.now, days, owners);
     },
   },
 };
