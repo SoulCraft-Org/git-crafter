@@ -155,6 +155,16 @@ check("a repo's overrides take only goal, near, goal_source, params, drop and ga
     assert.throws(() => loadDefs({ templateDir: join(dir, "t"), repoDir: join(dir, "r") }), /a\.json over the template's a\.json: t\.up: near must be on the worse side/);
     writeFileSync(join(dir, "r", "a.json"), JSON.stringify([{ id: "r.half", tab: "code", goal: 1 }]));
     assert.throws(() => loadDefs({ templateDir: join(dir, "t"), repoDir: join(dir, "r") }), /kind must be/, "a repo's own metric is a full definition");
+    // A dropped metric on a tab the config does not list loads (#116); one not dropped still stops.
+    const own = { ...up, id: "tokens.used", tab: "tokens" };
+    writeFileSync(join(dir, "r", "a.json"), JSON.stringify([{ ...own, drop: true }]));
+    assert.deepEqual(loadDefs({ templateDir: join(dir, "t"), repoDir: join(dir, "r") }).defs.map((d) => d.id), ["t.up"]);
+    writeFileSync(join(dir, "r", "a.json"), JSON.stringify([own]));
+    assert.throws(() => loadDefs({ templateDir: join(dir, "t"), repoDir: join(dir, "r") }), /tab "tokens" is gone/);
+    writeFileSync(join(dir, "r", "a.json"), JSON.stringify([{ ...own, drop: true, gate: true }]));
+    assert.throws(() => loadDefs({ templateDir: join(dir, "t"), repoDir: join(dir, "r") }), /tab "tokens" is gone/, "a gated drop still names its tab");
+    writeFileSync(join(dir, "r", "a.json"), JSON.stringify([{ ...own, tab: undefined, drop: true }]));
+    assert.throws(() => loadDefs({ templateDir: join(dir, "t"), repoDir: join(dir, "r") }), /unknown tab/, "a dropped metric still needs a tab");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

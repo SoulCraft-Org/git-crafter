@@ -137,6 +137,10 @@ export function loadTargets(dir, { tabIds = TAB_IDS } = {}) {
   return defs;
 }
 
+// A dropped metric that gates nothing is never shown, scored or collected, so its tab need not be listed: a
+// repo's public config can leave out a pack tab whose every metric it drops (#116).
+const offPage = (def) => def.drop === true && !def.gate && typeof def.tab === "string" && def.tab.trim() !== "";
+
 // The definitions a page scores: the template's targets, the repo's laid over
 // them, every one checked, then those dropped or on a tab the repo turned off
 // left out. Returns the defs, each targets file's params (overlayTargets),
@@ -145,7 +149,7 @@ export function loadTargets(dir, { tabIds = TAB_IDS } = {}) {
 export function loadDefs({ templateDir, packDirs = [], repoDir = null, tabs = DEFAULT_TABS, tabIds = new Set([...TAB_IDS, ...tabs.map(([id]) => id)]) }) {
   const repoFiles = repoDir && repoDir !== templateDir ? readTargetFiles(repoDir) : [];
   const { entries, params } = overlayTargets(baseFiles(templateDir, packDirs), repoFiles);
-  for (const def of entries) checkDef(def, `${def.overridden_in ? `${def.overridden_in} over the template's ${def.file}` : def.file}: ${def.id ?? "(no id)"}`, tabIds);
+  for (const def of entries) checkDef(def, `${def.overridden_in ? `${def.overridden_in} over the template's ${def.file}` : def.file}: ${def.id ?? "(no id)"}`, offPage(def) ? new Set([...tabIds, def.tab]) : tabIds);
   const on = new Set(tabs.map(([id]) => id));
   const defs = entries.filter((d) => d.drop !== true && on.has(d.tab));
   const gated = entries.filter((d) => (d.gate === true || d.gate === "warn") && on.has(d.tab));
