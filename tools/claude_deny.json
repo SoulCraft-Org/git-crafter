@@ -1,0 +1,23 @@
+{
+ "version": 1,
+ "comment": "The one-way-door deny rules for ~/.claude/settings.json permissions.deny, which replace the retired bash guard (tools/bash_guard_rules.json at 8023bd4). Deny rules block in every permission mode, bypassPermissions included (code.claude.com/docs/en/permission-modes, read 2026-11-14). A Bash rule matches the command text Claude writes, after Claude Code splits compound commands and strips a fixed set of wrappers; it does not match the same program by path or inside sh -c, so it is not a security boundary (code.claude.com/docs/en/permissions, read 2026-11-14). Each rule lists the retired guard rules it replaces, commands it must block and commands it must allow; tools/claude_deny.py --self-test runs them against a model of that documented matching. A Read rule also stops the file commands Claude Code recognizes in Bash (cat, head, tail, sed, tee) and redirect targets. uncovered names each retired rule no deny pattern can carry, and what covers it now. Read rules in user settings use ~/ or // so they apply in every project.",
+ "retired_source": "The 53 rule ids of tools/bash_guard_rules.json at commit 8023bd4, the guard these rules replace.",
+ "retired": ["git-force-push", "git-push-main", "git-skip-hooks", "hook-skip-export", "git-hookspath-config", "git-hookspath-section", "git-reset-hard", "git-discard-all", "git-discard-xargs", "git-discard-unseen-word", "git-discard-all-staged", "git-clean-force", "git-clean-force-exclude", "git-clean-force-value", "git-one-side-checkout", "git-one-side-merge", "gh-merge-unsafe", "gh-merge-disable-auto", "gh-merge-disable-auto-off", "gh-merge-unpinned-last", "gh-api-merge", "gh-stack-merge", "gh-api-merge-bypass", "gh-api-write-door", "gh-api-protection-delete", "gh-api-graphql-write-door", "gh-repo-one-way", "gh-token-print", "git-credential-print", "gh-signin-secrets", "key-issuer-to-store", "sudo-admin", "osascript-admin", "wrangler-one-way", "find-root-delete", "rm-root", "pipe-to-shell", "heredoc-backticks", "launch-agents", "crontab-write", "keychain-secret-read", "keychain-session-write", "clipboard-read", "env-dump", "key-var-print", "key-var-assign", "credential-file-read", "secret-on-argv", "value-print", "claude-setup-token", "sync-apply", "local-test-suite", "local-heavy-compute"],
+ "rules": [
+  {
+   "id": "rm-home",
+   "replaces": ["rm-root"],
+   "why": "A recursive delete of the home folder or the root. On 2026-11-04 a local harness deleted this account's home folder.",
+   "deny": [
+    "Bash(rm -rf ~)", "Bash(rm -rf ~/)", "Bash(rm -fr ~)", "Bash(rm -fr ~/)", "Bash(rm -r -f ~)", "Bash(rm -Rf ~)", "Bash(rm -rf -- ~)",
+    "Bash(rm -rf $HOME)", "Bash(rm -rf $HOME/)", "Bash(rm -rf \"$HOME\")", "Bash(rm -rf \"$HOME/\")",
+    "Bash(rm -rf ${HOME})", "Bash(rm -rf \"${HOME}\")", "Bash(rm -rf \"${HOME}/\")",
+    "Bash(rm -rf /)", "Bash(rm -rf .)", "Bash(rm -rf ..)", "Bash(rm -r .)"
+   ],
+   "blocks": ["rm -rf ~", "cd /tmp && rm -rf ~", "FOO=1 rm -rf \"$HOME\"", "timeout 5 rm -rf ~/", "rm -rf /", "echo \"$(rm -rf ~)\"", "rm -rf \"${HOME}/\""],
+   "allows": ["rm -rf ~/tmp/x", "rm -rf dist", "rm -rf ./node_modules", "rm -f ~/.cache/x.tmp", "rm -rf /tmp/scratch-123", "rm --help"],
+   "gaps": "Exact forms only, since * is a wildcard. /bin/rm, sh -c, rm -rf ~/* and flags after the path pass these rules; Claude Code's own critical-path check still prompts for a recognized rm of the home folder or the root in every mode, and the hookify rule block-rm-home blocks the wrapped forms in sessions that load it."
+  }
+ ],
+ "uncovered": []
+}
