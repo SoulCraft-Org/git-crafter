@@ -14,7 +14,7 @@ flowchart LR
 | Change | Goes in | Check |
 |---|---|---|
 | Reusable rule | `rules/*.md` | `voice_lint.py` in `tools/verify.sh` |
-| Blocked or allowed command | `tools/bash_guard_rules.json`, with block and allow examples | `bash_guard.py --self-test` |
+| Blocked or allowed command | `tools/claude_deny.json`, else `.claude/hookify.*.local.md`, with examples | `claude_deny.py --self-test` |
 | One org's name, path, link or number | `config/<org>.json`, never a template file | `public.private_refs`, goal 0 |
 | One account's machine, keys tool, checkout or naming | its private overlay, from [config/account.example.json](config/account.example.json); never here | `claude_os_sync.py --self-test` |
 | Goal or process-map step | `goals.json`, `maps.json` | `tests/pages-docs.test.mjs` |

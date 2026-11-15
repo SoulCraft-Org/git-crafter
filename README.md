@@ -9,7 +9,7 @@ Templates for AI agents to run an open-source or open-weight repo with Claude Co
 | [Quality, Speed and Consumption page](https://soulcraft-org.github.io/git-crafter/quality/) | 15 categories, each scored against an ideal from current, dated sources |
 | [Process page](https://soulcraft-org.github.io/git-crafter/) | Process maps: each step's tool, rule and metric |
 | [CI standard](templates/ci/README.md) | One reusable workflow on GitHub's standard hosted runners |
-| [Rules](rules/) and [guards](tools/) | What Claude sessions may do, and a bash guard that blocks one-way doors |
+| [Rules](rules/) and [guards](tools/) | What Claude sessions may do, and the `permissions.deny` list and hookify rules that block one-way doors |
 
 Both pages are public.
 

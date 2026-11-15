@@ -5,11 +5,8 @@
     "verify": { "run": ["bash", "tools/verify.sh"], "timeout": 10 },
     "self-test:deny-rules": { "run": ["python3", "-I", "tools/claude_deny.py", "--self-test"], "timeout": 10 },
     "self-test:hookify-rules": { "run": ["python3", "-I", "tools/hookify_check.py", "--self-test"], "timeout": 10 },
-    "self-test:bash-guard": { "run": ["python3", "-I", "tools/bash_guard.py", "--self-test"], "timeout": 10 },
     "self-test:voice-lint": { "run": ["python3", "-I", "tools/voice_lint.py", "--self-test"], "timeout": 10 },
     "self-test:sync-tool": { "run": ["python3", "-I", "tools/claude_os_sync.py", "--self-test"], "timeout": 10 },
-    "self-test:write-guard": { "run": ["python3", "-I", "tools/write_guard.py", "--self-test"], "timeout": 10 },
-    "self-test:comfy-guard": { "run": ["python3", "-I", "tools/comfy_guard.py", "--self-test"], "timeout": 10 },
-    "self-test:turn-check": { "run": ["python3", "-I", "tools/turn_check.py", "--self-test"], "timeout": 10 }
+    "self-test:comfy-guard": { "run": ["python3", "-I", "tools/comfy_guard.py", "--self-test"], "timeout": 10 }
   }
 }

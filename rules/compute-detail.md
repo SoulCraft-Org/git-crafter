@@ -53,7 +53,7 @@ a file these paths match.
 
 | Gate | Covers |
 |---|---|
-| The bash guard's `local-test-suite` and `local-heavy-compute` rules | the certain local cases; a case they miss still applies |
+| The deny list's `local-compute` rule (`tools/claude_deny.json`) | the plain suite, build and e2e commands; a case it misses still applies |
 | [`rules/comfy.md`](comfy.md) | Comfy tiers, and Comfy's own gates. Each account's standing yes, stop and guard are `compute.comfy` fields in `~/.claude/code-os/account.json` |
 
 OpenCode and Goose follow these rules too. A managed policy

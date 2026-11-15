@@ -41,7 +41,7 @@ not the same as dirty. The check catches a dirty checkout, not a clean one on
 someone else's branch. The printed branch is how you spot that.
 
 Source check: apply copies only reviewed, merged content, since user-claude
-installs the guard and the rules every session reads, and the orchestrator
+installs the deny rules, the hookify rules and the rules every session reads, and the orchestrator
 runs apply after each merge (rules/delegation.md). Before writing, apply runs `git fetch origin main` in the
 Git Crafter root and refuses unless that root is on main, has no tracked change
 and no untracked file, and its HEAD equals origin/main. The manifest must be
