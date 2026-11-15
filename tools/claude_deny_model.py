@@ -39,63 +39,48 @@ def bash_regex(spec):
     return re.compile("^%s$" % body, re.S), bare
 
 
-def _close(text, i):
-    """The index just past the ) that closes a $( opened before i."""
-    depth, quote = 1, None
-    while i < len(text):
-        c = text[i]
-        if quote:
-            if c == quote:
-                quote = None
-            elif c == "\\" and quote == '"':
-                i += 1
-        elif c in "'\"":
-            quote = c
-        elif c in "()":
-            depth += 1 if c == "(" else -1
-            if depth == 0:
-                return i + 1
-        i += 1
-    return len(text)
+# One shell token: a quoted string, a substitution, a separator, or a run of plain text.
+TOKEN_RE = re.compile(r"""'[^']*'|"(?:\\.|[^"\\])*"|\$\((?:[^()]|\([^()]*\))*\)|`[^`]*`|&&|\|\||\|&|[;|&\n]|\\.|[^'"$`;|&\n\\]+|.""", re.S)
+SUBST_RE = re.compile(r"\$\(((?:[^()]|\([^()]*\))*)\)|`([^`]*)`")
+SEPARATORS = {"&&", "||", "|&", ";", "|", "&", "\n"}
+# A wrapper's own options, dropped with it.
+WRAPPER_ARGS = {"timeout": r"^\S+\s+", "nice": r"^(-n\s+\S+\s+|-\d+\s+)?", "stdbuf": r"^(-\S+\s+)*"}
 
 
 def split_commands(text):
     """Each command a compound command holds, substitutions included."""
-    parts, nested, cur, quote, i = [], [], [], None, 0
-    while i < len(text):
-        c, two = text[i], text[i:i + 2]
-        if quote == "'":
-            cur.append(c)
-            quote = None if c == "'" else quote
-        elif c == "\\" and i + 1 < len(text):
-            cur.append(two)
-            i += 1
-        elif two == "$(":
-            end = _close(text, i + 2)
-            nested.append(text[i + 2:end - 1])
-            cur.append(text[i:end])
-            i = end - 1
-        elif c == "`":
-            end = text.find("`", i + 1)
-            end = len(text) if end < 0 else end
-            nested.append(text[i + 1:end])
-            cur.append(text[i:end + 1])
-            i = end
-        elif quote == '"' or c in "'\"":
-            cur.append(c)
-            quote = None if quote == c else (quote or c)
-        elif two in ("&&", "||", "|&") or c in ";|&\n":
-            parts.append("".join(cur))
-            cur = []
-            i += 1 if two in ("&&", "||", "|&") else 0
+    tokens = TOKEN_RE.findall(text)
+    parts, cur = [], ""
+    for tok in tokens:
+        if tok in SEPARATORS:
+            parts, cur = parts + [cur], ""
         else:
-            cur.append(c)
-        i += 1
-    parts.append("".join(cur))
-    out = [strip(p) for p in parts if p.strip()]
-    for n in nested:
-        out.extend(split_commands(n))
+            cur += tok
+    out = [strip(p) for p in parts + [cur] if p.strip()]
+    for inner in _substitutions(tokens):
+        out.extend(split_commands(inner))
     return [p for p in out if p]
+
+
+def _substitutions(tokens):
+    """The text inside each $(...) or backticks, outside single quotes."""
+    return [a or b for tok in tokens if not tok.startswith("'") for a, b in SUBST_RE.findall(tok)]
+
+
+def _unwrap(cmd):
+    """cmd without its first leading assignment or wrapper, or None when it starts with neither."""
+    m = ASSIGN_RE.match(cmd)
+    if m:
+        return cmd[m.end():]
+    words = cmd.split(None, 1)
+    if len(words) < 2:
+        return None
+    head, rest = words
+    if head in WRAPPERS and not (head == "command" and rest.startswith("-")):
+        return rest
+    if head == "xargs" and not rest.startswith("-"):
+        return rest
+    return re.sub(WRAPPER_ARGS[head], "", rest, count=1) if head in WRAPPER_ARGS else None
 
 
 def strip(cmd):
@@ -103,25 +88,10 @@ def strip(cmd):
     cmd = cmd.strip().lstrip("({ ").strip()
     while cmd.endswith(")") and cmd.count("(") < cmd.count(")"):
         cmd = cmd[:-1].strip()
-    while True:
-        m = ASSIGN_RE.match(cmd)
-        words = cmd.split(None, 1)
-        if m:
-            cmd = cmd[m.end():]
-        elif len(words) < 2:
-            return cmd
-        elif words[0] in WRAPPERS and not (words[0] == "command" and words[1].startswith("-")):
-            cmd = words[1]
-        elif words[0] == "timeout" and len(words[1].split(None, 1)) > 1:
-            cmd = words[1].split(None, 1)[1]
-        elif words[0] == "nice":
-            cmd = re.sub(r"^(-n\s+\S+|-\d+)\s+", "", words[1])
-        elif words[0] == "stdbuf":
-            cmd = re.sub(r"^(-\S+\s+)+", "", words[1])
-        elif words[0] == "xargs" and not words[1].startswith("-"):
-            cmd = words[1]
-        else:
-            return cmd
+    nxt = _unwrap(cmd)
+    while nxt is not None:
+        cmd, nxt = nxt, _unwrap(nxt)
+    return cmd
 
 
 def bash_matches(spec, command):
@@ -181,6 +151,7 @@ READ_ROWS = [
 
 
 def self_test():
+    """Check the model against the docs' own rows; 0 when every row agrees."""
     problems = []
     for kind, rows in (("Bash", DOC_ROWS), ("Read", READ_ROWS)):
         for spec, hits, misses in rows:
