@@ -9,25 +9,10 @@ deny rule blocks in every permission mode, bypassPermissions included
 (code.claude.com/docs/en/permission-modes, read 2026-11-14), and Claude Code
 evaluates it, so nothing here runs before a tool call. claude_deny.json holds
 the rules, the retired guard rules each replaces, and commands each must
-block and allow.
-
-Fires or waits: the rules fire once they sit in ~/.claude/settings.json under
-permissions.deny. claude_os_sync.py never edits settings.json, so after each
-apply that changes the list:
-
-  python3 -I ~/.claude/code-os/claude_deny.py --merge ~/.claude/settings.json --yes
-
-  --self-test        every block example matches one of its own rule's
-                     patterns, no allow example matches any pattern, each
-                     retired guard rule is accounted for once, and the model
-                     passes its own self-test.
-  --check FILE       exit 0 when FILE's permissions.deny holds every rule,
-                     else list the missing ones and exit 1. Read-only.
-  --merge FILE       print what --yes would add. Read-only.
-  --merge FILE --yes add the missing rules to the end of permissions.deny,
-                     never removing or reordering one and keeping every other
-                     key; it writes a temporary file and renames it into place.
-  --table            the Markdown table of retired rules and what replaces each.
+block and allow. COMMANDS lists what this file runs; --self-test checks that
+every block example matches one of its own rule's patterns, no allow example
+matches any pattern, each retired guard rule is accounted for once, and the
+model passes its own self-test.
 
 Exit 0 = ok, 1 = a check failed or rules are missing, 2 = usage or read error.
 Requires Python 3.9, standard library only.
@@ -36,7 +21,6 @@ Requires Python 3.9, standard library only.
 import json
 import os
 import sys
-import tempfile
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 if HERE not in sys.path:
@@ -47,6 +31,7 @@ DATA = os.path.join(HERE, "claude_deny.json")
 
 
 def load(path=DATA):
+    """The deny list data."""
     with open(path, encoding="utf-8") as f:
         return json.load(f)
 
@@ -59,111 +44,105 @@ def deny_list(data):
     return out
 
 
+def pattern_problem(d):
+    """What is wrong with one deny pattern, or None."""
+    m = model.RULE_RE.match(d)
+    if not m:
+        return "%r is not Bash(...) or Read(...)" % d
+    if m.group(2).strip() in ("", "*"):
+        return "%r would remove the whole tool" % d
+    if m.group(1) == "Read":
+        try:
+            model.read_regex(m.group(2))
+        except ValueError as e:
+            return str(e)
+    return None
+
+
+EXAMPLE_KEYS = (("Bash", "blocks", "allows"), ("Read", "read_blocks", "read_allows"))
+
+
+def _misses(rule, kind, key):
+    """The block examples no pattern of the rule's own matches."""
+    return ["no rule of its own blocks %r" % c for c in rule.get(key, [])
+            if not any(model.matches(d, c, kind) for d in rule["deny"])]
+
+
+def _false_hits(rules, examples, kind):
+    """The allow examples some pattern in the whole list matches, each with the first that does."""
+    out = []
+    for c in examples:
+        hit = [d for d in rules if model.matches(d, c, kind)]
+        out += ["%r should pass but %s blocks it" % (c, hit[0])] if hit else []
+    return out
+
+
+def example_problems(rule, rules):
+    """The block examples no pattern of the rule's own matches, and the allow examples any pattern does."""
+    out = []
+    for kind, block, allow in EXAMPLE_KEYS:
+        out += _misses(rule, kind, block) + _false_hits(rules, rule.get(allow, []), kind)
+    has = lambda keys: any(rule.get(k) for k in keys)  # noqa: E731
+    return out + ([] if has(("blocks", "read_blocks")) and has(("allows", "read_allows")) else ["needs a block and an allow example"])
+
+
 def rule_problems(rule, rules):
     """What is wrong with one rule: a malformed pattern, or an example that misbehaves."""
-    out = []
-    for d in rule["deny"]:
-        m = model.RULE_RE.match(d)
-        if not m:
-            out.append("%r is not Bash(...) or Read(...)" % d)
-        elif m.group(2).strip() in ("", "*"):
-            out.append("%r would remove the whole tool" % d)
-        elif m.group(1) == "Read":
-            try:
-                model.read_regex(m.group(2))
-            except ValueError as e:
-                out.append(str(e))
-    for kind, block, allow in (("Bash", "blocks", "allows"), ("Read", "read_blocks", "read_allows")):
-        out += ["no rule of its own blocks %r" % c for c in rule.get(block, [])
-                if not any(model.matches(d, c, kind) for d in rule["deny"])]
-        for c in rule.get(allow, []):
-            hit = [d for d in rules if model.matches(d, c, kind)]
-            out += ["%r should pass but %s blocks it" % (c, hit[0])] if hit else []
-    if not (rule.get("blocks") or rule.get("read_blocks")) or not (rule.get("allows") or rule.get("read_allows")):
-        out.append("needs a block and an allow example")
+    out = [p for p in map(pattern_problem, rule["deny"]) if p] + example_problems(rule, rules)
     return ["%s: %s" % (rule["id"], p) for p in out]
 
 
-def self_test(data):
-    rules = deny_list(data)
-    problems = [p for rule in data["rules"] for p in rule_problems(rule, rules)]
+def _accounted(data):
+    """Each retired id the data names, with the rules (or "uncovered") that name it."""
     seen = {}
     for rule in data["rules"]:
         for rid in rule["replaces"]:
             seen.setdefault(rid, []).append(rule["id"])
     for u in data["uncovered"]:
         seen.setdefault(u["id"], []).append("uncovered")
-        problems += [] if u.get("why") and u.get("now") else ["uncovered %s: needs why and now" % u["id"]]
+    return seen
+
+
+def accounting_problems(data):
+    """Each retired guard rule must be replaced, or named uncovered, exactly once."""
+    seen = _accounted(data)
+    problems = ["uncovered %s: needs why and now" % u["id"] for u in data["uncovered"] if not (u.get("why") and u.get("now"))]
     problems += ["%s is accounted for %d times, not once" % (rid, len(v)) for rid, v in seen.items() if len(v) != 1]
     problems += ["%s is no retired guard rule" % rid for rid in seen if rid not in data["retired"]]
     problems += ["retired %s is accounted for nowhere" % rid for rid in data["retired"] if rid not in seen]
+    return problems, len(seen)
+
+
+def self_test(data):
+    """Run every rule's examples, the accounting and the model's own test; 0 when all pass."""
+    rules = deny_list(data)
+    problems = [p for rule in data["rules"] for p in rule_problems(rule, rules)]
+    accounting, accounted = accounting_problems(data)
+    problems += accounting
     if len(rules) != sum(len(r["deny"]) for r in data["rules"]):
         problems.append("a deny rule is listed twice")
     for p in problems:
         print("FAIL " + p)
     print("claude_deny self-test: %d rules for %d retired guard rules, %s"
-          % (len(rules), len(seen), "ok" if not problems else "%d problems" % len(problems)))
+          % (len(rules), accounted, "ok" if not problems else "%d problems" % len(problems)))
     return model.self_test() or (1 if problems else 0)
 
 
-def read_settings(path):
-    with open(path, encoding="utf-8") as f:
-        settings = json.load(f)
-    if not isinstance(settings, dict):
-        raise ValueError("%s is not a JSON object" % path)
-    return settings
-
-
-def missing(settings, rules):
-    have = set(settings.get("permissions", {}).get("deny", []))
-    return [r for r in rules if r not in have]
-
-
-def merge(path, rules, write):
-    settings = read_settings(path)
-    add = missing(settings, rules)
-    for r in add:
-        print("add " + r)
-    if write and add:
-        perms = settings.setdefault("permissions", {})
-        perms["deny"] = list(perms.get("deny", [])) + add
-        fd, tmp = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(path)), prefix=".settings-")
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            f.write(json.dumps(settings, indent=2, ensure_ascii=False) + "\n")
-        os.chmod(tmp, os.stat(path).st_mode & 0o777)
-        os.replace(tmp, path)
-    print("%d of %d rules %s" % (len(add), len(rules), "added" if write else "to add (pass --yes to write)"))
-    return 0
-
-
-def table(data):
-    print("| Retired guard rule | Now | Deny rules | Misses |\n|---|---|---|---|")
-    for rule in data["rules"]:
-        for rid in rule["replaces"]:
-            print("| `%s` | `%s` | %d | %s |" % (rid, rule["id"], len(rule["deny"]), rule.get("gaps", "")))
-    for u in data["uncovered"]:
-        print("| `%s` | %s | 0 | %s |" % (u["id"], u["now"], u["why"]))
-    return 0
+COMMANDS = {("--self-test",): self_test}
 
 
 def main(argv):
+    """Run one command; 2 on a usage or read error."""
+    takes_file = {k[0] for k in COMMANDS if "FILE" in k}
+    shape = tuple("FILE" if i == 1 and argv[0] in takes_file else a for i, a in enumerate(argv))
+    if shape not in COMMANDS:
+        print("usage: claude_deny.py " + " | ".join(" ".join(k) for k in COMMANDS), file=sys.stderr)
+        return 2
     try:
-        data = load()
-        if argv == ["--self-test"]:
-            return self_test(data)
-        if argv == ["--table"]:
-            return table(data)
-        if len(argv) == 2 and argv[0] == "--check":
-            gone = missing(read_settings(os.path.expanduser(argv[1])), deny_list(data))
-            print("".join("missing %s\n" % r for r in gone) + "%d deny rules missing from %s" % (len(gone), argv[1]))
-            return 1 if gone else 0
-        if argv[:1] == ["--merge"] and len(argv) in (2, 3) and argv[2:] in ([], ["--yes"]):
-            return merge(os.path.expanduser(argv[1]), deny_list(data), argv[2:] == ["--yes"])
+        return COMMANDS[shape](load(), *argv[1:2])
     except (OSError, ValueError, KeyError) as e:
         print("claude_deny: %s" % e, file=sys.stderr)
         return 2
-    print("usage: claude_deny.py --self-test | --table | --check FILE | --merge FILE [--yes]", file=sys.stderr)
-    return 2
 
 
 if __name__ == "__main__":

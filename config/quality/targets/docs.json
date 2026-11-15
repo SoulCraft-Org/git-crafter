@@ -16,6 +16,10 @@
     {
      "glob": ".github/PULL_REQUEST_TEMPLATE.md",
      "why": "a form GitHub copies into each pull request, not a doc read in the repo"
+    },
+    {
+     "glob": ".claude/hookify.*.local.md",
+     "why": "hookify rules: a pattern the plugin reads and the message it shows on a block, not a doc read in the repo; tools/hookify_check.py checks them"
     }
    ],
    "agent_docs": [
