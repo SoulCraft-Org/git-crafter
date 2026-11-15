@@ -17,6 +17,164 @@
    "blocks": ["rm -rf ~", "cd /tmp && rm -rf ~", "FOO=1 rm -rf \"$HOME\"", "timeout 5 rm -rf ~/", "rm -rf /", "echo \"$(rm -rf ~)\"", "rm -rf \"${HOME}/\""],
    "allows": ["rm -rf ~/tmp/x", "rm -rf dist", "rm -rf ./node_modules", "rm -f ~/.cache/x.tmp", "rm -rf /tmp/scratch-123", "rm --help"],
    "gaps": "Exact forms only, since * is a wildcard. /bin/rm, sh -c, rm -rf ~/* and flags after the path pass these rules; Claude Code's own critical-path check still prompts for a recognized rm of the home folder or the root in every mode, and the hookify rule block-rm-home blocks the wrapped forms in sessions that load it."
+  },
+  {
+   "id": "find-home-delete",
+   "replaces": ["find-root-delete"],
+   "why": "find with -delete or -exec rm from the home folder or the root deletes the tree under it.",
+   "deny": [
+    "Bash(find ~ *-delete*)", "Bash(find ~/ *-delete*)", "Bash(find $HOME *-delete*)", "Bash(find / *-delete*)",
+    "Bash(find ~ *-exec rm *)", "Bash(find ~/ *-exec rm *)", "Bash(find / *-exec rm *)"
+   ],
+   "blocks": ["find ~ -delete", "find ~/ -mindepth 1 -delete", "find $HOME -delete", "find / -exec rm -rf {} +"],
+   "allows": ["find . -name '*.pyc' -delete", "find ~/tmp/x -delete", "find ~ -name x -print"],
+   "gaps": "find -L ~, /bin/rm inside -exec and a path written out in full pass."
+  },
+  {
+   "id": "git-force-push",
+   "replaces": ["git-force-push"],
+   "why": "House rule: never force-push.",
+   "deny": [
+    "Bash(git push *--force*)", "Bash(git push -f*)", "Bash(git push * -f*)", "Bash(git push * +*)",
+    "Bash(git -C * push *--force*)", "Bash(git -C * push -f*)", "Bash(git -C * push * -f*)", "Bash(git -C * push * +*)"
+   ],
+   "blocks": ["git push --force origin feat/x", "git push -f", "git push origin feat/x --force-with-lease", "git push origin +feat/x", "git -C repo push --force", "cd repo && git push -f origin x"],
+   "allows": ["git push origin feat/x", "git push -u origin feat/x", "git push --follow-tags origin feat/x"],
+   "gaps": "git -c push.default=current push and a force set in a config file pass."
+  },
+  {
+   "id": "git-push-main",
+   "replaces": ["git-push-main"],
+   "why": "House rule: never push to main.",
+   "deny": [
+    "Bash(git push * main)", "Bash(git push * main *)", "Bash(git push *:main)", "Bash(git push *:main *)",
+    "Bash(git push *:refs/heads/main)", "Bash(git push *:refs/heads/main *)",
+    "Bash(git push *--all*)", "Bash(git push *--branches*)", "Bash(git push *--mirror*)",
+    "Bash(git -C * push * main)", "Bash(git -C * push *:main)"
+   ],
+   "blocks": ["git push origin main", "git push origin HEAD:main", "git push origin feat/x:refs/heads/main", "git push origin :main", "git push origin --delete main", "git push --all origin", "git push -u origin main", "git -C repo push origin main"],
+   "allows": ["git push origin feat/main-fix", "git push -u origin main-redesign", "git push --tags origin", "git push origin --delete feat/x"],
+   "gaps": "A bare git push from a checkout on main passes; main's ruleset on GitHub still refuses it."
+  },
+  {
+   "id": "git-reset-hard",
+   "replaces": ["git-reset-hard"],
+   "why": "House rule: never hard-reset.",
+   "deny": ["Bash(git reset *--hard*)", "Bash(git reset *--har)", "Bash(git reset *--har *)", "Bash(git -C * reset *--hard*)"],
+   "blocks": ["git reset --hard origin/main", "cd repo && git reset --hard", "git -C repo reset --hard HEAD~1", "git reset --har"],
+   "allows": ["git reset HEAD file.txt", "git reset --soft HEAD~1", "git reset --help"],
+   "gaps": "--h and other shorter abbreviations pass."
+  },
+  {
+   "id": "git-skip-hooks",
+   "replaces": ["git-skip-hooks", "hook-skip-export"],
+   "why": "Hooks are gates, and skipping one hides a failure.",
+   "deny": ["Bash(git * --no-verify*)", "Bash(git commit -n*)", "Bash(export HUSKY=*)", "Bash(export SKIP=*)"],
+   "blocks": ["git commit --no-verify -m wip", "git commit -n -m wip", "git commit -nm wip", "git push --no-verify origin x", "export HUSKY=0 && git commit -m x", "export SKIP=voice-lint"],
+   "allows": ["git commit -m wip", "git commit --amend --no-edit", "export PATH=$PATH:/x", "git commit -m 'no -n here'"],
+   "gaps": "An inline HUSKY=0 before git passes, since a deny rule matches past a leading assignment; -n after other flags passes."
+  },
+  {
+   "id": "git-hooks-path",
+   "replaces": ["git-hookspath-config", "git-hookspath-section"],
+   "why": "Unsetting core.hooksPath, or removing the core section, turns the repo's gates off.",
+   "deny": [
+    "Bash(git config *--unset*core.hooksPath*)", "Bash(git config unset core.hooksPath*)", "Bash(git config core.hooksPath /dev/null)",
+    "Bash(git config *--remove-section core*)", "Bash(git config *--rename-section core *)"
+   ],
+   "blocks": ["git config core.hooksPath /dev/null", "git config --unset core.hooksPath", "git config unset core.hooksPath", "git config --remove-section core", "git config --rename-section core x"],
+   "allows": ["git config core.hooksPath .githooks", "git config --get core.hooksPath", "git config user.name x"],
+   "gaps": "Pointing core.hooksPath at any other folder, and abbreviated flags, pass."
+  },
+  {
+   "id": "git-discard",
+   "replaces": ["git-discard-all", "git-discard-xargs"],
+   "why": "Checking out or restoring the whole tree throws away every uncommitted change for good.",
+   "deny": [
+    "Bash(git checkout -- .)", "Bash(git checkout .)", "Bash(git checkout -- :/)", "Bash(git checkout --)",
+    "Bash(git restore .)", "Bash(git restore -- .)", "Bash(git restore :/)", "Bash(git restore -W .)", "Bash(git restore --worktree .)", "Bash(git restore)"
+   ],
+   "blocks": ["git checkout -- .", "git checkout .", "git restore .", "echo . | xargs git restore", "pwd | xargs git checkout --"],
+   "allows": ["git checkout -- src/a.ts", "git restore src/a.ts", "git restore --staged .", "git checkout feat/x"],
+   "gaps": "Exact forms only: other spellings of the whole tree, such as git restore -SW ., pass."
+  },
+  {
+   "id": "git-clean",
+   "replaces": ["git-clean-force", "git-clean-force-exclude", "git-clean-force-value"],
+   "why": "git clean -f deletes untracked files for good.",
+   "deny": ["Bash(git clean *-f*)", "Bash(git clean *--force*)", "Bash(git clean *-df*)", "Bash(git clean *-xdf*)", "Bash(git clean *-dxf*)", "Bash(git clean *-xf*)"],
+   "blocks": ["git clean -fd", "git clean -fdx", "git clean --force", "git clean -xdf", "git clean -df", "git clean -fen", "git clean -e -- -f"],
+   "allows": ["git clean -n", "git clean -nd", "git clean --dry-run"],
+   "gaps": "It also blocks a forced dry run (git clean -fn), which the guard allowed."
+  },
+  {
+   "id": "git-one-side",
+   "replaces": ["git-one-side-checkout", "git-one-side-merge"],
+   "why": "House rule: never take one side of a conflict wholesale.",
+   "deny": [
+    "Bash(git checkout --theirs .)", "Bash(git checkout --ours .)", "Bash(git checkout --theirs -- .)", "Bash(git checkout --ours -- .)",
+    "Bash(git restore --theirs .)", "Bash(git restore --ours .)",
+    "Bash(git * -X theirs*)", "Bash(git * -X ours*)", "Bash(git * -Xtheirs*)", "Bash(git * -Xours*)", "Bash(git * -s ours*)",
+    "Bash(git * --strategy=ours*)", "Bash(git * --strategy ours*)",
+    "Bash(git * --strategy-option=ours*)", "Bash(git * --strategy-option=theirs*)", "Bash(git * --strategy-option ours*)", "Bash(git * --strategy-option theirs*)"
+   ],
+   "blocks": ["git checkout --theirs .", "git checkout --ours -- .", "git restore --theirs .", "git merge -X theirs origin/main", "git merge -s ours feat/x", "git pull --strategy-option=ours", "git rebase -Xtheirs main"],
+   "allows": ["git checkout --theirs src/a.ts", "git merge origin/main", "git pull --rebase"],
+   "gaps": "A commit message that quotes one of these flags is blocked too."
+  },
+  {
+   "id": "gh-merge",
+   "replaces": ["gh-merge-unsafe", "gh-merge-disable-auto", "gh-merge-unpinned-last"],
+   "why": "Merge only the exact commit the reviewer verified; never auto-merge or bypass protections with --admin.",
+   "deny": [
+    "Bash(gh pr merge *--admin*)", "Bash(gh pr merge *--auto*)",
+    "Bash(gh pr merge *--match-head-commit $*)", "Bash(gh pr merge *--match-head-commit=$*)",
+    "Bash(gh pr merge *--match-head-commit \"$*)", "Bash(gh pr merge *--match-head-commit=\"$*)",
+    "Bash(gh pr merge *--match-head-commit \"\"*)", "Bash(gh pr merge *--match-head-commit=\"\"*)"
+   ],
+   "blocks": [
+    "gh pr merge 12 --auto --squash --match-head-commit 3f2a9c1d", "gh pr merge 12 --admin --squash --match-head-commit 3f2a9c1d",
+    "gh pr merge 12 --squash --match-head-commit \"$SHA\"", "gh pr merge 12 --merge --match-head-commit \"$(gh pr view 12 --json headRefOid --jq .headRefOid)\"",
+    "gh pr merge 12 --squash --match-head-commit $S", "gh pr merge 5 --merge --auto --disable-auto",
+    "gh pr merge 1 --squash --match-head-commit 3f2a9c1d --match-head-commit=$(git rev-parse HEAD)"
+   ],
+   "allows": ["gh pr merge 12 --squash --match-head-commit 3f2a9c1d", "gh pr merge 12 --merge --match-head-commit=3f2a9c1d8e7b6a5f4e3d2c1b0a9f8e7d6c5b4a39", "gh pr merge 264 --disable-auto", "gh pr view 12"],
+   "gaps": "A merge with no --match-head-commit at all passes: a rule cannot match a missing flag. The merging skill's verdict line and command row still require the pin."
+  },
+  {
+   "id": "gh-api-merge",
+   "replaces": ["gh-api-merge", "gh-stack-merge", "gh-api-merge-bypass"],
+   "why": "Merging through the API, or gh stack merge, skips the head-commit check; bypass_rules skips the repository's rules.",
+   "deny": [
+    "Bash(gh api *pulls/*/merge)", "Bash(gh api *pulls/*/merge *)", "Bash(gh api *mergePullRequest*)", "Bash(gh api *enablePullRequestAutoMerge*)",
+    "Bash(gh api *bypass_rules=true*)", "Bash(gh api *bypass_rules=1*)", "Bash(gh stack merge*)", "Bash(gh api *repos/*/merges*)"
+   ],
+   "blocks": [
+    "gh api -X PUT repos/o/r/pulls/12/merge -f merge_method=squash", "gh api --method PUT repos/o/r/pulls/12/merge",
+    "gh api graphql -f query='mutation { mergePullRequest(input: {pullRequestId: \"x\"}) { clientMutationId } }'",
+    "gh api -X PUT repos/o/r/pulls/12/merge-async -f sha=3f2a9c1d -F bypass_rules=true", "gh stack merge 3 --squash -y",
+    "gh api -X POST repos/o/r/merges -f base=main -f head=x"
+   ],
+   "allows": ["gh api -X PUT repos/o/r/pulls/12/merge-async -f sha=3f2a9c1d8e7b6a5f4e3d2c1b0a9f8e7d6c5b4a39 -f merge_method=squash", "gh api repos/o/r/pulls/12", "gh stack view"],
+   "gaps": "A GET of pulls/N/merge is blocked too."
+  },
+  {
+   "id": "gh-api-doors",
+   "replaces": ["gh-api-write-door", "gh-api-graphql-write-door"],
+   "why": "These API writes move or delete a ref, merge or commit without a push, delete a protection rule, or set a secret.",
+   "deny": [
+    "Bash(gh api *updateRefs*)", "Bash(gh api *deleteRef*)", "Bash(gh api *createCommitOnBranch*)", "Bash(gh api *mergeBranch*)",
+    "Bash(gh api *deleteBranchProtectionRule*)", "Bash(gh api *deleteRepositoryRuleset*)",
+    "Bash(gh api -X PATCH *refs/heads/main*)", "Bash(gh api --method PATCH *refs/heads/main*)",
+    "Bash(gh api -X PUT *secrets/*)", "Bash(gh api --method PUT *secrets/*)"
+   ],
+   "blocks": [
+    "gh api -X PUT repos/o/r/actions/secrets/X", "gh api -X PATCH repos/o/r/git/refs/heads/main -f sha=x -F force=true",
+    "gh api graphql -f query='mutation{updateRefs(input:{repositoryId:\"x\"}){clientMutationId}}'",
+    "gh api graphql -f query='mutation{mergeBranch(input:{repositoryId:\"x\",base:\"main\",head:\"h\"}){clientMutationId}}'"
+   ],
+   "allows": ["gh api repos/o/r/git/refs/heads/main", "gh api repos/o/r/actions/secrets", "gh api -X PUT repos/o/r/rulesets/1 --input r.json"],
+   "gaps": "The method flag after the path, or the lowercase -Xpatch form, passes."
   }
  ],
  "uncovered": []
