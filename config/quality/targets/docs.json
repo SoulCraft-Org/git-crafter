@@ -43,12 +43,6 @@
      ]
     },
     {
-     "doc": ".claude/agents/*.md",
-     "area": [
-      "skills/merging/"
-     ]
-    },
-    {
      "doc": "rules/delegation.md",
      "area": [
       "tools/bash_guard.py",

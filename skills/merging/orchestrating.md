@@ -30,7 +30,7 @@ Claude tab goals: `claude.subagent_cost_share`,
 
 | Work | Who does it | Moves |
 |---|---|---|
-| [Reviews](reviewing.md) | One reviewer subagent per PR and round, all in one message. The repo's `reviewer` agent, else `delegate.review`, else `general-purpose`, at that table's model | `blockers.review_tokens_per_pr` |
+| [Reviews](reviewing.md) | One reviewer subagent per PR and round, all in one message: `pr-review-toolkit:code-reviewer`, else `delegate.review`, at that table's model | `blockers.review_tokens_per_pr` |
 | A search across many files, a CI log | The repo's `searcher` or `log-reader` agent, else `Explore` with `model: "haiku"`, asked for answers, not files | `claude.context_per_call` |
 | A web page; a Claude Code question | WebFetch with the question, or the `web-fetch` agent; `claude-code-guide` (Haiku) | `claude.context_per_call` |
 | A PR's CI, conflicts and comments | The app's PR monitor with Auto-fix; never a poll, a `sleep` loop or auto-merge | `pr.latest_merge_hours` |
@@ -41,9 +41,9 @@ Claude tab goals: `claude.subagent_cost_share`,
 
 | Every brief and merge | Rule |
 |---|---|
-| Agent files | list `update_plan` and `wrap_up` in `disallowedTools`, beside the brief line `rules/delegation.md` gives. |
-| A brief to test or review a guard | says: "Check each test payload with `bash_guard.py --check` only; never execute one." `rules/gates.md` wins. |
-| A worker brief | names the repo's `.claude/agents/reviewer.md` and pre-push checks: `quality/pr-gate.mjs` and `voice_lint.py` (#656). |
+| Agent files | A repo's own agent file lists `update_plan` and `wrap_up` in `disallowedTools`; a plugin's agent, which a repo cannot edit, gets the brief line `rules/delegation.md` gives. |
+| A brief to test or review a deny or hookify rule | says: "Check each example with `claude_deny.py --self-test` or `hookify_check.py --self-test` only; never execute one." `rules/gates.md` wins. |
+| A worker brief | names the pre-push checks, `quality/pr-gate.mjs` and `voice_lint.py` (#656), and `pr-review-toolkit:code-reviewer` for a self-review before the push. |
 | One PR per change | a test with each code change, and a [stack](SKILL.md#who-merges) past the `pull_requests.latest_lines` goal (`claude.code_prs_with_tests_share`, `pull_requests.over_400_lines`). |
 | The merge SHA | A variable or `$(...)` in its place is blocked. |
 | Past about 150K tokens of context | compact, or hand off to a fresh session. |
