@@ -38,22 +38,20 @@
      "doc": "skills/merging/SKILL.md",
      "area": [
       "rules/delegation.md",
-      "tools/bash_guard.py",
-      "tools/bash_guard_cases.json"
+      "tools/claude_deny.json"
      ]
     },
     {
      "doc": "rules/delegation.md",
      "area": [
-      "tools/bash_guard.py",
-      "tools/bash_guard_rules.json",
+      "tools/claude_deny.json",
       "skills/merging/SKILL.md"
      ]
     },
     {
      "doc": "rules/keys.md",
      "area": [
-      "tools/bash_guard_rules.json",
+      "tools/claude_deny.json",
       "config/account.example.json"
      ]
     },
@@ -114,19 +112,16 @@
       ".github/workflows/secret-scan.yml",
       ".github/workflows/push-ruleset-proof.yml",
       "tools/secret_scan.sh",
-      "tools/bash_guard.py",
-      "tools/bash_guard_*.py",
-      "tools/write_guard.py",
+      "tools/claude_deny*",
+      ".claude/hookify.*.local.md",
       "tools/comfy_guard.py"
      ]
     },
     {
      "doc": "tools/THREAT-MODEL.md",
      "area": [
-      "tools/bash_guard.py",
-      "tools/bash_guard_*.py",
-      "tools/write_guard.py",
-      "tools/bash_guard_rules.json",
+      "tools/claude_deny*",
+      ".claude/hookify.*.local.md",
       "tools/comfy_guard.py",
       "tools/claude_os_sync.py",
       ".claude/settings.json",

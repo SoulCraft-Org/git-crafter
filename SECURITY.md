@@ -22,8 +22,8 @@ flowchart LR
 
 | Part | A finding looks like |
 |---|---|
-| `tools/bash_guard.py` and its rules | A one-way-door command the guard lets through, or a credential read it misses |
-| `tools/write_guard.py` | A write the guard should stop and does not |
+| `tools/claude_deny.json`, the `permissions.deny` list | A one-way-door command its rules let through, or a credential read they miss |
+| `.claude/hookify.*.local.md` | A command or write a hookify rule should block and does not |
 | `tools/comfy_guard.py` | A Comfy run the guard should deny or ask about and lets through |
 | `tools/claude_os_sync.py` | A write outside the paths `manifest.json` and an overlay list |
 | `tools/collect_org.mjs` | A read that writes, or a token in `data/` |
@@ -34,8 +34,8 @@ flowchart LR
 
 | Control | Where |
 |---|---|
-| No session reads, prints or stores a key value | [rules/keys.md](rules/keys.md); the guard's credential, Keychain, clipboard and env rules |
-| Every guard rule ships block and allow examples, run as a self-test in CI | [tools/bash_guard_rules.json](tools/bash_guard_rules.json), [tools/verify.sh](tools/verify.sh) |
+| No session reads, prints or stores a key value | [rules/keys.md](rules/keys.md); the deny list's credential, Keychain, clipboard and env rules |
+| Every deny and hookify rule ships block and allow examples, run as a self-test in CI | [tools/claude_deny.json](tools/claude_deny.json), [tools/hookify_check.py](tools/hookify_check.py), [tools/verify.sh](tools/verify.sh) |
 | gitleaks scans each PR's own commits, and on a push to main every ancestor of the pushed commit, pinned by version and SHA-256. A ruleset requires the check to merge | [secret-scan.yml](.github/workflows/secret-scan.yml), [secret_scan.sh](tools/secret_scan.sh) |
 | Workflows default to `contents: read`. Only three jobs write: Pages deploy, the hand-run ruleset probe (throwaway branches) and the Claude review (PR comments). Actions pin by commit SHA; checkouts use `persist-credentials: false`, probe excepted | [.github/workflows/](.github/workflows/) |
 | The repo's Actions policy runs only GitHub-owned actions, and only at a full commit SHA | The repo's Settings, Actions, General (set 2026-11-10) |

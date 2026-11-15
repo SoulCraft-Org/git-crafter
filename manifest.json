@@ -19,34 +19,17 @@
     "skills/merging/orchestrating.md": "skills/merging/orchestrating.md",
     "skills/merging/outside.md": "skills/merging/outside.md",
     "skills/merging/reviewing.md": "skills/merging/reviewing.md",
-    "tools/bash_guard.py": "code-os/bash_guard.py",
-    "tools/bash_guard_args.py": "code-os/bash_guard_args.py",
-    "tools/bash_guard_code.py": "code-os/bash_guard_code.py",
-    "tools/bash_guard_conditions.py": "code-os/bash_guard_conditions.py",
-    "tools/bash_guard_evaluate.py": "code-os/bash_guard_evaluate.py",
-    "tools/bash_guard_feeds.py": "code-os/bash_guard_feeds.py",
-    "tools/bash_guard_gh.py": "code-os/bash_guard_gh.py",
-    "tools/bash_guard_issuer.py": "code-os/bash_guard_issuer.py",
-    "tools/bash_guard_literals.py": "code-os/bash_guard_literals.py",
-    "tools/bash_guard_hook.py": "code-os/bash_guard_hook.py",
-    "tools/bash_guard_operands.py": "code-os/bash_guard_operands.py",
-    "tools/bash_guard_paths.py": "code-os/bash_guard_paths.py",
-    "tools/bash_guard_perl.py": "code-os/bash_guard_perl.py",
-    "tools/bash_guard_program.py": "code-os/bash_guard_program.py",
-    "tools/bash_guard_rules.py": "code-os/bash_guard_rules.py",
-    "tools/bash_guard_scan.py": "code-os/bash_guard_scan.py",
-    "tools/bash_guard_shellc.py": "code-os/bash_guard_shellc.py",
-    "tools/bash_guard_slow.py": "code-os/bash_guard_slow.py",
-    "tools/bash_guard_words.py": "code-os/bash_guard_words.py",
-    "tools/bash_guard_rules.json": "code-os/bash_guard_rules.json",
-    "tools/write_guard.py": "code-os/write_guard.py",
     "tools/comfy_guard.py": "code-os/comfy_guard.py",
-    "tools/turn_check.py": "code-os/turn_check.py",
     "tools/voice_lint.py": "code-os/voice_lint.py",
-    "tools/json_facts.py": "code-os/json_facts.py"
+    "tools/json_facts.py": "code-os/json_facts.py",
+    "tools/claude_deny.py": "code-os/claude_deny.py",
+    "tools/claude_deny_model.py": "code-os/claude_deny_model.py",
+    "tools/claude_deny.json": "code-os/claude_deny.json",
+    ".claude/hookify.no-banned-dash.local.md": "hookify.no-banned-dash.local.md",
+    ".claude/hookify.block-rm-home.local.md": "hookify.block-rm-home.local.md"
    }
   }
  },
  "comment_overlay": "Each account's own facts are not in Git Crafter. They live in that account's private overlay folder, laid out like ~/.claude (code-os/account.json from config/account.example.json, and any rules/<name>.md of its own), installed with apply user-claude --yes --overlay DIR. Only code-os/ and rules/ are taken, an overlay never replaces a file listed here, and it installs only once merged in its own checkout. Without an overlay, the rules that read account.json fall back to asking the owner.",
- "comment_user_claude": "user-claude installs tier 1 into ~/.claude for this account: the rules, the bash guard that settings.json wires as a PreToolUse hook, the write guard with the voice_lint.py it imports, the Comfy guard, the turn check, a Stop hook, and json_facts.py, which the bash guard's credential fix names. Apply never edits settings.json, so each account wires the write and Comfy guards and the turn check by hand, from the entry in each one's header. ~/.claude is not a git checkout, so apply warns and writes. Apply only copies: a file dropped from this list stays installed until someone deletes it by hand. It copies, never symlinks: a plugin cannot ship rules (code.claude.com/docs/en/plugins/components, read 2026-11-02), and Cowork skips a symlinked rules folder that points outside the working directory (code.claude.com/docs/en/memory, read 2026-11-02)."
+ "comment_user_claude": "user-claude installs tier 1 into ~/.claude for this account: the rules, the merging skill, claude_deny.py with its model and the claude_deny.json permissions.deny list it merges into settings.json, the two hookify rules, the Comfy guard, voice_lint.py, and json_facts.py, which reads facts from ~/.claude.json, a file the Read(~/.claude.json) deny rule keeps from every other read. Apply never edits settings.json: after an apply that changes claude_deny.json, run python3 -I ~/.claude/code-os/claude_deny.py --merge ~/.claude/settings.json --yes, and wire the Comfy guard by hand from the entry in its header. The hookify plugin loads hookify.*.local.md from .claude/ under a session's working folder, so the two installed in ~/.claude/ fire in sessions run from the home folder; Git Crafter's own .claude/ copies fire in its sessions. ~/.claude is not a git checkout, so apply warns and writes. Apply only copies: a file dropped from this list stays installed until someone deletes it by hand. It copies, never symlinks: a plugin cannot ship rules (code.claude.com/docs/en/plugins/components, read 2026-11-02), and Cowork skips a symlinked rules folder that points outside the working directory (code.claude.com/docs/en/memory, read 2026-11-02)."
 }

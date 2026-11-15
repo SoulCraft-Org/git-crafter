@@ -55,12 +55,12 @@ test("private references: org names and home paths outside config/ and data/, th
     { path: "rules/clean.md", text: "acme-site, acme.org, acmelabs-tool, /Users/someone/x, /Users/Shared/y, /Users/runner, /Users/someone., /Users/_/x" },
     { path: "config/other.json", text: "acme rootco" },
     { path: "data/org.json", text: "acme" },
-    { path: "tools/bash_guard_rules.json", text: "acme rootco" },
+    { path: "tools/claude_deny.json", text: "acme rootco" },
     { path: "configs/leak.md", text: "acmelabs" },
   ];
   const m = publicMetrics({ files, config, readAt })["public.private_refs"];
   assert.equal(m.value, 8);
-  assert.deepEqual(m.detail.map((d) => [d.label, d.value]), [["rules/bad.md", 5], ["tools/bash_guard_rules.json", 2], ["configs/leak.md", 1]]);
+  assert.deepEqual(m.detail.map((d) => [d.label, d.value]), [["rules/bad.md", 5], ["tools/claude_deny.json", 2], ["configs/leak.md", 1]]);
   assert.match(publicMetrics({ files, config: { private: {} }, readAt })["public.private_refs"].could_not_check, /lists no private names/);
   // This checkout, against the real org config: the count is the PR's figure. A public tree has none.
   if (!ORG_CONFIG || !existsSync(join(ROOT, ORG_CONFIG))) return t.diagnostic("no org config in this checkout");

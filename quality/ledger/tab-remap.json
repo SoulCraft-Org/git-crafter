@@ -26,7 +26,8 @@
   {"from":"usability","to":"pages","status":"moved","ids":["usability.axe_violations","usability.broken_links","usability.form_page_kib","usability.keyboard_task_share","usability.long_sentences","usability.reading_grade","usability.target_size_375","usability.task_clicks","usability.tbt_mobile","usability.unlabeled_fields","usability.words_before_action"]}
  ],
  "own": [
-  {"from":"code","to":"code","status":"kept","ids":["engine.page_seconds","guards.runner_call_ms"]},
+  {"from":"code","to":"code","status":"kept","ids":["engine.page_seconds"]},
+  {"from":"code","to":"code","status":"dropped","reason":"it timed the bash guard, which Claude Code's own permissions.deny rules replace (Git Crafter PR-D, 2026-11-14); nothing of Git Crafter's runs before a Bash call now","ids":["guards.runner_call_ms"]},
   {"from":"code","to":"pack Colorado-Startups/claudius","status":"moved","reason":"it times the guard on the machine that runs the sessions, a local-files read; Claudius reads local files","ids":["guards.call_ms"]},
   {"from":null,"to":"code","status":"new","reason":"Code Quality is free on a public repo, so its drop is lifted as it joins the Code tab (the approved plan, 2026-11-13)","ids":["security.code_quality_on","security.code_quality_open"]}
  ]

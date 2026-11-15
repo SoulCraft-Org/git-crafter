@@ -45,10 +45,6 @@ function allowed({ file, target }) {
   return TREES.some((t) => file.startsWith(t) && target.startsWith(t));
 }
 
-test('seam: the test reads imports in both quote styles and dynamic ones', () => {
-  assert.ok(imports().some((i) => i.file.endsWith('guard-speed.mjs') && i.target === `${LIB}readers.mjs`), 'a dynamic import is read');
-});
-
 test('seam: the test reads each shape a collector can load a module in', () => {
   const shapes = {
     "import { a } from '../x.mjs';": '../x.mjs',
