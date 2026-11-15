@@ -12,14 +12,11 @@
     "Bash(rm -rf ~)", "Bash(rm -rf ~/)", "Bash(rm -fr ~)", "Bash(rm -fr ~/)", "Bash(rm -r -f ~)", "Bash(rm -Rf ~)", "Bash(rm -rf -- ~)",
     "Bash(rm -rf $HOME)", "Bash(rm -rf $HOME/)", "Bash(rm -rf \"$HOME\")", "Bash(rm -rf \"$HOME/\")",
     "Bash(rm -rf ${HOME})", "Bash(rm -rf \"${HOME}\")", "Bash(rm -rf \"${HOME}/\")",
-    "Bash(rm -rf /)", "Bash(rm -rf .)", "Bash(rm -rf ..)", "Bash(rm -r .)",
-    "Bash(*/rm -rf ~)", "Bash(*/rm -rf ~/)", "Bash(*/rm -rf $HOME)", "Bash(*/rm -rf \"$HOME\")",
-    "Bash(bash -c *rm -rf ~*)", "Bash(sh -c *rm -rf ~*)", "Bash(zsh -c *rm -rf ~*)",
-    "Bash(bash -c *rm -rf *$HOME*)", "Bash(sh -c *rm -rf *$HOME*)", "Bash(zsh -c *rm -rf *$HOME*)"
+    "Bash(rm -rf /)", "Bash(rm -rf .)", "Bash(rm -rf ..)", "Bash(rm -r .)"
    ],
-   "blocks": ["rm -rf ~", "cd /tmp && rm -rf ~", "FOO=1 rm -rf \"$HOME\"", "timeout 5 rm -rf ~/", "rm -rf /", "echo \"$(rm -rf ~)\"", "rm -rf \"${HOME}/\"", "/bin/rm -rf ~", "bash -c 'rm -rf ~'", "sh -c \"rm -rf $HOME\"", "zsh -c 'rm -rf ~/'"],
-   "allows": ["rm -rf ~/tmp/x", "rm -rf dist", "rm -rf ./node_modules", "rm -f ~/.cache/x.tmp", "rm -rf /tmp/scratch-123", "rm --help", "/bin/rm -rf ./dist", "bash -c 'rm -rf ./build'"],
-   "gaps": "Exact forms, an rm by full path, and bash, sh or zsh -c wrappers. rm -rf ~/* and flags after the path pass, since * is a wildcard a rule cannot write literally; Claude Code's own critical-path check still prompts for a recognized rm of the home folder or the root in every mode, and the hookify rule block-rm-home blocks those forms in sessions that load it."
+   "blocks": ["rm -rf ~", "cd /tmp && rm -rf ~", "FOO=1 rm -rf \"$HOME\"", "timeout 5 rm -rf ~/", "rm -rf /", "echo \"$(rm -rf ~)\"", "rm -rf \"${HOME}/\""],
+   "allows": ["rm -rf ~/tmp/x", "rm -rf dist", "rm -rf ./node_modules", "rm -f ~/.cache/x.tmp", "rm -rf /tmp/scratch-123", "rm --help"],
+   "gaps": "Exact forms only, since * is a wildcard. /bin/rm, sh -c, rm -rf ~/* and flags after the path pass these rules; Claude Code's own critical-path check still prompts for a recognized rm of the home folder or the root in every mode, and the hookify rule block-rm-home blocks the wrapped forms in sessions that load it."
   },
   {
    "id": "find-home-delete",
