@@ -18,7 +18,7 @@ trap 'rm -rf "$cov"' EXIT
 COVER=(--experimental-test-coverage "--test-coverage-exclude=**/*.test.mjs" --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov)
 LCOV=quality/collectors/code/code-lcov.mjs
 
-echo "== deny model";   python3 -I tools/claude_deny_model.py --self-test
+echo "== deny rules";   python3 -I tools/claude_deny.py --self-test
 echo "== bash guard";   python3 -I tools/bash_guard.py --self-test
 echo "== guard speed";  python3 -I tools/tests/guard_speed.py
 echo "== guard parity"; python3 -I tools/tests/guard_parity.py --self-test
