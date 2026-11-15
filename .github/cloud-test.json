@@ -3,6 +3,7 @@
   "version": 1,
   "scripts": {
     "verify": { "run": ["bash", "tools/verify.sh"], "timeout": 10 },
+    "self-test:deny-model": { "run": ["python3", "-I", "tools/claude_deny_model.py", "--self-test"], "timeout": 10 },
     "self-test:bash-guard": { "run": ["python3", "-I", "tools/bash_guard.py", "--self-test"], "timeout": 10 },
     "self-test:voice-lint": { "run": ["python3", "-I", "tools/voice_lint.py", "--self-test"], "timeout": 10 },
     "self-test:sync-tool": { "run": ["python3", "-I", "tools/claude_os_sync.py", "--self-test"], "timeout": 10 },
