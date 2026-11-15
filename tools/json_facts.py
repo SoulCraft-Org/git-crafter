@@ -6,7 +6,7 @@ Canonical source: Git Crafter tools/json_facts.py. The installed copy lives at
 
   python3 -I ~/.claude/code-os/json_facts.py claude cachedGrowthBookFeatures.tengu_wise_newt
 
-The bash guard's credential-file-read rule blocks reads of ~/.claude.json,
+The Read(~/.claude.json) deny rule in claude_deny.json blocks reads of ~/.claude.json,
 which keeps Claude Code's flag cache beside MCP server keys. This reader
 takes a file's name from FILES, never a path, and dotted field names. It
 prints true, false, null and numbers as they are, a string as its length,

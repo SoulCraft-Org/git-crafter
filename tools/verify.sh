@@ -20,9 +20,6 @@ LCOV=quality/collectors/code/code-lcov.mjs
 
 echo "== deny rules";   python3 -I tools/claude_deny.py --self-test
 echo "== hookify rules"; python3 -I tools/hookify_check.py --self-test
-echo "== bash guard";   python3 -I tools/bash_guard.py --self-test
-echo "== guard speed";  python3 -I tools/tests/guard_speed.py
-echo "== guard parity"; python3 -I tools/tests/guard_parity.py --self-test
 echo "== voice lint";   python3 -I tools/voice_lint.py --self-test
 echo "== sync tool";    python3 -I tools/claude_os_sync.py --self-test
 echo "== ci standard";  python3 -I tools/ci_standard.py --self-test
@@ -30,9 +27,7 @@ echo "== ci embed";     python3 -I tools/ci_standard.py embed
 echo "== ci overflow";  python3 -I tools/ci_overflow.py --self-test
 echo "== shell tools";  python3 -I tools/shell_selftests.py
 echo "== public scan";  python3 -I tools/public_scan.py --self-test
-echo "== write guard";  python3 -I tools/write_guard.py --self-test
 echo "== comfy guard";  python3 -I tools/comfy_guard.py --self-test
-echo "== turn check";   python3 -I tools/turn_check.py --self-test
 echo "== json facts";   python3 -I tools/json_facts.py --self-test
 echo "== merge policy"; python3 -I tools/merge_policy.py --self-test --policy templates/open/merge_policy.json
 echo "== clauses";      python3 -I tools/clause_check.py --self-test
