@@ -21,7 +21,7 @@ that disagrees.
 | Judgment calls on design, copy and scope | decide, and record each in its PR description with its reason and reversal. Keep it reversible until launch. |
 | Cloudflare | Wrangler: deploys, secrets, and remote writes that delete nothing. |
 | GitHub repos | create, publish or archive one. |
-| One-way deletes | a repo, Cloudflare resource, ruleset, branch protection or unread repo secret. Read the target, check nothing uses it, and put `ONE_WAY_REASON="why"` on the command (the owner, 2026-11-10). |
+| One-way deletes | a repo, Cloudflare resource, ruleset, branch protection or unread repo secret. Read the target and check nothing uses it (the owner, 2026-11-10). |
 | IT and settings | GitHub org, repo and App settings and permissions, rulesets and branch protection; any service's settings within the spending rule. Claude analyses, reviews and applies them (the owner, 2026-11-09). |
 
 Never push to `main`, force-push, hard-reset, take one side of a conflict
