@@ -109,6 +109,7 @@ def accounting_problems(data):
     problems = ["uncovered %s: needs why and now" % u["id"] for u in data["uncovered"] if not (u.get("why") and u.get("now"))]
     problems += ["%s is accounted for %d times, not once" % (rid, len(v)) for rid, v in seen.items() if len(v) != 1]
     problems += ["%s is no retired guard rule" % rid for rid in seen if rid not in data["retired"]]
+    problems += ["retired %s is accounted for nowhere" % rid for rid in data["retired"] if rid not in seen]
     return problems, len(seen)
 
 
