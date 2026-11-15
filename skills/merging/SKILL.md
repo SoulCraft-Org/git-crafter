@@ -16,13 +16,13 @@ merges when, at the head commit:
 
 | # | Condition |
 |---|---|
-| 1 | `python3 -I ~/.claude/code-os/claude_deny.py --check ~/.claude/settings.json` passes: every deny rule is installed. |
+| 1 | `python3 -I ~/.claude/code-os/claude_deny.py --check ~/.claude/settings.json` passes. |
 | 2 | Every CI check passed; the repo's verify command passed in the cloud (CI or a `cloud-test` run) after the last change. |
 | 3 | The review its risk needs ([reviewing.md](reviewing.md)), in at most three rounds. After a third, rethink the approach, not a fourth round (Anthropic, "How the Claude Code team does code review", 2026-10-15). |
 
 The owner ranks quality, speed and token use above safety, privacy and
-security, and wants no over-engineering. A deny or hookify rule fix keeps
-one regression example, and a new rule needs a real incident.
+security, and wants no over-engineering. A rule fix keeps one regression
+case, and a new rule needs a real incident.
 
 | Merge | Rule |
 |---|---|
@@ -35,7 +35,7 @@ one regression example, and a new rule needs a real incident.
 | Verdict | Before merging, post a PR comment whose first line is exactly `Review: MERGE at <sha>` (or `BLOCK`), with the full 40-hex SHA. GitHub records no review when one account authors and merges, so `quality/collectors/github/github-reviews.mjs` (`MARKER`) reads this line as the review. |
 | Command | Merge with `gh pr merge N --<method> --match-head-commit <sha>` in an allowed method, typing the literal SHA that passed, never one read at merge time. Never use `--auto` or `--admin`. |
 | Stack | Past the `pull_requests.latest_lines` goal, a PR per layer atop the last, each reviewed at head. `gh api -X POST repos/{owner}/{repo}/stacks -F 'pull_requests[]=<n>'`, bottom up, joins them. `gh api -X PUT …/pulls/<top>/merge-async -f sha=<sha> -f merge_method=squash` merges it and those under; `…/merge-async/<uuid>` reads it. |
-| Tier 1 | After a tier 1 merge (`user-claude` in `manifest.json`): `git -C <checkout> pull --ff-only`, then `claude_os_sync.py apply user-claude --yes --overlay <account folder>`, and `claude_deny.py --merge ~/.claude/settings.json --yes` when `tools/claude_deny.json` changed. A `cp` leaves the sync record stale (#657). |
+| Tier 1 | After a tier 1 merge (`user-claude` in `manifest.json`): `git -C <checkout> pull --ff-only`, then `claude_os_sync.py apply user-claude --yes --overlay <account folder>`, then `claude_deny.py --merge ~/.claude/settings.json --yes`. A `cp` leaves the sync record stale (#657). |
 | Live site | Load and confirm a live page each merge deploys. |
 | Repo `CLAUDE.md` | On main, it may name its orchestrator and merge method within these conditions, never wider. |
 

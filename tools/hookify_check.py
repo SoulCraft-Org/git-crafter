@@ -1,18 +1,12 @@
 #!/usr/bin/env python3
-"""hookify_check.py: examples for Git Crafter's hookify rules.
+"""hookify_check.py: examples for Git Crafter's hookify rules, .claude/hookify.*.local.md.
 
-Canonical source: Git Crafter tools/hookify_check.py. The rules are
-.claude/hookify.*.local.md, which the hookify plugin (claude-plugins-official)
-loads from .claude/ under a session's working folder, so they fire in Git
-Crafter sessions, and in sessions run from the home folder once
-claude_os_sync.py apply user-claude installs them in ~/.claude/. Hookify
-compiles each pattern with re.IGNORECASE.
-
---self-test compiles each pattern as hookify does, runs the examples below,
-and times each pattern on long decoys (under DECOY_SECONDS each). For
-no-banned-dash it also checks that voice_lint.py grades the same examples
-FAIL, so the two definitions agree. Examples are text, never run. Exit 0 =
-ok, 1 = an example misbehaves, 2 = usage or read error. Python 3.9, stdlib.
+The hookify plugin loads them from .claude/ under a session's working folder:
+Git Crafter sessions, and home-folder sessions once apply installs them in
+~/.claude/. --self-test compiles each pattern as hookify does (re.IGNORECASE),
+runs the examples below, times each on long decoys, and checks no-banned-dash
+against voice_lint.py. Examples are text, never run. Exit 0 = ok, 1 = an
+example misbehaves, 2 = usage or read error.
 """
 
 import glob
@@ -23,9 +17,8 @@ import time
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 ROOT = os.path.dirname(HERE)
-EM, EN = "\u2014", "\u2013"
-# A command example is built from parts, so no source line reads as the command.
-RM, HOME_T = "r" + "m", "~"
+# Dashes as escapes, and each command example built from parts, so no source line reads as either.
+EM, EN, RM, HOME_T = "\u2014", "\u2013", "r" + "m", "~"
 
 EXAMPLES = {
     "no-banned-dash": {
@@ -45,14 +38,14 @@ EXAMPLES = {
 }
 
 
-# Long inputs a careless pattern backtracks on. Hookify gives each hook 10 s
-# (hooks/hooks.json), so each pattern must finish one well inside that.
+# Long inputs a careless pattern backtracks on; hookify gives a hook 10 s (hooks/hooks.json).
 DECOYS = ["x;" * 70000, ";/" * 70000, "|x" * 70000, "\n x" * 50000, RM + " " + "-x " * 50000,
           "/a" * 70000, "echo $(" * 30000, "env " + "a=1 " * 40000 + "q", "find " + "-L " * 50000 + "x"]
 DECOY_SECONDS = 1.0
 
 
 def rule_files():
+    """The hookify rule files in the Git Crafter root's .claude/."""
     return sorted(glob.glob(os.path.join(ROOT, ".claude", "hookify.*.local.md")))
 
 
@@ -83,6 +76,7 @@ def parse(path):
 
 
 def matches(conds, example):
+    """True when every condition matches: file_path against the path, any other field against the text."""
     path, text = example if isinstance(example, tuple) else ("", example)
     for c in conds:
         value = path if c["field"] == "file_path" else text
@@ -92,6 +86,7 @@ def matches(conds, example):
 
 
 def voice_fails(text):
+    """True when voice_lint.py grades a dash in the text FAIL."""
     if HERE not in sys.path:
         sys.path.append(HERE)
     import voice_lint
@@ -99,37 +94,48 @@ def voice_fails(text):
                for _line, severity, check, _message in voice_lint.lint_text(text))
 
 
+def pattern_problems(name, conds):
+    """A pattern that does not compile, or that runs a decoy past DECOY_SECONDS."""
+    out = []
+    for c in conds:
+        try:
+            regex = re.compile(c["pattern"], re.IGNORECASE)
+        except re.error as e:
+            out.append("%s: pattern does not compile: %s" % (name, e))
+            continue
+        for d in DECOYS:
+            start = time.perf_counter()
+            regex.search(d)
+            took = time.perf_counter() - start
+            out += ["%s: %.1f s on a %d-character decoy" % (name, took, len(d))] if took > DECOY_SECONDS else []
+    return out
+
+
+def example_problems(name, conds):
+    """The examples a rule gets wrong, and for no-banned-dash any voice_lint disagrees on."""
+    ex = EXAMPLES.get(name)
+    if ex is None:
+        return ["%s: no examples in hookify_check.py" % name]
+    out = ["%s: should block %r" % (name, e) for e in ex["block"] if not matches(conds, e)]
+    out += ["%s: should allow %r" % (name, e) for e in ex["allow"] if matches(conds, e)]
+    return out + (voice_disagreements(name, ex, conds) if name == "no-banned-dash" else [])
+
+
+def voice_disagreements(name, ex, conds):
+    """The prose examples where voice_lint.py and the dash rule disagree."""
+    prose = [e for e in ex["block"] + ex["allow"] if e[0].lower().endswith((".md", ".mdx", ".txt"))]
+    return ["%s: voice_lint and the rule disagree on %r" % (name, e[1]) for e in prose if voice_fails(e[1]) != matches(conds, e)]
+
+
 def self_test():
+    """Check every rule file's action, patterns and examples; 0 when all pass."""
     problems, names = [], []
     for path in rule_files():
         name, _event, action, conds = parse(path)
         names.append(name)
-        if action != "block":
-            problems.append("%s: action is %r, not block" % (name, action))
-        for c in conds:
-            try:
-                re.compile(c["pattern"], re.IGNORECASE)
-            except re.error as e:
-                problems.append("%s: pattern does not compile: %s" % (name, e))
-                conds = []
-        for c in conds:
-            for d in DECOYS:
-                start = time.perf_counter()
-                re.search(c["pattern"], d, re.IGNORECASE)
-                took = time.perf_counter() - start
-                if took > DECOY_SECONDS:
-                    problems.append("%s: %.1f s on a %d-character decoy, over %.1f s" % (name, took, len(d), DECOY_SECONDS))
-        ex = EXAMPLES.get(name)
-        if ex is None:
-            problems.append("%s: no examples in hookify_check.py" % name)
-            continue
-        problems += ["%s: should block %r" % (name, e) for e in ex["block"] if not matches(conds, e)]
-        problems += ["%s: should allow %r" % (name, e) for e in ex["allow"] if matches(conds, e)]
-        if name == "no-banned-dash":
-            for e in ex["block"] + ex["allow"]:
-                prose = e[0].lower().endswith((".md", ".mdx", ".txt"))
-                if prose and voice_fails(e[1]) != matches(conds, e):
-                    problems.append("%s: voice_lint and the rule disagree on %r" % (name, e[1]))
+        problems += [] if action == "block" else ["%s: action is %r, not block" % (name, action)]
+        found = pattern_problems(name, conds)
+        problems += found or example_problems(name, conds)
     problems += ["%s: examples but no rule file" % n for n in EXAMPLES if n not in names]
     for p in problems:
         print("FAIL " + p)
@@ -138,6 +144,7 @@ def self_test():
 
 
 def main(argv):
+    """Run --self-test; 2 on a usage or read error."""
     try:
         if argv == ["--self-test"]:
             return self_test()
