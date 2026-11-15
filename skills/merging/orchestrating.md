@@ -41,9 +41,9 @@ Claude tab goals: `claude.subagent_cost_share`,
 
 | Every brief and merge | Rule |
 |---|---|
-| Agent files | A repo's own agent file lists `update_plan` and `wrap_up` in `disallowedTools`; a plugin's agent, which a repo cannot edit, gets the brief line `rules/delegation.md` gives. |
-| A brief to test or review a deny or hookify rule | says: "Check each example with `claude_deny.py --self-test` or `hookify_check.py --self-test` only; never execute one." `rules/gates.md` wins. |
-| A worker brief | names the pre-push checks, `quality/pr-gate.mjs` and `voice_lint.py` (#656), and `pr-review-toolkit:code-reviewer` for a self-review before the push. |
+| Agent files | list `update_plan` and `wrap_up` in `disallowedTools`; a plugin's agents get the brief line `rules/delegation.md` gives. |
+| A brief to test or review a rule | says: "Check each example with `claude_deny.py` or `hookify_check.py --self-test` only; never execute one." `rules/gates.md` wins. |
+| A worker brief | names the pre-push checks: `quality/pr-gate.mjs` and `voice_lint.py` (#656). |
 | One PR per change | a test with each code change, and a [stack](SKILL.md#who-merges) past the `pull_requests.latest_lines` goal (`claude.code_prs_with_tests_share`, `pull_requests.over_400_lines`). |
 | The merge SHA | A variable or `$(...)` in its place is blocked. |
 | Past about 150K tokens of context | compact, or hand off to a fresh session. |
