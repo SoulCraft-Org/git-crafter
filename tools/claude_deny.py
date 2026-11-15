@@ -131,6 +131,76 @@ def self_test(data):
 COMMANDS = {("--self-test",): self_test}
 
 
+# --- Settings: the rules fire once they sit in ~/.claude/settings.json under
+# permissions.deny. claude_os_sync.py never edits settings.json, so after each
+# apply that changes the list, run --merge ~/.claude/settings.json --yes.
+#   --check FILE        exit 0 when FILE holds every rule, else list the missing ones. Read-only.
+#   --merge FILE [--yes] print the missing rules; with --yes add them to the end of
+#                       permissions.deny, keeping every other rule and key, through a
+#                       temporary file renamed into place.
+#   --table             the Markdown table of retired rules and what replaces each.
+
+def read_settings(path):
+    """A settings file as a JSON object."""
+    with open(path, encoding="utf-8") as f:
+        settings = json.load(f)
+    if not isinstance(settings, dict):
+        raise ValueError("%s is not a JSON object" % path)
+    return settings
+
+
+def missing(settings, rules):
+    """The rules a settings file's permissions.deny lacks, in list order."""
+    have = set(settings.get("permissions", {}).get("deny", []))
+    return [r for r in rules if r not in have]
+
+
+def merge(path, rules, write):
+    """Print the missing rules, and with write add them to the end of permissions.deny."""
+    settings = read_settings(path)
+    add = missing(settings, rules)
+    for r in add:
+        print("add " + r)
+    if write and add:
+        import tempfile
+        perms = settings.setdefault("permissions", {})
+        perms["deny"] = list(perms.get("deny", [])) + add
+        fd, tmp = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(path)), prefix=".settings-")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(json.dumps(settings, indent=2, ensure_ascii=False) + "\n")
+        os.chmod(tmp, os.stat(path).st_mode & 0o777)
+        os.replace(tmp, path)
+    print("%d of %d rules %s" % (len(add), len(rules), "added" if write else "to add (pass --yes to write)"))
+    return 0
+
+
+def table(data):
+    """Print the Markdown table of retired guard rules and what replaces each."""
+    print("| Retired guard rule | Now | Deny rules | Misses |\n|---|---|---|---|")
+    for rule in data["rules"]:
+        for rid in rule["replaces"]:
+            print("| `%s` | `%s` | %d | %s |" % (rid, rule["id"], len(rule["deny"]), rule.get("gaps", "")))
+    for u in data["uncovered"]:
+        print("| `%s` | %s | 0 | %s |" % (u["id"], u["now"], u["why"]))
+    return 0
+
+
+def check(path, data):
+    """Exit 0 when a settings file holds every deny rule, else list the missing ones."""
+    gone = missing(read_settings(os.path.expanduser(path)), deny_list(data))
+    print("".join("missing %s\n" % r for r in gone) + "%d deny rules missing from %s" % (len(gone), path))
+    return 1 if gone else 0
+
+
+COMMANDS.update({
+    ("--table",): table,
+    ("--check", "FILE"): lambda data, f: check(f, data),
+    ("--merge", "FILE"): lambda data, f: merge(os.path.expanduser(f), deny_list(data), False),
+    ("--merge", "FILE", "--yes"): lambda data, f: merge(os.path.expanduser(f), deny_list(data), True),
+})
+# --- End of settings.
+
+
 def main(argv):
     """Run one command; 2 on a usage or read error."""
     takes_file = {k[0] for k in COMMANDS if "FILE" in k}
