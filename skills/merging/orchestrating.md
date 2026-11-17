@@ -33,7 +33,7 @@ Claude tab goals: `claude.subagent_cost_share`,
 | [Reviews](reviewing.md) | One reviewer subagent per PR and round, all in one message: `pr-review-toolkit:code-reviewer`, else `delegate.review`, at that table's model | `blockers.review_tokens_per_pr` |
 | A search across many files, a CI log | The repo's `searcher` or `log-reader` agent, else `Explore` with `model: "haiku"`, asked for answers, not files | `claude.context_per_call` |
 | A web page; a Claude Code question | WebFetch with the question, or the `web-fetch` agent; `claude-code-guide` (Haiku) | `claude.context_per_call` |
-| A PR's CI, conflicts and comments | The app's PR monitor with Auto-fix; never a poll, a `sleep` loop or auto-merge | `pr.latest_merge_hours` |
+| A PR's CI, conflicts and comments | The app's PR monitor with Auto-fix, or the one background watch [Who merges](SKILL.md#who-merges) names: either wakes the session when checks finish. Never a `sleep` loop, a repeated `gh` call or auto-merge | `pr.latest_merge_hours` |
 | A task of its own | A worker in its own worktree, on a short fresh brief, not a long conversation's fork | `claude.hours_session_to_pr` |
 | A live page after its deploy | Its text in the app's browser; screenshots stay in CI's visual check | `deploy.success_rate` |
 | Bulk text an open-weight model can draft | `delegate.bulk_text`, credited in a `Co-authored-by:` trailer | `models.third_party_share` |
