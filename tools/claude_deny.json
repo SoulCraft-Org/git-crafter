@@ -187,15 +187,15 @@
     "Bash(gh auth token*)", "Bash(gh auth status *--show-token*)", "Bash(gh auth status * -t*)",
     "Bash(git credential fill*)", "Bash(git * credential fill*)", "Bash(git credential-* get*)", "Bash(git-credential-* get*)",
     "Bash(*wrangler auth token*)", "Bash(*wrangler * auth token*)", "Bash(*modal config show*)", "Bash(crusoe config get *)", "Bash(runpodctl config)",
-    "Bash(*claude setup-token*)"
+    "Bash(claude setup-token*)", "Bash(*/claude setup-token*)"
    ],
    "blocks": [
     "gh auth token", "gh auth status --show-token", "GH_TOKEN=$(gh auth token) gh api user", "git credential fill", "git -C repo credential fill",
     "wrangler auth token", "npx wrangler auth token", "./node_modules/.bin/wrangler auth token", "wrangler -e staging auth token",
     "modal config show", "uvx modal config show", "crusoe config get secret_key", "runpodctl config", "claude setup-token", "/opt/homebrew/bin/claude setup-token"
    ],
-   "allows": ["gh auth status", "wrangler whoami", "modal config set-environment main", "runpodctl get pod", "claude --version"],
-   "gaps": "The same programs run through python -m or a full path the rules do not name pass."
+   "allows": ["gh auth status", "wrangler whoami", "modal config set-environment main", "runpodctl get pod", "claude --version", "keys signin claude setup-token"],
+   "gaps": "The same programs run through python -m or a full path the rules do not name pass. The setup-token rules match it only as the command itself, so an account's keys tool can open it in a Terminal window that the owner reads and no session sees (the owner asked for this, 2026-11-17); another program that takes it as an argument passes too."
   },
   {
    "id": "sign-in-and-secrets",
