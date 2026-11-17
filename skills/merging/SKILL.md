@@ -27,7 +27,7 @@ case, and a new rule needs a real incident.
 | Merge | Rule |
 |---|---|
 | Order | Post each verdict, then merge passes in order. |
-| Checks | Wait once (`gh pr checks N --watch --interval 60`; the 10 s default spends the shared API allowance, #707), then merge, never asking the owner (2026-11-10). |
+| Checks | Wait once, in the background: `gh pr checks N --watch --interval 60` with `run_in_background`, whose exit wakes the session, or the app's PR monitor, whose event does. Then merge, never asking the owner (2026-11-10). The 10 s default spends the shared API allowance (#707). |
 | Pace | Merges a day stay under included Actions money left ÷ days to reset ÷ cost per merge, read each wave (#648). |
 | Waiting | A green PR with no verdict for 20 minutes is any orchestrator's (`pull_requests.green_waiting_minutes`; the owner, 2026-11-10). |
 | Branch rule | Keep "require branches to be up to date" off on `main`, so no merge re-runs the others' CI. |
