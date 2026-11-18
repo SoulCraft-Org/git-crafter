@@ -187,15 +187,15 @@
     "Bash(gh auth token*)", "Bash(gh auth status *--show-token*)", "Bash(gh auth status * -t*)",
     "Bash(git credential fill*)", "Bash(git * credential fill*)", "Bash(git credential-* get*)", "Bash(git-credential-* get*)",
     "Bash(*wrangler auth token*)", "Bash(*wrangler * auth token*)", "Bash(*modal config show*)", "Bash(crusoe config get *)", "Bash(runpodctl config)",
-    "Bash(*claude setup-token*)"
+    "Bash(claude setup-token*)", "Bash(*/claude setup-token*)", "Bash(*claude-code setup-token*)", "Bash(*$(claude setup-token*)", "Bash(*`claude setup-token*)"
    ],
    "blocks": [
     "gh auth token", "gh auth status --show-token", "GH_TOKEN=$(gh auth token) gh api user", "git credential fill", "git -C repo credential fill",
     "wrangler auth token", "npx wrangler auth token", "./node_modules/.bin/wrangler auth token", "wrangler -e staging auth token",
-    "modal config show", "uvx modal config show", "crusoe config get secret_key", "runpodctl config", "claude setup-token", "/opt/homebrew/bin/claude setup-token"
+    "modal config show", "uvx modal config show", "crusoe config get secret_key", "runpodctl config", "claude setup-token", "/opt/homebrew/bin/claude setup-token", "npx @anthropic-ai/claude-code setup-token", "T=$(claude setup-token)"
    ],
-   "allows": ["gh auth status", "wrangler whoami", "modal config set-environment main", "runpodctl get pod", "claude --version"],
-   "gaps": "The same programs run through python -m or a full path the rules do not name pass."
+   "allows": ["gh auth status", "wrangler whoami", "modal config set-environment main", "runpodctl get pod", "claude --version", "keys signin claude setup-token"],
+   "gaps": "The same programs run through python -m or a full path the rules do not name pass. keys signin passes on purpose: it runs the command in a Terminal.app window the session never reads, so the token never reaches tool output (the owner, 2026-11-18: \"No, you do it\")."
   },
   {
    "id": "sign-in-and-secrets",
