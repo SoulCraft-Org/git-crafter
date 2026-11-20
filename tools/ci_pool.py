@@ -1,23 +1,24 @@
 #!/usr/bin/env python3
-"""ci_pool.py: the org's Blacksmith pool meter, the minutes every repo used of Blacksmith's free minutes and the stop.
+"""ci_pool.py: the org's Blacksmith pool meter, the dollars used of Blacksmith's $12 monthly credit and the stop.
 
 Usage:
     ci_pool.py meter --org=ORG --ledger=FILE [--seconds=N] [--cli-usage=FILE] [--hard-stop=N] [--resume] [--write]
         Reads every repo's job records with $GH_TOKEN (the CI pool App's installation token), saves the ledger as it
-        goes and prints the reading. --cli-usage takes `blacksmith usage --since 30d --format json` output, and the
-        reading uses the higher of the two counts. With --write, at the hard stop (default 2,850) every runner group
-        whose name starts with Blacksmith is closed to all repos, again on each pass, until a pass with --resume opens
-        them to all. $CI_POOL_PREVIOUS, the last reading, carries the stop from pass to pass. --write also stores the
-        reading in the org variable CI_POOL. A pass stops on its own after N seconds (default 900) and reads
-        complete: false until a later pass catches up.
+        goes and prints the reading. --cli-usage takes `blacksmith usage --since 30d --format json` output: its
+        estimated cost is the reading, the job records' cost its floor, and the higher counts. Without that cost the
+        reading is complete: false, so no chooser takes Blacksmith. With --write, at the hard stop (default $11.40)
+        every runner group whose name starts with Blacksmith is closed to all repos, again on each pass, until a pass
+        with --resume opens them to all. $CI_POOL_PREVIOUS, the last reading, carries the stop from pass to pass.
+        --write also stores the reading in the org variable CI_POOL. A pass stops on its own after N seconds
+        (default 900) and reads complete: false until a later pass catches up.
         Exit 0 read, 2 usage error, 3 could not read.
     ci_pool.py --self-test
         Runs tools/tests/test_ci_pool.py with fake APIs.
 
-Each job counts as Blacksmith bills it: rounded up to the minute, then weighted against an x64 2-vCPU minute. The
-reading is trusted for MAX_AGE, so the stop sits under the free minutes by what the busiest hour could burn in that
-time: stop = free - MAX_AGE x peak hourly burn. A run whose jobs the meter could not all read makes the reading
-complete: false, and a chooser treats that as no reading. Standard library only.
+Blacksmith's free tier is a credit worth FREE x64 2-vCPU minutes at list price, so the meter works in dollars. Each
+job in the floor counts as Blacksmith bills it: rounded up to the minute, weighted against an x64 2-vCPU minute, times
+RATE. The stop is STOP_SHARE of the credit and the hard stop HARD_SHARE. A run whose jobs the meter could not all
+read makes the reading complete: false, and a chooser treats that as no reading. Standard library only.
 """
 
 from __future__ import annotations
@@ -40,10 +41,11 @@ API = "https://api.github.com"
 FREE = 3000
 # The meter runs hourly. 75 minutes trusts one reading plus 15 minutes of schedule delay; a missed pass goes stale.
 MAX_AGE = dt.timedelta(minutes=75)
-# A goal: the busiest hour assumed before the meter has seen one, a fifth of the free minutes.
-PEAK_FLOOR = 600
-# A goal: 150 minutes of headroom under the free minutes for jobs already running when the runner groups close.
-HARD_STOP = 2850
+# Blacksmith's FAQ: the free minutes are "a monthly credit worth the same number of x64 2 vCPU minutes at list price"
+# (docs.blacksmith.sh, read 2026-11-20): $0.004 a minute, so $12. Goals: stop at 90 %, close the groups at 95 %.
+RATE, STOP_SHARE, HARD_SHARE = 0.004, 0.90, 0.95
+CREDIT = FREE * RATE
+STOP, HARD_STOP = round(CREDIT * STOP_SHARE, 2), round(CREDIT * HARD_SHARE, 2)
 WINDOW = dt.timedelta(days=31)
 LABEL_RE = re.compile(r"blacksmith-(\d+)vcpu-(ubuntu|windows|macos)-\w+(-arm)?(;scheduling=flex)?")
 # Weights against an x64 2-vCPU minute (docs.blacksmith.sh/blacksmith-runners/overview, read 2026-11-20).
@@ -162,11 +164,6 @@ def run_jobs(api, org: str, repo: str, run_id) -> tuple:
     return jobs, pages, isinstance(total, int) and len(jobs) >= total
 
 
-def stop_for(peak: float) -> int:
-    """The stop: the free minutes less what the org can burn while one reading is trusted."""
-    return max(FREE - math.ceil(max(peak, PEAK_FLOOR) * MAX_AGE.total_seconds() / 3600), 0)
-
-
 def org_repos(api, org: str) -> list:
     """The org's repos that are not archived, sorted; Unreadable past 5,000."""
     repos = []
@@ -246,16 +243,18 @@ def meter(api, org: str, ledger: dict, now: dt.datetime, deadline: float = math.
     repos = org_repos(api, org)
     complete = all([p.read_repo(repo) for repo in repos])
     by_repo, peak = tally({**p.runs, **p.going})
-    used, stop = sum(by_repo.values()), stop_for(peak)
-    return {"version": 2, "at": iso(now), "complete": complete, "max_age_minutes": int(MAX_AGE.total_seconds() // 60),
+    used = sum(by_repo.values())
+    cost = round(used * RATE, 2)
+    return {"version": 3, "at": iso(now), "complete": complete, "max_age_minutes": int(MAX_AGE.total_seconds() // 60),
             "window_start": iso(p.start), "repos": len(repos),
-            "blacksmith": {"used": round(used, 1), "free": FREE, "stop": stop, "left": round(max(stop - used, 0), 1),
-                           "peak_hour": round(peak, 1), "by_repo": {k: round(v, 1) for k, v in sorted(by_repo.items()) if v}}}
+            "blacksmith": {"cost": cost, "credit": CREDIT, "stop": STOP, "left": round(max(STOP - cost, 0), 2),
+                           "floor_cost": cost, "floor_minutes": round(used, 1), "peak_hour": round(peak, 1),
+                           "by_repo": {k: round(v, 1) for k, v in sorted(by_repo.items()) if v}}}
 
 
-def cli_minutes(text: str):
-    """The highest billable minute count anywhere in `blacksmith usage --format json` output; None when it has none.
-    A total is never below its parts, so the highest count found is the org's total."""
+def cli_cost(text: str):
+    """The highest estimated cost anywhere in `blacksmith usage --format json` output; None when it has none. A total is
+    never below its parts, so the highest found is the org's total."""
     try:
         stack, found = [json.loads(text)], []
     except ValueError:
@@ -266,7 +265,7 @@ def cli_minutes(text: str):
             stack.extend(node)
         for key, value in node.items() if isinstance(node, dict) else ():
             name = str(key).lower()
-            if isinstance(value, (int, float)) and not isinstance(value, bool) and "minute" in name and "bill" in name:
+            if isinstance(value, (int, float)) and not isinstance(value, bool) and "cost" in name:
                 found.append(float(value))
             else:
                 stack.append(value)
@@ -274,15 +273,15 @@ def cli_minutes(text: str):
 
 
 def cross_check(reading: dict, text) -> dict:
-    """The higher of the meter's count and Blacksmith's own. Output with no count becomes a note; the meter's stands."""
-    if text is None:
-        return reading
-    b, cli = reading["blacksmith"], cli_minutes(text)
-    b["cli_used"] = cli
-    if cli is None:
-        reading.setdefault("notes", []).append("blacksmith usage printed no billable minutes; the meter's count stands")
-    elif cli > b["used"]:
-        b["used"], b["left"] = round(cli, 1), round(max(b["stop"] - cli, 0), 1)
+    """The higher of Blacksmith's estimated cost and the job records' floor. No cost read, from no token or output
+    without one, makes the reading complete: false: no Blacksmith without Blacksmith's own count."""
+    b = reading["blacksmith"]
+    b["cli_cost"] = None if text is None else cli_cost(text)
+    if b["cli_cost"] is None:
+        reading["complete"] = False
+        reading.setdefault("notes", []).append("no estimated cost from blacksmith usage; no Blacksmith until one is read")
+    elif b["cli_cost"] > b["cost"]:
+        b["cost"], b["left"] = round(b["cli_cost"], 2), round(max(b["stop"] - b["cli_cost"], 0), 2)
     return reading
 
 
@@ -316,12 +315,12 @@ def blacksmith_groups(api, org: str) -> list:
     return [g for g in groups if str(g.get("name", "")).lower().startswith("blacksmith")]
 
 
-def backstop(api, org: str, reading: dict, hard_stop: int, resume: bool, previous) -> dict:
+def backstop(api, org: str, reading: dict, hard_stop: float, resume: bool, previous) -> dict:
     """At the hard stop, closes every Blacksmith runner group to all repos, and closes it again each pass until resume.
     Resume opens them to all, unless the count is still at the hard stop. Never GitHub's org-wide self-hosted switch."""
     b = reading["blacksmith"]
     b["hard_stop"] = hard_stop
-    b["stopped"] = b["used"] >= hard_stop or (was_stopped(previous) and not resume)
+    b["stopped"] = b["cost"] >= hard_stop or (was_stopped(previous) and not resume)
     groups = blacksmith_groups(api, org)
     if b["stopped"] and not groups:
         raise Unreadable(f"{org} is at its hard stop and has no runner group whose name starts with Blacksmith")
@@ -396,15 +395,15 @@ def main(argv: list) -> int:
     p.add_argument("--ledger", required=True)
     p.add_argument("--seconds", type=int, default=900)
     p.add_argument("--cli-usage")
-    p.add_argument("--hard-stop", type=int, default=HARD_STOP)
+    p.add_argument("--hard-stop", type=float, default=HARD_STOP)
     p.add_argument("--resume", action="store_true")
     p.add_argument("--write", action="store_true")
     args = parser.parse_args(argv)
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]{0,38}", args.org):
         print(f"::error title=ci-pool usage::not an org name: {args.org!r}")
         return 2
-    if not 0 < args.hard_stop <= FREE:
-        print(f"::error title=ci-pool usage::--hard-stop must be 1 to {FREE}, not {args.hard_stop}")
+    if not 0 < args.hard_stop <= CREDIT:
+        print(f"::error title=ci-pool usage::--hard-stop must be over 0 and at most {CREDIT} dollars, not {args.hard_stop}")
         return 2
     try:
         api = Api(os.environ.get("GH_TOKEN", ""))
@@ -420,8 +419,8 @@ def main(argv: list) -> int:
         return 3
     b = reading["blacksmith"]
     with open(os.environ.get("GITHUB_STEP_SUMMARY") or os.devnull, "a", encoding="utf-8") as handle:
-        handle.write(f"## CI pool\n\n| Used | Stop | Left | Peak hour | Complete | Stopped |\n|---|---|---|---|---|---|\n"
-                     f"| {b['used']} | {b['stop']} | {b['left']} | {b['peak_hour']} | {reading['complete']} | "
+        handle.write(f"## CI pool\n\n| Cost $ | Stop $ | Left $ | Floor $ | Complete | Stopped |\n|---|---|---|---|---|---|\n"
+                     f"| {b['cost']} | {b['stop']} | {b['left']} | {b['floor_cost']} | {reading['complete']} | "
                      f"{b.get('stopped', 'not checked')} |\n")
     return 0
 

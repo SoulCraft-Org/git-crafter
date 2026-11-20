@@ -1,4 +1,4 @@
-# Git Crafter CI pool: one meter per org for Blacksmith's free minutes, run from the org's .github repo
+# Git Crafter CI pool: one meter per org for Blacksmith's $12 monthly free credit, run from the org's .github repo
 # (templates/ci/ci-pool.yml), with tools/ci_pool.py at the pinned commit. Nothing is copied into the repo.
 #
 #   - uses: SoulCraft-Org/git-crafter/actions/ci-pool@<full sha> # vN
@@ -10,14 +10,15 @@
 # mode meter (the default) reads every repo's Blacksmith jobs with the CI pool App (templates/ci/ci-pool-app.json),
 # writes the reading to the org variable CI_POOL, and at hard-stop closes every runner group whose name starts with
 # Blacksmith until a run with resume. The ledger rides in the Actions cache, so each pass reads only what changed; a
-# pass stops after seconds and the next one catches up. mode usage reads Blacksmith's own count with
+# pass stops after seconds and the next one catches up. mode usage reads Blacksmith's estimated cost with
 # BLACKSMITH_ORG_TOKEN in a job of its own, since its installer runs unpinned code: the meter job never sees it.
+# Without that cost the reading is complete: false, so no chooser takes Blacksmith.
 # Exit 3 from the meter leaves CI_POOL as it was, so it goes stale and every chooser falls back to ubuntu-latest.
 name: Git Crafter CI pool
-description: Meters an org's Blacksmith minutes into the org variable CI_POOL and closes the Blacksmith runner groups at the hard stop.
+description: Meters an org's Blacksmith dollars into the org variable CI_POOL and closes the Blacksmith runner groups at the hard stop.
 inputs:
   mode:
-    description: meter, or usage for Blacksmith's own count
+    description: meter, or usage for Blacksmith's estimated cost
     default: meter
   client-id:
     description: The CI pool App's client id (meter)
@@ -29,14 +30,14 @@ inputs:
     description: The last reading, vars.CI_POOL; it carries a hard stop from pass to pass (meter)
     default: ""
   usage:
-    description: The usage job's output; empty skips the cross-check (meter)
+    description: The usage job's output; empty leaves the reading not complete (meter)
     default: ""
   blacksmith-token:
-    description: secrets.BLACKSMITH_ORG_TOKEN; empty skips the read (usage)
+    description: secrets.BLACKSMITH_ORG_TOKEN; empty means no Blacksmith (usage)
     default: ""
   hard-stop:
-    description: Minutes at which the Blacksmith runner groups close
-    default: "2850"
+    description: Dollars of the $12 credit at which the Blacksmith runner groups close
+    default: "11.4"
   resume:
     description: true opens the Blacksmith runner groups to all repos again
     default: "false"
