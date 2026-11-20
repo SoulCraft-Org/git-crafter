@@ -1,5 +1,5 @@
 # The org's CI pool meter: copy to <org>/.github/.github/workflows/ci-pool.yml, once per org
-# (templates/ci/README.md#ci-pool). It needs the CI pool App (ci-pool-app.json) installed on all repos, its client id
+# (templates/ci/CI-POOL.md). It needs the CI pool App (ci-pool-app.json) installed on all repos, its client id
 # in the org variable CI_POOL_APP_CLIENT_ID and its private key in the .github repo's secret CI_POOL_APP_KEY.
 # Blacksmith's org token goes in the secret BLACKSMITH_ORG_TOKEN of the .github repo's environment ci-pool-meter: its
 # estimated cost is the reading, and without it no chooser takes Blacksmith. Every repo's chooser reads vars.CI_POOL.

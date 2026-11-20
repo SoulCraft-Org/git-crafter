@@ -41,8 +41,8 @@ API = "https://api.github.com"
 FREE = 3000
 # The meter runs hourly. 75 minutes trusts one reading plus 15 minutes of schedule delay; a missed pass goes stale.
 MAX_AGE = dt.timedelta(minutes=75)
-# Blacksmith's FAQ: the free minutes are "a monthly credit worth the same number of x64 2 vCPU minutes at list price"
-# (docs.blacksmith.sh, read 2026-11-20): $0.004 a minute, so $12. Goals: stop at 90 %, close the groups at 95 %.
+# Free: 3,000 x64 2vCPU minutes a month per org (docs.blacksmith.sh runners overview FAQ); list price $0.004 a minute
+# (flex scheduling page), both read 2026-11-20: $12 of credit. Goals: stop at 90 %, close the groups at 95 %.
 RATE, STOP_SHARE, HARD_SHARE = 0.004, 0.90, 0.95
 CREDIT = FREE * RATE
 STOP, HARD_STOP = round(CREDIT * STOP_SHARE, 2), round(CREDIT * HARD_SHARE, 2)

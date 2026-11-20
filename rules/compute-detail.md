@@ -34,7 +34,7 @@ a file these paths match.
 | It runs on GitHub's pool only: `ubuntu-slim` for short jobs, since Linux 1-core bills at a third of 2-core; `ubuntu-latest` for standard ones | [runner pricing](https://docs.github.com/en/billing/reference/actions-runner-pricing) |
 | Hard stop: the budget `ci.budget` names. No pool runs without one | `account.json` |
 | Overflow: only the lane `ci.overflow` names, and only once the stop it names exists | `account.json` |
-| One Blacksmith meter per org, `templates/ci/ci-pool.yml`, replaces per-repo shares. It writes the org variable `CI_POOL`, and closes every `Blacksmith*` runner group at its hard stop | Git Crafter `templates/ci/README.md#ci-pool` |
+| One Blacksmith meter per org, `templates/ci/ci-pool.yml`, replaces per-repo shares. It reads Blacksmith's estimated cost against its $12 credit, writes the org variable `CI_POOL`, and closes every `Blacksmith*` runner group at its hard stop | Git Crafter `templates/ci/CI-POOL.md` |
 | Paid security features stay off unless `ci.paid_features` lists one; the free secret scan and Dependabot stay on | `account.json` |
 
 | Runner labels | Rule |

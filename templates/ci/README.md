@@ -54,7 +54,7 @@ flowchart LR
 | `pinned` | every remote `uses:` at a full SHA, or a step's reference locked in `.github/workflows/actions.lock` |
 | `cache` | `npm ci` or `pip install` with a setup cache |
 | `no-share` | no per-repo minute guard |
-| `blacksmith` | no Blacksmith label outside the chooser, and no Blacksmith sticky disk or Docker layer cache action. No exception waives it |
+| `blacksmith` | Blacksmith labels only via the chooser; no sticky disk or layer cache |
 
 ## Overflow switch
 
@@ -73,33 +73,8 @@ flowchart LR
 | On | `gh variable set CI_OVERFLOW_RUNNER --body blacksmith-2vcpu-ubuntu-2404` |
 | Off | `gh variable delete CI_OVERFLOW_RUNNER` |
 | Opt in | a `runner` job that calls `ci-overflow.yml` with `actions: read`, and `runner:` its label on the `ci` job ([example](../../.github/workflows/ci-overflow.yml)) |
-| A second repo | the org's [CI pool](#ci-pool), which serves every repo |
+| A second repo | the org's [CI pool](CI-POOL.md) |
 | Meter | `runner` job log |
 | New lane | a `lanes` entry, `.github/ci-overflow.json` |
 | Exception | `runner`, five jobs, `.github/ci-standard.json` |
-
-## CI pool
-
-One meter per org counts every repo's Blacksmith minutes over a rolling 31 days, as Blacksmith bills them. Every repo's chooser reads its reading, `vars.CI_POOL`, with no token. [DECISIONS.md](DECISIONS.md) has why.
-
-```mermaid
-flowchart LR
-  C[ci-pool.yml, hourly] --> P[tools/ci_pool.py]
-  P -->|reading| V[org variable CI_POOL]
-  P -->|at hard stop| R[Blacksmith runner groups: no repos]
-  V --> O[tools/ci_overflow.py]
-  O -->|fresh, whole, under stop| L[lane label]
-  O -->|anything else| G[ubuntu-latest]
-```
-
-| Do | How |
-| --- | --- |
-| App | create it from [`ci-pool-app.json`](ci-pool-app.json) and install it on all repos: Actions read, org Variables write, org Self-hosted runners write, no webhook |
-| Meter | copy [`ci-pool.yml`](ci-pool.yml) to `<org>/.github/.github/workflows/`, pinned to the first release with `actions/ci-pool` |
-| Variable | `CI_POOL_APP_CLIENT_ID`, the App's client id, at the org |
-| Secrets | `CI_POOL_APP_KEY`, the App's private key, in the `.github` repo. Optional: `BLACKSMITH_ORG_TOKEN`, so the reading takes the higher of the meter's count and Blacksmith's own |
-| Runner groups | each Blacksmith group's name starts with `Blacksmith`. At the hard stop, 2,850 by default (a goal), the meter sets each to selected repos, with none |
-| Resume | run `ci-pool` by hand with `resume` ticked; the groups go back to all repos |
-| Repos | `CI_OVERFLOW_RUNNER` set to a lane label, at the org or the repo, and the `runner` job above |
-| Reading | version 2; `complete: false` until the meter has caught up; stale after 75 minutes |
 

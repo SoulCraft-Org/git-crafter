@@ -21,7 +21,7 @@ name: ci-overflow
 # it holds a lane's label: tools/ci_overflow.py sums this cycle's minutes on that lane from the caller's run and job
 # data and names the label until the lane's stop, then ubuntu-latest. Anything it cannot read is ubuntu-latest too.
 # Where the org runs the pool meter (templates/ci/ci-pool.yml), the org variable CI_POOL holds its reading, and the
-# label comes from that alone, with no API call (templates/ci/README.md#ci-pool).
+# label comes from that alone, with no API call (templates/ci/CI-POOL.md).
 # The meter and .github/ci-overflow.json are embedded below verbatim by `ci_standard.py embed --write`, as
 # ci-standard.yml embeds its checks, so the lanes and the stop are Git Crafter's at the caller's pin and no pull request
 # in the caller can edit them. templates/ci/DECISIONS.md, 2026-11-11.
