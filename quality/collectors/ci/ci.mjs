@@ -60,7 +60,7 @@ import { once } from "../github/github-loaders.mjs";
 import { runsOnPush } from "./ci-workflows.mjs";
 import { TARGETS_FILE, RUNS_PER_WORKFLOW, LAST_RUNS, LAST_PRS, QUEUE_SAMPLE, LOG_SAMPLE, LAST, CODE_QUALITY, round1, pct, skip, measured, ms, completed, newest, groupBy, mapLimit } from "./ci-core.mjs";
 import { describeRun, pushToGreen, cacheVerdict, weightedLightShare, commonStart } from "./ci-describe.mjs";
-import { skipTriggers } from "./ci-stages.mjs";
+import { skipTriggers, standardCalls } from "./ci-stages.mjs";
 import { pipelineDetail } from "./ci-detail.mjs";
 import { reasonFor, settings } from "./ci-settings.mjs";
 import { workflowRuns, runJobs, flakyChecks } from "./ci-runs.mjs";
@@ -71,7 +71,7 @@ import { prRunRequests } from "../lib/quota.mjs";
 
 export { workflowRuns, JOBS_BATCH, JOBS_BATCH_WITH_STEPS, runJobs, flakyChecks, prRuns, latestPriced, priceRuns } from "./ci-runs.mjs";
 export { reasonFor, settings } from "./ci-settings.mjs";
-export { pipelineStages, skipTriggers } from "./ci-stages.mjs";
+export { pipelineStages, skipTriggers, standardCalls } from "./ci-stages.mjs";
 export { LIGHT_SPAN_SECONDS, describeRun, pushToGreen, cacheVerdict, weightedLightShare, commonStart } from "./ci-describe.mjs";
 export { RUNS_PER_WORKFLOW, LAST_RUNS, LAST_PRS, QUEUE_SAMPLE, LOG_SAMPLE, RUNNER_RATES, runnerRate, STAGE_ORDER } from "./ci-core.mjs";
 export { firesOn, hookCode, hookRuns, shardCount, jobNames, jobGraph } from "./ci-workflows.mjs";
@@ -123,21 +123,24 @@ const FIXING_PULLS = `query FixingPulls($owner: String!, $name: String!) {
   }
 }`;
 
-function loaders({ gh, repo, cfg }) {
+function loaders({ gh, repo, cfg, root }) {
   const L = {};
-  return Object.assign(L, runLoaders(L, { gh, repo, cfg }), pullLoaders(L, { gh, repo, cfg }), {
+  return Object.assign(L, runLoaders(L, { gh, repo, cfg, root }), pullLoaders(L, { gh, repo, cfg }), {
     // The project board's cards, as github.mjs reads them; read only for the card metric.
     board: once(() => readProject(gh, repo, ...repo.split("/"), projectSettings(cfg.boardParams, repo))),
   });
 }
 
 /** Memoized reads of workflows and their runs. */
-function runLoaders(L, { gh, repo, cfg }) {
+function runLoaders(L, { gh, repo, cfg, root }) {
   const jobs = new Map();
+  // What a run's workflow skips by design when it calls ci-standard.yml; nothing for any other workflow.
+  const calls = once(() => standardCalls(root));
+  const byDesign = (run) => calls().get(run.workflow) ?? calls().get(String(run.path ?? "").split("@")[0]);
   return {
     // A run's REST jobs, read once, described: billed minutes, runner labels, queue times.
     jobsOf: (run) => {
-      if (!jobs.has(run.id)) jobs.set(run.id, gh.rest(`repos/${repo}/actions/runs/${run.id}/jobs?per_page=100`).then((b) => describeRun(run, b.jobs ?? [])));
+      if (!jobs.has(run.id)) jobs.set(run.id, gh.rest(`repos/${repo}/actions/runs/${run.id}/jobs?per_page=100`).then((b) => describeRun(run, b.jobs ?? [], byDesign(run))));
       return jobs.get(run.id);
     },
     // The default branch: params.default_branch, else the repo's, as github.mjs reads it.
@@ -166,7 +169,7 @@ function runLoaders(L, { gh, repo, cfg }) {
     described: once(async () => {
       const done = (await L.runs()).filter(completed);
       const jobs = await runJobs(gh, done, { steps: true });
-      return done.map((r) => describeRun(r, jobs.get(r.id)));
+      return done.map((r) => describeRun(r, jobs.get(r.id), byDesign(r)));
     }),
     // REST jobs, which carry created_at, for the newest QUEUE_SAMPLE of those runs per workflow.
     queued: once(async () => {
@@ -367,9 +370,9 @@ export async function collect({ root = process.cwd(), mode = "local", params = O
   }
   if (!slug) gh = refusingGh(`no repo to read: params.repo in ${TARGETS_FILE} is not owner/name, and GITHUB_REPOSITORY is unset`);
   // A CI run reads the board with the admin client (ADMIN_READ_TOKEN or the App token), as github.mjs does.
-  const LA = admin && slug ? loaders({ gh: admin, repo: slug, cfg }) : null;
+  const LA = admin && slug ? loaders({ gh: admin, repo: slug, cfg, root }) : null;
   const ctx = { root, mode, gh, repo: slug, now: Number(now), cfg, selfRun, LA };
-  const L = loaders({ gh, repo: slug, cfg });
+  const L = loaders({ gh, repo: slug, cfg, root });
   const entries = await Promise.all(
     active.map(async ([id, metric]) => {
       const source = metric.source.replaceAll("{repo}", slug ?? "owner/name");
