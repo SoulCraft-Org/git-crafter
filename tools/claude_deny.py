@@ -14,6 +14,11 @@ every block example matches one of its own rule's patterns, no allow example
 matches any pattern, each retired guard rule is accounted for once, and the
 model passes its own self-test.
 
+An account's own rules go in claude_deny.local.json beside this file (the account
+overlay's code-os/claude_deny.local.json). It has the same shape; every command
+here reads it, so --self-test checks its examples and accounting and --merge
+installs its rules. Git Crafter's CI has no such file and tests only its own list.
+
 Exit 0 = ok, 1 = a check failed or rules are missing, 2 = usage or read error.
 Requires Python 3.9, standard library only.
 """
@@ -28,12 +33,32 @@ if HERE not in sys.path:
 import claude_deny_model as model  # noqa: E402  # pyright: ignore[reportMissingImports]
 
 DATA = os.path.join(HERE, "claude_deny.json")
+# One account's own rules, installed beside this file from its overlay folder
+# (code-os/claude_deny.local.json). Same shape as claude_deny.json; its rules,
+# retired ids and uncovered entries are added after Git Crafter's own.
+LOCAL = os.path.join(HERE, "claude_deny.local.json")
 
 
-def load(path=DATA):
-    """The deny list data."""
+def _read(path):
+    """One deny list file as a JSON object."""
     with open(path, encoding="utf-8") as f:
         return json.load(f)
+
+
+def merge_local(data, local):
+    """data with a local file's rules, retired ids and uncovered entries added after its own."""
+    if not isinstance(local, dict):
+        raise ValueError("the local deny list is not a JSON object")
+    out = dict(data)
+    for key in ("rules", "retired", "uncovered"):
+        out[key] = list(data[key]) + list(local.get(key, []))
+    return out
+
+
+def load(path=DATA, local=LOCAL):
+    """The deny list data, with the account's local file merged in when one sits beside it."""
+    data = _read(path)
+    return merge_local(data, _read(local)) if os.path.exists(local) else data
 
 
 def deny_list(data):
@@ -113,6 +138,21 @@ def accounting_problems(data):
     return problems, len(seen)
 
 
+def merge_problems():
+    """Check merge_local on a one-rule list: the local rule lands after the shared ones, and a bad shape is refused."""
+    shared = {"rules": [{"id": "a"}], "retired": ["r1"], "uncovered": []}
+    got = merge_local(shared, {"rules": [{"id": "b"}], "retired": ["r2"]})
+    out = [] if [r["id"] for r in got["rules"]] == ["a", "b"] and got["retired"] == ["r1", "r2"] and got["uncovered"] == [] \
+        else ["merge_local does not append the local rules and retired ids"]
+    out += [] if shared == {"rules": [{"id": "a"}], "retired": ["r1"], "uncovered": []} else ["merge_local changed its input"]
+    try:
+        merge_local(shared, [])
+        out.append("merge_local accepted a local list that is not an object")
+    except ValueError:
+        pass
+    return out
+
+
 def self_test(data):
     """Run every rule's examples, the accounting and the model's own test; 0 when all pass."""
     rules = deny_list(data)
@@ -121,6 +161,9 @@ def self_test(data):
     problems += accounting
     if len(rules) != sum(len(r["deny"]) for r in data["rules"]):
         problems.append("a deny rule is listed twice")
+    ids = [r["id"] for r in data["rules"]]
+    problems += ["rule id %s is used twice" % i for i in sorted(set(ids)) if ids.count(i) > 1]
+    problems += merge_problems()
     for p in problems:
         print("FAIL " + p)
     print("claude_deny self-test: %d rules for %d retired guard rules, %s"
