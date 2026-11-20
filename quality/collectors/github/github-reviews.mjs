@@ -28,10 +28,12 @@ export function reviewMarkers(pull) {
 }
 
 /**
- * Whether the PRs hold verdict comments and every author reads as a non-member.
- * GitHub shows a private org member as CONTRIBUTOR to a token that is not in
- * the org, so the verdicts exist but cannot be told from an outsider's. That
- * is a read the token cannot make, not a PR that went unreviewed.
+ * Whether any PR holds a well-formed verdict comment whose author reads as a
+ * non-member. GitHub shows a private org member as CONTRIBUTOR to a token that
+ * is not in the org, while a public member reads as MEMBER, so one member's
+ * verdict proves nothing about another's: the verdict exists but cannot be
+ * told from an outsider's. That is a read the token cannot make, not a PR that
+ * went unreviewed.
  */
 export function privateMarkerAuthors(pulls) {
   // Only a verdict naming one of the PR's own commits counts, as in reviewMarkers: anyone can post the words.
@@ -39,7 +41,7 @@ export function privateMarkerAuthors(pulls) {
     const oids = commitsOf(p);
     return (p.markerComments?.nodes ?? []).filter((c) => oids.has(MARKER.exec(String(c.body ?? "").split("\n", 1)[0].replace(/\r$/, ""))?.[2]));
   });
-  return found.length > 0 && !found.some((c) => MARKER_AUTHORS.has(c.authorAssociation));
+  return found.some((c) => !MARKER_AUTHORS.has(c.authorAssociation));
 }
 
 /**

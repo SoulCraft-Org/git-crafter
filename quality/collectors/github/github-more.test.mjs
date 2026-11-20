@@ -220,7 +220,7 @@ describe("collect() fails open", () => {
     const pulls = [
       pr(1, { notes: [note(1, 0.2, `Review: BLOCK at ${sha("b")}\nTwo findings.`), note(1, 0.8, `Review: MERGE at ${sha("a")}`, "OWNER")] }),
       pr(2, { notes: [note(2, 0.5, `Review: MERGE at ${sha("a")}\r\nClean.`, "COLLABORATOR")] }),
-      pr(3, { notes: [note(3, 0.5, `Review: MERGE at ${sha("a")}`, "NONE")] }), // forged: not a member
+      pr(3, { notes: [note(3, 0.5, `Review: MERGE at ${sha("f")}`, "NONE")] }), // forged: not a member, and no commit of the PR
       pr(4, { notes: [note(4, 0.5, `Review: MERGE at ${sha("f")}`)] }), // a SHA not in the PR
       pr(5, { notes: [note(5, 0.5, "Review: MERGE at aaaaaaa"), note(5, 0.6, `Review: MERGE at ${sha("a")} looks good`)] }), // short, and not the whole line
       // One login opens and reviews: its COMMENTED review of the earlier head counts.
@@ -255,9 +255,12 @@ describe("collect() fails open", () => {
     // An outsider's verdict naming a SHA the PR never had proves nothing about membership: the 0 stands.
     const forged = await run({ gh: fakeGh({ graphql: { ...GRAPHQL, MergedPulls: { repository: { pullRequests: { pageInfo: { hasNextPage: false }, nodes: [pr(15, { notes: [note(15, 0.5, `Review: MERGE at ${sha("f")}`, "NONE")] })] } } } } }) });
     assert.equal(forged["pull_requests.reviewed"].value, 0);
-    // One member verdict among them shows membership reads, so a forged one still scores as not reviewed.
+    // A public member's verdict does not make a private member's readable: a mix of both is not scored either, never 33.3.
     const mixed = await run({ gh: fakeGh({ graphql: { ...GRAPHQL, MergedPulls: { repository: { pullRequests: { pageInfo: { hasNextPage: false }, nodes: [...privateOnly, pr(14, { notes: [note(14, 0.5, `Review: MERGE at ${sha("a")}`, "MEMBER")] })] } } } } }) });
-    assert.equal(mixed["pull_requests.reviewed"].value, 33.3);
+    for (const id of ["pull_requests.reviewed", "pull_requests.fixed_after_review"]) {
+      assert.match(mixed[id].could_not_check, /membership is private/, id);
+      assert.equal(mixed[id].value, undefined, id);
+    }
   });
 
   it("times green to merge on the merged head: the median of the last 10, each PR a row, and no check times as could_not_check", async () => {
