@@ -127,13 +127,45 @@ export function skipTriggers(root, branch) {
   return rows;
 }
 
+// A job's `uses` that calls the CI standard.
+const CALLS_STANDARD = /(^|\/)ci-standard\.ya?ml(@|$)/;
+
+/**
+ * What each workflow's calls of ci-standard.yml skip by design, keyed by the
+ * workflow's name and its file path, for describeRun: `calls`, the caller jobs'
+ * names, and `unset`, each "caller / short" or "caller / standard" job the
+ * caller passed no commands for, so the standard skips it whatever changed.
+ * Only workflows with a call are listed. A file that does not parse reads as
+ * no call, so the run metrics fall back to counting every skip.
+ */
+export function standardCalls(root) {
+  const out = new Map();
+  let docs = [];
+  try {
+    docs = workflowDocs(root);
+  } catch {
+    return out;
+  }
+  for (const { file, doc, name } of docs) {
+    const calls = Object.entries(doc.jobs ?? {}).filter(([, job]) => CALLS_STANDARD.test(String(job?.uses ?? "")));
+    if (!calls.length) continue;
+    const names = calls.map(([id, job]) => ({ name: jobNames(id, job)[0], job }));
+    const byDesign = {
+      calls: names.map((c) => c.name),
+      unset: names.flatMap((c) => ["short", "standard"].filter((input) => !String(c.job.with?.[input] ?? "").trim()).map((input) => `${c.name} / ${input}`)),
+    };
+    out.set(name, byDesign).set(`.github/workflows/${file}`, byDesign);
+  }
+  return out;
+}
+
 /** How one trigger skips work: a paths filter, a changes job, a ci-standard paths input, or null. */
 function skipHow(levels, onEvent) {
   const jobs = levels.flat().map(([, job]) => job);
   if (onEvent?.paths || onEvent?.["paths-ignore"]) return "paths filter";
   if (jobs.some((job) => /needs\.[\w-]+\.outputs\./.test(String(job?.if ?? "")))) return "changes job";
   // A caller of the CI standard skips its jobs through the standard's own changes job when it sets paths.
-  const standard = jobs.some((job) => /(^|\/)ci-standard\.ya?ml(@|$)/.test(String(job?.uses ?? "")) &&
+  const standard = jobs.some((job) => CALLS_STANDARD.test(String(job?.uses ?? "")) &&
     String(job?.with?.paths ?? "").split("\n").some((l) => l.trim() && !l.trim().startsWith("#")));
   return standard ? "ci-standard paths" : null;
 }

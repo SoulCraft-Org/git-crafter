@@ -6,8 +6,8 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { after, before, describe, it } from "node:test";
-import { collect, JOBS_BATCH, JOBS_BATCH_WITH_STEPS, LAST_RUNS, METRIC_IDS, QUEUE_SAMPLE, runJobs, settings, skipTriggers } from "./ci.mjs";
-import { TARGETS, TEMPLATE_PARAMS, FULL_PARAMS, NOW, REPO, T, run, RUNS, skipped, job, JOBS, CHECKS, pull, RUNS_OF, REST, fakeGh, ROOT, collectWith } from "./ci-fixtures.mjs";
+import { collect, describeRun, JOBS_BATCH, JOBS_BATCH_WITH_STEPS, LAST_RUNS, METRIC_IDS, QUEUE_SAMPLE, runJobs, settings, skipTriggers, standardCalls } from "./ci.mjs";
+import { TARGETS, TEMPLATE_PARAMS, FULL_PARAMS, NOW, REPO, T, run, RUNS, skipped, GATES, job, JOBS, CHECKS, pull, RUNS_OF, REST, fakeGh, ROOT, collectWith } from "./ci-fixtures.mjs";
 // Worked by hand from the fixture.
 const EXPECTED = {
   "ci.latest_flow": 10, // the latest head that went all green, s4: 13:00 to 13:10
@@ -284,6 +284,27 @@ describe("repo settings", () => {
     assert.deepEqual(how("      paths: |\n        src/**\n"), ["ci-standard paths"]);
     assert.deepEqual(how(""), [null], "no paths: the standard runs every change");
     assert.deepEqual(how("      paths: |\n        # none yet\n"), [null], "a comment is no path");
+  });
+
+  it("does not count as skipped work what a CI standard caller skips by design: an unset standard job, input-guarded steps", () => {
+    const caller = (inputs) => `name: ci\non:\n  pull_request:\njobs:\n  ci:\n    uses: acme/kit/.github/workflows/ci-standard.yml@${"a".repeat(40)} # v1\n    with:\n${inputs}`;
+    const short = standardCalls(repoWith({ ".github/workflows/ci.yml": caller("      short: npm test\n") }));
+    assert.deepEqual(short.get("ci"), { calls: ["ci"], unset: ["ci / standard"] }, "only short is set");
+    assert.equal(short.get(".github/workflows/ci.yml"), short.get("ci"), "found by file path too");
+    const both = standardCalls(repoWith({ ".github/workflows/ci.yml": caller("      short: npm test\n      standard: npm run e2e\n") }));
+    assert.deepEqual(both.get("ci").unset, [], "both set");
+    // One passing run of the short-only caller: changes found work, short ran 34 s with its python steps skipped (no python-version), standard never set. 50 s in all.
+    const changes = job(401, "ci / changes", "13:00:00", "13:00:00", "13:00:07", "success", GATES);
+    const standard = job(403, "ci / standard", "13:00:08", null, null, "skipped", []);
+    const ciOk = job(404, "ci / ci-ok", "13:00:44", "13:00:46", "13:00:50", "success", GATES);
+    const ran = [changes, job(402, "ci / short", "13:00:08", "13:00:09", "13:00:43", "success", [...GATES, skipped("Run actions/setup-python@abc"), skipped("Run set -euo pipefail")]), standard, ciOk];
+    assert.equal(describeRun(RUNS[6], ran).light, true, "without the caller's inputs, the skips read as skipped work");
+    assert.equal(describeRun(RUNS[6], ran, short.get("ci")).light, false, "short's work was real, and standard was never asked for");
+    // Nothing changed: the changes job skipped short, which the caller did set. That is light.
+    const idle = [changes, job(405, "ci / short", "13:00:08", null, null, "skipped", []), standard, ciOk];
+    assert.equal(describeRun(RUNS[6], idle, short.get("ci")).light, true, "a configured job skipped for lack of changes is light");
+    // A caller that set standard too: its skipped standard job is skipped work.
+    assert.equal(describeRun(RUNS[6], ran, both.get("ci")).light, true, "standard is configured, so skipping it is skipped work");
   });
 
   it("reads the default branch from the repo when the params name none: a master repo", async () => {
