@@ -292,14 +292,14 @@
     "Read(~/.config/.wrangler/**)", "Read(~/Library/Application Support/Claude/claude_desktop_config.json)",
     "Read(~/.zshrc)", "Read(~/.zshrc.bak-*)", "Read(~/.zprofile)", "Read(~/.zshenv)", "Read(~/.zsh_history)", "Read(~/.zsh_sessions/**)",
     "Read(~/.bash_profile)", "Read(~/.bashrc)", "Read(~/.netrc)", "Read(~/.npmrc)", "Read(~/.docker/config.json)", "Read(~/.aws/credentials)",
-    "Read(~/.codex/config.toml)", "Read(~/.minimax_h3_key)", "Read(~/.claude-server-commander/config.json)", "Read(~/.config/goose/**)",
+    "Read(~/.codex/config.toml)", "Read(~/.minimax_h3_key)", "Read(~/.claude-server-commander/config.json)", "Read(~/.config/goose/secrets.yaml)", "Read(~/.local/share/opencode/opencode.db*)", "Read(~/.local/share/opencode/auth.json)",
     "Read(~/.ollama/id_*)", "Read(~/.config/rive/**)", "Read(~/.git-credentials)",
     "Bash(* ~/.ssh/id_*)", "Bash(* ~/.claude.json)", "Bash(* ~/.claude.json *)", "Bash(* ~/.claude/.credentials.json*)", "Bash(* ~/.git-credentials*)", "Bash(* ~/.netrc*)"
    ],
    "blocks": ["base64 ~/.ssh/id_ed25519", "jq . ~/.claude.json", "cp ~/.claude/.credentials.json /tmp/x", "xxd ~/.git-credentials"],
    "allows": ["python3 -I ~/.claude/code-os/json_facts.py claude cachedGrowthBookFeatures", "ls ~/.ssh/config", "cat README.md"],
-   "read_blocks": ["~/.ssh/id_ed25519", "~/.claude.json", "~/.claude/.credentials.json", "/Users/x/Developer/site/.env", "/Users/x/Developer/site/.env.production", "/Users/x/a/b/server.key", "/tmp/cert.pem", "~/.config/gh/hosts.yml", "~/Library/Application Support/Claude/claude_desktop_config.json", "~/.zsh_sessions/A1.history"],
-   "read_allows": ["~/.ssh/config", "/Users/x/Developer/site/.env.example", "/Users/x/Developer/site/README.md", "~/.claude/settings.json", "~/.config/git/ignore"],
+   "read_blocks": ["~/.ssh/id_ed25519", "~/.claude.json", "~/.claude/.credentials.json", "/Users/x/Developer/site/.env", "/Users/x/Developer/site/.env.production", "/Users/x/a/b/server.key", "/tmp/cert.pem", "~/.config/gh/hosts.yml", "~/Library/Application Support/Claude/claude_desktop_config.json", "~/.zsh_sessions/A1.history", "~/.config/goose/secrets.yaml", "~/.local/share/opencode/opencode.db"],
+   "read_allows": ["~/.ssh/config", "/Users/x/Developer/site/.env.example", "/Users/x/Developer/site/README.md", "~/.claude/settings.json", "~/.config/git/ignore", "~/.config/goose/config.yaml"],
    "gaps": "A script that opens a .env or key file itself (python, node) passes, and so does a Bash reader of a .env or key file that Claude Code does not recognize; the sandbox is the boundary for that (code.claude.com/docs/en/sandboxing)."
   },
   {
