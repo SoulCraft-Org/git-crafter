@@ -7,7 +7,8 @@ Usage:
         GITHUB_API_URL, CI_OVERFLOW_SAVE ("true" on the trusted branch) and CI_OVERFLOW_WORKFLOWS (the workflow files
         to meter, comma- or space-separated, each a name or a workflow ref; empty is the config's workflows). Writes
         label, minutes, reason and artifact to GITHUB_OUTPUT (stdout when unset). With CI_OVERFLOW_SAVE, writes the
-        meter's state to FILE for upload-artifact.
+        meter's state to FILE for upload-artifact. With CI_POOL, the org's reading from tools/ci_pool.py, no token
+        is used: the lane's label only while that reading is fresh, whole and under its stop.
     ci_overflow.py --self-test
         Runs tools/tests/test_ci_overflow.py: under, at and over the stop, an unreadable API, off, a backlog, a repo
         off the lane, a workflow list, and ci-standard.yml's lane labels against the config.
@@ -16,7 +17,8 @@ The meter sums this period's minutes of this repo's jobs whose labels match the 
 each job rounded up to the minute and weighted by its vCPUs. The newest state artifact from the trusted branch carries
 the runs already summed, so a run reads only the runs since. Exit 0 always: anything it cannot read is the fallback
 label, GitHub's own runner (rules/gates.md, fail open). The lanes live in .github/ci-overflow.json. A lane serves only
-the repos its `repos` names, since its free minutes are per organization and this meter reads one repo.
+the repos its `repos` names, since its free minutes are per organization and this meter reads one repo. An org that
+runs the pool meter (templates/ci/ci-pool.yml) sets CI_POOL for every repo, and this per-repo meter then stays idle.
 .github/workflows/ci-overflow.yml embeds this file and that config, so any repo that calls ci-standard.yml can meter.
 """
 
@@ -39,6 +41,8 @@ CONFIG = os.path.join(".github", "ci-overflow.json")
 SETTLE = timedelta(seconds=60)  # runs created in the last minute wait for the next meter run
 SAFE = re.compile(r"[A-Za-z0-9 _.:;,()'-]*")  # one output value: no line break, no = or other control
 STOCK = {"label": "ubuntu-latest", "minutes": "", "artifact": ""}
+POOL_AGE = timedelta(minutes=75)  # tools/ci_pool.py's MAX_AGE: an older reading is stale
+POOL_SKEW = timedelta(minutes=5)  # a reading this far ahead of the runner's clock is still fresh
 WORKFLOW_FILE = re.compile(r"[A-Za-z0-9_.-]+\.ya?ml")  # one workflow file name, safe in an API path
 
 
@@ -235,12 +239,42 @@ def admit(env: dict, cfg: dict):
     if not found:
         return "CI_OVERFLOW_RUNNER is no lane's label"
     name, lane = found
-    if env.get("GITHUB_REPOSITORY", "").lower() not in {r.lower() for r in lane["repos"]}:
+    if not env.get("CI_POOL", "").strip() and env.get("GITHUB_REPOSITORY", "").lower() not in {r.lower() for r in lane["repos"]}:
         return "this repo is not on the lane's meter (repos in .github/ci-overflow.json)"
     workflows = workflows_of(env.get("CI_OVERFLOW_WORKFLOWS", ""), cfg)
     if workflows is None:
         return "CI_OVERFLOW_WORKFLOWS names a file that is not a workflow"
     return name, lane, label, {**cfg, "workflows": workflows}
+
+
+def pool_reason(raw: str, now: datetime) -> str:
+    """Why the org's CI_POOL reading keeps the lane off, or "" when it lets the lane run."""
+    try:
+        doc = json.loads(raw)
+        b, age = doc["blacksmith"], now - when(doc["at"])
+        used, stop = float(b["used"]), float(b["stop"])
+    except (ValueError, KeyError, TypeError, AttributeError):
+        return "CI_POOL is not a pool reading"
+    if doc.get("version") != 2:
+        return "CI_POOL is not a version 2 reading"
+    if not -POOL_SKEW <= age < POOL_AGE:
+        return f"CI_POOL was read {int(age.total_seconds() // 60)} minutes ago"
+    if doc.get("complete") is not True:
+        return "the pool meter has not caught up"
+    if b.get("stopped") is not False or used >= stop:
+        return f"{used:g} of {stop:g} pool minutes, or stopped"
+    return ""
+
+
+def pooled(raw: str, label: str, fallback: str, now: datetime) -> dict:
+    """The outputs from the org's reading: label while it lets the lane run, else the fallback. No API call."""
+    why = pool_reason(raw, now)
+    try:
+        minutes = f"{float(json.loads(raw)['blacksmith']['used']):g}"
+    except (ValueError, KeyError, TypeError):
+        minutes = ""
+    pick = fallback if why else label
+    return {"label": pick, "minutes": minutes, "artifact": "", "reason": f"pool: {why or minutes + ' minutes'}; {pick}"}
 
 
 def decide(env: dict, cfg: dict, api, now: datetime) -> tuple:
@@ -251,6 +285,8 @@ def decide(env: dict, cfg: dict, api, now: datetime) -> tuple:
     if isinstance(admitted, str):
         return {**off, "reason": admitted}, None
     name, lane, label, cfg = admitted
+    if env.get("CI_POOL", "").strip():
+        return pooled(env["CI_POOL"], label, fallback, now), None
     start = period_start(now, lane["cycle_day"])
     trusted = env.get("CI_OVERFLOW_SAVE") == "true"
     budget = cfg["budget_calls"]["main" if trusted else "pull_request"]
