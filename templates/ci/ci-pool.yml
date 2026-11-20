@@ -1,0 +1,46 @@
+# The org's CI pool meter: copy to <org>/.github/.github/workflows/ci-pool.yml, once per org
+# (templates/ci/README.md#ci-pool). It needs the CI pool App (ci-pool-app.json) installed on all repos, its client id
+# in the org variable CI_POOL_APP_CLIENT_ID and its private key in the .github repo's secret CI_POOL_APP_KEY. The
+# secret BLACKSMITH_ORG_TOKEN is optional: with it, the reading takes the higher of the meter's count and Blacksmith's
+# own. Every repo's chooser then reads vars.CI_POOL.
+name: ci-pool
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+    inputs:
+      resume:
+        description: Open the Blacksmith runner groups to all repos again after a hard stop
+        type: boolean
+        default: false
+permissions: {}
+concurrency:
+  group: ci-pool
+  cancel-in-progress: false
+jobs:
+  usage:
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    permissions: {}
+    outputs:
+      json: ${{ steps.read.outputs.usage }}
+    steps:
+      - id: read
+        uses: SoulCraft-Org/git-crafter/actions/ci-pool@<full sha> # the first release with actions/ci-pool
+        with:
+          mode: usage
+          blacksmith-token: ${{ secrets.BLACKSMITH_ORG_TOKEN }}
+  meter:
+    needs: usage
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-slim
+    timeout-minutes: 14
+    permissions: {}
+    steps:
+      - uses: SoulCraft-Org/git-crafter/actions/ci-pool@<full sha> # the first release with actions/ci-pool
+        with:
+          client-id: ${{ vars.CI_POOL_APP_CLIENT_ID }}
+          private-key: ${{ secrets.CI_POOL_APP_KEY }}
+          previous: ${{ vars.CI_POOL }}
+          usage: ${{ needs.usage.outputs.json }}
+          resume: ${{ inputs.resume == true }}
