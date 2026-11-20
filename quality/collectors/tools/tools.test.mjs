@@ -105,6 +105,19 @@ test('action pins: a tag that actions.lock records reads as its locked commit; $
   }
 });
 
+test('action pins: a sub-path action reads as the commit its repo@ref lock key records, whatever the owner\'s case', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tools-lock-sub-'));
+  const flows = path.join(dir, '.github', 'workflows');
+  fs.mkdirSync(flows, { recursive: true });
+  fs.writeFileSync(path.join(flows, 'w.yml'), ['jobs:', '  a:', '    steps:', '      - uses: Acme/Kit/sub/path@v1.2.3', '      - uses: acme/kit/other@v9'].join('\n'));
+  fs.writeFileSync(path.join(flows, 'actions.lock'), ["version: 'v0.0.3'", 'workflows: {}', 'dependencies:', "    'acme/kit@v1.2.3':", "        ref: 'v1.2.3'", `        commit: 'sha1-${'b'.repeat(40)}'`].join('\n'));
+  try {
+    assert.deepEqual(actionPins(dir).map((p) => `${p.repo}${p.path}@${p.ref}`), [`Kit/sub/path@${'b'.repeat(40)}`, 'kit/other@v9']);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('collect: every metric from a good fixture', async () => {
   const out = await collect({ ...base, exec: fakeExec() });
   assert.equal(out['tools.deps_latest_share'].value, 33.3, 'lib current; big behind; fresh too new');
