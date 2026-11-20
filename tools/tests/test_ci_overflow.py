@@ -7,6 +7,7 @@ label through ci-standard.yml's own runs-on rule for its standard job, read from
 """
 
 import copy
+import importlib.util
 import io
 import json
 import os
@@ -215,9 +216,42 @@ def caller_checks(tool, cfg):
     yield "verify.yml meters the config's workflows", tool.workflows_of(named, cfg) == sorted(cfg["workflows"])
 
 
+def reading(ago=10, cost=3.2, stop=10.8, **over):
+    """An org CI_POOL reading as tools/ci_pool.py writes it, read `ago` minutes back; over replaces top-level keys."""
+    doc = {"version": 3, "at": t(ago), "complete": True, "blacksmith": {
+        "cost": cost, "stop": stop, "cli_cost": cost, "floor_minutes": 800, "stopped": False}}
+    return json.dumps({**doc, **over})
+
+
+def pool_checks(tool, cfg):
+    """CI_POOL: the lane only on a fresh, whole reading under its stop, with no API call, for a repo off the lane too."""
+    nobody = copy.deepcopy(cfg)
+    for lane in nobody["lanes"].values():
+        lane["repos"] = []
+    stopped, no_cli = json.loads(reading()), json.loads(reading())
+    stopped["blacksmith"]["stopped"] = True
+    no_cli["blacksmith"]["cli_cost"] = None
+    for name, raw, want in (("a fresh reading under its stop", reading(), LANE), ("74 minutes old", reading(74), LANE),
+                            ("75 minutes old", reading(75), "ubuntu-latest"), ("10 minutes ahead", reading(-10), "ubuntu-latest"),
+                            ("version 2", reading(version=2), "ubuntu-latest"), ("not caught up", reading(complete=False), "ubuntu-latest"),
+                            ("at its stop", reading(cost=10.8), "ubuntu-latest"), ("stopped", json.dumps(stopped), "ubuntu-latest"),
+                            ("no stopped field", reading(blacksmith={"cost": 1, "stop": 10.8, "cli_cost": 1}), "ubuntu-latest"),
+                            ("no cost from Blacksmith", json.dumps(no_cli), "ubuntu-latest"),
+                            ("not JSON", "{", "ubuntu-latest"), ("a list", "[]", "ubuntu-latest")):
+        api = FakeApi(fail=True)
+        out = tool.decide({**ON, "CI_POOL": raw}, nobody, api, NOW)[0]
+        yield f"pool, {name}: {want}, no call", out["label"] == want and api.calls == 0 and tool.safe(out) == out
+    out = tool.decide({"CI_OVERFLOW_RUNNER": "self-hosted", "CI_POOL": reading()}, nobody, FakeApi(), NOW)[0]
+    yield "pool, an unknown label: GitHub's runner", out["label"] == "ubuntu-latest"
+    spec = importlib.util.spec_from_file_location("ci_pool", os.path.join(ROOT, "tools", "ci_pool.py"))
+    pool = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(pool)
+    yield "the age limit is ci_pool.py's MAX_AGE", tool.POOL_AGE == pool.MAX_AGE
+
+
 def run_all(tool, cfg):
     """Every case's (name, passed)."""
-    return list(checks(tool, cfg)) + list(cli_checks(tool)) + list(caller_checks(tool, cfg))
+    return list(checks(tool, cfg)) + list(cli_checks(tool)) + list(caller_checks(tool, cfg)) + list(pool_checks(tool, cfg))
 
 
 def run(tool):

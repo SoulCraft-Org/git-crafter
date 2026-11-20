@@ -54,6 +54,7 @@ flowchart LR
 | `pinned` | every remote `uses:` at a full SHA, or a step's reference locked in `.github/workflows/actions.lock` |
 | `cache` | `npm ci` or `pip install` with a setup cache |
 | `no-share` | no per-repo minute guard |
+| `blacksmith` | Blacksmith labels only via the chooser; no sticky disk or layer cache |
 
 ## Overflow switch
 
@@ -72,7 +73,8 @@ flowchart LR
 | On | `gh variable set CI_OVERFLOW_RUNNER --body blacksmith-2vcpu-ubuntu-2404` |
 | Off | `gh variable delete CI_OVERFLOW_RUNNER` |
 | Opt in | a `runner` job that calls `ci-overflow.yml` with `actions: read`, and `runner:` its label on the `ci` job ([example](../../.github/workflows/ci-overflow.yml)) |
-| A second repo | its name in the lane's `repos`, once an org-wide meter counts it |
+| A second repo | the org's [CI pool](CI-POOL.md) |
 | Meter | `runner` job log |
 | New lane | a `lanes` entry, `.github/ci-overflow.json` |
 | Exception | `runner`, five jobs, `.github/ci-standard.json` |
+
