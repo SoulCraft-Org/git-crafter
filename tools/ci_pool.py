@@ -2,9 +2,10 @@
 """ci_pool.py: the org's Blacksmith pool meter, the minutes every repo used of Blacksmith's free minutes and the stop.
 
 Usage:
-    ci_pool.py meter --org=ORG --ledger=FILE [--seconds=N] [--write]
+    ci_pool.py meter --org=ORG --ledger=FILE [--seconds=N] [--cli-usage=FILE] [--write]
         Reads every repo's job records with $GH_TOKEN (the CI pool App's installation token), saves the ledger as it
-        goes and prints the reading. --write also stores the reading in the org variable CI_POOL. A pass stops on its
+        goes and prints the reading. --cli-usage takes `blacksmith usage --since 30d --format json` output, and the
+        reading uses the higher of the two counts. --write also stores the reading in the org variable CI_POOL. A pass stops on its
         own after N seconds (default 900) and reads complete: false until a later pass catches up.
         Exit 0 read, 2 usage error, 3 could not read.
     ci_pool.py --self-test
@@ -213,6 +214,50 @@ def meter(api, org: str, ledger: dict, now: dt.datetime, deadline: float = math.
                            "peak_hour": round(peak, 1), "by_repo": {k: round(v, 1) for k, v in sorted(by_repo.items()) if v}}}
 
 
+def cli_minutes(text: str):
+    """The highest billable minute count anywhere in `blacksmith usage --format json` output; None when it has none.
+    A total is never below its parts, so the highest count found is the org's total."""
+    try:
+        stack, found = [json.loads(text)], []
+    except ValueError:
+        return None
+    while stack:
+        node = stack.pop()
+        if isinstance(node, list):
+            stack.extend(node)
+        for key, value in node.items() if isinstance(node, dict) else ():
+            name = str(key).lower()
+            if isinstance(value, (int, float)) and not isinstance(value, bool) and "minute" in name and "bill" in name:
+                found.append(float(value))
+            else:
+                stack.append(value)
+    return max(found, default=None)
+
+
+def cross_check(reading: dict, text) -> dict:
+    """The higher of the meter's count and Blacksmith's own. Output with no count becomes a note; the meter's stands."""
+    if text is None:
+        return reading
+    b, cli = reading["blacksmith"], cli_minutes(text)
+    b["cli_used"] = cli
+    if cli is None:
+        reading.setdefault("notes", []).append("blacksmith usage printed no billable minutes; the meter's count stands")
+    elif cli > b["used"]:
+        b["used"], b["left"] = round(cli, 1), round(max(b["stop"] - cli, 0), 1)
+    return reading
+
+
+def read_text(path):
+    """The file's text; "" when it cannot be read, so cross_check notes it. None when no path was given."""
+    if path is None:
+        return None
+    try:
+        with open(path, encoding="utf-8") as handle:
+            return handle.read()
+    except OSError:
+        return ""
+
+
 def write_variable(api, org: str, value: str) -> None:
     body = {"name": "CI_POOL", "value": value, "visibility": "all"}
     try:
@@ -266,6 +311,7 @@ def main(argv: list) -> int:
     p.add_argument("--org", required=True)
     p.add_argument("--ledger", required=True)
     p.add_argument("--seconds", type=int, default=900)
+    p.add_argument("--cli-usage")
     p.add_argument("--write", action="store_true")
     args = parser.parse_args(argv)
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]{0,38}", args.org):
@@ -273,7 +319,7 @@ def main(argv: list) -> int:
         return 2
     try:
         api = Api(os.environ.get("GH_TOKEN", ""))
-        reading = run_meter(args, api, dt.datetime.now(dt.timezone.utc))
+        reading = cross_check(run_meter(args, api, dt.datetime.now(dt.timezone.utc)), read_text(args.cli_usage))
         reading["api_calls"] = api.calls
         print(json.dumps(reading, indent=1))
         if args.write:

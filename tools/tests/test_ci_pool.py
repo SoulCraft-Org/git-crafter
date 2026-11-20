@@ -139,6 +139,24 @@ def ledger_checks(tool):
     yield "write_variable creates CI_POOL when it is missing", (fake.written or {}).get("name") == "CI_POOL"
 
 
+def cli_checks(tool):
+    """Blacksmith's own count, read from its CLI's JSON, and the higher count kept."""
+    nested = json.dumps({"billable_minutes": 120.0, "repos": [{"name": "a", "billable_minutes": 80}], "free_minutes": 3000})
+    yield "the CLI's total is its highest billable count", tool.cli_minutes(nested) == 120.0
+    yield "a camelCase field counts too", tool.cli_minutes('{"usage": {"billingMinutes": 30}}') == 30.0
+    for name, text in (("not JSON", "Error: not signed in"), ("no billable field", '{"minutes": 5, "billable": true}')):
+        yield f"CLI output with {name} gives no count", tool.cli_minutes(text) is None
+
+    def reading():
+        return {"blacksmith": {"used": 10.5, "stop": 2250, "left": 2239.5}}
+    up = tool.cross_check(reading(), nested)["blacksmith"]
+    yield "a higher CLI count raises used and lowers left", up["used"] == 120.0 and up["left"] == 2130.0
+    yield "a lower CLI count leaves the meter's", tool.cross_check(reading(), '{"billable_minutes": 3}')["blacksmith"]["used"] == 10.5
+    yield "no CLI output leaves the reading as it was", tool.cross_check(reading(), None) == reading()
+    noted = tool.cross_check(reading(), "")
+    yield "unreadable CLI output becomes a note", noted["notes"] and noted["blacksmith"]["used"] == 10.5
+
+
 def raises(tool, fn) -> bool:
     try:
         fn()
@@ -158,4 +176,4 @@ def run(tool):
     return 1 if bad else 0
 
 
-CHECKS = (label_checks, list_checks, meter_checks, ledger_checks)
+CHECKS = (label_checks, list_checks, meter_checks, ledger_checks, cli_checks)
