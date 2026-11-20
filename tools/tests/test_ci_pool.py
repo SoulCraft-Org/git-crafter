@@ -6,6 +6,10 @@ raise Unreadable, never a quiet undercount.
 """
 
 import datetime as dt
+import json
+import os
+import tempfile
+from types import SimpleNamespace
 
 NOW = dt.datetime(2026, 11, 20, 10, 0, tzinfo=dt.timezone.utc)
 BS = {"labels": ["blacksmith-2vcpu-ubuntu-2404"], "runner_name": "bs"}
@@ -31,7 +35,7 @@ class FakeApi:
     tool = None
 
     def __init__(self, fail: str = "", job_total=None):
-        self.fail, self.job_total, self.calls, self.paths = fail, job_total, 0, []
+        self.fail, self.job_total, self.calls, self.paths, self.written = fail, job_total, 0, [], None
 
     def get(self, path: str, params=None):
         self.calls += 1
@@ -51,6 +55,11 @@ class FakeApi:
                     {"id": i, "status": s, "updated_at": f"u{i}", "created_at": c} for i, s, c in listed]}
         run_id = int(path.split("/runs/")[1].split("/")[0])
         return {"total_count": self.job_total or len(JOBS[run_id]), "jobs": JOBS[run_id]}
+
+    def request(self, method, path, params=None, body=None):
+        if method == "PATCH":
+            raise FileNotFoundError(path)
+        self.written = body
 
 
 class CappedApi(FakeApi):
@@ -114,6 +123,22 @@ def meter_checks(tool):
     yield "the next pass resumes and catches up", tool.meter(FakeApi(), "org", ledger, NOW)["complete"] is True
 
 
+def ledger_checks(tool):
+    """The ledger saved as the pass goes and across a failed read, and the org variable."""
+    saves, tool.SAVE_EVERY = [], 1
+    tool.meter(FakeApi(), "org", {}, NOW, save=lambda x: saves.append(len(x["runs"])))
+    tool.SAVE_EVERY = 50
+    yield "the ledger is saved as the pass goes", saves == [0, 1, 2]
+    with tempfile.TemporaryDirectory() as tmp:
+        args = SimpleNamespace(org="org", ledger=os.path.join(tmp, "ledger.json"), seconds=60)
+        failed = raises(tool, lambda: tool.run_meter(args, FakeApi("/beta/"), NOW))
+        with open(args.ledger, encoding="utf-8") as fh:
+            yield "a failed read still saves the runs read so far", failed and sorted(json.load(fh)["runs"]) == ["alpha/1"]
+    fake = FakeApi()
+    tool.write_variable(fake, "org", "{}")
+    yield "write_variable creates CI_POOL when it is missing", (fake.written or {}).get("name") == "CI_POOL"
+
+
 def raises(tool, fn) -> bool:
     try:
         fn()
@@ -133,4 +158,4 @@ def run(tool):
     return 1 if bad else 0
 
 
-CHECKS = (label_checks, list_checks, meter_checks)
+CHECKS = (label_checks, list_checks, meter_checks, ledger_checks)
