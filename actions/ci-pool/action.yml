@@ -1,0 +1,105 @@
+# Git Crafter CI pool: one meter per org for Blacksmith's free minutes, run from the org's .github repo
+# (templates/ci/ci-pool.yml), with tools/ci_pool.py at the pinned commit. Nothing is copied into the repo.
+#
+#   - uses: SoulCraft-Org/git-crafter/actions/ci-pool@<full sha> # vN
+#     with:
+#       client-id: ${{ vars.CI_POOL_APP_CLIENT_ID }}
+#       private-key: ${{ secrets.CI_POOL_APP_KEY }}
+#       previous: ${{ vars.CI_POOL }}
+#
+# mode meter (the default) reads every repo's Blacksmith jobs with the CI pool App (templates/ci/ci-pool-app.json),
+# writes the reading to the org variable CI_POOL, and at hard-stop closes every runner group whose name starts with
+# Blacksmith until a run with resume. The ledger rides in the Actions cache, so each pass reads only what changed; a
+# pass stops after seconds and the next one catches up. mode usage reads Blacksmith's own count with
+# BLACKSMITH_ORG_TOKEN in a job of its own, since its installer runs unpinned code: the meter job never sees it.
+# Exit 3 from the meter leaves CI_POOL as it was, so it goes stale and every chooser falls back to ubuntu-latest.
+name: Git Crafter CI pool
+description: Meters an org's Blacksmith minutes into the org variable CI_POOL and closes the Blacksmith runner groups at the hard stop.
+inputs:
+  mode:
+    description: meter, or usage for Blacksmith's own count
+    default: meter
+  client-id:
+    description: The CI pool App's client id (meter)
+    default: ""
+  private-key:
+    description: The CI pool App's private key (meter)
+    default: ""
+  previous:
+    description: The last reading, vars.CI_POOL; it carries a hard stop from pass to pass (meter)
+    default: ""
+  usage:
+    description: The usage job's output; empty skips the cross-check (meter)
+    default: ""
+  blacksmith-token:
+    description: secrets.BLACKSMITH_ORG_TOKEN; empty skips the read (usage)
+    default: ""
+  hard-stop:
+    description: Minutes at which the Blacksmith runner groups close
+    default: "2850"
+  resume:
+    description: true opens the Blacksmith runner groups to all repos again
+    default: "false"
+  seconds:
+    description: The pass's own time budget; ubuntu-slim stops a job at 15 minutes
+    default: "600"
+outputs:
+  usage:
+    description: blacksmith usage --since 30d JSON, a failure note, or empty when no token was given
+    value: ${{ steps.usage.outputs.json }}
+runs:
+  using: composite
+  steps:
+    - name: Read Blacksmith's own count
+      id: usage
+      if: inputs.mode == 'usage'
+      shell: bash
+      env:
+        BLACKSMITH_ORG_TOKEN: ${{ inputs.blacksmith-token }}
+        BLACKSMITH_DISABLE_AUTO_UPDATE: "1"
+      run: |
+        [ -n "$BLACKSMITH_ORG_TOKEN" ] || exit 0
+        PATH="$HOME/.local/bin:$HOME/.blacksmith/bin:$PATH"
+        out="$( (curl -fsSL https://get.blacksmith.sh | sh >&2 &&
+          printf '%s' "$BLACKSMITH_ORG_TOKEN" | blacksmith auth login --api-token - --non-interactive --organization "$GITHUB_REPOSITORY_OWNER" >&2 &&
+          blacksmith usage --since 30d --format json) || echo "blacksmith usage failed")"
+        mark="BLACKSMITH_USAGE_$RANDOM$RANDOM"
+        printf 'json<<%s\n%s\n%s\n' "$mark" "$out" "$mark" >> "$GITHUB_OUTPUT"
+    - name: Mint the CI pool App's token
+      id: token
+      if: inputs.mode == 'meter'
+      uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      with:
+        client-id: ${{ inputs.client-id }}
+        private-key: ${{ inputs.private-key }}
+        owner: ${{ github.repository_owner }}
+    - name: Restore the ledger
+      if: inputs.mode == 'meter'
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/ci-pool/ledger.json
+        key: ci-pool-ledger-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: ci-pool-ledger-
+    - name: Meter the pool
+      if: inputs.mode == 'meter'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ steps.token.outputs.token }}
+        CI_POOL_PREVIOUS: ${{ inputs.previous }}
+        USAGE: ${{ inputs.usage }}
+        HARD_STOP: ${{ inputs.hard-stop }}
+        RESUME: ${{ inputs.resume }}
+        POOL_SECONDS: ${{ inputs.seconds }}
+      run: |
+        dir="$RUNNER_TEMP/ci-pool"
+        mkdir -p "$dir"
+        args=(meter --org "$GITHUB_REPOSITORY_OWNER" --ledger "$dir/ledger.json" --seconds "$POOL_SECONDS" --hard-stop "$HARD_STOP" --write)
+        if [ "$RESUME" = true ]; then args+=(--resume); fi
+        if [ -n "$USAGE" ]; then printf '%s' "$USAGE" > "$dir/usage.json"; args+=(--cli-usage "$dir/usage.json"); fi
+        python3 -I "$GITHUB_ACTION_PATH/../../tools/ci_pool.py" "${args[@]}"
+    - name: Save the ledger, also after a failed read
+      if: always() && inputs.mode == 'meter'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/ci-pool/ledger.json
+        key: ci-pool-ledger-${{ github.run_id }}-${{ github.run_attempt }}

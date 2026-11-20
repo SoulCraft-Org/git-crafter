@@ -189,6 +189,18 @@ def backstop_checks(tool):
     yield "a stop with no Blacksmith group is Unreadable", raises(tool, lambda: at(2850, api=GroupApi(("Default",))))
 
 
+def manifest_checks(tool):
+    """The CI pool App asks for exactly what the meter and the backstop use, and no webhook."""
+    with open(os.path.join(tool.HERE, "..", "templates", "ci", "ci-pool-app.json"), encoding="utf-8") as fh:
+        app = json.load(fh)
+    yield "the App reads Actions, writes org variables and runner groups, nothing more", app["default_permissions"] == {
+        "actions": "read", "organization_actions_variables": "write", "organization_self_hosted_runners": "write"}
+    yield "the App's webhook is off", app["hook_attributes"]["active"] is False and app["default_events"] == []
+    with open(os.path.join(tool.HERE, "..", "actions", "ci-pool", "action.yml"), encoding="utf-8") as fh:
+        action = fh.read()
+    yield "the action's hard stop default is the meter's", f'default: "{tool.HARD_STOP}"' in action
+
+
 def raises(tool, fn) -> bool:
     try:
         fn()
@@ -208,4 +220,4 @@ def run(tool):
     return 1 if bad else 0
 
 
-CHECKS = (label_checks, list_checks, meter_checks, ledger_checks, cli_checks, backstop_checks)
+CHECKS = (label_checks, list_checks, meter_checks, ledger_checks, cli_checks, backstop_checks, manifest_checks)
