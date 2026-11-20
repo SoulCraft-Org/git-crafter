@@ -3,10 +3,11 @@
 
 Usage:
     ci_pool.py --self-test
-        Runs tools/tests/test_ci_pool.py.
+        Runs tools/tests/test_ci_pool.py with fake APIs.
 
-Each job counts as Blacksmith bills it: rounded up to the minute, then weighted against an x64 2-vCPU minute. A
-label Blacksmith does not list, or a failed read, raises Unreadable, never a count of zero. Standard library only.
+Each job counts as Blacksmith bills it: rounded up to the minute, then weighted against an x64 2-vCPU minute. A list
+the meter could not read whole says so, and a failed read raises Unreadable, never a count of zero. Standard library
+only.
 """
 
 from __future__ import annotations
@@ -23,9 +24,11 @@ import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 API = "https://api.github.com"
+WINDOW = dt.timedelta(days=31)
 LABEL_RE = re.compile(r"blacksmith-(\d+)vcpu-(ubuntu|windows|macos)-\w+(-arm)?(;scheduling=flex)?")
 # Weights against an x64 2-vCPU minute (docs.blacksmith.sh/blacksmith-runners/overview, read 2026-11-20).
 ARM, MACOS = 0.625, {6: 20, 12: 40}
+RUN_PAGES, JOB_PAGES, PAGE = 500, 10, 100
 
 
 class Unreadable(Exception):
@@ -98,6 +101,48 @@ def job_minutes(job: dict, now: dt.datetime) -> float:
     end = parse_time(job["completed_at"]) if job.get("completed_at") else now
     seconds = (end - parse_time(job["started_at"])).total_seconds()
     return math.ceil(max(seconds, 1.0) / 60) * max(weight(x) for x in labels)
+
+
+def repo_runs(api, org: str, repo: str, start: dt.datetime) -> tuple:
+    """(runs created at or after start, newest first; whether that is all of them). No `created` filter: GitHub caps a
+    filtered list at 1,000 runs. A list that ends short of total_count is cut off, so it is not complete."""
+    path, runs, seen, total = f"/repos/{org}/{repo}/actions/runs", [], 0, None
+    for page in range(1, RUN_PAGES + 1):
+        doc = api.get(path, {"per_page": PAGE, "page": page})
+        items = items_of(doc, "workflow_runs", path)
+        total = doc.get("total_count") if total is None else total
+        for run in items:
+            seen += 1
+            if parse_time(run["created_at"]) < start:
+                return runs, True
+            runs.append(run)
+        if len(items) < PAGE:
+            return runs, isinstance(total, int) and seen >= total
+    return runs, False
+
+
+def run_jobs(api, org: str, repo: str, run_id) -> tuple:
+    """(every job of every attempt, pages read, whether that is all of them per total_count)."""
+    path, jobs, total, pages = f"/repos/{org}/{repo}/actions/runs/{run_id}/jobs", [], None, 0
+    for page in range(1, JOB_PAGES + 1):
+        doc = api.get(path, {"filter": "all", "per_page": PAGE, "page": page})
+        pages += 1
+        items = items_of(doc, "jobs", path)
+        total = doc.get("total_count") if total is None else total
+        jobs.extend(items)
+        if len(items) < PAGE:
+            break
+    return jobs, pages, isinstance(total, int) and len(jobs) >= total
+
+
+def org_repos(api, org: str) -> list:
+    repos = []
+    for page in range(1, 51):
+        items = items_of(api.get(f"/orgs/{org}/repos", {"type": "all", "per_page": PAGE, "page": page}), "", "repos")
+        repos += [r["name"] for r in items if not r.get("archived")]
+        if len(items) < PAGE:
+            return sorted(repos)
+    raise Unreadable(f"GET /orgs/{org}/repos: more than 5,000 repos")
 
 
 def self_test() -> int:
