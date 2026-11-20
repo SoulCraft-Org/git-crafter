@@ -216,9 +216,10 @@ def caller_checks(tool, cfg):
     yield "verify.yml meters the config's workflows", tool.workflows_of(named, cfg) == sorted(cfg["workflows"])
 
 
-def reading(ago=10, used=800, stop=2700, **over):
+def reading(ago=10, cost=3.2, stop=10.8, **over):
     """An org CI_POOL reading as tools/ci_pool.py writes it, read `ago` minutes back; over replaces top-level keys."""
-    doc = {"version": 2, "at": t(ago), "complete": True, "blacksmith": {"used": used, "stop": stop, "stopped": False}}
+    doc = {"version": 3, "at": t(ago), "complete": True, "blacksmith": {
+        "cost": cost, "stop": stop, "cli_cost": cost, "floor_minutes": 800, "stopped": False}}
     return json.dumps({**doc, **over})
 
 
@@ -227,13 +228,15 @@ def pool_checks(tool, cfg):
     nobody = copy.deepcopy(cfg)
     for lane in nobody["lanes"].values():
         lane["repos"] = []
-    stopped = json.loads(reading())
+    stopped, no_cli = json.loads(reading()), json.loads(reading())
     stopped["blacksmith"]["stopped"] = True
+    no_cli["blacksmith"]["cli_cost"] = None
     for name, raw, want in (("a fresh reading under its stop", reading(), LANE), ("74 minutes old", reading(74), LANE),
                             ("75 minutes old", reading(75), "ubuntu-latest"), ("10 minutes ahead", reading(-10), "ubuntu-latest"),
-                            ("version 1", reading(version=1), "ubuntu-latest"), ("not caught up", reading(complete=False), "ubuntu-latest"),
-                            ("at its stop", reading(used=2700), "ubuntu-latest"), ("stopped", json.dumps(stopped), "ubuntu-latest"),
-                            ("no stopped field", reading(blacksmith={"used": 1, "stop": 2700}), "ubuntu-latest"),
+                            ("version 2", reading(version=2), "ubuntu-latest"), ("not caught up", reading(complete=False), "ubuntu-latest"),
+                            ("at its stop", reading(cost=10.8), "ubuntu-latest"), ("stopped", json.dumps(stopped), "ubuntu-latest"),
+                            ("no stopped field", reading(blacksmith={"cost": 1, "stop": 10.8, "cli_cost": 1}), "ubuntu-latest"),
+                            ("no cost from Blacksmith", json.dumps(no_cli), "ubuntu-latest"),
                             ("not JSON", "{", "ubuntu-latest"), ("a list", "[]", "ubuntu-latest")):
         api = FakeApi(fail=True)
         out = tool.decide({**ON, "CI_POOL": raw}, nobody, api, NOW)[0]

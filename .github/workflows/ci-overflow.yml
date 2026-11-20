@@ -63,7 +63,8 @@ jobs:
                   to meter, comma- or space-separated, each a name or a workflow ref; empty is the config's workflows). Writes
                   label, minutes, reason and artifact to GITHUB_OUTPUT (stdout when unset). With CI_OVERFLOW_SAVE, writes the
                   meter's state to FILE for upload-artifact. With CI_POOL, the org's reading from tools/ci_pool.py, no token
-                  is used: the lane's label only while that reading is fresh, whole and under its stop.
+                  is used: the lane's label only while that reading is fresh, whole, has Blacksmith's own cost and is under its
+                  stop.
               ci_overflow.py --self-test
                   Runs tools/tests/test_ci_overflow.py: under, at and over the stop, an unreadable API, off, a backlog, a repo
                   off the lane, a workflow list, and ci-standard.yml's lane labels against the config.
@@ -307,17 +308,17 @@ jobs:
               try:
                   doc = json.loads(raw)
                   b, age = doc["blacksmith"], now - when(doc["at"])
-                  used, stop = float(b["used"]), float(b["stop"])
+                  cost, stop = float(b["cost"]), float(b["stop"])
               except (ValueError, KeyError, TypeError, AttributeError):
                   return "CI_POOL is not a pool reading"
-              if doc.get("version") != 2:
-                  return "CI_POOL is not a version 2 reading"
+              if doc.get("version") != 3:
+                  return "CI_POOL is not a version 3 reading"
               if not -POOL_SKEW <= age < POOL_AGE:
                   return f"CI_POOL was read {int(age.total_seconds() // 60)} minutes ago"
-              if doc.get("complete") is not True:
-                  return "the pool meter has not caught up"
-              if b.get("stopped") is not False or used >= stop:
-                  return f"{used:g} of {stop:g} pool minutes, or stopped"
+              if doc.get("complete") is not True or not isinstance(b.get("cli_cost"), (int, float)):
+                  return "the pool meter has not caught up, or has no cost from Blacksmith"
+              if b.get("stopped") is not False or cost >= stop:
+                  return f"{cost:.2f} of a {stop:.2f} dollar stop, or stopped"
               return ""
 
 
@@ -325,11 +326,12 @@ jobs:
               """The outputs from the org's reading: label while it lets the lane run, else the fallback. No API call."""
               why = pool_reason(raw, now)
               try:
-                  minutes = f"{float(json.loads(raw)['blacksmith']['used']):g}"
+                  b = json.loads(raw)["blacksmith"]
+                  minutes, cost = f"{float(b['floor_minutes']):g}", f"{float(b['cost']):.2f}"
               except (ValueError, KeyError, TypeError):
-                  minutes = ""
+                  minutes, cost = "", ""
               pick = fallback if why else label
-              return {"label": pick, "minutes": minutes, "artifact": "", "reason": f"pool: {why or minutes + ' minutes'}; {pick}"}
+              return {"label": pick, "minutes": minutes, "artifact": "", "reason": f"pool: {why or cost + ' dollars used'}; {pick}"}
 
 
           def decide(env: dict, cfg: dict, api, now: datetime) -> tuple:
