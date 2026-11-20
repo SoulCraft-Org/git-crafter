@@ -157,6 +157,38 @@ def cli_checks(tool):
     yield "unreadable CLI output becomes a note", noted["notes"] and noted["blacksmith"]["used"] == 10.5
 
 
+class GroupApi:
+    """An org's runner groups; records each write as (method, last path part, body)."""
+
+    def __init__(self, names=("Blacksmith", "blacksmith-arm", "Default")):
+        self.groups, self.writes = [{"id": i, "name": n} for i, n in enumerate(names, 7)], []
+
+    def get(self, path, params=None):
+        return {"total_count": len(self.groups), "runner_groups": self.groups}
+
+    def request(self, method, path, params=None, body=None):
+        self.writes.append((method, path.rsplit("/", 1)[-1], body))
+
+
+def backstop_checks(tool):
+    """The hard stop closes the Blacksmith groups, holds them closed, and opens them only on resume."""
+    def at(used, previous=None, resume=False, api=None):
+        api = api or GroupApi()
+        b = tool.backstop(api, "org", {"blacksmith": {"used": used}}, 2850, resume, previous)["blacksmith"]
+        return b["stopped"], api.writes
+    closed = [("PATCH", "7", {"visibility": "selected"}), ("PUT", "repositories", {"selected_repository_ids": []}),
+              ("PATCH", "8", {"visibility": "selected"}), ("PUT", "repositories", {"selected_repository_ids": []})]
+    stopped = json.dumps({"blacksmith": {"stopped": True}})
+    yield "under the hard stop nothing changes", at(2849) == (False, [])
+    yield "at the hard stop both Blacksmith groups close and Default does not", at(2850) == (True, closed)
+    yield "once stopped, each pass closes them again", at(100, stopped) == (True, closed)
+    yield "resume opens them to all", at(100, stopped, True) == (False, [("PATCH", "7", {"visibility": "all"}),
+                                                                         ("PATCH", "8", {"visibility": "all"})])
+    yield "resume at the hard stop stays stopped", at(2900, stopped, True) == (True, closed)
+    yield "a garbled last reading is not a stop", at(100, "{not json") == (False, [])
+    yield "a stop with no Blacksmith group is Unreadable", raises(tool, lambda: at(2850, api=GroupApi(("Default",))))
+
+
 def raises(tool, fn) -> bool:
     try:
         fn()
@@ -176,4 +208,4 @@ def run(tool):
     return 1 if bad else 0
 
 
-CHECKS = (label_checks, list_checks, meter_checks, ledger_checks, cli_checks)
+CHECKS = (label_checks, list_checks, meter_checks, ledger_checks, cli_checks, backstop_checks)

@@ -2,11 +2,14 @@
 """ci_pool.py: the org's Blacksmith pool meter, the minutes every repo used of Blacksmith's free minutes and the stop.
 
 Usage:
-    ci_pool.py meter --org=ORG --ledger=FILE [--seconds=N] [--cli-usage=FILE] [--write]
+    ci_pool.py meter --org=ORG --ledger=FILE [--seconds=N] [--cli-usage=FILE] [--hard-stop=N] [--resume] [--write]
         Reads every repo's job records with $GH_TOKEN (the CI pool App's installation token), saves the ledger as it
         goes and prints the reading. --cli-usage takes `blacksmith usage --since 30d --format json` output, and the
-        reading uses the higher of the two counts. --write also stores the reading in the org variable CI_POOL. A pass stops on its
-        own after N seconds (default 900) and reads complete: false until a later pass catches up.
+        reading uses the higher of the two counts. With --write, at the hard stop (default 2,850) every runner group
+        whose name starts with Blacksmith is closed to all repos, again on each pass, until a pass with --resume opens
+        them to all. $CI_POOL_PREVIOUS, the last reading, carries the stop from pass to pass. --write also stores the
+        reading in the org variable CI_POOL. A pass stops on its own after N seconds (default 900) and reads
+        complete: false until a later pass catches up.
         Exit 0 read, 2 usage error, 3 could not read.
     ci_pool.py --self-test
         Runs tools/tests/test_ci_pool.py with fake APIs.
@@ -39,6 +42,8 @@ FREE = 3000
 MAX_AGE = dt.timedelta(minutes=75)
 # A goal: the busiest hour assumed before the meter has seen one, a fifth of the free minutes.
 PEAK_FLOOR = 600
+# A goal: 150 minutes of headroom under the free minutes for jobs already running when the runner groups close.
+HARD_STOP = 2850
 WINDOW = dt.timedelta(days=31)
 LABEL_RE = re.compile(r"blacksmith-(\d+)vcpu-(ubuntu|windows|macos)-\w+(-arm)?(;scheduling=flex)?")
 # Weights against an x64 2-vCPU minute (docs.blacksmith.sh/blacksmith-runners/overview, read 2026-11-20).
@@ -258,6 +263,47 @@ def read_text(path):
         return ""
 
 
+def was_stopped(previous) -> bool:
+    """Whether the last reading, the org variable's text, says the pool was stopped."""
+    try:
+        doc = json.loads(previous or "")
+    except ValueError:
+        return False
+    return isinstance(doc, dict) and isinstance(doc.get("blacksmith"), dict) and doc["blacksmith"].get("stopped") is True
+
+
+def blacksmith_groups(api, org: str) -> list:
+    path = f"/orgs/{org}/actions/runner-groups"
+    doc = api.get(path, {"per_page": PAGE})
+    groups = items_of(doc, "runner_groups", path)
+    if doc.get("total_count", 0) > len(groups):
+        raise Unreadable(f"GET {path}: more than {PAGE} runner groups")
+    return [g for g in groups if str(g.get("name", "")).lower().startswith("blacksmith")]
+
+
+def backstop(api, org: str, reading: dict, hard_stop: int, resume: bool, previous) -> dict:
+    """At the hard stop, closes every Blacksmith runner group to all repos, and closes it again each pass until resume.
+    Resume opens them to all, unless the count is still at the hard stop. Never GitHub's org-wide self-hosted switch."""
+    b = reading["blacksmith"]
+    b["hard_stop"] = hard_stop
+    b["stopped"] = b["used"] >= hard_stop or (was_stopped(previous) and not resume)
+    groups = blacksmith_groups(api, org)
+    if b["stopped"] and not groups:
+        raise Unreadable(f"{org} is at its hard stop and has no runner group whose name starts with Blacksmith")
+    try:
+        for g in groups:
+            path = f"/orgs/{org}/actions/runner-groups/{g['id']}"
+            if b["stopped"]:
+                api.request("PATCH", path, body={"visibility": "selected"})
+                api.request("PUT", path + "/repositories", body={"selected_repository_ids": []})
+            elif resume:
+                api.request("PATCH", path, body={"visibility": "all"})
+    except FileNotFoundError as err:
+        raise Unreadable(f"runner group gone mid-pass: {err}") from None
+    b["groups"] = [g.get("name") for g in groups]
+    return reading
+
+
 def write_variable(api, org: str, value: str) -> None:
     body = {"name": "CI_POOL", "value": value, "visibility": "all"}
     try:
@@ -312,14 +358,21 @@ def main(argv: list) -> int:
     p.add_argument("--ledger", required=True)
     p.add_argument("--seconds", type=int, default=900)
     p.add_argument("--cli-usage")
+    p.add_argument("--hard-stop", type=int, default=HARD_STOP)
+    p.add_argument("--resume", action="store_true")
     p.add_argument("--write", action="store_true")
     args = parser.parse_args(argv)
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]{0,38}", args.org):
         print(f"::error title=ci-pool usage::not an org name: {args.org!r}")
         return 2
+    if not 0 < args.hard_stop <= FREE:
+        print(f"::error title=ci-pool usage::--hard-stop must be 1 to {FREE}, not {args.hard_stop}")
+        return 2
     try:
         api = Api(os.environ.get("GH_TOKEN", ""))
         reading = cross_check(run_meter(args, api, dt.datetime.now(dt.timezone.utc)), read_text(args.cli_usage))
+        if args.write:
+            backstop(api, args.org, reading, args.hard_stop, args.resume, os.environ.get("CI_POOL_PREVIOUS"))
         reading["api_calls"] = api.calls
         print(json.dumps(reading, indent=1))
         if args.write:
@@ -329,8 +382,9 @@ def main(argv: list) -> int:
         return 3
     b = reading["blacksmith"]
     with open(os.environ.get("GITHUB_STEP_SUMMARY") or os.devnull, "a", encoding="utf-8") as handle:
-        handle.write(f"## CI pool\n\n| Used | Stop | Left | Peak hour | Complete |\n|---|---|---|---|---|\n"
-                     f"| {b['used']} | {b['stop']} | {b['left']} | {b['peak_hour']} | {reading['complete']} |\n")
+        handle.write(f"## CI pool\n\n| Used | Stop | Left | Peak hour | Complete | Stopped |\n|---|---|---|---|---|---|\n"
+                     f"| {b['used']} | {b['stop']} | {b['left']} | {b['peak_hour']} | {reading['complete']} | "
+                     f"{b.get('stopped', 'not checked')} |\n")
     return 0
 
 
