@@ -16,6 +16,7 @@ BS = {"labels": ["blacksmith-2vcpu-ubuntu-2404"], "runner_name": "bs"}
 
 
 def job(label: str, start: str, end, **extra) -> dict:
+    """A Blacksmith job on 2026-11-20 from start to end; end None is still running."""
     return {**BS, "labels": [label], "started_at": f"2026-11-20T{start}Z", "completed_at": end and f"2026-11-20T{end}Z", **extra}
 
 
@@ -28,6 +29,10 @@ JOBS = {
 }
 
 
+RUNS = {"alpha": [(2, "in_progress", "2026-11-20T09:00:00Z"), (1, "completed", "2026-11-20T08:00:00Z"),
+                  (0, "completed", "2026-09-01T08:00:00Z")], "beta": [(3, "completed", "2026-11-19T08:00:00Z")]}
+
+
 class FakeApi:
     """alpha: a run still going, a Blacksmith run of 3 jobs, then a run before the window that must end the list.
     beta: one GitHub-hosted run. old: archived."""
@@ -38,6 +43,7 @@ class FakeApi:
         self.fail, self.job_total, self.calls, self.paths, self.written = fail, job_total, 0, [], None
 
     def get(self, path: str, params=None):
+        """Serves the repos, then each repo's runs and each run's jobs; a path containing fail is Unreadable."""
         self.calls += 1
         params = params or {}
         self.paths.append((path, params.get("page")))
@@ -47,16 +53,19 @@ class FakeApi:
             return [{"name": "alpha"}, {"name": "beta"}, {"name": "old", "archived": True}]
         if "created" in params or (path.endswith("/jobs") and params.get("filter") != "all"):
             raise self.tool.Unreadable(f"GET {path}: a capped list, or one attempt only")
-        runs = {"alpha": [(2, "in_progress", "2026-11-20T09:00:00Z"), (1, "completed", "2026-11-20T08:00:00Z"),
-                          (0, "completed", "2026-09-01T08:00:00Z")], "beta": [(3, "completed", "2026-11-19T08:00:00Z")]}
-        for repo, listed in runs.items():
-            if path == f"/repos/org/{repo}/actions/runs":
-                return {"total_count": len(listed), "workflow_runs": [
-                    {"id": i, "status": s, "updated_at": f"u{i}", "created_at": c} for i, s, c in listed]}
+        return self.runs_or_jobs(path)
+
+    def runs_or_jobs(self, path: str) -> dict:
+        """A repo's runs from RUNS, or a run's jobs from JOBS."""
+        listed = RUNS.get(path.split("/")[3]) if path.endswith("/actions/runs") else None
+        if listed is not None:
+            return {"total_count": len(listed), "workflow_runs": [
+                {"id": i, "status": s, "updated_at": f"u{i}", "created_at": c} for i, s, c in listed]}
         run_id = int(path.split("/runs/")[1].split("/")[0])
         return {"total_count": self.job_total or len(JOBS[run_id]), "jobs": JOBS[run_id]}
 
     def request(self, method, path, params=None, body=None):
+        """Records a write; a PATCH finds no variable, so the meter creates it."""
         if method == "PATCH":
             raise FileNotFoundError(path)
         self.written = body
@@ -66,6 +75,7 @@ class CappedApi(FakeApi):
     """One repo with 2,500 runs in the window, served as GitHub serves a filtered list: 10 pages, then empty."""
 
     def get(self, path: str, params=None):
+        """The one repo, then its runs ten pages deep."""
         self.calls += 1
         if path.endswith("/repos"):
             return [{"name": "busy"}]
@@ -148,6 +158,7 @@ def cli_checks(tool):
         yield f"CLI output with {name} gives no count", tool.cli_minutes(text) is None
 
     def reading():
+        """A fresh reading of 10.5 minutes."""
         return {"blacksmith": {"used": 10.5, "stop": 2250, "left": 2239.5}}
     up = tool.cross_check(reading(), nested)["blacksmith"]
     yield "a higher CLI count raises used and lowers left", up["used"] == 120.0 and up["left"] == 2130.0
@@ -164,15 +175,18 @@ class GroupApi:
         self.groups, self.writes = [{"id": i, "name": n} for i, n in enumerate(names, 7)], []
 
     def get(self, path, params=None):
+        """The groups, on one page."""
         return {"total_count": len(self.groups), "runner_groups": self.groups}
 
     def request(self, method, path, params=None, body=None):
+        """Records the write."""
         self.writes.append((method, path.rsplit("/", 1)[-1], body))
 
 
 def backstop_checks(tool):
     """The hard stop closes the Blacksmith groups, holds them closed, and opens them only on resume."""
     def at(used, previous=None, resume=False, api=None):
+        """(stopped, the writes) for a pass at used minutes."""
         api = api or GroupApi()
         b = tool.backstop(api, "org", {"blacksmith": {"used": used}}, 2850, resume, previous)["blacksmith"]
         return b["stopped"], api.writes
@@ -202,6 +216,7 @@ def manifest_checks(tool):
 
 
 def raises(tool, fn) -> bool:
+    """Whether fn raises Unreadable."""
     try:
         fn()
     except tool.Unreadable:

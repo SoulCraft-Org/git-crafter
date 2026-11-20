@@ -64,6 +64,7 @@ def parse_time(value) -> dt.datetime:
 
 
 def iso(t: dt.datetime) -> str:
+    """The time in UTC, as GitHub writes it."""
     return t.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
@@ -76,6 +77,7 @@ class Api:
         self.token, self.calls = token, 0
 
     def request(self, method: str, path: str, params: dict | None = None, body: dict | None = None):
+        """One call; its JSON. A failed read is Unreadable; a write to a missing path is FileNotFoundError."""
         url = API + path + ("?" + urllib.parse.urlencode(params) if params else "")
         data = json.dumps(body).encode() if body is not None else None
         req = urllib.request.Request(url, data=data, method=method, headers={
@@ -94,10 +96,12 @@ class Api:
             raise Unreadable(f"{method} {path}: {type(err).__name__}") from None
 
     def get(self, path: str, params: dict | None = None):
+        """One GET; its JSON."""
         return self.request("GET", path, params)
 
 
 def items_of(doc, key: str, path: str) -> list:
+    """The list under key (or doc itself when key is empty); Unreadable when it is not a list."""
     items = doc.get(key) if isinstance(doc, dict) and key else doc
     if not isinstance(items, list):
         raise Unreadable(f"GET {path}: no {key or 'item'} list")
@@ -108,13 +112,12 @@ def weight(label: str) -> float:
     """Free minutes one minute on this Blacksmith label uses. A label Blacksmith does not list is Unreadable."""
     m = LABEL_RE.fullmatch(label)
     vcpus, family, arm = (int(m[1]), m[2], bool(m[3])) if m else (0, "", False)
-    if vcpus > 0 and family == "ubuntu":
-        return vcpus / 2 * (ARM if arm else 1.0)
-    if vcpus > 0 and family == "windows" and not arm:
-        return float(vcpus)
-    if family == "macos" and not arm and vcpus in MACOS:
-        return float(MACOS[vcpus])
-    raise Unreadable(f"unknown Blacksmith runner label {label!r}")
+    rates = {("ubuntu", False): vcpus / 2, ("ubuntu", True): vcpus / 2 * ARM, ("windows", False): vcpus,
+             ("macos", False): MACOS.get(vcpus, 0)}
+    rate = rates.get((family, arm), 0)
+    if rate <= 0:
+        raise Unreadable(f"unknown Blacksmith runner label {label!r}")
+    return float(rate)
 
 
 def job_minutes(job: dict, now: dt.datetime) -> float:
@@ -165,6 +168,7 @@ def stop_for(peak: float) -> int:
 
 
 def org_repos(api, org: str) -> list:
+    """The org's repos that are not archived, sorted; Unreadable past 5,000."""
     repos = []
     for page in range(1, 51):
         items = items_of(api.get(f"/orgs/{org}/repos", {"type": "all", "per_page": PAGE, "page": page}), "", "repos")
@@ -174,47 +178,77 @@ def org_repos(api, org: str) -> list:
     raise Unreadable(f"GET /orgs/{org}/repos: more than 5,000 repos")
 
 
-def meter(api, org: str, ledger: dict, now: dt.datetime, deadline: float = math.inf, clock=time.monotonic,
-          save=lambda _ledger: None, reads: int = READS_PER_PASS) -> dict:
-    """The reading. ledger maps "repo/run id" to {"u": updated_at, "h": created hour, "m": minutes} for finished runs
-    whose jobs were all read, and is updated in place; save gets it every SAVE_EVERY runs read. Past deadline on clock,
-    or out of reads, the pass reads no more runs and says complete: false."""
-    start = now - WINDOW
+class Pass:
+    """One pass of the meter: what it reads, its limits (a deadline on clock, job pages left) and the runs it read."""
+
+    def __init__(self, api, org: str, now: dt.datetime, runs: dict, limits: tuple):
+        self.api, self.org, self.now, self.start = api, org, now, now - WINDOW
+        self.runs, self.going, self.fresh = runs, {}, 0
+        self.deadline, self.clock, self.save, self.reads = limits
+
+    def has_time(self) -> bool:
+        """Whether the deadline is still ahead."""
+        return self.clock() < self.deadline
+
+    def read_run(self, repo: str, run: dict) -> bool:
+        """Reads one run's jobs into runs (finished, every job read) or going; whether every job was read."""
+        key, done = f"{repo}/{run['id']}", run.get("status") == "completed"
+        jobs, pages, all_jobs = run_jobs(self.api, self.org, repo, run["id"])
+        self.reads, self.fresh = self.reads - pages, self.fresh + 1
+        self.runs.pop(key, None)
+        (self.runs if done and all_jobs else self.going)[key] = {
+            "u": run.get("updated_at"), "h": parse_time(run["created_at"]).strftime("%Y-%m-%dT%H"),
+            "m": sum(job_minutes(j, self.now) for j in jobs)}
+        if self.fresh % SAVE_EVERY == 0:
+            self.save()
+        return all_jobs
+
+    def read_repo(self, repo: str) -> bool:
+        """Reads the repo's runs in the window that the ledger lacks; whether all of them were read."""
+        listed, whole = repo_runs(self.api, self.org, repo, self.start) if self.has_time() else ([], False)
+        for run in listed:
+            if run.get("status") == "completed" and self.runs.get(f"{repo}/{run['id']}", {}).get("u") == run.get(
+                    "updated_at"):
+                continue
+            if self.reads <= 0 or not self.has_time():
+                whole = False
+                continue
+            whole = self.read_run(repo, run) and whole
+        return whole
+
+
+def kept_runs(ledger: dict, start: dt.datetime) -> dict:
+    """The ledger's runs created in the window. Resets the ledger in place to version 2, holding only those."""
     floor = start.strftime("%Y-%m-%dT%H")
     old = ledger.get("runs") if ledger.get("version") == 2 and isinstance(ledger.get("runs"), dict) else {}
     runs = {k: v for k, v in old.items() if isinstance(v, dict) and str(v.get("h", "")) >= floor}
     ledger.clear()
     ledger.update({"version": 2, "runs": runs})
-    complete, going, fresh = True, {}, 0
-    repos = org_repos(api, org)
-    for repo in repos:
-        listed, whole = repo_runs(api, org, repo, start) if clock() < deadline else ([], False)
-        complete = complete and whole
-        for run in listed:
-            key, done = f"{repo}/{run['id']}", run.get("status") == "completed"
-            if done and runs.get(key, {}).get("u") == run.get("updated_at"):
-                continue
-            if reads <= 0 or clock() >= deadline:
-                complete = False
-                continue
-            jobs, pages, all_jobs = run_jobs(api, org, repo, run["id"])
-            reads, fresh = reads - pages, fresh + 1
-            complete = complete and all_jobs
-            entry = {"u": run.get("updated_at"), "h": parse_time(run["created_at"]).strftime("%Y-%m-%dT%H"),
-                     "m": sum(job_minutes(j, now) for j in jobs)}
-            (runs if done and all_jobs else going)[key] = entry
-            if not (done and all_jobs):
-                runs.pop(key, None)
-            if fresh % SAVE_EVERY == 0:
-                save(ledger)
+    return runs
+
+
+def tally(entries: dict) -> tuple:
+    """(minutes by repo, the busiest hour's minutes) over "repo/run id" entries."""
     by_repo, by_hour = {}, {}
-    for key, v in {**runs, **going}.items():
-        by_repo[key.split("/", 1)[0]] = by_repo.get(key.split("/", 1)[0], 0) + v["m"]
+    for key, v in entries.items():
+        repo = key.split("/", 1)[0]
+        by_repo[repo] = by_repo.get(repo, 0) + v["m"]
         by_hour[v["h"]] = by_hour.get(v["h"], 0) + v["m"]
-    used, peak = sum(by_repo.values()), max(by_hour.values(), default=0.0)
-    stop = stop_for(peak)
+    return by_repo, max(by_hour.values(), default=0.0)
+
+
+def meter(api, org: str, ledger: dict, now: dt.datetime, deadline: float = math.inf, clock=time.monotonic,
+          save=lambda _ledger: None, reads: int = READS_PER_PASS) -> dict:
+    """The reading. ledger maps "repo/run id" to {"u": updated_at, "h": created hour, "m": minutes} for finished runs
+    whose jobs were all read, and is updated in place; save gets it every SAVE_EVERY runs read. Past deadline on clock,
+    or out of reads, the pass reads no more runs and says complete: false."""
+    p = Pass(api, org, now, kept_runs(ledger, now - WINDOW), (deadline, clock, lambda: save(ledger), reads))
+    repos = org_repos(api, org)
+    complete = all([p.read_repo(repo) for repo in repos])
+    by_repo, peak = tally({**p.runs, **p.going})
+    used, stop = sum(by_repo.values()), stop_for(peak)
     return {"version": 2, "at": iso(now), "complete": complete, "max_age_minutes": int(MAX_AGE.total_seconds() // 60),
-            "window_start": iso(start), "repos": len(repos),
+            "window_start": iso(p.start), "repos": len(repos),
             "blacksmith": {"used": round(used, 1), "free": FREE, "stop": stop, "left": round(max(stop - used, 0), 1),
                            "peak_hour": round(peak, 1), "by_repo": {k: round(v, 1) for k, v in sorted(by_repo.items()) if v}}}
 
@@ -273,6 +307,7 @@ def was_stopped(previous) -> bool:
 
 
 def blacksmith_groups(api, org: str) -> list:
+    """The org's runner groups whose name starts with Blacksmith; Unreadable past one page."""
     path = f"/orgs/{org}/actions/runner-groups"
     doc = api.get(path, {"per_page": PAGE})
     groups = items_of(doc, "runner_groups", path)
@@ -305,6 +340,7 @@ def backstop(api, org: str, reading: dict, hard_stop: int, resume: bool, previou
 
 
 def write_variable(api, org: str, value: str) -> None:
+    """Stores the reading in the org variable CI_POOL, creating it the first time."""
     body = {"name": "CI_POOL", "value": value, "visibility": "all"}
     try:
         api.request("PATCH", f"/orgs/{org}/actions/variables/CI_POOL", body=body)
@@ -320,6 +356,7 @@ def save_ledger(path: str, ledger: dict) -> None:
 
 
 def load_ledger(path: str) -> dict:
+    """The saved ledger; empty when there is none or it cannot be read."""
     try:
         with open(path, encoding="utf-8") as handle:
             ledger = json.load(handle)
@@ -349,6 +386,7 @@ def self_test() -> int:
 
 
 def main(argv: list) -> int:
+    """The command line; the exit code."""
     if argv == ["--self-test"]:
         return self_test()
     parser = argparse.ArgumentParser(prog="ci_pool.py", description=__doc__.split("\n\n")[0])
