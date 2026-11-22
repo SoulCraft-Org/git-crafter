@@ -23,6 +23,10 @@ Built-in checks:
   em-dash              FAIL  Any em dash (U+2014).
   spaced-en-dash       FAIL  " - " styled en dash (U+2013). It reads as an
                              em dash, so it is out too.
+  double-hyphen-dash   WARN  A double hyphen standing in for a dash: spaced
+                             between words, or joining two words. A CLI flag
+                             such as --help is never spaced on both sides,
+                             and inline code is skipped, so it warns.
   sentence-length      WARN  Sentence longer than max_words (default 30).
   hedge-word           WARN  Hedging that fights plain and direct.
   ai-tell              WARN  Phrasing that reads as machine-written.
@@ -123,11 +127,14 @@ ATTRIBUTION_CUES = ["according to", "per ", "source", "cite", "cites", "cited", 
 LINK_RE = re.compile(r"\[[^\]]*\]\([^)]+\)|https?://\S+")
 INLINE_CODE_RE = re.compile(r"`[^`]*`")
 SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
+# A double hyphen typed as a dash: spaced between two words ("fast -- and"), or
+# joining them ("fast--and"). A flag ("--help") has no space after its hyphens.
+DOUBLE_HYPHEN_RE = re.compile(r"\w\s+--\s+\w|[A-Za-z]--[A-Za-z]")
 
 # Default grade per built-in check. A rules file may regrade any of them.
 # House rule: block on the certain, warn on the likely. The dash checks are
 # literal character tests; everything else is a heuristic.
-DEFAULT_SEVERITY = {"em-dash": "FAIL", "spaced-en-dash": "FAIL", "sentence-length": "WARN",
+DEFAULT_SEVERITY = {"em-dash": "FAIL", "spaced-en-dash": "FAIL", "double-hyphen-dash": "WARN", "sentence-length": "WARN",
                     "hedge-word": "WARN", "ai-tell": "WARN", "unattributed-figure": "WARN"}
 BUILTIN_CHECKS = tuple(DEFAULT_SEVERITY)
 VALID_SEVERITIES = ("FAIL", "WARN", "off")
@@ -239,6 +246,9 @@ def dash_findings(line_no, raw, rules):
 def word_findings(line_no, line, rules):
     """Hedge words, AI tells and the rule file's own patterns, read from the line without its noise."""
     found = []
+    sev = rules.sev("double-hyphen-dash")
+    if sev and DOUBLE_HYPHEN_RE.search(line):
+        found.append((line_no, sev, "double-hyphen-dash", "double hyphen used as a dash; use a comma, colon or period"))
     sev = rules.sev("hedge-word")
     if sev:
         found += [(line_no, sev, "hedge-word", 'hedge "%s"; say it plainly or cut it' % hedge)
@@ -353,6 +363,7 @@ def report(path, findings):
 SELF_TEST_BAD = (
     "The corridor is booming " + EM_DASH + " photonics is the future.\n"
     "Light moves data " + EN_DASH + " and it moves it fast.\n"
+    "Fiber is cheap -- and it is getting cheaper.\n"
     "Colorado has 250 photonics companies and 8,000 workers.\n"
     "It is arguably the best place in America to build with light, and this sentence keeps going and going, "
     "adding clause after clause, idea after idea, well past the point where a reader can hold it in one breath.\n"
@@ -373,6 +384,9 @@ SELF_TEST_CLEAN = ("The corridor builds computing on light.\n"
                    "companies statewide; confirm the current figure before publishing.\n"
                    "Reaching 10,000 photonics workers is a goal, not a count.\n"
                    "Count signed letters rather than estimates.\n"
+                   # A flag, a flag in code and a table rule must not read as a dash.
+                   "Pass --help for usage, or run `git push --force-with-lease` with care.\n"
+                   "| a | b |\n|---|---|\n"
                    # An unspaced en dash in a range must not match. spaced-en-dash blocks,
                    # so it has to stay this narrow.
                    "See sections 3" + EN_DASH + "4 for the method.\n")
@@ -382,7 +396,7 @@ SELF_TEST_CLEAN = ("The corridor builds computing on light.\n"
 # Source: ~/.claude/rules/writing-and-gates.md, "Block on the certain, warn on
 # the likely." The two dash checks are literal character tests, so they
 # block. The rest are heuristics, so they warn.
-SELF_TEST_EXPECTED = {"em-dash": "FAIL", "spaced-en-dash": "FAIL", "sentence-length": "WARN",
+SELF_TEST_EXPECTED = {"em-dash": "FAIL", "spaced-en-dash": "FAIL", "double-hyphen-dash": "WARN", "sentence-length": "WARN",
                       "hedge-word": "WARN", "ai-tell": "WARN", "unattributed-figure": "WARN"}
 
 # One row of the "Built-in checks" table in the module docstring.
