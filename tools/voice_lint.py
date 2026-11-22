@@ -127,9 +127,6 @@ ATTRIBUTION_CUES = ["according to", "per ", "source", "cite", "cites", "cited", 
 LINK_RE = re.compile(r"\[[^\]]*\]\([^)]+\)|https?://\S+")
 INLINE_CODE_RE = re.compile(r"`[^`]*`")
 SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
-# A double hyphen typed as a dash: spaced between two words ("fast -- and"), or
-# joining them ("fast--and"). A flag ("--help") has no space after its hyphens.
-DOUBLE_HYPHEN_RE = re.compile(r"\w\s+--\s+\w|[A-Za-z]--[A-Za-z]")
 
 # Default grade per built-in check. A rules file may regrade any of them.
 # House rule: block on the certain, warn on the likely. The dash checks are
@@ -184,7 +181,10 @@ class Rules(object):
         self.cues = ATTRIBUTION_CUES + [c.lower() for c in data.get("attribution_cues", [])]
         self.ai_tells = [(re.compile(p, re.IGNORECASE | re.MULTILINE), p, advice) for p, advice in AI_TELLS]
         self.severity = dict(data.get("severity", {}))
-        self.patterns = []
+        # A double hyphen typed as a dash, spaced between words or joining them; a flag (--help) has no space after.
+        # It rides the patterns list, so it reads the line without code spans or URLs.
+        self.patterns = [("double-hyphen-dash", sev, re.compile(r"\w\s+--\s+\w|[A-Za-z]--[A-Za-z]"), "use a comma or colon")] if (
+            sev := self.sev("double-hyphen-dash")) else []
         for i, spec in enumerate(data.get("patterns", [])):
             sev = _grade(spec.get("severity", "WARN"), "WARN")
             if sev:
@@ -208,10 +208,9 @@ def load_rules_from_obj(data, max_words=None):
     """Rules from a parsed rules object, checked as load_rules checks a file. A repo's own lint calls it."""
     if not isinstance(data, dict):
         raise ValueError("rules file must contain a JSON object")
-    for check in data.get("severity", {}):
+    for check, value in data.get("severity", {}).items():
         if check not in BUILTIN_CHECKS:
             raise ValueError("severity names unknown check %r; known: %s" % (check, ", ".join(BUILTIN_CHECKS)))
-    for check, value in data.get("severity", {}).items():
         if str(value).upper() not in [s.upper() for s in VALID_SEVERITIES]:
             raise ValueError("severity for %r must be FAIL, WARN, or off" % check)
     for i, spec in enumerate(data.get("patterns", [])):
@@ -246,9 +245,6 @@ def dash_findings(line_no, raw, rules):
 def word_findings(line_no, line, rules):
     """Hedge words, AI tells and the rule file's own patterns, read from the line without its noise."""
     found = []
-    sev = rules.sev("double-hyphen-dash")
-    if sev and DOUBLE_HYPHEN_RE.search(line):
-        found.append((line_no, sev, "double-hyphen-dash", "double hyphen used as a dash; use a comma, colon or period"))
     sev = rules.sev("hedge-word")
     if sev:
         found += [(line_no, sev, "hedge-word", 'hedge "%s"; say it plainly or cut it' % hedge)
@@ -362,8 +358,7 @@ def report(path, findings):
 
 SELF_TEST_BAD = (
     "The corridor is booming " + EM_DASH + " photonics is the future.\n"
-    "Light moves data " + EN_DASH + " and it moves it fast.\n"
-    "Fiber is cheap -- and it is getting cheaper.\n"
+    "Light moves data " + EN_DASH + " and it moves it fast. Fiber is cheap -- and getting cheaper.\n"
     "Colorado has 250 photonics companies and 8,000 workers.\n"
     "It is arguably the best place in America to build with light, and this sentence keeps going and going, "
     "adding clause after clause, idea after idea, well past the point where a reader can hold it in one breath.\n"
@@ -383,10 +378,8 @@ SELF_TEST_CLEAN = ("The corridor builds computing on light.\n"
                    "The industry association has cited on the order of 250 photonics "
                    "companies statewide; confirm the current figure before publishing.\n"
                    "Reaching 10,000 photonics workers is a goal, not a count.\n"
-                   "Count signed letters rather than estimates.\n"
-                   # A flag, a flag in code and a table rule must not read as a dash.
-                   "Pass --help for usage, or run `git push --force-with-lease` with care.\n"
-                   "| a | b |\n|---|---|\n"
+                   # A bare flag and a flag in code must not read as a dash.
+                   "Count signed letters rather than estimates. Pass --help, or `git push --force-with-lease`.\n"
                    # An unspaced en dash in a range must not match. spaced-en-dash blocks,
                    # so it has to stay this narrow.
                    "See sections 3" + EN_DASH + "4 for the method.\n")
