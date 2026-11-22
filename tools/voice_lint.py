@@ -23,6 +23,10 @@ Built-in checks:
   em-dash              FAIL  Any em dash (U+2014).
   spaced-en-dash       FAIL  " - " styled en dash (U+2013). It reads as an
                              em dash, so it is out too.
+  double-hyphen-dash   WARN  A double hyphen standing in for a dash: spaced
+                             between words, or joining two words. A CLI flag
+                             such as --help is never spaced on both sides,
+                             and inline code is skipped, so it warns.
   sentence-length      WARN  Sentence longer than max_words (default 30).
   hedge-word           WARN  Hedging that fights plain and direct.
   ai-tell              WARN  Phrasing that reads as machine-written.
@@ -127,7 +131,7 @@ SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
 # Default grade per built-in check. A rules file may regrade any of them.
 # House rule: block on the certain, warn on the likely. The dash checks are
 # literal character tests; everything else is a heuristic.
-DEFAULT_SEVERITY = {"em-dash": "FAIL", "spaced-en-dash": "FAIL", "sentence-length": "WARN",
+DEFAULT_SEVERITY = {"em-dash": "FAIL", "spaced-en-dash": "FAIL", "double-hyphen-dash": "WARN", "sentence-length": "WARN",
                     "hedge-word": "WARN", "ai-tell": "WARN", "unattributed-figure": "WARN"}
 BUILTIN_CHECKS = tuple(DEFAULT_SEVERITY)
 VALID_SEVERITIES = ("FAIL", "WARN", "off")
@@ -177,7 +181,10 @@ class Rules(object):
         self.cues = ATTRIBUTION_CUES + [c.lower() for c in data.get("attribution_cues", [])]
         self.ai_tells = [(re.compile(p, re.IGNORECASE | re.MULTILINE), p, advice) for p, advice in AI_TELLS]
         self.severity = dict(data.get("severity", {}))
-        self.patterns = []
+        # A double hyphen typed as a dash, spaced between words or joining them; a flag (--help) has no space after.
+        # It rides the patterns list, so it reads the line without code spans or URLs.
+        self.patterns = [("double-hyphen-dash", sev, re.compile(r"\w\s+--\s+\w|[A-Za-z]--[A-Za-z]"), "use a comma or colon")] if (
+            sev := self.sev("double-hyphen-dash")) else []
         for i, spec in enumerate(data.get("patterns", [])):
             sev = _grade(spec.get("severity", "WARN"), "WARN")
             if sev:
@@ -201,10 +208,9 @@ def load_rules_from_obj(data, max_words=None):
     """Rules from a parsed rules object, checked as load_rules checks a file. A repo's own lint calls it."""
     if not isinstance(data, dict):
         raise ValueError("rules file must contain a JSON object")
-    for check in data.get("severity", {}):
+    for check, value in data.get("severity", {}).items():
         if check not in BUILTIN_CHECKS:
             raise ValueError("severity names unknown check %r; known: %s" % (check, ", ".join(BUILTIN_CHECKS)))
-    for check, value in data.get("severity", {}).items():
         if str(value).upper() not in [s.upper() for s in VALID_SEVERITIES]:
             raise ValueError("severity for %r must be FAIL, WARN, or off" % check)
     for i, spec in enumerate(data.get("patterns", [])):
@@ -352,7 +358,7 @@ def report(path, findings):
 
 SELF_TEST_BAD = (
     "The corridor is booming " + EM_DASH + " photonics is the future.\n"
-    "Light moves data " + EN_DASH + " and it moves it fast.\n"
+    "Light moves data " + EN_DASH + " and it moves it fast. Fiber is cheap -- and getting cheaper.\n"
     "Colorado has 250 photonics companies and 8,000 workers.\n"
     "It is arguably the best place in America to build with light, and this sentence keeps going and going, "
     "adding clause after clause, idea after idea, well past the point where a reader can hold it in one breath.\n"
@@ -372,7 +378,8 @@ SELF_TEST_CLEAN = ("The corridor builds computing on light.\n"
                    "The industry association has cited on the order of 250 photonics "
                    "companies statewide; confirm the current figure before publishing.\n"
                    "Reaching 10,000 photonics workers is a goal, not a count.\n"
-                   "Count signed letters rather than estimates.\n"
+                   # A bare flag and a flag in code must not read as a dash.
+                   "Count signed letters rather than estimates. Pass --help, or `git push --force-with-lease`.\n"
                    # An unspaced en dash in a range must not match. spaced-en-dash blocks,
                    # so it has to stay this narrow.
                    "See sections 3" + EN_DASH + "4 for the method.\n")
@@ -382,7 +389,7 @@ SELF_TEST_CLEAN = ("The corridor builds computing on light.\n"
 # Source: ~/.claude/rules/writing-and-gates.md, "Block on the certain, warn on
 # the likely." The two dash checks are literal character tests, so they
 # block. The rest are heuristics, so they warn.
-SELF_TEST_EXPECTED = {"em-dash": "FAIL", "spaced-en-dash": "FAIL", "sentence-length": "WARN",
+SELF_TEST_EXPECTED = {"em-dash": "FAIL", "spaced-en-dash": "FAIL", "double-hyphen-dash": "WARN", "sentence-length": "WARN",
                       "hedge-word": "WARN", "ai-tell": "WARN", "unattributed-figure": "WARN"}
 
 # One row of the "Built-in checks" table in the module docstring.
