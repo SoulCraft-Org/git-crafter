@@ -7,7 +7,7 @@ import { main } from "./merge_pr_stack.mjs";
 
 const REPO = "acme/widget";
 const SHA = { 7: "a".repeat(40), 8: "b".repeat(40) };
-const ARGV = ["--repo", REPO, "--prs", `7:${SHA[7]},8:${SHA[8]}`];
+const ARGV = ["--repo", REPO, "--prs", `7:${SHA[7]},8:${SHA[8]}`, "--followups", "#3"];
 const PASS = [{ id: 1, name: "ci / ci-ok", status: "completed", conclusion: "success", app: { id: 1 } }];
 const pr = (n, base, head) => ({ state: "open", draft: false, merged: false, mergeable: true, base: { ref: base }, head: { ref: head, sha: SHA[n] } });
 const STACKED = { 7: pr(7, "main", "claude/one"), 8: pr(8, "claude/one", "claude/two") };
@@ -37,8 +37,8 @@ test("a new stack is joined bottom up, each verdict posted, then the top merges 
   assert.equal(r.code, 0);
   assert.deepEqual(r.writes, [
     `-X POST repos/${REPO}/stacks -F pull_requests[]=7 -F pull_requests[]=8`,
-    `repos/${REPO}/issues/7/comments -f body=Review: MERGE at ${SHA[7]}`,
-    `repos/${REPO}/issues/8/comments -f body=Review: MERGE at ${SHA[8]}`,
+    `repos/${REPO}/issues/7/comments -f body=Review: MERGE at ${SHA[7]}\nFollow-ups: #3`,
+    `repos/${REPO}/issues/8/comments -f body=Review: MERGE at ${SHA[8]}\nFollow-ups: #3`,
     `-X PUT repos/${REPO}/pulls/8/merge-async -f sha=${SHA[8]} -f merge_method=squash`,
   ]);
 });
@@ -67,5 +67,5 @@ test("--check writes nothing, a slow merge is polled, a stuck one exits 3 and ba
   const slow = await merge(ARGV, { mergedAfter: 2 });
   assert.deepEqual([slow.code, slow.sleeps], [0, [5000, 5000]]);
   assert.equal((await merge([...ARGV, "--wait", "5"], { mergedAfter: 99 })).code, 3);
-  for (const bad of [["--repo", REPO, "--prs", `7:${SHA[7]}`], [...ARGV, "--admin"], ["--repo", REPO, "--prs", "7:x,8:y"]]) assert.equal((await merge(bad)).code, 2);
+  for (const bad of [["--repo", REPO, "--prs", `7:${SHA[7]}`, "--followups", "none"], ARGV.slice(0, -2), [...ARGV, "--admin"], [...ARGV.slice(0, -1), "12"], ["--repo", REPO, "--prs", "7:x,8:y"]]) assert.equal((await merge(bad)).code, 2);
 });

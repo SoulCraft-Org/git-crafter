@@ -2,7 +2,7 @@
 // checks are judged as merge_pr.mjs judges one, the stack is joined if it is not, each verdict is posted bottom up,
 // and the top merges with everything under it.
 //
-//   node tools/merge_pr_stack.mjs --repo owner/name --prs N:<sha>,N:<sha>,... [--base main] [--wait 60] [--check]
+//   node tools/merge_pr_stack.mjs --repo owner/name --prs N:<sha>,N:<sha>,... --followups <#n,PVTI_...|none> [--base main] [--wait 60] [--check]
 //
 // --prs lists the pull requests bottom up, each with the 40-hex head its review passed. The bottom pull request's
 // base must be --base and each other's the head branch of the one under it. An open stack that holds other pull
@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 import { ghRunner } from "./apply_setup.mjs";
 import { assess, verdict } from "./merge_pr.mjs";
 
-const USAGE = "usage: node tools/merge_pr_stack.mjs --repo owner/name --prs N:<sha>,N:<sha>,... [--base main] [--wait seconds] [--check]";
+const USAGE = "usage: node tools/merge_pr_stack.mjs --repo owner/name --prs N:<sha>,N:<sha>,... --followups <#n,PVTI_...|none> [--base main] [--wait seconds] [--check]";
 const STEP = 5;
 
 // The command line as options, or { problem }.
@@ -23,13 +23,15 @@ function parseArgs(argv) {
   const o = { base: "main", wait: 60, check: false };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--check") o.check = true;
-    else if (["--repo", "--prs", "--base", "--wait"].includes(argv[i]) && argv[i + 1]) o[argv[i].slice(2)] = argv[++i];
+    else if (["--repo", "--prs", "--followups", "--base", "--wait"].includes(argv[i]) && argv[i + 1]) o[argv[i].slice(2)] = argv[++i];
     else return { problem: `unknown or incomplete argument ${argv[i]}` };
   }
   const prs = String(o.prs ?? "").split(",").map((p) => p.split(":"));
   if (!/^[\w.-]+\/[\w.-]+$/.test(o.repo ?? "")) return { problem: "--repo must be owner/name" };
   if (prs.length < 2 || prs.some(([n, sha]) => !/^[1-9]\d*$/.test(n) || !/^[0-9a-f]{40}$/.test(sha ?? ""))) return { problem: "--prs must be two or more N:<40-hex sha>, bottom up" };
-  return /^\d+$/.test(String(o.wait)) ? { ...o, wait: Number(o.wait), prs: prs.map(([pr, sha]) => ({ pr, sha })) } : { problem: "--wait must be seconds" };
+  const items = String(o.followups ?? "").split(",").map((i) => i.trim());
+  if (o.followups !== "none" && !items.every((i) => /^(#\d+|PVTI_[\w-]+)$/.test(i))) return { problem: "--followups is required: #<digits> or PVTI_... items, comma separated, or none" };
+  return /^\d+$/.test(String(o.wait)) ? { ...o, followups: items.join(", "), wait: Number(o.wait), prs: prs.map(([pr, sha]) => ({ pr, sha })) } : { problem: "--wait must be seconds" };
 }
 
 /** The command line. `run` is gh, `sleep` the wait between reads (both injectable for tests). Returns the exit code. */
@@ -53,7 +55,7 @@ export async function main(argv = process.argv.slice(2), { run = ghRunner(), sle
     if (open.some((s) => s.pull_requests.map((p) => p.number).join() !== want)) throw new Error(`an open stack holds ${open[0].pull_requests.map((p) => `#${p.number}`).join(", ")}, not #${want.replaceAll(",", ", #")}`);
     if (o.check) return 0;
     if (!open.length) run(["api", "-X", "POST", `repos/${o.repo}/stacks`, ...o.prs.flatMap((p) => ["-F", `pull_requests[]=${p.pr}`])]);
-    for (const p of o.prs) verdict(run, { repo: o.repo, ...p });
+    for (const p of o.prs) verdict(run, { repo: o.repo, followups: o.followups, ...p });
     const top = o.prs.at(-1);
     run(["api", "-X", "PUT", `repos/${o.repo}/pulls/${top.pr}/merge-async`, "-f", `sha=${top.sha}`, "-f", "merge_method=squash"]);
     for (let waited = 0; !read(`repos/${o.repo}/pulls/${top.pr}`).merged; waited += STEP) {
