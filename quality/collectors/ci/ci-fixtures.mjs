@@ -3,9 +3,9 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { after, before, it } from "node:test";
+import { after, before } from "node:test";
 import { fileURLToPath } from "node:url";
-import { collect, settings } from "./ci.mjs";
+import { collect } from "./ci.mjs";
 import { GhError } from "../github/github.mjs";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 // The collector's targets file, parsed.
