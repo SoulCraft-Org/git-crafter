@@ -588,7 +588,7 @@
     "near": 100,
     "direction": "lower",
     "goal_source": "GitHub docs, Dependency caching reference (read 2026-11-23): each repo gets 10 GB of cache and, past the limit, the least recently accessed caches are deleted first; template goal (2026-11-23): stay under 80% so a new cache evicts nothing",
-    "source": "state: gh api repos/{repo}/actions/cache/usage, active_caches_size_in_bytes over params.cache_limit_gb (10); GitHub refreshes it about every five minutes",
+    "source": "state: gh api repos/{repo}/actions/cache/usage, active_caches_size_in_bytes over actions/cache/storage-limit (max_cache_size_gb), else params.cache_limit_gb (10); GitHub refreshes it about every five minutes",
     "needs": "none",
     "chart": "gauge",
     "group": "Caches"
