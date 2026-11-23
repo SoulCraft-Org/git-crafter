@@ -10,7 +10,6 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
-  collect,
   LABELS,
   namedIds,
   readOwnRun,
@@ -29,7 +28,6 @@ import {
   checkDocs,
   checkLibrary,
   CODE_OS_QUALITY_CONFIG,
-  MAX_STEPS,
   missingKinds,
   PAGE_DEFAULTS,
   pageConfig,
