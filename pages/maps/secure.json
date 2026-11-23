@@ -1,10 +1,10 @@
 {
  "id": "secure",
  "name": "Secure",
- "why": "A repo's security, from keys no session reads to alerts closed within a week",
- "ideal": "No session reads a key. Scans run in minutes. The threat model stays current. Reports have a private path. Alerts close within a week.",
+ "why": "A repo's security, from keys blocked at push to alerts closed within a week",
+ "ideal": "No key reaches the repo. Scans run in minutes. The threat model stays current. Reports have a private path. Alerts close within a week.",
  "sources": [
-  {"title": "Claude Code: configure permissions", "url": "https://code.claude.com/docs/en/permissions", "date": "2026-11-04"},
+  {"title": "GitHub Docs: Push protection", "url": "https://docs.github.com/en/code-security/secret-scanning/introduction/about-push-protection", "date": "2026-11-23"},
   {"title": "GitHub Docs: GitHub security features", "url": "https://docs.github.com/en/code-security/getting-started/github-security-features", "date": "2026-11-10"},
   {"title": "GitHub Docs: Quickstart for securing your repository", "url": "https://docs.github.com/en/code-security/getting-started/quickstart-for-securing-your-repository", "date": "2026-11-10"},
   {"title": "GitHub Docs: Adding a security policy to your repository", "url": "https://docs.github.com/en/code-security/getting-started/adding-a-security-policy-to-your-repository", "date": "2026-11-03"}
