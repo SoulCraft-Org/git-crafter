@@ -74,6 +74,37 @@ for (const name of workflows) {
   });
 }
 
+// Docker actions pinned by commit, and the image each pinned commit's action.yml pulls (#202). The commit fixes
+// action.yml, not the image its tag names, so each is a gap THREAT-MODEL.md records. A bump fails here until
+// someone reads the new commit's action.yml. Scorecard's server refuses a digest-pinned step, so the tag stays.
+const DOCKER_ACTIONS = { "ossf/scorecard-action": { "fa7117db83c52d787ae5a89f350999701505d78e": "ghcr.io/ossf/scorecard-action:v2.5.0" } };
+
+// The faults of one file: a docker:// step with no digest, or a Docker action whose pulled image is unread or unrecorded.
+function dockerFaults(file, yml, model) {
+  const faults = [];
+  for (const [, ref] of remote(yml)) {
+    const [name, sha] = ref.split("@");
+    if (ref.startsWith("docker://") && !/@sha256:[0-9a-f]{64}$/.test(ref)) faults.push(`${file}: ${ref} names no digest`);
+    if (!DOCKER_ACTIONS[name]) continue;
+    const image = DOCKER_ACTIONS[name][sha];
+    if (!image) faults.push(`${file}: ${ref} is a Docker action at a commit whose image is unread`);
+    else if (!model.includes(`\`${image}\``)) faults.push(`${file}: ${image} is pulled by tag and THREAT-MODEL.md does not record it`);
+  }
+  return faults;
+}
+
+const templates = readdirSync(new URL("../templates/ci/", import.meta.url)).filter((n) => /\.ya?ml$/.test(n)).map((n) => `templates/ci/${n}`);
+
+test("a docker:// step names a digest, and a Docker action's tag image is a recorded gap", () => {
+  const model = read("THREAT-MODEL.md");
+  for (const file of [...workflows.map((n) => `.github/workflows/${n}`), ...templates]) assert.deepEqual(dockerFaults(file, read(file), model), []);
+  const yml = read(".github/workflows/scorecard.yml");
+  assert.ok(dockerFaults("x", "      - uses: docker://ghcr.io/o/a:v1\n", model).some((f) => f.endsWith("names no digest")));
+  assert.deepEqual(dockerFaults("x", `      - uses: docker://ghcr.io/o/a@sha256:${"0".repeat(64)}\n`, model), []);
+  assert.ok(dockerFaults("x", yml.replace(/scorecard-action@[0-9a-f]{40}/, `scorecard-action@${"1".repeat(40)}`), model).some((f) => f.endsWith("image is unread")));
+  assert.ok(dockerFaults("x", yml, "").some((f) => f.endsWith("does not record it")));
+});
+
 test("a tag pin fails, even one actions.lock records", () => {
   const file = ".github/workflows/ci-standard.yml";
   const tagged = read(file).replace(/actions\/checkout@[0-9a-f]{40} # v7\.0\.1/, "actions/checkout@v7.0.1");
