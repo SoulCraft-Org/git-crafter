@@ -25,6 +25,62 @@ JOBS = {
 }
 
 
+RUNS = {"alpha": [(2, "in_progress", "2026-11-20T09:00:00Z"), (1, "completed", "2026-11-20T08:00:00Z"),
+                  (0, "completed", "2026-09-01T08:00:00Z")], "beta": [(3, "completed", "2026-11-19T08:00:00Z")]}
+
+
+class FakeApi:
+    """alpha: a run still going, a Blacksmith run of 3 jobs, then a run before the window that must end the list.
+    beta: one GitHub-hosted run. old: archived."""
+
+    tool = None
+
+    def __init__(self, fail: str = "", job_total=None):
+        self.fail, self.job_total, self.calls, self.paths, self.written = fail, job_total, 0, [], None
+
+    def get(self, path: str, params=None):
+        """Serves the repos, then each repo's runs and each run's jobs; a path containing fail is Unreadable."""
+        self.calls += 1
+        params = params or {}
+        self.paths.append((path, params.get("page")))
+        if self.fail and self.fail in path:
+            raise self.tool.Unreadable(f"GET {path}: HTTP 500")
+        if path.endswith("/repos"):
+            return [{"name": "alpha"}, {"name": "beta"}, {"name": "old", "archived": True}]
+        if "created" in params or (path.endswith("/jobs") and params.get("filter") != "all"):
+            raise self.tool.Unreadable(f"GET {path}: a capped list, or one attempt only")
+        return self.runs_or_jobs(path)
+
+    def runs_or_jobs(self, path: str) -> dict:
+        """A repo's runs from RUNS, or a run's jobs from JOBS."""
+        listed = RUNS.get(path.split("/")[3]) if path.endswith("/actions/runs") else None
+        if listed is not None:
+            return {"total_count": len(listed), "workflow_runs": [
+                {"id": i, "status": s, "updated_at": f"u{i}", "created_at": c} for i, s, c in listed]}
+        run_id = int(path.split("/runs/")[1].split("/")[0])
+        return {"total_count": self.job_total or len(JOBS[run_id]), "jobs": JOBS[run_id]}
+
+    def request(self, method, path, params=None, body=None):
+        """Records a write; a PATCH finds no variable, so the meter creates it."""
+        if method == "PATCH":
+            raise FileNotFoundError(path)
+        self.written = body
+
+
+class CappedApi(FakeApi):
+    """One repo with 2,500 runs in the window, served as GitHub serves a filtered list: 10 pages, then empty."""
+
+    def get(self, path: str, params=None):
+        """The one repo, then its runs ten pages deep."""
+        self.calls += 1
+        if path.endswith("/repos"):
+            return [{"name": "busy"}]
+        page = (params or {}).get("page", 1)
+        return {"total_count": 2500, "workflow_runs": [] if page > 10 else [
+            {"id": page * 1000 + i, "status": "completed", "updated_at": "u", "created_at": "2026-11-20T08:00:00Z"}
+            for i in range(100)]}
+
+
 def label_checks(tool):
     """Each label's weight, each job's rounding, and the labels Blacksmith does not list."""
     weights = {"blacksmith-2vcpu-ubuntu-2404": 1, "blacksmith-8vcpu-ubuntu-2204": 4, "blacksmith-4vcpu-ubuntu-2404-arm": 1.25,
@@ -36,6 +92,18 @@ def label_checks(tool):
         yield f"an unknown label is Unreadable: {label}", raises(tool, lambda: tool.weight(label))
     mins = [tool.job_minutes(j, NOW) for j in JOBS[1] + JOBS[2] + JOBS[3]]
     yield "jobs round up, run to now, and GitHub's own count 0", mins == [2, 4, 2.5, 2, 0, 0]
+    yield "no token is Unreadable", raises(tool, lambda: tool.Api(""))
+
+
+def list_checks(tool):
+    """The repo, run and job lists, whole or not, and a failed read."""
+    api = FakeApi()
+    runs, whole = tool.repo_runs(api, "org", "alpha", NOW - tool.WINDOW)
+    yield "the run list ends at the first run before the window", [r["id"] for r in runs] == [2, 1] and whole and api.calls == 1
+    yield "a run list cut off at 1,000 of 2,500 is not whole", tool.repo_runs(CappedApi(), "org", "busy", NOW - tool.WINDOW)[1] is False
+    yield "a job list short of its total_count is not whole", tool.run_jobs(FakeApi(job_total=500), "org", "alpha", 1)[2] is False
+    yield "a failed run list is Unreadable", raises(tool, lambda: tool.repo_runs(FakeApi("/actions/runs"), "org", "alpha", NOW))
+    yield "the repo list skips archived repos", tool.org_repos(FakeApi(), "org") == ["alpha", "beta"]
 
 
 def raises(tool, fn) -> bool:
@@ -49,6 +117,7 @@ def raises(tool, fn) -> bool:
 
 def run(tool):
     """Exit 0 when every case passes; prints each failure."""
+    FakeApi.tool = tool
     results = [result for checks in CHECKS for result in checks(tool)]
     bad = [name for name, ok in results if not ok]
     for name in bad:
@@ -57,4 +126,4 @@ def run(tool):
     return 1 if bad else 0
 
 
-CHECKS = (label_checks,)
+CHECKS = (label_checks, list_checks)
