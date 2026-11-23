@@ -18,6 +18,10 @@
      "why": "a form GitHub copies into each pull request, not a doc read in the repo"
     },
     {
+     "glob": "templates/open/.github/PULL_REQUEST_TEMPLATE.md",
+     "why": "a form an adopter copies into its pull requests, like .github/PULL_REQUEST_TEMPLATE.md, not a doc read here"
+    },
+    {
      "glob": ".claude/hookify.*.local.md",
      "why": "hookify rules: a pattern the plugin reads and the message it shows on a block, not a doc read in the repo; tools/hookify_check.py checks them"
     }
@@ -34,6 +38,14 @@
     {
      "glob": ".claude/**",
      "why": "agent definitions Claude loads"
+    },
+    {
+     "glob": "templates/agents/AGENTS.md",
+     "why": "the AGENTS.md an adopter copies, read by agents, not a doc read in this repo"
+    },
+    {
+     "glob": "templates/agents/CLAUDE.md",
+     "why": "the CLAUDE.md an adopter copies, read by Claude Code, not a doc read in this repo"
     }
    ],
    "text_only_below": 50,
