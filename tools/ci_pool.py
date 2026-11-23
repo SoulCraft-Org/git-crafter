@@ -331,13 +331,19 @@ def backstop(api, org: str, reading: dict, hard_stop: float, resume: bool, previ
     return reading
 
 
-def write_variable(api, org: str, value: str) -> None:
-    """Stores the reading in the org variable CI_POOL, creating it the first time."""
-    body = {"name": "CI_POOL", "value": value, "visibility": "all"}
+def write_variable(api, org: str, value: str, name: str = "CI_POOL") -> None:
+    """Stores value in the org variable, creating it the first time: the reading in CI_POOL by default."""
+    body = {"name": name, "value": value, "visibility": "all"}
     try:
-        api.request("PATCH", f"/orgs/{org}/actions/variables/CI_POOL", body=body)
+        api.request("PATCH", f"/orgs/{org}/actions/variables/{name}", body=body)
     except FileNotFoundError:
         api.request("POST", f"/orgs/{org}/actions/variables", body=body)
+
+
+def stop_flag(reading: dict) -> str:
+    """The org variable CI_POOL_STOP: 1 when the reading says stop, 0 below it. A repo's own CI_POOL cannot shadow it."""
+    b = reading["blacksmith"]
+    return "1" if b.get("stopped") is True or b["cost"] >= b["stop"] else "0"
 
 
 def save_ledger(path: str, ledger: dict) -> None:
@@ -407,6 +413,7 @@ def main(argv: list) -> int:
         print(json.dumps(reading, indent=1))
         if args.write:
             write_variable(api, args.org, json.dumps(reading, separators=(",", ":")))
+            write_variable(api, args.org, stop_flag(reading), "CI_POOL_STOP")
     except Unreadable as err:
         print(f"::warning title=ci-pool could not check::{err}; CI_POOL is left as it was, and goes stale")
         return 3
