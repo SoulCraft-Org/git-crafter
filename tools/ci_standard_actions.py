@@ -1,9 +1,6 @@
-"""ci_standard_actions.py: the pinned rule, on a job's steps and on the local actions they call (#200).
-
-Embedded with ci_standard.py in ci-standard.yml. A step's uses: ./PATH (or $/PATH) runs PATH/action.yml from the
-checkout, and its steps run in the caller's job with its token, so they are read too, and the local actions they call.
-A link, or a path that leaves the repo, is never read: it is could not check. Standard library only.
-"""
+"""ci_standard_actions.py: the pinned rule, on a job's steps and the local actions they call (#200). Embedded with
+ci_standard.py. A step's uses: ./PATH or $/PATH runs PATH/action.yml in the caller's job, so its steps are read too; a
+link or a path out of the repo is never read (could not check). Standard library only."""
 
 from __future__ import annotations
 
