@@ -193,12 +193,15 @@ export const missingKinds = (steps, kindOf) => KINDS.filter((k) => !(steps ?? []
 // against the template's metric ids alone, opens with an ideal state and its
 // dated sources, and links each rule over https, since a repo_url would point
 // into whichever repo uses it.
+const CLAUDE_DOCS = /\/\/code\.claude\.com\b/;
 export function checkLibrary(library, templateIds, kindOf = null) {
   const maps = Object.values(library);
   const errs = checkMaps({ repo_url: "https://example.org", maps }, templateIds, "pages/maps");
   for (const m of maps) {
     if (m.ideal === undefined) errs.push(`pages/maps/${m.id}.json: a library map needs an ideal and its sources`);
+    for (const src of m.sources ?? []) if (CLAUDE_DOCS.test(src.url)) errs.push(`pages/maps/${m.id}.json: a library source must not link Claude Code docs (${src.url})`);
     for (const s of m.steps ?? []) {
+      if (CLAUDE_DOCS.test(s.rule_ref)) errs.push(`pages/maps/${m.id}.json, step "${s.id}": rule_ref must not link Claude Code docs`);
       if (!https(s.rule_ref)) errs.push(`pages/maps/${m.id}.json, step "${s.id}": rule_ref must be an https link`);
       if (s.actor === undefined) errs.push(`pages/maps/${m.id}.json, step "${s.id}": a library step needs an actor, who does it`);
       const words = String(s.rule ?? "").trim().split(/\s+/).filter(Boolean).length;

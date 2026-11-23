@@ -244,6 +244,8 @@ test("the library: every map has its ideal and dated sources, at most MAX_STEPS 
   assert.deepEqual(own.filter((m) => m.steps.some((s) => !s.actor)).map((m) => m.id), [], "every shown step has an actor, so every map is drawn as lanes");
   const broken = { x: { ...library.delivery, id: "x", ideal: undefined, sources: undefined, critical_path: undefined, steps: [{ ...library.delivery.steps[0], actor: undefined, rule: "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty twentyone", rule_ref: "rules/x.md", metric: "gone.metric" }] } };
   assert.deepEqual(checkLibrary(broken, templateIds(), templateKinds()), ['pages/maps map "x", step "plan": gone.metric is not a metric on this repo\'s Quality page', "pages/maps/x.json: a library map needs an ideal and its sources", 'pages/maps/x.json, step "plan": rule_ref must be an https link', 'pages/maps/x.json, step "plan": a library step needs an actor, who does it', 'pages/maps/x.json, step "plan": rule has 21 words; a library rule keeps 20 at most', "pages/maps/x.json: no step scores quality, speed, consumption; a map scores quality, speed and consumption"]);
+  const cc = { x: { ...library.delivery, id: "x", sources: [{ title: "t", url: "https://code.claude.com/docs/en/hooks", date: "2026-11-23" }], steps: library.delivery.steps.map((s, i) => (i ? s : { ...s, rule_ref: "https://code.claude.com/docs/en/hooks" })) } };
+  assert.deepEqual(checkLibrary(cc, templateIds(), templateKinds()).filter((e) => /Claude Code docs/.test(e)).length, 2, "a library map links no Claude Code docs, in a source or a rule_ref");
 });
 
 test("a repo uses a library map by id and changes a step by id; a typo is an error, never a no-op", () => {
