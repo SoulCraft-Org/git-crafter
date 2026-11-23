@@ -2,7 +2,9 @@
 // Offline: a fake gh answers every call from an in-memory repo and records each call.
 
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { test } from "node:test";
 import { ghRunner, main, SETUP } from "./apply_setup.mjs";
 
@@ -11,6 +13,7 @@ const ROW = Object.fromEntries(LIST.rows.map((r) => [r.id, r]));
 const REPO = "acme/widget";
 const P = (route = "") => `repos/${REPO}${route}`;
 const RULESETS = P("/rulesets?includes_parents=true&targets=branch,tag,push&per_page=100");
+const VALUES = { topics: ["b", "a"], homepage: "https://example.org", description: "A widget" };
 
 // A ruleset as GitHub answers it: the row's body with an id and a source.
 const ruleset = (id, body, source = "Repository") => ({ id, source_type: source, ...structuredClone(body) });
@@ -41,26 +44,53 @@ function standard() {
 
 const notFound = (what) => Object.assign(new Error(`gh: Not Found (HTTP 404) ${what}`), { status: 404 });
 
-// A gh stand-in over `state`; calls records every call, and a write fails the test.
+// What each write does to the fake repo; a write with no entry here fails as GitHub would (HTTP 404).
+const WRITES = {
+  [`PATCH ${P()}`]: (s, body) => Object.assign(s[P()], body),
+  [`PUT ${P("/vulnerability-alerts")}`]: (s) => (s[P("/vulnerability-alerts")] = ""),
+  [`PATCH ${P("/code-scanning/default-setup")}`]: (s, body) => (s[P("/code-scanning/default-setup")] = s.slowScan ? { state: "not-configured" } : body),
+  [`PUT ${P("/topics")}`]: (s, body) => (s[P()].topics = body.names),
+  "POST graphql": (s, body) => {
+    if (body.variables.id !== s[P()].node_id) throw notFound(body.variables.id);
+    s[P()].has_discussions = true;
+  },
+};
+
+// A gh stand-in over `state`; calls records every call, and a -X call is a write.
 function fakeGh(state) {
   const calls = [];
-  const run = (args) => {
-    calls.push(args);
-    assert.notEqual(args[1], "-X", `no write in a read-only run: ${args.join(" ")}`);
+  const run = (args, input) => {
+    calls.push({ args, body: input === undefined ? undefined : JSON.parse(input) });
     if (args[1] === "graphql") return JSON.stringify({ data: { repository: { usesCustomOpenGraphImage: false, hasSponsorshipsEnabled: false } } });
-    if (!(args[1] in state)) throw notFound(args[1]);
-    return typeof state[args[1]] === "string" ? state[args[1]] : JSON.stringify(state[args[1]]);
+    if (args[1] !== "-X") {
+      if (!(args[1] in state)) throw notFound(args[1]);
+      return typeof state[args[1]] === "string" ? state[args[1]] : JSON.stringify(state[args[1]]);
+    }
+    const write = WRITES[`${args[2]} ${args[3]}`];
+    if (!write) throw notFound(args[3]);
+    write(state, calls.at(-1).body);
+    return "";
   };
-  return { run, calls };
+  return { run, calls, writes: () => calls.filter((c) => c.args[1] === "-X").map((c) => ({ call: `${c.args[2]} ${c.args[3]}`, body: c.body })) };
 }
 
-// Runs the tool on `state` with `flags`; byId is each row's status, the first 13 characters of its line.
-function tool(state, flags = []) {
+// Runs the tool on `state` with `flags`; values, when given, go in a temp file. byId is each row's status, the first 13 characters of its line.
+function tool(state, flags = [], values = VALUES) {
   const gh = fakeGh(state);
   const lines = [];
-  const code = main(["--repo", REPO, ...flags], { run: gh.run, log: (l) => lines.push(l) });
-  const byId = Object.fromEntries(LIST.rows.map((r) => [r.id, lines.find((l) => l.includes(` ${r.id}`))?.slice(0, 13).trim()]));
-  return { code, lines, byId, calls: gh.calls };
+  const dir = mkdtempSync(path.join(tmpdir(), "setup-"));
+  try {
+    const args = ["--repo", REPO, ...flags];
+    if (values) {
+      writeFileSync(path.join(dir, "v.json"), JSON.stringify(values));
+      args.push("--values", "v.json");
+    }
+    const code = main(args, { run: gh.run, root: dir, log: (l) => lines.push(l) });
+    const byId = Object.fromEntries(LIST.rows.map((r) => [r.id, lines.find((l) => l.includes(` ${r.id}`))?.slice(0, 13).trim()]));
+    return { code, lines, byId, ...gh };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 }
 
 const count = (byId, status) => Object.values(byId).filter((s) => s === status).length;
@@ -68,12 +98,12 @@ const count = (byId, status) => Object.values(byId).filter((s) => s === status).
 test("a repo at the standard reads same everywhere, passes --check and is never written", () => {
   const got = tool(standard(), ["--check"]);
   assert.equal(got.code, 0, got.lines.join("\n"));
-  assert.equal(count(got.byId, "same"), LIST.rows.filter((r) => !r.optional && r.check && !r.id.startsWith("values.")).length);
-  assert.equal(count(got.byId, "no value"), 3, "the per-repo values rows have no value without a values file");
-  assert.ok(!got.calls.some((c) => c[1] === "graphql"), "an optional row is not even read");
+  assert.equal(count(got.byId, "same"), LIST.rows.filter((r) => !r.optional && r.check).length);
+  assert.ok(!got.calls.some((c) => c.args[1] === "graphql"), "an optional row is not even read");
+  assert.deepEqual(got.writes(), []);
   assert.equal(count(got.byId, "optional"), LIST.rows.filter((r) => r.optional).length);
   assert.equal(count(got.byId, "by hand"), LIST.rows.filter((r) => !r.optional && !r.check).length);
-  assert.match(got.lines.at(-1), /nothing changed/);
+  assert.match(got.lines.at(-1), /dry run: nothing changed/);
 });
 
 test("drift reads would change with the value it read; only --check turns it into exit 1, naming each row", () => {
@@ -85,16 +115,58 @@ test("drift reads would change with the value it read; only --check turns it int
   assert.equal(plain.code, 0);
   for (const id of ["repo.wiki", "repo.no_auto_merge", "security.dependabot_alerts"]) assert.equal(plain.byId[id], "would change", id);
   assert.match(plain.lines.find((l) => l.includes("repo.wiki")), /has_wiki is false, want true/);
+  assert.deepEqual(plain.writes(), []);
   const checked = tool(state, ["--check"]);
   assert.equal(checked.code, 1);
   assert.equal(checked.lines.at(-1), "check failed: repo.wiki, repo.no_auto_merge, security.dependabot_alerts");
 });
 
+test("apply: each changed row is set once, then read back as changed; --check then passes", () => {
+  const state = standard();
+  state[P()].has_wiki = false;
+  state[P()].has_discussions = false;
+  delete state[P("/vulnerability-alerts")];
+  const got = tool(state, ["--apply"]);
+  assert.equal(got.code, 0, got.lines.join("\n"));
+  assert.deepEqual(got.writes(), [
+    { call: `PATCH ${P()}`, body: { has_wiki: true } },
+    { call: "POST graphql", body: { ...ROW["repo.discussions"].body, variables: { id: "R_1" } } },
+    { call: `PUT ${P("/vulnerability-alerts")}`, body: undefined },
+  ]);
+  assert.equal(count(got.byId, "changed"), 3);
+  assert.equal(tool(state, ["--check"]).code, 0, "the repo now passes --check");
+});
+
+test("apply: a write that does not read back fails, and the run exits 1", () => {
+  const state = { ...standard(), slowScan: true, [P("/code-scanning/default-setup")]: { state: "not-configured" } };
+  const got = tool(state, ["--apply"]);
+  assert.equal(got.code, 1);
+  assert.equal(got.byId["security.code_scanning"], "failed");
+  assert.match(got.lines.find((l) => l.includes("security.code_scanning")), /read back would change: state is "not-configured"/);
+});
+
+test("optional rows and values: optional_on turns a row on; topics apply as names, in any order", () => {
+  const on = { ...VALUES, optional_on: ["repo.template"] };
+  const applied = tool(standard(), ["--apply", "--check"], on);
+  assert.equal(applied.code, 0, applied.lines.join("\n"));
+  assert.deepEqual(applied.writes(), [{ call: `PATCH ${P()}`, body: { is_template: true } }]);
+  assert.deepEqual(tool(standard(), ["--apply"], { ...VALUES, topics: ["a", "c"] }).writes(), [{ call: `PUT ${P("/topics")}`, body: { names: ["a", "c"] } }]);
+  const none = tool(standard(), ["--check"], null);
+  assert.equal(none.code, 0);
+  assert.equal(count(none.byId, "no value"), 3, "no values file: the per-repo rows read no value, and never fail");
+});
+
+test("Git Crafter's values file fills every values row and turns on only optional rows", () => {
+  const own = JSON.parse(readFileSync(new URL("../config/setup-values.json", import.meta.url), "utf8"));
+  for (const r of LIST.rows.filter((x) => x.id.startsWith("values."))) assert.ok(own[r.id.slice("values.".length)], r.id);
+  assert.ok(own.optional_on.every((id) => ROW[id]?.optional));
+});
+
 test("usage errors exit 2 and read nothing", () => {
-  for (const argv of [["--repo", "nope"], ["--repo", REPO, "--force"]]) {
+  for (const argv of [["--repo", "nope"], ["--repo", REPO, "--force"], ["--repo", REPO, "--values", "missing.json"]]) {
     const gh = fakeGh(standard());
     const said = [];
-    assert.equal(main(argv, { run: gh.run, log: () => {}, error: (l) => said.push(l) }), 2, argv.join(" "));
+    assert.equal(main(argv, { run: gh.run, root: tmpdir(), log: () => {}, error: (l) => said.push(l) }), 2, argv.join(" "));
     assert.match(said.join("\n"), /usage: node tools\/apply_setup\.mjs/);
     assert.deepEqual(gh.calls, []);
   }
