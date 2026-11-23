@@ -18,14 +18,27 @@ function each(ro, draw) {
 }
 const tagR = (html, r) => html.replace(/^<(\w+)/, `<$1 data-r="${esc(r)}"${r ? " hidden" : ""}`);
 
-function tile(kind, ro) {
+// A step's reason for not being measured, when its entry gives one.
+const reasonOf = (ro) => (finite(ro.value) ? null : (ro.entry?.could_not_check ?? "not measured"));
+
+// The reasons two steps or more share, each said once at the top of the page; a tile says only "not measured" for them, so one sentence never reads ten times (it lifted the reading grade).
+function sharedReasons(readoutsByMap) {
+  const count = new Map();
+  for (const ro of Object.values(readoutsByMap).flatMap((r) => Object.values(r))) {
+    const why = reasonOf(ro);
+    if (why && why !== "not measured") count.set(why, (count.get(why) ?? 0) + 1);
+  }
+  return new Set([...count].filter(([, n]) => n > 1).map(([why]) => why));
+}
+
+function tile(kind, ro, shared = new Set()) {
   if (!ro) return `<div class="tile none"><p class="t-l">${kind}</p><p class="t-n">–</p><p class="t-m">not measured for this step</p></div>`;
   const ok = finite(ro.value);
   const status = ro.def ? ro.status : ok ? null : "not-measured";
   const num = each(ro, (v, st, r) => `<span class="t-nv">${st ? glyph(st) : ""}${esc(finite(v) ? `${atLeast(ro.entry, r)}${fmtCompact(v, ro.unit)}` : "–")}</span>`);
   return `<div class="tile${status ? ` s-${status}` : ""}" data-vg=""><p class="t-l">${kind}</p><p class="t-n">${num}</p><p class="t-m">${metricName(ro, ro.invert ? `100 less ${ro.label}` : ro.label)}</p>${
     ro.def ? `${each(ro, (v) => bullet(ro.def, finite(v) ? v : null))}<p class="goal">goal ${esc(goalText(ro.def, fmtCompact))}</p>` : ""
-  }${ok ? "" : `<p class="reason">${esc(ro.entry?.could_not_check ?? "not measured")}</p>`}${ro.trend ?? ""}</div>`;
+  }${ok ? "" : `<p class="reason">${shared.has(reasonOf(ro)) ? "not measured" : esc(reasonOf(ro))}</p>`}${ro.trend ?? ""}</div>`;
 }
 
 // A step's trend: one point a UTC day from the repo's Quality history runs,
@@ -103,7 +116,7 @@ function timeBarHead(ro) {
 
 const KIND_NAMES = { quality: "Quality", speed: "Speed", consumption: "Consumption" };
 
-function panel(map, step, i, ro, critical, cfg, data) {
+function panel(map, step, i, ro, critical, cfg, data, shared) {
   const key = `${map.id}-${step.id}`;
   const per = (ro2, title) => {
     const list = ro2 ? repoBars(ro2.entry, cfg.repos) : [];
@@ -115,7 +128,7 @@ function panel(map, step, i, ro, critical, cfg, data) {
   const icon = ICON_IDS.includes(step.icon ?? step.id) ? (step.icon ?? step.id) : "plan";
   return `<article class="panel" id="step-${esc(key)}" data-step="${esc(key)}" aria-labelledby="h-${esc(key)}">
 <header class="p-head"><span class="p-num${critical.has(step.id) ? " crit" : ""}">${i + 1}</span><h3 id="h-${esc(key)}">${cicon(icon)}${esc(step.name)}</h3>${critical.has(step.id) ? '<span class="chip">critical path</span>' : ""}</header>
-<div class="tiles">${tile(KIND_NAMES[ro.kind] ?? "Metric", ro)}</div>
+<div class="tiles">${tile(KIND_NAMES[ro.kind] ?? "Metric", ro, shared)}</div>
 <div class="p-body">
 <div class="p-figs">${figs || '<p class="empty">No per-repo data for this step.</p>'}</div>
 <div class="p-side">
@@ -137,14 +150,20 @@ export function mapsTab(data, goalsDoc, mapsDoc, defs, repos, metricsHref, histo
   const goals = goalIndex(goalsDoc);
   const cfg = { repo_url: mapsDoc.repo_url, repos };
   const readoutsByMap = {};
-  const sections = maps.map((m) => {
-    const critical = new Set(m.critical_path ?? m.steps.map((s) => s.id));
+  const critics = {};
+  for (const m of maps) {
+    critics[m.id] = new Set(m.critical_path ?? m.steps.map((s) => s.id));
     const readouts = Object.fromEntries(m.steps.map((s) => [s.id, stepReadout(s, data.metrics, { def: defs?.[s.metric] ?? null, goals, ownRepo: data.own_repo ?? null })]));
     readoutsByMap[m.id] = readouts;
     for (const ro of Object.values(readouts)) {
       ro.goalHref = metricsHref && ro.goalId ? `${metricsHref}#goal-${ro.goalId}` : null;
       ro.trend = stepTrend(history, ro);
     }
+  }
+  const shared = sharedReasons(readoutsByMap);
+  const sections = maps.map((m) => {
+    const critical = critics[m.id];
+    const readouts = readoutsByMap[m.id];
     const selected = openingStep(m.steps, readouts);
     const steps = m.steps.map((s) => ({ ...s, short: s.short ?? s.name }));
     const stepbar = `<div class="stepbar" role="group" aria-label="${esc(m.name)} steps" hidden>${steps
@@ -156,7 +175,7 @@ ${ideal(`map-${m.id}`, m, m.name)}
 <div class="hero flow"><div class="trail-box">${(steps.some((s) => s.at) ? grid : trail)({ ...m, steps }, readouts, critical, selected)}</div></div>
 ${timeBar(m, data, { defs, goals, ownRepo: data.own_repo ?? null })}
 ${stepbar}
-<section class="panels">${m.steps.map((s, i) => panel(m, s, i, readouts[s.id], critical, cfg, data)).join("\n")}</section>
+<section class="panels">${m.steps.map((s, i) => panel(m, s, i, readouts[s.id], critical, cfg, data, shared)).join("\n")}</section>
 </section>`;
   });
   const legend = `<ul class="t-key"><li><svg viewBox="0 0 28 10" aria-hidden="true"><path class="k-main" d="M0 5h28"/></svg>critical path</li><li><svg viewBox="0 0 14 14" aria-hidden="true"><circle class="k-ring" cx="7" cy="7" r="5.5" pathLength="100" stroke-dasharray="70 100" transform="rotate(-90 7 7)"/></svg>ring: a share, fuller is better</li><li>Select a step for its detail</li></ul>`;
@@ -167,5 +186,6 @@ ${stepbar}
     return `<a href="#map-${esc(m.id)}" aria-label="${esc(label)}" data-tip="${esc(label)}"><b>${esc(m.name)}</b>${statusStack(counts, { legend: false, cls: "mi-bar" })}</a>`;
   });
   // A div, not a nav: the page's nav rule (quality/render/page.css) would pin it over the tab bar.
-  return `<div class="map-index" role="navigation" aria-label="Maps">${index.join("")}</div>\n${legend}\n${sections.join("\n")}`;
+  const notes = [...shared].map((why) => `<p class="reason">Not measured: ${esc(why)}</p>`).join("");
+  return `<div class="map-index" role="navigation" aria-label="Maps">${index.join("")}</div>\n${notes}${legend}\n${sections.join("\n")}`;
 }
