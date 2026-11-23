@@ -6,7 +6,7 @@ Templates for AI agents to run an open-source or open-weight repo with Claude Co
 
 | Part | Gives a repo |
 |---|---|
-| [Quality, Speed and Consumption page](https://soulcraft-org.github.io/git-crafter/quality/) | 13 tabs, each scored against an ideal from dated sources |
+| [Quality, Speed and Consumption page](https://soulcraft-org.github.io/git-crafter/quality/) | 13 tabs, each scored against an ideal from current, dated sources |
 | [Process page](https://soulcraft-org.github.io/git-crafter/) | Process maps: each step's tool, rule and metric |
 | [CI standard](templates/ci/README.md) | One reusable workflow on GitHub's standard hosted runners |
 | [Rules](rules/) and [guards](tools/) | What Claude sessions may do, and the `permissions.deny` list and hookify rules that block one-way doors |
@@ -38,7 +38,7 @@ Each tab scores Quality, Speed and Consumption, a third each, against sourced go
 ```mermaid
 flowchart LR
   AD[Adopt] --> DL[Delivery] --> DP[Deploy] --> ME[Measure]
-  DL --> RE[Release] -->|bump| AD
+  DL --> RE[Release] -->|Dependabot bump| AD
   ME --> SC[Score] -->|issue or card| DL
   DI[Discuss] -->|issue or card| DL
   CT[Contribute] --> DL
