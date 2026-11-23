@@ -12,7 +12,7 @@ workflows:
         - 'actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0'
     '.github/workflows/claude-review.yml':
         - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
-        - 'anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c'
+        - 'anthropics/claude-code-action@9eb012b6d0900c2b9eede65ee1758cec4d2973e9'
     '.github/workflows/cloud-test.yml':
         - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
         - 'actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1'
@@ -90,9 +90,9 @@ dependencies:
         repo_id: 496012378
         uses:
             - 'actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f'
-    'anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c':
-        ref: 'v1.0.268'
-        commit: 'sha1-c0949c50a78c1ec8ce2647db36629b870e715d0c'
+    'anthropics/claude-code-action@9eb012b6d0900c2b9eede65ee1758cec4d2973e9':
+        ref: 'v1.0.270'
+        commit: 'sha1-9eb012b6d0900c2b9eede65ee1758cec4d2973e9'
         owner_id: 76263028
         repo_id: 986421638
         uses:

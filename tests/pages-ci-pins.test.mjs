@@ -114,3 +114,21 @@ test("a tag pin fails, even one actions.lock records", () => {
   const unkeyed = read(file).replace(/actions\/setup-python@[0-9a-f]{40}/, `actions/setup-python@${"0".repeat(40)}`);
   assert.ok(pinFaults(file, unkeyed, lock).some((f) => f.endsWith("not keyed in actions.lock")));
 });
+
+test("branch-cleanup.yml sweeps on a schedule, not on every pull request close", () => {
+  const yml = read(".github/workflows/branch-cleanup.yml");
+  const on = yml.slice(yml.indexOf("\non:\n"), yml.indexOf("\npermissions:"));
+  assert.match(on, /^ {2}schedule:\n {4}- cron: "\d+ \d+ \* \* \*"$/m, "once a day");
+  assert.doesNotMatch(on, /pull_request|push:/, "a merge starts no run that skips itself (ci.light_run_share)");
+  assert.doesNotMatch(yml, /^\s*-?\s*uses:/m, "no action and no checkout step");
+  assert.match(yml, /merged_at == null/, "only a pull request closed without merging");
+  assert.match(yml, /\[!A-Za-z0-9\._\/-\]/, "a branch name from the API passes a character check before it joins a path");
+  assert.doesNotMatch(yml, /\$\{\{\s*github\.event\.pull_request/, "no event text reaches the shell");
+});
+
+test("claude-review.yml runs when a pull request goes ready, not on every push", () => {
+  const yml = read(".github/workflows/claude-review.yml");
+  const on = yml.slice(yml.indexOf("\non:\n"), yml.indexOf("\npermissions:"));
+  assert.match(on, /^ {4}types: \[ready_for_review, reopened\]$/m);
+  assert.doesNotMatch(on, /synchronize|opened,/, "a draft's push or open starts a run that does no work (ci.light_run_share)");
+});

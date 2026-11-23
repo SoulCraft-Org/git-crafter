@@ -21,16 +21,24 @@ name: claude-review
 # MCP files load nothing. The prompt holds no event text, only the repo name
 # and the PR number. Inputs read from github.com/anthropics/claude-code-action
 # at v1.0.271 (action.yml, docs/solutions.md, docs/usage.md, read 2026-11-11).
-# v1.0.264 is pinned: the newest release past the 14-day cooldown, same inputs.
+# v1.0.270 is pinned: the newest release past the 14-day cooldown on 2026-11-23 (tools.actions_latest_share),
+# same inputs and the same nested setup-bun as v1.0.268 (action.yml compared).
 # actions.lock holds each commit SHA (gh actions-lock), like every workflow here.
 #
 # Before the token is set, the repo's Actions policy must also allow
 # anthropics/claude-code-action and oven-sh/setup-bun (its one nested action).
 # Today it allows GitHub-owned and verified creators' actions (verified_allowed, scorecard.yml); check that
 # both are allowed. A skipped job downloads nothing.
+#
+# When it runs: once per pull request, when it is marked ready for review (or reopened), not on every push.
+# A run used to start on every push to a pull request that touches these paths. A draft's gate skips at
+# once, and with the token unset a ready pull request's gate is the whole run: every one of the last 100
+# runs did no work (ci.light_run_share counts them light). A pull request opened as a draft, as workers
+# open them, is reviewed when it goes ready, on the diff that will merge. A non-draft pull request is not reviewed when opened: mark it draft and ready again, or run the
+# review by hand. A push after that review is not reviewed again; reopening or a new ready cycle does.
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [ready_for_review, reopened]
     paths:
       - ".github/workflows/**"
       - "actions/**"
@@ -83,7 +91,7 @@ jobs:
           persist-credentials: false
 
       - name: Claude security review
-        uses: anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c # v1.0.268
+        uses: anthropics/claude-code-action@9eb012b6d0900c2b9eede65ee1758cec4d2973e9 # v1.0.270
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
