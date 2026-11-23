@@ -20,16 +20,23 @@ export function alwaysRunWhy(always, ...ids) {
 // A job of a ci-standard.yml caller that does the caller's commands: "ci / short", "ci / standard". Its "changes" and "ci-ok" jobs only detect and gate.
 const TIER_JOB = /\s\/\s(short|standard)$/;
 
+// Whether a job is a tier job. With the callers the run's workflow file names (`byDesign.calls`) it is "<caller> / short" or "<caller> / standard"
+// for one of them, so another workflow's "x / short" is no work here; with no file read for the workflow (`byDesign` undefined) the name alone decides.
+const isTier = (job, byDesign) => {
+  const name = String(job.name ?? "");
+  return byDesign ? byDesign.calls.some((c) => name === `${c} / short` || name === `${c} / standard`) : TIER_JOB.test(name);
+};
+
 /** A passing run that skipped something and finished within this is light. */
 export const LIGHT_SPAN_SECONDS = 60;
 
 // Whether a run did no real work (describeRun): skipped, or passed with something skipped, in under a minute, and no short or standard job ran.
 function isLight(run, jobs, ran, byDesign) {
   if (run.conclusion === "skipped") return true;
-  if (run.conclusion !== "success" || ran.some((j) => TIER_JOB.test(String(j.name ?? "")))) return false;
-  const guarded = (j) => byDesign.calls.some((c) => String(j.name ?? "").startsWith(`${c} / `));
+  if (run.conclusion !== "success" || ran.some((j) => isTier(j, byDesign))) return false;
+  const guarded = (j) => (byDesign?.calls ?? []).some((c) => String(j.name ?? "").startsWith(`${c} / `));
   const skippedSomething =
-    jobs.some((j) => j.conclusion === "skipped" && !byDesign.unset.includes(j.name)) ||
+    jobs.some((j) => j.conclusion === "skipped" && !(byDesign?.unset ?? []).includes(j.name)) ||
     ran.some((j) => !guarded(j) && (j.steps ?? []).some((s) => !WRAPPER_STEP.test(s.name ?? "") && s.conclusion === "skipped"));
   const span = ran.length ? (Math.max(...ran.map((j) => ms(j.completed_at))) - Math.min(...ran.map((j) => ms(j.started_at)))) / 1000 : 0;
   return skippedSomething && span < LIGHT_SPAN_SECONDS;
@@ -54,8 +61,11 @@ function isLight(run, jobs, ran, byDesign) {
  * inputs guard (python-version, pip-requirements), and `unset`, the jobs
  * ("caller / standard") the caller passed no commands for. Neither is work
  * skipped for lack of changes; only a configured job the changes job skipped is.
+ * A tier job is "caller / short" or "caller / standard" for a caller `calls`
+ * names, so another workflow's "x / short" job is no work; with no `byDesign`
+ * (the workflow's file was not read) any job named "x / short" is.
  */
-export function describeRun(run, jobs, byDesign = { calls: [], unset: [] }) {
+export function describeRun(run, jobs, byDesign) {
   const ran = jobs.filter((j) => j.conclusion !== "skipped" && j.started_at && j.completed_at);
   const light = isLight(run, jobs, ran, byDesign);
   const end = ran.length ? Math.max(...ran.map((j) => ms(j.completed_at))) : null;
