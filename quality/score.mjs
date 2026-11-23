@@ -146,9 +146,15 @@ const offPage = (def) => def.drop === true && !def.gate && typeof def.tab === "s
 // left out. Returns the defs, each targets file's params (overlayTargets),
 // every id the files define, so a caller can tell off from unknown, and the
 // gated ones on a shown tab: a dropped metric may still gate, unscored.
-export function loadDefs({ templateDir, packDirs = [], repoDir = null, tabs = DEFAULT_TABS, tabIds = new Set([...TAB_IDS, ...tabs.map(([id]) => id)]) }) {
+// dropNeeds (the config's drop_needs) drops every metric with one of those
+// `needs` values, as drop: true does; a value no metric needs is a usage error.
+export function loadDefs({ templateDir, packDirs = [], repoDir = null, tabs = DEFAULT_TABS, tabIds = new Set([...TAB_IDS, ...tabs.map(([id]) => id)]), dropNeeds = [] }) {
   const repoFiles = repoDir && repoDir !== templateDir ? readTargetFiles(repoDir) : [];
   const { entries, params } = overlayTargets(baseFiles(templateDir, packDirs), repoFiles);
+  for (const need of dropNeeds) {
+    if (!entries.some((d) => d.needs === need)) throw new Error(`drop_needs: no metric needs "${need}"`);
+  }
+  for (const def of entries) if (dropNeeds.includes(def.needs)) def.drop = true;
   for (const def of entries) checkDef(def, `${def.overridden_in ? `${def.overridden_in} over the template's ${def.file}` : def.file}: ${def.id ?? "(no id)"}`, offPage(def) ? new Set([...tabIds, def.tab]) : tabIds);
   const on = new Set(tabs.map(([id]) => id));
   const defs = entries.filter((d) => d.drop !== true && on.has(d.tab));

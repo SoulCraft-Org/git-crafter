@@ -29,6 +29,10 @@
   {"from":"code","to":"code","status":"kept","ids":["engine.page_seconds"]},
   {"from":"code","to":"code","status":"dropped","reason":"it timed the bash guard, which Claude Code's own permissions.deny rules replace (Git Crafter PR-D, 2026-11-14); nothing of Git Crafter's runs before a Bash call now","ids":["guards.runner_call_ms"]},
   {"from":"code","to":"pack Colorado-Startups/claudius","status":"moved","reason":"it times the guard on the machine that runs the sessions, a local-files read; Claudius reads local files","ids":["guards.call_ms"]},
-  {"from":null,"to":"code","status":"new","reason":"Code Quality is free on a public repo, so its drop is lifted as it joins the Code tab (the approved plan, 2026-11-13)","ids":["security.code_quality_on","security.code_quality_open"]}
+  {"from":null,"to":"code","status":"new","reason":"Code Quality is free on a public repo, so its drop is lifted as it joins the Code tab (the approved plan, 2026-11-13)","ids":["security.code_quality_on","security.code_quality_open"]},
+  {"from":"settings","to":"settings","status":"dropped","reason":"this repo is public, so the reading is not measured (Git Crafter, 2026-11-23)","ids":["settings.metered_on"]},
+  {"from":"settings","to":"pages","status":"dropped","reason":"this repo is public, so its Pages site is public (Git Crafter, 2026-11-23)","ids":["settings.pages_private"]},
+  {"from":"deploy","to":"pages","status":"dropped","reason":"it reads only after a failed deploy, and deploy.latest_failed counts one (Git Crafter, 2026-11-23)","ids":["deploy.latest_restore_hours"]},
+  {"from":"usability","to":"pages","status":"dropped","reason":"Git Crafter ships no form page (Git Crafter, 2026-11-23)","ids":["usability.form_page_kib"]}
  ]
 }

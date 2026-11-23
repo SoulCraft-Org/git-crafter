@@ -17,6 +17,7 @@ A repo's Quality page settings (`config.mjs`), and how its targets lie over the 
 | `reviews`, `data`, `history`, `out` | `<repo>/quality/<key>`; `out` is `<repo>/quality/dist` | folders |
 | `tokens_css` | `render/tokens.css` | the color tokens the page draws with |
 | `budget` | 1,000,000, per `config.mjs` (read 2026-11-04) | page bytes; one over is exit 1 |
+| `drop_needs` | `[]` | `needs` values whose metrics the page drops, as `drop: true` does for each: `["local-files"]` on a public page. A value no metric needs is a usage error |
 | `issue_sync` | `null`, off | `{ "label", "labels", "project", "quick", "waiting" }` turns on [`sync-issues.mjs`](sync-issues.mjs): on main, one draft card per missed metric on org project `project`, Todo, or Waiting on data for ids in `waiting`. Ids in `quick` open a Task issue instead, labeled `labels[tab]` or `label`; with no `project`, every id does. Cards need env `BOARD_TOKEN` |
 | `comment` | | allowed |
 | an unknown key | | a usage error |
