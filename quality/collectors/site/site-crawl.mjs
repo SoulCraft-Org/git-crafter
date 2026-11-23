@@ -208,8 +208,8 @@ export function syllables(word) {
   return Math.max(1, w.match(/[aeiouy]{1,2}/g)?.length ?? 0);
 }
 
-const WORD = /[\p{L}\p{N}][\p{L}\p{N}'’.-]*/gu;
 // The words in text.
+const WORD = /[\p{L}\p{N}][\p{L}\p{N}'’.-]*/gu;
 
 // innerText puts each block on its own line. A line is prose when it ends in
 // sentence punctuation; headings, buttons and nav labels do not, and a
