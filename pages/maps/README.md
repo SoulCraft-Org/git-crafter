@@ -34,7 +34,7 @@ flowchart LR
 | `rule_ref` an https link | `checkLibrary` |
 | a step of each kind: quality, speed and consumption | `checkLibrary`; `tests/pages-docs.test.mjs` for a repo's own maps |
 | `at: [col, row]` on every step draws a fork; no two steps share a cell | `checkMaps` |
-| `actor` on every step, one of `ACTORS` in `pages/draw.mjs`, draws lanes: a band per actor, in order of first appearance. A fork's pair in one lane stacks. Some steps with an actor and some without is an error | `checkMaps`, `tests/pages-lanes.test.mjs` |
+| `actor` on every step, one of `ACTORS` in `pages/draw.mjs`, draws lanes: a band per actor, in order of first appearance. A fork's pair in one lane stacks. Some steps with an actor and some without is an error; a library step always has one | `checkMaps`; `checkLibrary` for the library |
 | `time_bar`, optional: one metric whose detail rows are step hours, drawn under the trail as one labelled stacked bar. A step it could not read is listed, never a zero | `checkMaps`, `tests/pages-build.test.mjs` |
 | a step's value comes from the repo's own Quality run when the page builds (`withOwnRun`), never an older copy in `data/org.json`: no step to re-run | `tests/pages-build.test.mjs` |
 

@@ -200,6 +200,7 @@ export function checkLibrary(library, templateIds, kindOf = null) {
     if (m.ideal === undefined) errs.push(`pages/maps/${m.id}.json: a library map needs an ideal and its sources`);
     for (const s of m.steps ?? []) {
       if (!https(s.rule_ref)) errs.push(`pages/maps/${m.id}.json, step "${s.id}": rule_ref must be an https link`);
+      if (s.actor === undefined) errs.push(`pages/maps/${m.id}.json, step "${s.id}": a library step needs an actor, who does it`);
       const words = String(s.rule ?? "").trim().split(/\s+/).filter(Boolean).length;
       if (words > MAX_RULE_WORDS) errs.push(`pages/maps/${m.id}.json, step "${s.id}": rule has ${words} words; a library rule keeps ${MAX_RULE_WORDS} at most`);
     }
