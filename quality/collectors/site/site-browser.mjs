@@ -1,9 +1,7 @@
 // Playwright passes for the site collectors (site-lib.mjs).
 
 import { readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
-import { firstLine, measured, now, once, resolveFrom, serial } from "./site-base.mjs";
+import { firstLine, now, once, resolveFrom, serial } from "./site-base.mjs";
 
 // ---------- Playwright ----------
 

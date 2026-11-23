@@ -1,9 +1,6 @@
-"""ci_standard_actions.py: the pinned rule, on a job's steps and on the local actions they call (#200).
-
-Embedded with ci_standard.py in ci-standard.yml. A step's uses: ./PATH (or $/PATH) runs PATH/action.yml from the
-checkout, and its steps run in the caller's job with its token, so they are read too, and the local actions they call.
-A link, or a path that leaves the repo, is never read: it is could not check. Standard library only.
-"""
+"""ci_standard_actions.py: the pinned rule, on a job's steps and the local actions they call (#200). Embedded with
+ci_standard.py. A step's uses: ./PATH or $/PATH runs PATH/action.yml in the caller's job, so its steps are read too; a
+link or a path out of the repo is never read (could not check). Standard library only."""
 
 from __future__ import annotations
 
@@ -51,6 +48,13 @@ def read_action(repo: str, rel: str) -> tuple:
     return None, f"no {' or '.join(ACTION_FILES)} in the checkout"
 
 
+def action_steps(doc: dict) -> list:
+    """A composite action's steps, and a Docker action's docker:// image as one more step."""
+    runs = doc.get("runs") if isinstance(doc.get("runs"), dict) else {}
+    image = str(runs.get("image") or "")
+    return [s for s in runs.get("steps") or [] if isinstance(s, dict)] + ([{"uses": image}] if image.startswith("docker://") else [])
+
+
 def local_action_findings(repo: str, steps: list) -> tuple:
     """(findings, unread) for each local action the steps call, and each local action those call, read once each."""
     found, unread, seen, todo = [], [], set(), list(steps)
@@ -64,9 +68,7 @@ def local_action_findings(repo: str, steps: list) -> tuple:
         if why:
             unread.append((rel, f"local action: {why}"))
             continue
-        runs = doc.get("runs") if isinstance(doc.get("runs"), dict) else {}
-        image = str(runs.get("image") or "")  # a Docker action's image is checked as one more step
-        inner = [s for s in runs.get("steps") or [] if isinstance(s, dict)] + ([{"uses": image}] if image.startswith("docker://") else [])
+        inner = action_steps(doc)
         found += pin_findings(rel, inner)
         todo += inner
     return found, unread

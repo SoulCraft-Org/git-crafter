@@ -73,14 +73,14 @@ def self_test():
         st = lib.classify(canon, manifest, spec)[0][2]
         ok = check(st == lib.MODIFIED, "editing the copy reads as modified") and ok
 
-        rc = sync.cmd_apply(canon, manifest, "r", yes=True, force=False,
+        sync.cmd_apply(canon, manifest, "r", yes=True, force=False,
                        adopt=False, dry_run=False)
         with open(dest, encoding="utf-8") as fh:
             body = fh.read()
         ok = check("edited this by hand" in body,
                    "apply refuses to clobber an in-place edit") and ok
 
-        rc = sync.cmd_apply(canon, manifest, "r", yes=True, force=True,
+        sync.cmd_apply(canon, manifest, "r", yes=True, force=True,
                        adopt=False, dry_run=False)
         with open(dest, encoding="utf-8") as fh:
             body = fh.read()
@@ -98,15 +98,18 @@ def self_test():
         ok = check("pre-existing" in body,
                    "apply refuses to adopt without --adopt") and ok
 
-        before = open(dest, encoding="utf-8").read()
-        rc = sync.cmd_apply(canon, manifest, "r", yes=True, force=False,
+        with open(dest, encoding="utf-8") as fh:
+            before = fh.read()
+        sync.cmd_apply(canon, manifest, "r", yes=True, force=False,
                        adopt=True, dry_run=True)
-        after = open(dest, encoding="utf-8").read()
+        with open(dest, encoding="utf-8") as fh:
+            after = fh.read()
         ok = check(before == after, "dry run writes nothing") and ok
 
         rc = sync.cmd_apply(canon, manifest, "r", yes=False, force=False,
                        adopt=True, dry_run=False)
-        after = open(dest, encoding="utf-8").read()
+        with open(dest, encoding="utf-8") as fh:
+            after = fh.read()
         ok = check(rc == 2 and before == after,
                    "apply without --yes writes nothing") and ok
 
