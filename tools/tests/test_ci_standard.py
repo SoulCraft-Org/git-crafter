@@ -1,6 +1,6 @@
 """test_ci_standard.py: the CI standard's self-test, run by `python3 -I tools/ci_standard.py --self-test`.
 
-Seeded known-good and known-bad repos, changes in a scratch git repo, the parser, the embed, and the three embedded
+Seeded known-good and known-bad repos, changes in a scratch git repo, the parser, the embed, and the four embedded
 files run alone, as on a runner with no Git Crafter checkout. It stays out of ci-standard.yml, so the workflow's copy of
 ci_standard.py exits 2 for --self-test. ci_standard.py puts tools/ on sys.path before it imports this file.
 """
@@ -116,6 +116,16 @@ def expect(wrong: list, label: str, change: dict, want: set):
 # gh actions-lock's file: the workflows it has onboarded and each one's locked uses: lines.
 LOCK = "version: 'v0.0.3'\nworkflows:\n    '.github/workflows/deploy.yml':\n        - '{ref}'\ndependencies: {{}}\n"
 TAGGED = edit(".github/workflows/deploy.yml", "actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1", "actions/setup-node@v7.1.0")
+ACTION = "name: x\nruns:\n  using: composite\n  steps:\n    - uses: {ref}\n"
+X = ".github/actions/x/action.yml"
+
+
+def calling(ref: str) -> dict:
+    """GOOD's deploy.yml with one more step, uses: ref."""
+    return edit(".github/workflows/deploy.yml", "      - run: |\n", f"      - uses: {ref}\n      - run: |\n")
+
+
+LOCAL = calling("./.github/actions/x")
 CANCEL = f"  cancel-in-progress: {EXPR} github.event_name == 'pull_request' }}}}\n"
 # (label, change to GOOD, the rules it must find): one row a seeded known-bad or known-good repo.
 CASES = [
@@ -157,7 +167,8 @@ CASES = [
     ("a tag-pinned action the lockfile does not list", {**TAGGED, ".github/workflows/actions.lock": LOCK.format(ref="actions/setup-node@v7.0.0")}, {"pinned"}),
     ("a lockfile that lists another workflow", {**TAGGED, ".github/workflows/actions.lock": LOCK.format(ref="actions/setup-node@v7.1.0").replace("deploy.yml", "ci.yml")}, {"pinned"}),
     ("a lockfile that does not parse locks nothing", {**TAGGED, ".github/workflows/actions.lock": "workflows: [unclosed\n"}, {"pinned"}),
-    ("this repo's own $/ action passes", {".github/workflows/own.yml": "on: workflow_dispatch\npermissions:\n  contents: read\njobs:\n  x:\n    runs-on: ubuntu-slim\n    timeout-minutes: 5\n    steps:\n      - uses: $/actions/x\n"}, set()),
+    ("this repo's own $/ action passes", {".github/workflows/own.yml": "on: workflow_dispatch\npermissions:\n  contents: read\njobs:\n  x:\n    runs-on: ubuntu-slim\n    timeout-minutes: 5\n    steps:\n      - uses: $/actions/x\n",
+                                          "actions/x/action.yml": ACTION.format(ref="o/a@" + "b" * 40)}, set()),
     ("npm ci with no cache", edit(".github/workflows/deploy.yml", "        with:\n          node-version: 26\n          cache: npm\n", "        with:\n          node-version: 26\n"), {"cache"}),
     ("pip with no cache", edit(".github/workflows/deploy.yml", "          npx wrangler deploy\n", "          pip install -r requirements.txt\n          npx wrangler deploy\n"), {"cache"}),
     ("npm ci in a heredoc is data", edit(".github/workflows/deploy.yml", "        with:\n          node-version: 26\n          cache: npm\n      - run: |\n          npm ci\n",
@@ -166,6 +177,23 @@ CASES = [
                                                        "        with:\n          node-version: 26\n      - run: |\n          cat > x <<'END'\n          y\n          END\n          npm ci\n"), {"cache"}),
     ("a per-repo minute guard", {".github/scripts/build_minutes_guard.py": ""}, {"no-share"}),
     ("an unreadable workflow", {".github/workflows/odd.yml": "on: push\nx: !!str 1\n"}, {"unread"}),
+    # #200: a local action's own steps keep the pinned rule.
+    ("a local action's tag-pinned step", {**LOCAL, X: ACTION.format(ref="some-owner/some-action@main")}, {"pinned"}),
+    ("a local action's SHA-pinned step passes", {**LOCAL, X: ACTION.format(ref="some-owner/some-action@" + "a" * 40)}, set()),
+    ("a local action in action.yaml", {**LOCAL, X.replace(".yml", ".yaml"): ACTION.format(ref="o/a@v1")}, {"pinned"}),
+    ("a local action that calls another", {**LOCAL, X: ACTION.format(ref="./.github/actions/y"),
+                                            ".github/actions/y/action.yml": ACTION.format(ref="o/a@v1")}, {"pinned"}),
+    ("a local action that calls itself is read once", {**LOCAL, X: ACTION.format(ref="./.github/actions/x/")}, set()),
+    ("a local Docker action by tag", {**LOCAL, X: "runs:\n  using: docker\n  image: docker://ghcr.io/o/a:v1\n"}, {"pinned"}),
+    ("a local action with no action.yml", LOCAL, {"unread"}),
+    ("a local action outside the repo", calling("./../x"), {"unread"}),
+    # #201: a deploy cancels only on pull requests; a bare group name never cancels.
+    ("a deploy that cancels on every push", edit(".github/workflows/deploy.yml", "  cancel-in-progress: false\n",
+                                                  f"  cancel-in-progress: {EXPR} github.event_name != 'pull_request' }}}}\n"), {"concurrency"}),
+    ("a deploy that cancels on pull requests only passes", edit(".github/workflows/deploy.yml", "  cancel-in-progress: false\n",
+                                                                 f"  cancel-in-progress: {EXPR}github.event_name  ==  'pull_request'}}}}\n"), set()),
+    ("a bare concurrency group never cancels", edit(".github/workflows/ci.yml", f"concurrency:\n  group: ci-{EXPR} github.ref }}}}\n{CANCEL}",
+                                                     f"concurrency: ci-{EXPR} github.ref }}}}\n"), {"concurrency"}),
 ]
 
 
@@ -205,6 +233,38 @@ def test_lock_link(wrong: list):
         got = {f[0] for f in check_repo(tmp)["findings"]}
     if got != {"pinned"}:
         wrong.append(f"a lockfile that is a link: rules {sorted(got)}, want ['pinned']")
+
+
+def test_action_link(wrong: list):
+    """A local action folder or action.yml that is a link is never read (#200): could not check, never a pass."""
+    for link, target in ((".github/actions/x", "real"), (X, "real/action.yml")):
+        with tempfile.TemporaryDirectory() as tmp:
+            for rel, text in {**GOOD, **LOCAL, "real/action.yml": ACTION.format(ref="o/a@v1")}.items():
+                os.makedirs(os.path.dirname(os.path.join(tmp, rel)), exist_ok=True)
+                with open(os.path.join(tmp, rel), "w", encoding="utf-8") as fh:
+                    fh.write(text)
+            os.makedirs(os.path.dirname(os.path.join(tmp, link)), exist_ok=True)
+            os.symlink(os.path.join(tmp, target), os.path.join(tmp, link))
+            r = check_repo(tmp)
+        if r["findings"] or [w for w, _ in r["could_not_check"]] != [".github/actions/x"]:
+            wrong.append(f"a local action through a link at {link}: {r['findings']} {r['could_not_check']}")
+
+
+def test_unreadable(wrong: list):
+    """A non-UTF-8 dependabot.yml and an exception whose rules hold a list exit 3, could not check, with no
+    traceback (#203)."""
+    cases = [("a dependabot.yml that is not UTF-8", ".github/dependabot.yml", DEPENDABOT.encode() + b"# caf\xe9\n"),
+             ("an exception whose rules hold a list", ".github/ci-standard.json",
+              json.dumps({"version": 1, "exceptions": {"deploy.yml": {"rules": [["runner"]], "why": "x"}}}).encode())]
+    for label, rel, data in cases:
+        with tempfile.TemporaryDirectory() as tmp:
+            for name, text in {**GOOD, rel: data}.items():
+                os.makedirs(os.path.dirname(os.path.join(tmp, name)), exist_ok=True)
+                with open(os.path.join(tmp, name), "wb") as fh:
+                    fh.write(text if isinstance(text, bytes) else text.encode())
+            r = subprocess.run([sys.executable, "-I", CLI, "check", "--repo", tmp], capture_output=True, text=True)
+        if r.returncode != 3 or "Traceback" in r.stderr or "ci-standard:" not in r.stdout:
+            wrong.append(f"{label}: exit {r.returncode}, want 3 with a summary line: {r.stdout}{r.stderr}")
 
 
 def test_exceptions(wrong: list):
@@ -270,6 +330,23 @@ def test_changes(wrong: list):
             wrong.append("a change to a workflow file did not run")
 
         output_flag(g, git, wrong)
+        never_match(g, wrong)
+
+
+def never_match(g: str, wrong: list):
+    """A glob that can never match a git path is a usage error, exit 2, so ci-ok fails; a glob that matches no
+    tracked file warns (#199)."""
+    for label, paths, code, text in [
+        ("a leading ./", "docs/**\n./src/**", 2, "'./src/**'"),
+        ("a leading /", "/src/**", 2, "'/src/**'"),
+        ("a ! negation", "!docs/**", 2, "'!docs/**'"),
+        ("a glob that matches no file", "dcos/**", 0, "::warning::"),
+        ("a glob that matches a file", "docs/**", 0, "run=true"),
+    ]:
+        r = subprocess.run([sys.executable, "-I", CLI, "changes", "--paths=" + paths, "--base=" + "0" * 40], cwd=g,
+                           capture_output=True, text=True, env={k: v for k, v in os.environ.items() if k != "GITHUB_OUTPUT"})
+        if r.returncode != code or text not in r.stdout or (code == 0 and paths == "docs/**" and "::warning::" in r.stdout):
+            wrong.append(f"changes, {label}: exit {r.returncode}, want {code} with {text!r}: {r.stdout}")
 
 
 def output_flag(g: str, git, wrong: list):
@@ -319,9 +396,9 @@ def test_parser(wrong: list):
     ]:
         try:
             parse(text)
-            wrong.append(f"parsed {label}")
         except ParseError:
-            pass
+            continue  # the parser must refuse it
+        wrong.append(f"parsed {label}")
 
 
 def quiet(fn, *args):
@@ -358,7 +435,7 @@ def test_embed(wrong: list):
 
 
 def test_alone(wrong: list):
-    """The three embedded files alone, as the workflow writes them: check and changes run; embed and the self-test
+    """The four embedded files alone, as the workflow writes them: check and changes run; embed and the self-test
     exit 2."""
     with tempfile.TemporaryDirectory() as tmp:
         for name, _mark in EMBEDS:
@@ -378,7 +455,7 @@ def test_alone(wrong: list):
 def run() -> int:
     """Every part; prints each failure and PASS or FAIL, and returns 0 or 1."""
     wrong = []
-    for part in (test_repos, test_lock_link, test_exceptions, test_changes, test_parser, test_embed, test_alone):
+    for part in (test_repos, test_lock_link, test_action_link, test_unreadable, test_exceptions, test_changes, test_parser, test_embed, test_alone):
         part(wrong)
     for line in wrong:
         print(f"ci-standard self-test: FAIL: {line}")

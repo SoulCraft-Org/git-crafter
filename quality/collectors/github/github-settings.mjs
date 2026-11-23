@@ -80,6 +80,8 @@ export function projectSettings(params, repo) {
     issueTypes: listOr(params, "issue_types", ["Bug", "Task"]),
     parkHours: number(params, "park_hours", 24),
     recordMinutes: number(params, "record_minutes", 5),
+    // Days an answerable discussion may wait for its answer before it counts as unanswered.
+    discussionDays: number(params, "discussion_days", 7),
   };
 }
 

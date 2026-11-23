@@ -1,5 +1,6 @@
 // GitHub collector for the Quality, Speed and Consumption page. It fills the
 // Issues tab (id `issues`: issues, their types, forms and labels, and how visual their cards are), the
+// Discussions tab (id `discussions`: answerable discussions still unanswered), the
 // Projects tab (id `projects`: the board's cards), Pull requests, Security and quality (id `security`: the
 // five features of GitHub's Security and quality tab, their open findings,
 // and the repo's settings), and
@@ -30,6 +31,7 @@
 //                    Empty turns the type checks off
 //   park_hours       hours an open issue of another type may wait before it
 //                    counts as parked (24)
+//   discussion_days  days an answerable discussion may wait for its answer (7)
 //   record_minutes   an issue closed by hand within this many minutes of
 //                    opening is a record of work already done, left out of
 //                    the closed-issue metrics (5); 0 counts every close
@@ -80,6 +82,7 @@ import { settings } from "./github-settings.mjs";
 import { loaders, securityAndAnalysis, on } from "./github-loaders.mjs";
 import { feature, whileOn, reasonFor } from "./github-helpers.mjs";
 import { ISSUE_METRICS, ACTION_METRICS, PROJECT_METRICS } from "./github-metrics-work.mjs";
+import { DISCUSSION_METRICS } from "./github-metrics-discussions.mjs";
 import { PULL_METRICS } from "./github-metrics-pulls.mjs";
 import { SECURITY_HARDENING_METRICS, SECURITY_REVIEW_METRICS } from "./github-metrics-security.mjs";
 export { runsPullRequestCode } from "./github-helpers.mjs";
@@ -147,7 +150,7 @@ const SECURITY_FEATURE_METRICS = {
     },
   },
   "security.code_quality_on": {
-    source: "gh api repos/{repo}/code-quality/setup (state)",
+    source: "gh api repos/{repo}/code-quality/setup (state); where a read-only token is refused it, the findings call answering (code-quality/findings)",
     async run(L) {
       return feature(L, await L.codeQualityOn(), "code_quality");
     },
@@ -274,7 +277,7 @@ const SETTINGS_METRICS = {
   },
 };
 
-const METRICS = {...ISSUE_METRICS, ...PULL_METRICS, ...ACTION_METRICS, ...PROJECT_METRICS, ...SECURITY_FEATURE_METRICS, ...SECURITY_HARDENING_METRICS, ...SECURITY_REVIEW_METRICS, ...SETTINGS_METRICS};
+const METRICS = {...ISSUE_METRICS, ...DISCUSSION_METRICS, ...PULL_METRICS, ...ACTION_METRICS, ...PROJECT_METRICS, ...SECURITY_FEATURE_METRICS, ...SECURITY_HARDENING_METRICS, ...SECURITY_REVIEW_METRICS, ...SETTINGS_METRICS};
 
 export const METRIC_IDS = Object.keys(METRICS);
 

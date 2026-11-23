@@ -170,6 +170,26 @@ check("a repo's overrides take only goal, near, goal_source, params, drop and ga
   }
 });
 
+check("drop_needs drops each metric with a listed needs value, and a typo stops", () => {
+  const dir = mkdtempSync(join(tmpdir(), "quality-dropneeds-"));
+  try {
+    writeFileSync(join(dir, "a.json"), JSON.stringify([{ ...up, needs: "local-files" }, { ...down, needs: "none" }]));
+    const ids = (dropNeeds) => loadDefs({ templateDir: dir, dropNeeds }).defs.map((d) => d.id);
+    assert.deepEqual(ids([]), ["t.up", "t.down"], "off by default");
+    assert.deepEqual(ids(["local-files"]), ["t.down"], "the listed needs value is off");
+    assert.throws(() => ids(["local-file"]), /drop_needs: no metric needs "local-file"/, "a typo stops");
+    const gated = loadDefs({ templateDir: dir, dropNeeds: ["local-files"] });
+    assert.equal(gated.all.find((d) => d.id === "t.up").drop, true, "the dropped metric is still defined");
+    writeFileSync(join(dir, "c.json"), JSON.stringify({ drop_needs: ["local-files"] }));
+    assert.deepEqual(loadConfig({ root: dir, file: "c.json", env: {} }).drop_needs, ["local-files"]);
+    writeFileSync(join(dir, "c.json"), JSON.stringify({ drop_needs: "local-files" }));
+    assert.throws(() => loadConfig({ root: dir, file: "c.json", env: {} }), /drop_needs must be a list/);
+    assert.deepEqual(loadConfig({ root: dir, env: {} }).drop_needs, [], "default: none");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 check("a repo's config: tabs, web tabs, unknown keys, collector names", () => {
   assert.deepEqual(resolveTabs({}).map(([id]) => id), TABS.map(([id]) => id).filter((id) => !WEB_TABS.includes(id)));
   assert.deepEqual(resolveTabs({ web: true }), TABS);
@@ -207,8 +227,8 @@ check("every tab the template fills has an ideal and all three categories", () =
   const dir = fileURLToPath(new URL("./targets/", import.meta.url));
   const ideals = loadIdeals({ templateDir: fileURLToPath(new URL("./ideals/", import.meta.url)) });
   const { all } = loadDefs({ templateDir: dir, tabs: TABS });
-  // Discussions waits on its readers and Scanning on a speed metric: later PRs.
-  const known = [["discussions", "quality"], ["discussions", "speed"], ["discussions", "consumption"], ["scanning", "speed"]].map(([tab, missing]) => ({ tab, missing }));
+  // Discussions waits on a consumption reader and Scanning on a speed metric: later PRs.
+  const known = [["discussions", "consumption"], ["scanning", "speed"]].map(([tab, missing]) => ({ tab, missing }));
   assert.deepEqual(tabGaps(TABS, all.filter((d) => d.drop !== true), ideals), known, "a tab lacks its ideal or a category");
   for (const d of all) assert.ok(!/\/Users\/|\/home\/[a-z]/.test(JSON.stringify(d.params ?? {})), `${d.id}: a home path in the template's params`);
   assert.ok(readFileSync(new URL("./render/client.js", import.meta.url), "utf8").includes("dataset.repo"), "the client reads the repo from the page");

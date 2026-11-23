@@ -7,6 +7,9 @@ name: scorecard
 # No SARIF upload: the template's upload-sarif step is left out, so a Scorecard finding opens no code scanning
 # alert; the score and its checks are read on api.scorecard.dev. ADVISORY: no ruleset requires this check.
 # The repo's Actions policy allows verified creators' actions (verified_allowed), and Scorecard's publisher is one.
+# A known gap (#202, THREAT-MODEL.md): the action is a Docker action, so the commit pin fixes its action.yaml but
+# not its image, ghcr.io/ossf/scorecard-action:v2.5.0, pulled by tag. Scorecard's server refuses to publish from a
+# step pinned to a digest (scorecard-infra verify_workflow.go, read 2026-11-23), so the tag stays.
 on:
   schedule:
     - cron: "41 6 * * 1"

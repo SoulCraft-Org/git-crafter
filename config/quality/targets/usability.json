@@ -1,0 +1,7 @@
+[
+ {
+  "id": "usability.form_page_kib",
+  "drop": true,
+  "goal_source": "Git Crafter: dropped because Git Crafter ships the Process and Metrics pages and no form page (params.form_pages is empty), so there is no heaviest form to weigh (2026-11-23)"
+ }
+]

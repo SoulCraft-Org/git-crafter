@@ -4,5 +4,10 @@
   "params": {
    "expected_from_setup": true
   }
+ },
+ {
+  "id": "settings.metered_on",
+  "drop": true,
+  "goal_source": "Git Crafter: dropped because this repo is public, and the reading is not measured for a public repo (its source says so) (2026-11-23)"
  }
 ]

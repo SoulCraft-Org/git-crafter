@@ -236,6 +236,16 @@ test("a trail step's link name starts with the words the step shows (axe label-c
   for (const m of links) assert.equal(m[2], m[1], "the tooltip is its description");
 });
 
+test("a one-step map draws a click area as wide as the step and no line of zero length, as a trail and as a grid (#109)", () => {
+  const map = { id: "m", name: "Map", steps: [{ id: "plan", name: "Plan" }] };
+  const readouts = { plan: { label: "Plan", value: 1, unit: "on/off", kind: "speed" } };
+  const one = [trail(map, readouts, new Set(["plan"]), "plan"), grid({ ...map, steps: [{ ...map.steps[0], at: [0, 0] }] }, readouts, new Set(["plan"]), "plan")];
+  for (const svg of one) {
+    assert.deepEqual([...svg.matchAll(/class="t-hit"[^>]* width="(-?[\d.]+)"/g)].map((m) => Number(m[1])), [132], "the click area is the step's box");
+    assert.doesNotMatch(svg, /class="t-(main|off)"/, "no line from the step to itself");
+  }
+});
+
 test("a fork's nodes keep the trail's link markup and accessible name, and every column joins every step in the next", () => {
   const fork = readJson("tests/fixtures/maps/good.json").maps.find((m) => m.steps.some((s) => s.at));
   const readouts = Object.fromEntries(fork.steps.map((s) => [s.id, { label: s.name, value: s.id === "fix" ? 1 : null, unit: s.id === "fix" ? "on/off" : "h", kind: "speed" }]));
@@ -495,6 +505,18 @@ test("a map's time_bar: one labelled stacked bar of its step hours, the missing 
   assert.match(fig, /<i class="p4"><\/i><b>merge to live 0\.04 h<\/b>/, "a step keeps its color when the session step is missing");
   assert.match(fig, /<li>session start to PR open: not read here; transcripts live on the machine/);
   assert.match(draw({}), /<figure class="time-bar" id="time-delivery">.*?<p class="reason">not measured<\/p><\/figure>/s, "no entry: said, never a zero bar");
+});
+
+test("a reason several steps share prints once on the page, a step's own reason stays in its tile (#250)", () => {
+  const step = (id, metric) => ({ id, name: id, tools: ["t"], rule: "A rule.", rule_ref: "R.md", metric, icon: "plan" });
+  const doc = { repo_url: "https://example.org", maps: [{ id: "a", name: "A", why: "w", steps: [step("one", "x.one"), step("two", "x.two")] }, { id: "b", name: "B", why: "w", steps: [step("one", "x.three"), step("two", "x.four")] }] };
+  const shared = "could not read the Quality run: none of data/quality/latest.json";
+  const metrics = { "x.one": { label: "One", could_not_check: shared }, "x.two": { label: "Two", could_not_check: shared }, "x.three": { label: "Three", could_not_check: shared }, "x.four": { label: "Four", could_not_check: "gh failed" } };
+  const html = renderProcess({ data: { repos: [{ name: "one" }], metrics, org: "o" }, goalsDoc: { outcomes: [] }, processDoc: { repo_url: "https://example.org" }, mapsDoc: doc, css: "", script: "", tabs: ["build"] });
+  assert.equal(html.split(shared).length - 1, 1, "the shared sentence is said once");
+  assert.match(html, /<p class="reason">Not measured: could not read the Quality run/, "at the top of the Maps tab");
+  assert.equal((html.match(/<p class="reason">not measured<\/p>/g) ?? []).length, 3, "each tile that shares it says only not measured");
+  assert.equal((html.match(/<p class="reason">gh failed<\/p>/g) ?? []).length, 1, "a reason only one step has stays in its tile");
 });
 
 test("a map step's trend line: drawn from 2 daily Quality history points, nothing with fewer", () => {

@@ -1,7 +1,7 @@
 // The trail's node, scale and classes, so the client and the phone layout treat a fork as a trail.
 
 import { esc } from "../quality/render/charts.mjs";
-import { GAP, TRAIL, stepNode } from "./draw.mjs";
+import { GAP, TRAIL, hitWidth, stepNode } from "./draw.mjs";
 
 // Rows sit far enough apart that one node's value line clears the next's halo.
 export const GRID = { top: 60, row: 150, foot: 90 };
@@ -34,7 +34,7 @@ export function grid(map, readouts, critical, selected) {
       }),
     );
   });
-  const hitW = Math.min(132, G.gap - 4 || 132);
+  const hitW = hitWidth(G.gap);
   const nodes = steps.map((s, i) => stepNode({ key: `${map.id}-${s.id}`, s, i, ro: readouts[s.id], x: G.xy[s.id][0], y: G.xy[s.id][1], hitW, crit: critical.has(s.id), selected })).join("");
   return `<svg class="trail" viewBox="0 0 ${G.width} ${G.height}" role="group" aria-label="${esc(map.name)}: ${steps.length} steps in ${cols.length} columns; the critical path is the thick line">${edges.join("")}${nodes}</svg>`;
 }

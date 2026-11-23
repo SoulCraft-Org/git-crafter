@@ -9,21 +9,22 @@ A repo's Quality page settings (`config.mjs`), and how its targets lie over the 
 | `repo` | `GITHUB_REPOSITORY` | `owner/name`, for issue, commit and review links |
 | `name` | the repo's name | the page title |
 | `tabs` | every template tab but `pages` | tab ids in order; `["id", "Name"]` adds a tab of the repo's own; a removed id stops ([migration](../templates/quality/README.md#from-v6-to-v7)) |
-| `web` | `false` | `true` shows Pages, the tab scoring a website |
+| `web` | `false` | `true` shows the Pages tab |
 | `targets` | `<repo>/quality/targets` | the repo's overrides and own metrics |
 | `collectors` | `<repo>/quality/collectors` | the repo's own collectors; a template collector's name is a usage error |
-| `ideals` | `<repo>/quality/ideals` | the repo's ideal states, one file per tab, in place of the template's |
+| `ideals` | `<repo>/quality/ideals` | ideal states, one file per tab, replacing the template's |
 | `packs` | `[]` | other repos' tabs and maps ([below](#packs)) |
 | `reviews`, `data`, `history`, `out` | `<repo>/quality/<key>`; `out` is `<repo>/quality/dist` | folders |
-| `tokens_css` | `render/tokens.css` | the color tokens the page draws with |
-| `budget` | 1,000,000, per `config.mjs` (read 2026-11-04) | page bytes; one over is exit 1 |
-| `issue_sync` | `null`, off | `{ "label", "labels", "project", "quick", "waiting" }` turns on [`sync-issues.mjs`](sync-issues.mjs): on main, one draft card per missed metric on org project `project`, Todo, or Waiting on data for ids in `waiting`. Ids in `quick` open a Task issue instead, labeled `labels[tab]` or `label`; with no `project`, every id does. Cards need env `BOARD_TOKEN` |
+| `tokens_css` | `render/tokens.css` | the page's color tokens |
+| `budget` | 1,000,000, per `config.mjs` | page bytes; one over is exit 1 |
+| `drop_needs` | `[]` | metrics whose `needs` is listed are off, as `drop` does; an unused value is a usage error |
+| `issue_sync` | `null`, off | `{ "label", "labels", "project", "quick", "waiting" }` turns on [`sync-issues.mjs`](sync-issues.mjs): one draft card per missed metric on org project `project`, Todo, or Waiting on data for ids in `waiting`. Ids in `quick` open a Task issue instead, labeled `labels[tab]` or `label`; with no `project`, every id does. Cards need env `BOARD_TOKEN` |
 | `comment` | | allowed |
 | an unknown key | | a usage error |
 
 ## Packs
 
-A pack adds another repo's Quality tabs and Process maps ([`packs.mjs`](packs.mjs)). A pack is pinned like an action, because its collectors run in CI. `actions/pages` fetches only its `quality-config` file's packs.
+A pack adds another repo's Quality tabs and Process maps ([`packs.mjs`](packs.mjs)). A pack is pinned like an action. `actions/pages` fetches only its `quality-config` file's packs.
 
 | Entry | Means |
 | --- | --- |
