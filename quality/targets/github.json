@@ -24,6 +24,7 @@
       ],
       "park_hours": 24,
       "record_minutes": 5,
+      "discussion_days": 7,
       "project_title": "",
       "project_columns": [
         "Todo",
@@ -1120,5 +1121,37 @@
     "needs": "none",
     "chart": "table",
     "group": "Waits"
+  },
+  {
+    "id": "discussions.unanswered_old",
+    "tab": "discussions",
+    "kind": "quality",
+    "label": "Unanswered questions",
+    "means": "Questions in an answerable category that have waited past the limit with no answer; fewer is better.",
+    "unit": "questions",
+    "goal": 0,
+    "near": 2,
+    "direction": "lower",
+    "goal_source": "GitHub docs, About discussions (read 2026-11-23): a question and answer category lets maintainers mark an answer, which helps people find information faster; template goal (2026-11-23): no question waits a week for its answer",
+    "source": "state: gh api graphql: repository.discussions, open discussions in a category with isAnswerable true and isAnswered not true, older than params.discussion_days (7); a category that takes no answer, such as Announcements, is left out; not measured while Discussions is off",
+    "needs": "none",
+    "chart": "number",
+    "group": "Discussions"
+  },
+  {
+    "id": "discussions.oldest_unanswered_hours",
+    "tab": "discussions",
+    "kind": "speed",
+    "label": "Oldest unanswered question",
+    "means": "How long the longest-waiting unanswered question has been open, in hours; 0 when none waits. Lower is better.",
+    "unit": "hours",
+    "goal": 24,
+    "near": 168,
+    "direction": "lower",
+    "goal_source": "template goal (2026-11-23): a new question gets its answer within a day, as the tab's ideal says; GitHub docs, About discussions (read 2026-11-23): maintainers mark an answer in a question and answer category",
+    "source": "state: gh api graphql: repository.discussions, the oldest open discussion in a category with isAnswerable true and isAnswered not true, its age at read time (a point in time, never a median); 0 when none; not measured while Discussions is off",
+    "needs": "none",
+    "chart": "number",
+    "group": "Discussions"
   }
 ]

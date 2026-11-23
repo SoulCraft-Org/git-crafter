@@ -4,7 +4,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import YAML from "yaml";
 import { connection, GhError } from "./github-core.mjs";
-import { ISSUES, RECENT_ISSUES, OPEN_ISSUE_TYPES, LABEL_USE, MERGED_PULLS, MERGED_PAGE, OPEN_PULLS, BRANCH_COMMITS, SECURITY_POLICY, VULNERABILITY_ALERTS } from "./github-queries.mjs";
+import { ISSUES, RECENT_ISSUES, OPEN_ISSUE_TYPES, LABEL_USE, MERGED_PULLS, MERGED_PAGE, OPEN_PULLS, BRANCH_COMMITS, OPEN_DISCUSSIONS, SECURITY_POLICY, VULNERABILITY_ALERTS } from "./github-queries.mjs";
 import { readProtection, readProject } from "./github-reads.mjs";
 import { diffFiles } from "./github-reviews.mjs";
 import { lockKey } from "../lib/lock-key.mjs";
@@ -114,6 +114,8 @@ function issueLoaders(L, { gh, repo, root, git = gitDiff }) {
     open: once(() => connection(gh, OPEN_PULLS, { owner, name }, (d) => d.repository.pullRequests)),
     // Not memoized: the second read after GitHub was still computing mergeability.
     openAgain: () => connection(gh, OPEN_PULLS, { owner, name }, (d) => d.repository.pullRequests),
+    // Open discussions, oldest first.
+    discussions: once(() => connection(gh, OPEN_DISCUSSIONS, { owner, name }, (d) => d.repository.discussions)),
     branchCommits: once(async () => (await gh.graphql(BRANCH_COMMITS, { owner, name })).repository.defaultBranchRef.target.history.nodes),
   };
 }
