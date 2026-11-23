@@ -28,6 +28,14 @@
    ],
    "agent_docs": [
     {
+     "glob": "AGENTS.md",
+     "why": "the file every coding agent in this repo loads"
+    },
+    {
+     "glob": "CLAUDE.md",
+     "why": "the file Claude Code loads, which pulls in AGENTS.md"
+    },
+    {
      "glob": "rules/**",
      "why": "rules Claude loads, four of them every turn"
     },
@@ -229,6 +237,22 @@
       "templates/ci/wiki.yml",
       "templates/open/README.md"
      ]
+    },
+    {
+     "doc": "AGENTS.md",
+     "area": [
+      "tools/verify.sh",
+      ".github/workflows/verify.yml",
+      "skills/merging/outside.md"
+     ],
+     "why": "the rows name the verify entry point, the workflow that runs it and the outside-pull-request rule; a changed check in them does not change a row"
+    },
+    {
+     "doc": "CLAUDE.md",
+     "area": [
+      "skills/merging/SKILL.md"
+     ],
+     "why": "the file's one row names the merging skill"
     },
     {
      "doc": "templates/agents/AGENTS.md",
