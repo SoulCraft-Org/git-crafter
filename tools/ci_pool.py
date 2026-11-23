@@ -12,6 +12,7 @@ library only.
 from __future__ import annotations
 
 import datetime as dt
+import json
 import math
 import os
 import re
@@ -179,6 +180,92 @@ def meter(api, org: str, ledger: dict, now: dt.datetime, deadline: float = math.
             "blacksmith": {"cost": cost, "credit": CREDIT, "stop": STOP, "left": round(max(STOP - cost, 0), 2),
                            "floor_cost": cost, "floor_minutes": round(used, 1), "peak_hour": round(peak, 1),
                            "by_repo": {k: round(v, 1) for k, v in sorted(by_repo.items()) if v}}}
+
+
+def cli_cost(text: str):
+    """The highest estimated cost anywhere in `blacksmith usage --format json` output; None when it has none. A total is
+    never below its parts, so the highest found is the org's total."""
+    try:
+        stack, found = [json.loads(text)], []
+    except ValueError:
+        return None
+    while stack:
+        node = stack.pop()
+        if isinstance(node, list):
+            stack.extend(node)
+        for key, value in node.items() if isinstance(node, dict) else ():
+            name = str(key).lower()
+            if isinstance(value, (int, float)) and not isinstance(value, bool) and "cost" in name:
+                found.append(float(value))
+            else:
+                stack.append(value)
+    return max(found, default=None)
+
+
+def cross_check(reading: dict, text) -> dict:
+    """The higher of Blacksmith's estimated cost and the job records' floor. No cost read, from no token or output
+    without one, makes the reading complete: false: no Blacksmith without Blacksmith's own count."""
+    b = reading["blacksmith"]
+    b["cli_cost"] = None if text is None else cli_cost(text)
+    if b["cli_cost"] is None:
+        reading["complete"] = False
+        reading.setdefault("notes", []).append("no estimated cost from blacksmith usage; no Blacksmith until one is read")
+    elif b["cli_cost"] > b["cost"]:
+        b["cost"], b["left"] = round(b["cli_cost"], 2), round(max(b["stop"] - b["cli_cost"], 0), 2)
+    return reading
+
+
+def read_text(path):
+    """The file's text; "" when it cannot be read, so cross_check notes it. None when no path was given."""
+    if path is None:
+        return None
+    try:
+        with open(path, encoding="utf-8") as handle:
+            return handle.read()
+    except OSError:
+        return ""
+
+
+def was_stopped(previous) -> bool:
+    """Whether the last reading, the org variable's text, says the pool was stopped."""
+    try:
+        doc = json.loads(previous or "")
+    except ValueError:
+        return False
+    return isinstance(doc, dict) and isinstance(doc.get("blacksmith"), dict) and doc["blacksmith"].get("stopped") is True
+
+
+def blacksmith_groups(api, org: str) -> list:
+    """The org's runner groups whose name starts with Blacksmith; Unreadable past one page."""
+    path = f"/orgs/{org}/actions/runner-groups"
+    doc = api.get(path, {"per_page": PAGE})
+    groups = items_of(doc, "runner_groups", path)
+    if doc.get("total_count", 0) > len(groups):
+        raise Unreadable(f"GET {path}: more than {PAGE} runner groups")
+    return [g for g in groups if str(g.get("name", "")).lower().startswith("blacksmith")]
+
+
+def backstop(api, org: str, reading: dict, hard_stop: float, resume: bool, previous) -> dict:
+    """At the hard stop, closes every Blacksmith runner group to all repos, and closes it again each pass until resume.
+    Resume opens them to all, unless the count is still at the hard stop. Never GitHub's org-wide self-hosted switch."""
+    b = reading["blacksmith"]
+    b["hard_stop"] = hard_stop
+    b["stopped"] = b["cost"] >= hard_stop or (was_stopped(previous) and not resume)
+    groups = blacksmith_groups(api, org)
+    if b["stopped"] and not groups:
+        raise Unreadable(f"{org} is at its hard stop and has no runner group whose name starts with Blacksmith")
+    try:
+        for g in groups:
+            path = f"/orgs/{org}/actions/runner-groups/{g['id']}"
+            if b["stopped"]:
+                api.request("PATCH", path, body={"visibility": "selected"})
+                api.request("PUT", path + "/repositories", body={"selected_repository_ids": []})
+            elif resume:
+                api.request("PATCH", path, body={"visibility": "all"})
+    except FileNotFoundError as err:
+        raise Unreadable(f"runner group gone mid-pass: {err}") from None
+    b["groups"] = [g.get("name") for g in groups]
+    return reading
 
 
 def self_test() -> int:
