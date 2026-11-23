@@ -537,9 +537,9 @@ describe("Security and quality: Actions hardening, supply chain and Claude Code"
     const file = path.join(root, ".claude", "settings.json");
     assert.ok(existsSync(file), "Git Crafter has a .claude/settings.json");
     const settings = JSON.parse(readFileSync(file, "utf8"));
-    // autoCompactWindow sizes a session's context (#693); enabledPlugins false and deniedMcpServers only switch things off (#754). None grants anything, so they may sit beside the deny list.
+    // autoCompactWindow sizes a session's context (#693); enabledPlugins only switches plugins on, all of them (owner, 2026-11-23: every plugin stays on), and deniedMcpServers only switches servers off (#754). Neither adds a permission rule, so they may sit beside the deny list.
     const granting = Object.keys(settings).filter((k) => !["permissions", "autoCompactWindow", "enabledPlugins", "deniedMcpServers"].includes(k));
-    assert.ok(Object.values(settings.enabledPlugins ?? {}).every((v) => v === false), "enabledPlugins only switches off");
+    assert.ok(Object.values(settings.enabledPlugins ?? {}).every((v) => v === true), "enabledPlugins only switches on, never off");
     assert.deepEqual(granting, [], "no hooks, env or other keys");
     assert.ok(Number.isInteger(settings.autoCompactWindow ?? 250000), "autoCompactWindow is a token count");
     assert.deepEqual(Object.keys(settings.permissions), ["deny"], "no allow or ask list");

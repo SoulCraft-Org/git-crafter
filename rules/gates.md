@@ -32,3 +32,14 @@ automated check: a lint, a hook, a guard, a parity or token check.
 | Fail open on infrastructure | A missing interpreter, unreadable file or parse error is "could not verify", never a content violation. |
 | A gate an agent can skip is not a gate | A bypass flag is a human call, kept out of the agent's reach. Match narrowly: a guardrail that fires on prose about itself trains people to disable it. |
 | Rules belong in data | One machine-readable file holds the terms, tokens and figures, and a test asserts every surface agrees with it. |
+
+## Tracking
+
+Linked from the Tracking row in [`rules/delegation.md`](delegation.md). The full text is the Tracking row of `templates/agents/AGENTS.md`.
+
+| When | Rule |
+|---|---|
+| Before work starts | Each planned step is an issue and each feature or improvement a card on the owner's board. |
+| A bug is found | It is an issue in the repo at fault, filed when found and closed by its fix. |
+| A PR opens | It names its issue. |
+| A review finding | Is fixed or linked to an issue or card before merge. |
