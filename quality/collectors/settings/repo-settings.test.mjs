@@ -31,7 +31,11 @@ function fakeGh(over = {}) {
     return structuredClone(entry);
   };
   const asked = [];
-  const graphql = async (query) => (asked.push(query.match(/\{ (\w[\w ]*) \} \}$/)[1].split(" ")), { repository: structuredClone(rest.graphql ?? {}) });
+  const graphql = async (query) => {
+    if (rest.graphql === null) throw new GhError("GraphQL refused", { type: "FORBIDDEN" });
+    asked.push(query.match(/\{ (\w[\w ]*) \} \}$/)?.[1].split(" ") ?? ["rulesets"]);
+    return { repository: structuredClone(rest.graphql ?? {}) };
+  };
   return { rest: answer, restAll: answer, graphql, asked };
 }
 
@@ -102,10 +106,13 @@ test("protections: a guard with nothing to guard has no row", async () => {
   assert.deepEqual(Object.keys(rows(bare[id])), ["No one can bypass the default branch's rules", "A push rule blocks secret file names"]);
 });
 
-test("protections: a hidden bypass list is not measured, never read as none", async () => {
+test("protections: a bypass list REST hides reads through GraphQL's count; with neither it is not measured, never read as none", async () => {
+  const id = "settings.protections_missing";
   const { bypass_actors: _, ...hidden } = REST[R("/rulesets/1")];
-  const got = await run({ [R("/rulesets/1")]: hidden });
-  assert.match(got["settings.protections_missing"].could_not_check, /bypass list is hidden/);
+  const count = (totalCount) => ({ rulesets: { nodes: [{ databaseId: 1, bypassActors: { totalCount } }] } });
+  assert.equal((await run({ [R("/rulesets/1")]: hidden, graphql: count(0) }))[id].value, 0);
+  assert.equal((await run({ [R("/rulesets/1")]: hidden, graphql: count(2) }))[id].value, 1);
+  for (const graphql of [{}, null]) assert.match((await run({ [R("/rulesets/1")]: hidden, graphql }))[id].could_not_check, /bypass list is hidden/);
 });
 
 test("general drift: counts fields off the repo's standard; no standard is not measured", async () => {

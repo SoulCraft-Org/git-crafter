@@ -48,8 +48,8 @@ async function bypassRow(R) {
   const sets = await branchSets(R);
   const classic = await R.classic();
   if (!sets.length && !classic) return null;
-  if (sets.some((s) => s.bypass_actors === undefined)) return { hidden: `a ruleset's bypass list is hidden from this token: ${NEEDS["github-admin"]}` };
-  const open = sets.some((s) => s.bypass_actors.length) || classic?.enforce_admins?.enabled === false;
+  if (sets.some((s) => s.bypass_count === undefined)) return { hidden: `a ruleset's bypass list is hidden from this token, REST and GraphQL: ${NEEDS["github-admin"]}` };
+  const open = sets.some((s) => s.bypass_count) || classic?.enforce_admins?.enabled === false;
   return { label: "No one can bypass the default branch's rules", ok: !open };
 }
 
