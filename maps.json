@@ -25,6 +25,7 @@
   {"use": "secure", "why": "Git Crafter's security, from keys no session reads to alerts closed within a week", "steps": {"keys": {"rule_ref": "rules/keys.md"}, "scan": {"rule_ref": "SECURITY.md"}, "model": {"rule_ref": "THREAT-MODEL.md"}, "report": {"rule_ref": "SECURITY.md"}, "alerts": {"rule_ref": "SECURITY.md"}}},
   {"use": "contribute"},
   {"use": "release"},
-  {"use": "score"}
+  {"use": "score"},
+  {"use": "discuss"}
  ]
 }

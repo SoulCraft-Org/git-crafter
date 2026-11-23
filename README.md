@@ -40,6 +40,7 @@ flowchart LR
   AD[Adopt] --> DL[Delivery] --> DP[Deploy] --> ME[Measure]
   DL --> RE[Release] -->|Dependabot bump| AD
   ME --> SC[Score] -->|issue or card| DL
+  DI[Discuss] -->|issue or card| DL
   CT[Contribute] --> DL
   CO[Code] --> DL
   DO[Document] --> DL

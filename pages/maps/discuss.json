@@ -1,0 +1,21 @@
+{
+ "id": "discuss",
+ "name": "Discuss",
+ "why": "A question or idea, from Discussions to an answer, a decision, and the issue or card that closes",
+ "ideal": "Questions and ideas start in Discussions. Each gets a reply within a day, a marked answer or a decision, then an issue or card.",
+ "sources": [
+  {"title": "GitHub Docs: About discussions", "url": "https://docs.github.com/en/discussions/collaborating-with-your-community-using-discussions/about-discussions", "date": "2026-11-23"},
+  {"title": "GitHub Docs: Syntax for discussion category forms", "url": "https://docs.github.com/en/discussions/managing-discussions-for-your-community/syntax-for-discussion-category-forms", "date": "2026-11-23"},
+  {"title": "GitHub Docs: Participating in a discussion", "url": "https://docs.github.com/en/discussions/collaborating-with-your-community-using-discussions/participating-in-a-discussion", "date": "2026-11-23"},
+  {"title": "GitHub Docs: Creating an issue", "url": "https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-an-issue", "date": "2026-11-23"}
+ ],
+ "critical_path": ["ask", "reply", "mark", "issue", "card", "close"],
+ "steps": [
+  {"id": "ask", "name": "Ask", "tools": ["GitHub Discussions", "Category forms in .github/DISCUSSION_TEMPLATE"], "rule": "A question or idea starts in a Discussions category with a form, so a reply has what it needs.", "rule_ref": "https://docs.github.com/en/discussions/managing-discussions-for-your-community/syntax-for-discussion-category-forms", "metric": "settings.open_repo_missing", "icon": "mail", "at": [0, 0]},
+  {"id": "reply", "name": "Reply", "tools": ["Discussions notifications", "A maintainer with triage access"], "rule": "A maintainer gives each new question a first reply within a day.", "rule_ref": "https://docs.github.com/en/discussions/collaborating-with-your-community-using-discussions/about-discussions", "metric": "discussions.oldest_unanswered_hours", "icon": "clock", "at": [1, 0]},
+  {"id": "mark", "name": "Mark", "tools": ["Mark as answer", "A question and answer category"], "rule": "A maintainer marks the answer to each question, so the next reader finds it.", "rule_ref": "https://docs.github.com/en/discussions/collaborating-with-your-community-using-discussions/participating-in-a-discussion", "metric": "discussions.unanswered_old", "icon": "review", "at": [2, 0]},
+  {"id": "issue", "name": "Issue", "tools": ["Create issue from discussion", "Issue forms, blank issues off"], "rule": "A maintainer turns an accepted idea into an issue labeled enhancement.", "rule_ref": "https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository", "metric": "issues.intake_ready", "icon": "plan", "at": [3, 0]},
+  {"id": "card", "name": "Card", "tools": ["The org project", "Draft issues"], "rule": "A big idea becomes a draft card. It is Done with its merged pull request.", "rule_ref": "https://docs.github.com/en/issues/planning-and-tracking-with-projects/learning-about-projects/about-projects", "metric": "projects.done_with_pr", "icon": "sessions", "at": [3, 1]},
+  {"id": "close", "name": "Close", "tools": ["Closes #n on its own line", "The CI standard"], "rule": "A small merged pull request closes the issue or card, within the runner minutes goal. The discussion links it.", "rule_ref": "https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue", "metric": "issues.latest_fix_ci_minutes", "gates_from": "workflows", "icon": "merge", "at": [4, 0]}
+ ]
+}
