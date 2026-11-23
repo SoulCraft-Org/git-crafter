@@ -6,7 +6,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { after, describe, it } from "node:test";
-import { collect, describeRun, JOBS_BATCH, JOBS_BATCH_WITH_STEPS, LAST_RUNS, METRIC_IDS, QUEUE_SAMPLE, runJobs, skipTriggers, standardCalls } from "./ci.mjs";
+import { alwaysRunWhy, collect, describeRun, JOBS_BATCH, JOBS_BATCH_WITH_STEPS, LAST_RUNS, METRIC_IDS, QUEUE_SAMPLE, runJobs, skipTriggers, standardCalls } from "./ci.mjs";
 import { TARGETS, TEMPLATE_PARAMS, FULL_PARAMS, NOW, REPO, T, run, RUNS, skipped, GATES, job, JOBS, CHECKS, RUNS_OF, REST, fakeGh, ROOT, collectWith } from "./ci-fixtures.mjs";
 // Worked by hand from the fixture.
 const EXPECTED = {
@@ -129,6 +129,31 @@ describe("collect", () => {
     assert.deepEqual(got["ci.latest_pr_dollars"].detail.map((d) => [d.label, d.value]), [["unit-tests", 0.072], ["dependency-scan", 0.002]]);
     assert.ok(got["ci.latest_pr_dollars"].source.endsWith("; #11"), got["ci.latest_pr_dollars"].source);
     assert.equal(got["ci.skip_unchanged_share"].detail[1].label, "dependency-scan, pull request: runs its work on every change");
+  });
+
+  it("leaves a workflow in params.always_run out of the skip and light shares, and shows it with its reason", async () => {
+    const always_run = { "unit-tests.yml": "a scan must read every file", "dependency-scan": "it scans every push" };
+    const got = await collectWith({ params: { ...FULL_PARAMS, always_run } });
+    const skips = got["ci.skip_unchanged_share"];
+    assert.equal(skips.value, 100, "cloud-test and e2e skip; the 3 triggers of the two listed workflows are not counted");
+    assert.deepEqual(skips.detail.filter((d) => /left out/.test(d.label)).map((d) => d.label), [
+      "dependency-scan, pull request: left out, must run every time: it scans every push",
+      "unit-tests, pull request: left out, must run every time: a scan must read every file",
+      "unit-tests, push to main: left out, must run every time: a scan must read every file",
+    ], "a file name matches; so does a workflow name");
+    const light = got["ci.light_run_share"];
+    assert.equal(light.value, 16.7, "unit-tests alone: dependency-scan's light runs are not counted");
+    assert.deepEqual(light.detail.at(-1), { label: "dependency-scan, left out, must run every time: it scans every push", value: 20, unit: "%" });
+    assert.equal(alwaysRunWhy({ "ci.yml": "x" }, "ci", ".github/workflows/ci.yml@refs/heads/main"), "x", "a run's path ends in @ref");
+    assert.equal(alwaysRunWhy({ ".github/workflows/ci.yml": "y" }, "ci", ".github/workflows/ci.yml"), "y");
+    assert.equal(alwaysRunWhy({}, "ci", null), undefined);
+    const all = await collectWith({ params: { ...FULL_PARAMS, always_run: { "unit-tests": "a", "dependency-scan": "b", "cloud-test": "c", "e2e": "d" } } });
+    assert.match(all["ci.skip_unchanged_share"].could_not_check, /every trigger read is in params\.always_run/);
+    assert.match(all["ci.light_run_share"].could_not_check, /every workflow read is in params\.always_run/);
+    for (const bad of [["no reason"], { "ci.yml": "" }, { "ci.yml": 5 }]) {
+      const err = await collectWith({ params: { ...FULL_PARAMS, always_run: bad } });
+      assert.match(err["ci.light_run_share"].could_not_check, /params\.always_run in targets\/ci\.json must map each workflow to the reason/, JSON.stringify(bad));
+    }
   });
 
   it("reads each run list, the GraphQL jobs and the pull requests once, and never a dynamic workflow", async () => {
@@ -305,6 +330,19 @@ describe("repo settings", () => {
     assert.equal(describeRun(RUNS[6], idle, short.get("ci")).light, true, "a configured job skipped for lack of changes is light");
     // A caller that set standard too: its skipped standard job is skipped work.
     assert.equal(describeRun(RUNS[6], ran, both.get("ci")).light, true, "standard is configured, so skipping it is skipped work");
+  });
+
+  it("does not read the steps a CI standard caller's jobs skip by input or lockfile as light, with standard set too", () => {
+    const caller = `name: ci\non:\n  pull_request:\njobs:\n  ci:\n    uses: acme/kit/.github/workflows/ci-standard.yml@${"a".repeat(40)} # v1\n    with:\n      short: npm test\n      standard: npm run e2e\n`;
+    const calls = standardCalls(repoWith({ ".github/workflows/ci.yml": caller })).get("ci");
+    const steps = [...GATES, skipped("npm ci"), skipped("Run actions/setup-python@abc")];
+    const ran = [
+      job(501, "ci / changes", "13:00:00", "13:00:00", "13:00:07", "success", GATES),
+      job(502, "ci / short", "13:00:08", "13:00:09", "13:00:43", "success", steps),
+      job(503, "ci / standard", "13:00:08", "13:00:09", "13:00:40", "success", steps),
+      job(504, "ci / ci-ok", "13:00:44", "13:00:46", "13:00:50", "success", GATES),
+    ];
+    assert.equal(describeRun(RUNS[6], ran, calls).light, false, "npm ci and setup-python skipped inside the engine's own jobs");
   });
 
   it("reads the default branch from the repo when the params name none: a master repo", async () => {

@@ -4,6 +4,19 @@ import { ms, groupBy, pct, RUNS_PER_WORKFLOW } from "./ci-core.mjs";
 // GitHub's own wrapper steps, which no workflow file declares.
 const WRAPPER_STEP = /^(Set up job|Complete job|Post )/;
 
+/**
+ * Why a workflow is in params.always_run, or undefined. A workflow is named by
+ * its `name:`, its file path or its file's name; `ids` are the ones a row or
+ * run knows (a run's path may end in @ref).
+ */
+export function alwaysRunWhy(always, ...ids) {
+  for (const id of ids.filter(Boolean).map((i) => String(i).split("@")[0])) {
+    const why = always[id] ?? always[id.split("/").pop()];
+    if (why) return why;
+  }
+  return undefined;
+}
+
 /** A passing run that skipped something and finished within this is light. */
 export const LIGHT_SPAN_SECONDS = 60;
 
@@ -36,6 +49,7 @@ export function describeRun(run, jobs, byDesign = { calls: [], unset: [] }) {
   return {
     id: run.id,
     workflow: run.workflow ?? run.name,
+    path: run.path ?? null,
     event: run.event,
     created_at: run.created_at,
     conclusion: run.conclusion,

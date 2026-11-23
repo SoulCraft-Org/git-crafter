@@ -47,6 +47,10 @@
 //                   "deploy" from merged to each deploy app's check run
 //   deploy_apps     slugs of the GitHub Apps whose check runs on a merge commit
 //                   are deploys
+//   always_run      { "<workflow>": "<why>" }: workflows that must run every
+//                   time (a privacy scan, a page that reads live data). ci.skip_unchanged_share
+//                   and ci.light_run_share leave them out and show each with its
+//                   reason. A workflow is named by its name, file path or file name
 //   security_workflows  a pattern for the names of the workflows that scan
 //                   for vulnerabilities and secrets; GitHub's dynamic
 //                   CodeQL - Code Quality run is read with them for the Code tab
@@ -59,7 +63,7 @@ import { adminGh, gated } from "../github/github-core.mjs";
 import { once } from "../github/github-loaders.mjs";
 import { runsOnPush } from "./ci-workflows.mjs";
 import { TARGETS_FILE, RUNS_PER_WORKFLOW, LAST_RUNS, LAST_PRS, QUEUE_SAMPLE, LOG_SAMPLE, LAST, CODE_QUALITY, round1, pct, skip, measured, ms, completed, newest, groupBy, mapLimit } from "./ci-core.mjs";
-import { describeRun, pushToGreen, cacheVerdict, weightedLightShare, commonStart } from "./ci-describe.mjs";
+import { alwaysRunWhy, describeRun, pushToGreen, cacheVerdict, weightedLightShare, commonStart } from "./ci-describe.mjs";
 import { skipTriggers, standardCalls } from "./ci-stages.mjs";
 import { pipelineDetail } from "./ci-detail.mjs";
 import { reasonFor, settings } from "./ci-settings.mjs";
@@ -72,7 +76,7 @@ import { prRunRequests } from "../lib/quota.mjs";
 export { workflowRuns, JOBS_BATCH, JOBS_BATCH_WITH_STEPS, runJobs, flakyChecks, prRuns, latestPriced, priceRuns } from "./ci-runs.mjs";
 export { reasonFor, settings } from "./ci-settings.mjs";
 export { pipelineStages, skipTriggers, standardCalls } from "./ci-stages.mjs";
-export { LIGHT_SPAN_SECONDS, describeRun, pushToGreen, cacheVerdict, weightedLightShare, commonStart } from "./ci-describe.mjs";
+export { LIGHT_SPAN_SECONDS, alwaysRunWhy, describeRun, pushToGreen, cacheVerdict, weightedLightShare, commonStart } from "./ci-describe.mjs";
 export { RUNS_PER_WORKFLOW, LAST_RUNS, LAST_PRS, QUEUE_SAMPLE, LOG_SAMPLE, RUNNER_RATES, runnerRate, STAGE_ORDER } from "./ci-core.mjs";
 export { firesOn, hookCode, hookRuns, shardCount, jobNames, jobGraph } from "./ci-workflows.mjs";
 
@@ -302,22 +306,34 @@ const METRICS = {
   },
   "ci.light_run_share": {
     source: `GraphQL check runs and steps of the ${LAST}, weighted by each workflow and event's runs since the start of the shortest full list of ${RUNS_PER_WORKFLOW}`,
-    async run(L) {
+    async run(L, { cfg }) {
       const sample = await L.described();
       if (!sample.length) return skip(`no completed run in the ${LAST}`);
-      const { share, detail } = weightedLightShare(sample, (await L.covered()).runs);
-      return measured(share, detail);
+      const runs = (await L.covered()).runs;
+      const left = (r) => alwaysRunWhy(cfg.alwaysRun, r.workflow, r.path);
+      const counted = sample.filter((r) => !left(r));
+      if (!counted.length) return skip(`every workflow read is in params.always_run in ${TARGETS_FILE}`);
+      const { share, detail } = weightedLightShare(counted, runs.filter((r) => !left(r)));
+      // A workflow that must run every time is left out of the share and shown with its reason.
+      const why = new Map(sample.filter(left).map((r) => [r.workflow, left(r)]));
+      const apart = weightedLightShare(sample.filter(left), runs.filter(left)).detail.map((d) => ({ label: `${d.label}, left out, must run every time: ${why.get(d.label)}`, value: d.value, unit: "%" }));
+      return measured(share, [...detail, ...apart]);
     },
   },
   ...SPEND_METRICS,
   "ci.skip_unchanged_share": {
     source: "state: .github/workflows, each pull_request and push to the default branch trigger (params.default_branch, else gh api repos/{repo}): a paths or paths-ignore filter, a job whose if reads a needs.*.outputs value (a changes job), or a job calling ci-standard.yml with paths",
-    async run(L, { root }) {
+    async run(L, { root, cfg }) {
       const branch = await L.branch();
       const rows = skipTriggers(root, branch);
       if (!rows.length) return skip(`no workflow in .github/workflows runs on a pull request or a push to ${branch}`);
-      const detail = rows.map((r) => ({ label: `${r.workflow}, ${r.trigger}: ${r.how ?? "runs its work on every change"}`, value: r.how ? 1 : 0, unit: "" }));
-      return measured(pct(rows.filter((r) => r.how).length, rows.length), detail);
+      // A workflow that must run on every change is left out of the share and shown with its reason.
+      const why = (r) => alwaysRunWhy(cfg.alwaysRun, r.workflow, r.file);
+      const counted = rows.filter((r) => !why(r));
+      if (!counted.length) return skip(`every trigger read is in params.always_run in ${TARGETS_FILE}`);
+      const line = (r) => `${r.workflow}, ${r.trigger}: ${why(r) ? `left out, must run every time: ${why(r)}` : (r.how ?? "runs its work on every change")}`;
+      const detail = rows.map((r) => ({ label: line(r), value: r.how ? 1 : 0, unit: "" }));
+      return measured(pct(counted.filter((r) => r.how).length, counted.length), detail);
     },
   },
   ...INSIGHT_METRICS,
