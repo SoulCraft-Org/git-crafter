@@ -426,6 +426,9 @@ test("a repo's scope reads its own repos, never the org's list, and a branch it 
 
 test("an adopter's override of a pack's metric rates: the config's packs resolve before the site targets are read", () => {
   const dir = mkdtempSync(join(tmpdir(), "cos-pack-"));
+  // Actions sets GITHUB_ACTIONS, which refuses the local-path pack this test uses; the last step sets it back.
+  const actions = process.env.GITHUB_ACTIONS;
+  delete process.env.GITHUB_ACTIONS;
   try {
     mkdirSync(join(dir, "pack", "targets"), { recursive: true });
     mkdirSync(join(dir, "cfg", "targets"), { recursive: true });
@@ -450,18 +453,15 @@ test("an adopter's override of a pack's metric rates: the config's packs resolve
     const gone = { ...spec, packs: [{ dir: join(dir, "nowhere"), targets: join(dir, "nowhere", "targets") }] };
     assert.match(readSiteFromDisk(dir, gone, null, () => "abc1234\n").defs_error, /pack .*nowhere is not checked out/);
     // In Actions a local-path pack is refused, as collect.mjs refuses it.
-    const actions = process.env.GITHUB_ACTIONS;
     process.env.GITHUB_ACTIONS = "true";
-    try {
-      assert.throws(() => ownQuality(dir, scope), /local path, which only a --local run takes/);
-    } finally {
-      if (actions === undefined) delete process.env.GITHUB_ACTIONS;
-      else process.env.GITHUB_ACTIONS = actions;
-    }
+    assert.throws(() => ownQuality(dir, scope), /local path, which only a --local run takes/);
+    delete process.env.GITHUB_ACTIONS;
     // A pack file named like a template targets file is the same usage error collect.mjs gives.
     writeFileSync(join(dir, "pack", "targets", "ci.json"), "[]");
     assert.match(readSiteFromDisk(dir, spec, null, () => "abc1234\n").defs_error, /pack targets ci\.json is named like another targets file/);
   } finally {
+    if (actions === undefined) delete process.env.GITHUB_ACTIONS;
+    else process.env.GITHUB_ACTIONS = actions;
     rmSync(dir, { recursive: true, force: true });
   }
 });
