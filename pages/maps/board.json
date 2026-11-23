@@ -74,7 +74,7 @@
     "Workflow: Pull request linked to issue"
    ],
    "rule": "A fresh session takes one card. The card is in progress only while its pull request is open.",
-   "rule_ref": "https://docs.github.com/en/issues/planning-and-tracking-with-projects/learning-about-projects/best-practices-for-projects",
+   "rule_ref": "https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project/using-the-built-in-automations",
    "metric": "projects.cards_by_column"
   },
   {
