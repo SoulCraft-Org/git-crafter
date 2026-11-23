@@ -59,7 +59,7 @@ function parseArgs(argv) {
 }
 
 // Reads the pull request and its checks at `sha` and returns decide's answer with the pull request, re-reading mergeable UNKNOWN for up to `wait` seconds.
-async function assess({ read, repo, pr, sha, base, wait, sleep }) {
+export async function assess({ read, repo, pr, sha, base, wait, sleep }) {
   const runs = read(`repos/${repo}/commits/${sha}/check-runs?per_page=100`);
   const status = read(`repos/${repo}/commits/${sha}/status?per_page=100`);
   if (runs.total_count > runs.check_runs.length || status.total_count > status.statuses.length) throw new Error("more checks than one page holds, so some are unread");
@@ -73,7 +73,7 @@ async function assess({ read, repo, pr, sha, base, wait, sleep }) {
 }
 
 // Posts `Review: MERGE at <sha>`, then a `Follow-ups:` line, unless a comment already opens with the first line; a verdict is never edited.
-function verdict(run, { repo, pr, sha, followups }) {
+export function verdict(run, { repo, pr, sha, followups }) {
   const route = `repos/${repo}/issues/${pr}/comments`;
   if (!run(["api", route, "--paginate", "-q", '.[].body | split("\\n")[0]']).split("\n").includes(`Review: MERGE at ${sha}`)) run(["api", route, "-f", `body=Review: MERGE at ${sha}\nFollow-ups: ${followups}`]);
 }
