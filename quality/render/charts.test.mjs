@@ -101,7 +101,7 @@ test("meter: a score gets meter semantics; null reads not measured", () => {
 
 test("status stack: counts in order, empty statuses skipped in the bar", () => {
   const counts = statusCounts([{ status: "meets" }, { status: "meets" }, { status: "misses" }]);
-  assert.deepEqual(counts, { meets: 2, near: 0, misses: 1, "not-measured": 0 });
+  assert.deepEqual(counts, { meets: 2, near: 0, misses: 1, "not-measured": 0, "not-applicable": 0 });
   const html = statusStack(counts);
   assert.match(html, /aria-label="2 meet, 1 miss"/);
   assert.doesNotMatch(html, /class="b-near"/);
@@ -228,7 +228,7 @@ test("master: each category the mean of its tabs, the master the mean of the cat
     { quality: { score: null }, speed: { score: null }, rows: rows([null]) },
   ]);
   // Quality (60 + 80) / 2 = 70, speed 90 (tab two alone), tab three left out: (70 + 90) / 2.
-  assert.deepEqual(r.master, { score: 80, measured: 2, total: 3, categories: 2, metricsMeasured: 3, metricsTotal: 5 });
+  assert.deepEqual(r.master, { score: 80, measured: 2, total: 3, categories: 2, metricsMeasured: 3, metricsTotal: 5, metricsNotApplicable: 0 });
 });
 
 test("master: quality, speed and consumption weigh a third each", () => {

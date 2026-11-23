@@ -6,7 +6,9 @@
 //
 // A metric a collector could not read ({ could_not_check }) is "not measured":
 // it is left out of the mean and counted in "n of m measured", never scored 0,
-// because could not verify is not the same as verified and red.
+// because could not verify is not the same as verified and red. One that cannot
+// exist here ({ not_applicable }, a finding count for a feature that is off) is
+// "does not apply": left out of the mean and out of m, and listed apart.
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -298,9 +300,18 @@ export function mergeMetrics(...runs) {
 // `at` are the runs' generated_at.
 function replaces(prev, entry, prevAt = "", at = "") {
   if (!prev) return true;
+  if (isNotApplicable(entry) || isNotApplicable(prev)) return settled(prev, entry, prevAt, at);
   if (isMeasured(entry)) return readLater(prev, entry);
   if (isMeasured(prev) || isWeak(entry)) return false;
   return isWeak(prev) || (at ?? "") > (prevAt ?? "");
+}
+
+// A does-not-apply entry states a fact as a measurement does: it beats a blank one, and of it and a measurement
+// the newer run wins, so a feature turned off since the last local run does not keep its old count.
+function settled(prev, entry, prevAt, at) {
+  const blank = (e) => !isMeasured(e) && !isNotApplicable(e);
+  if (blank(entry)) return false;
+  return blank(prev) || (at ?? "") > (prevAt ?? "");
 }
 
 // A measured entry takes the place of a blank one, or of an older reading.
@@ -312,6 +323,9 @@ function readLater(prev, entry) {
 export function isMeasured(entry) {
   return Boolean(entry) && entry.could_not_check === undefined && typeof entry.value === "number" && Number.isFinite(entry.value);
 }
+
+// True when a collector says the metric cannot apply here and gives the reason in words.
+export const isNotApplicable = (entry) => typeof entry?.not_applicable === "string" && entry.not_applicable.trim() !== "" && entry.value === undefined && entry.could_not_check === undefined;
 
 // The entries a run keeps: one per current definition, in definition order,
 // and none for an id the definitions no longer hold (a metric the template
@@ -336,7 +350,7 @@ function weakEntry(entry, def) {
 }
 
 function keepEntry(entry, def) {
-  if (isMeasured(entry)) return entry;
+  if (isMeasured(entry) || isNotApplicable(entry)) return entry;
   if (!entry || typeof entry !== "object") return { could_not_check: NOT_REPORTED, source: def.source, weak: true };
   if (typeof entry.could_not_check === "string" && entry.could_not_check.trim()) return entry;
   return weakEntry(entry, def);
@@ -362,7 +376,9 @@ const isWeak = (entry) => Boolean(entry?.weak || entry?.unreported);
 //   def.goal  the target; meeting it is worth 100
 //   def.near  the edge of the near band, between the goal and a clear miss
 //   def.direction  "higher" or "lower" is better
+// A metric that does not apply has status "not-applicable" and no points.
 export function scoreMetric(def, entry) {
+  if (isNotApplicable(entry)) return { status: "not-applicable", points: null };
   if (!isMeasured(entry)) return { status: "not-measured", points: null };
   // Banded, so a reader can tell a score's meaning at a glance.
   const atLeast = (edge) => (def.direction === "higher" ? entry.value >= edge : entry.value <= edge);
@@ -450,7 +466,7 @@ export function scoreTab(tab, defs, metrics, reviews = {}) {
     .filter((d) => d.tab === tab)
     .map((def) => ({ def, entry: metrics[def.id], ...scoreMetric(def, metrics[def.id]) }));
   const part = (kind) => {
-    const of = rows.filter((r) => r.def.kind === kind);
+    const of = rows.filter((r) => r.def.kind === kind && r.status !== "not-applicable");
     const measured = of.filter((r) => r.points !== null);
     return { score: mean(measured.map((r) => r.points)), measured: measured.length, total: of.length };
   };

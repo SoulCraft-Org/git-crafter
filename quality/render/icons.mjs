@@ -53,6 +53,8 @@ const GLYPHS = {
   near: '<circle cx="8" cy="8" r="7" style="fill:var(--c-brass)"/><path d="M4.25 9.1c1.1-1.9 2.4-1.9 3.75-.9s2.65 1 3.75-.9" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>',
   misses: '<circle cx="8" cy="8" r="7" style="fill:var(--c-danger)"/><path d="m5.5 5.5 5 5m0-5-5 5" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>',
   "not-measured": '<circle cx="8" cy="8" r="6" fill="none" style="stroke:var(--c-text-dim)" stroke-width="2"/>',
+  // A dashed ring with a bar through it: told from the plain ring by shape, never by color alone.
+  "not-applicable": '<circle cx="8" cy="8" r="6" fill="none" style="stroke:var(--c-text-dim)" stroke-width="2" stroke-dasharray="3 2.2"/><path d="M5 8h6" style="stroke:var(--c-text-dim)" stroke-width="2" stroke-linecap="round"/>',
 };
 
 export const SPRITE = `<svg class="sprite" aria-hidden="true" focusable="false" width="0" height="0">${Object.entries(SYMBOLS)

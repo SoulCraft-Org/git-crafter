@@ -38,7 +38,7 @@ import { repos } from "./repos.mjs";
 import { credits } from "./credits.mjs";
 import { deploys } from "./deploys.mjs";
 import { tools } from "./tools.mjs";
-import { groupRows, historyFor, notMeasured, overall, worstGaps, workQueue } from "./model.mjs";
+import { groupRows, historyFor, notApplicable, notMeasured, overall, worstGaps, workQueue } from "./model.mjs";
 
 // The page ships its styles and client script without comments and without
 // the whitespace a browser ignores; the source files keep both. This keeps
@@ -163,7 +163,7 @@ function metricRow(row, history) {
   const { def, entry, status } = row;
   const measured = isMeasured(entry);
   const means = typeof def.means === "string" && def.means ? `<p class="means">${esc(def.means)}</p>` : "";
-  const reason = measured ? "" : `<p class="reason">${esc(entry?.could_not_check ?? "No collector reported this metric.")}</p>`;
+  const reason = measured ? "" : `<p class="reason">${esc(entry?.not_applicable ?? entry?.could_not_check ?? "No collector reported this metric.")}</p>`;
   return `<details class="metric s-${status}" id="m-${esc(def.id)}">
 <summary>${glyph(status)}<span class="lbl">${esc(def.label)}</span><span class="val">${esc(valueText(row))}</span>${bullet(def, measured ? entry.value : null)}<span class="goal">${esc(goalText(def))}</span></summary>
 <div class="more">${means}${exactLine(def, entry)}${gapLine(row)}${weeklyFigure(def, history)}${reason}${breakdown(row)}${sourceLines(def, entry)}</div>
@@ -190,7 +190,7 @@ function chips(rows) {
   const counts = statusCounts(rows);
   const chip = (f, label, n, pressed = false) =>
     `<button type="button" data-f="${f}" aria-pressed="${pressed}"${n === 0 ? " disabled" : ""}>${f === "all" ? "" : glyph(f, "")}${label}<b>${n}</b></button>`;
-  return `<div class="chips" role="group" aria-label="Show metrics" hidden>${chip("all", "All", rows.length, true)}${chip("misses", "Misses", counts.misses)}${chip("near", "Near", counts.near)}${chip("meets", "Meets", counts.meets)}${chip("not-measured", "Not measured", counts["not-measured"])}</div>`;
+  return `<div class="chips" role="group" aria-label="Show metrics" hidden>${chip("all", "All", rows.length, true)}${chip("misses", "Misses", counts.misses)}${chip("near", "Near", counts.near)}${chip("meets", "Meets", counts.meets)}${chip("not-measured", "Not measured", counts["not-measured"])}${counts["not-applicable"] ? chip("not-applicable", "Does not apply", counts["not-applicable"]) : ""}</div>`;
 }
 
 // ---- Tab panel ----------------------------------------------------------------
@@ -306,16 +306,16 @@ function fixList(results) {
     .join("")}</ol>`;
 }
 
-function notMeasuredList(results) {
-  const rows = notMeasured(results);
+// A fold of the metrics with no number, each with its reason: the ones not read, and the ones that cannot apply.
+function reasonList(rows, title, reasonOf) {
   if (!rows.length) return "";
-  return `<details class="nm"><summary><h3>Not measured</h3><b>${rows.length}</b></summary><ul>${rows
-    .map(
-      (row) =>
-        `<li>${tabChip(row.tab)}<a href="#m-${esc(row.def.id)}">${esc(row.def.label)}</a><span class="reason">${esc(row.entry?.could_not_check ?? "No collector reported this metric.")}</span></li>`,
-    )
+  return `<details class="nm"><summary><h3>${title}</h3><b>${rows.length}</b></summary><ul>${rows
+    .map((row) => `<li>${tabChip(row.tab)}<a href="#m-${esc(row.def.id)}">${esc(row.def.label)}</a><span class="reason">${esc(reasonOf(row.entry))}</span></li>`)
     .join("")}</ul></details>`;
 }
+
+const notMeasuredList = (results) => reasonList(notMeasured(results), "Not measured", (e) => e?.could_not_check ?? "No collector reported this metric.");
+const notApplicableList = (results) => reasonList(notApplicable(results), "Does not apply", (e) => e.not_applicable);
 
 function overview(results, total) {
   const allRows = results.flatMap((r) => r.rows);
@@ -330,6 +330,7 @@ ${fixList(results)}
 <h3>Scoreboard</h3>
 ${scoreboard(results)}
 ${notMeasuredList(results)}
+${notApplicableList(results)}
 </section>`;
 }
 
@@ -351,7 +352,7 @@ export function render({ defs, metrics, reviews = {}, reviewHistory, history = [
   });
   const total = overall(results);
   const commit = !meta.commit ? "unknown" : REPO ? `<a href="${esc(REPO)}/commit/${esc(meta.commit)}">${esc(meta.commit.slice(0, 7))}</a>` : esc(meta.commit.slice(0, 7));
-  const legend = ["meets", "near", "misses", "not-measured"].map((s) => `<li>${glyph(s, "")}${STATUS_WORD[s]}</li>`).join("");
+  const legend = ["meets", "near", "misses", "not-measured", ...(total.master.metricsNotApplicable ? ["not-applicable"] : [])].map((s) => `<li>${glyph(s, "")}${STATUS_WORD[s]}</li>`).join("");
   return `<!doctype html>
 <html lang="en">
 <head>

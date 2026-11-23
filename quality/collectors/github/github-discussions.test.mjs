@@ -37,7 +37,7 @@ describe("Discussions metrics", () => {
 
   it("are not measured while Discussions is off", async () => {
     const out = await read({ gh: fakeGh({ rest: repoWith({ has_discussions: false }), graphql: GRAPHQL }) });
-    for (const id of IDS) assert.match(out[id].could_not_check, /Discussions is off/, id);
+    for (const id of IDS) assert.match(out[id].not_applicable, /Discussions is off/, id);
   });
 
   it("follow params.discussion_days", async () => {
