@@ -17,6 +17,9 @@ export function alwaysRunWhy(always, ...ids) {
   return undefined;
 }
 
+// A job of a ci-standard.yml caller that does the caller's commands: "ci / short", "ci / standard". Its "changes" and "ci-ok" jobs only detect and gate.
+const TIER_JOB = /\s\/\s(short|standard)$/;
+
 /** A passing run that skipped something and finished within this is light. */
 export const LIGHT_SPAN_SECONDS = 60;
 
@@ -27,7 +30,10 @@ export const LIGHT_SPAN_SECONDS = 60;
  * changes job finds no input that changed. This holds for one job
  * that skips its own steps and for a sharded workflow whose shard jobs are
  * skipped. A failed run is never light: the steps after the failure are
- * skipped because it failed. Each job bills its minutes rounded up, at least
+ * skipped because it failed. A run in which a ci-standard.yml caller's `short`
+ * or `standard` job ran is never light: that job did the caller's commands, and
+ * its skipped steps and a skipped sibling tier say nothing about the changes.
+ * Each job bills its minutes rounded up, at least
  * 1, as GitHub bills Linux runners. A job without created_at (read through
  * GraphQL) has no queue time.
  *
@@ -44,7 +50,8 @@ export function describeRun(run, jobs, byDesign = { calls: [], unset: [] }) {
     jobs.some((j) => j.conclusion === "skipped" && !byDesign.unset.includes(j.name)) ||
     ran.some((j) => !guarded(j) && (j.steps ?? []).some((s) => !WRAPPER_STEP.test(s.name ?? "") && s.conclusion === "skipped"));
   const span = ran.length ? (Math.max(...ran.map((j) => ms(j.completed_at))) - Math.min(...ran.map((j) => ms(j.started_at)))) / 1000 : 0;
-  const light = run.conclusion === "skipped" || (run.conclusion === "success" && skippedSomething && span < LIGHT_SPAN_SECONDS);
+  const worked = ran.some((j) => TIER_JOB.test(String(j.name ?? "")));
+  const light = run.conclusion === "skipped" || (run.conclusion === "success" && !worked && skippedSomething && span < LIGHT_SPAN_SECONDS);
   const end = ran.length ? Math.max(...ran.map((j) => ms(j.completed_at))) : null;
   return {
     id: run.id,

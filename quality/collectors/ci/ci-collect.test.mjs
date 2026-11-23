@@ -323,13 +323,14 @@ describe("repo settings", () => {
     const standard = job(403, "ci / standard", "13:00:08", null, null, "skipped", []);
     const ciOk = job(404, "ci / ci-ok", "13:00:44", "13:00:46", "13:00:50", "success", GATES);
     const ran = [changes, job(402, "ci / short", "13:00:08", "13:00:09", "13:00:43", "success", [...GATES, skipped("Run actions/setup-python@abc"), skipped("Run set -euo pipefail")]), standard, ciOk];
-    assert.equal(describeRun(RUNS[6], ran).light, true, "without the caller's inputs, the skips read as skipped work");
+    assert.equal(describeRun(RUNS[6], ran).light, false, "a short job that ran is work, with or without the caller's inputs");
+    assert.equal(describeRun(RUNS[6], ran.filter((j) => !/short$/.test(j.name))).light, true, "changes, a skipped standard and the gate alone are light");
     assert.equal(describeRun(RUNS[6], ran, short.get("ci")).light, false, "short's work was real, and standard was never asked for");
     // Nothing changed: the changes job skipped short, which the caller did set. That is light.
     const idle = [changes, job(405, "ci / short", "13:00:08", null, null, "skipped", []), standard, ciOk];
     assert.equal(describeRun(RUNS[6], idle, short.get("ci")).light, true, "a configured job skipped for lack of changes is light");
     // A caller that set standard too: its skipped standard job is skipped work.
-    assert.equal(describeRun(RUNS[6], ran, both.get("ci")).light, true, "standard is configured, so skipping it is skipped work");
+    assert.equal(describeRun(RUNS[6], ran, both.get("ci")).light, false, "short ran, so the run did work whatever standard did");
   });
 
   it("does not read the steps a CI standard caller's jobs skip by input or lockfile as light, with standard set too", () => {
