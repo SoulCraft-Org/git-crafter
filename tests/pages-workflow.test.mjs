@@ -1,7 +1,10 @@
 // .github/workflows/pages.yml's build job: the Process page builds again after the Quality step, and the daily
 // schedule runs as a push to main does (admin reads, the main-reads save, the deploy) with no screenshots.
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 import { parse } from "yaml";
 
@@ -63,4 +66,41 @@ test("one daily schedule, and the scheduled run acts as a push to main", () => {
   const runner = wf.jobs.runner.steps.find((s) => s.id === "choose");
   assert.equal(holds(runner.env.CI_OVERFLOW_SAVE, "schedule"), true, "the overflow meter saves its state");
   assert.equal(holds(runner.env.CI_OVERFLOW_SAVE, "pull_request"), false);
+});
+
+// The changes job's docs and action outputs: the paths alone, with no extra true for a workflow file. Its Python runs here
+// against a scratch repo whose one change is the one named.
+test("a workflow-only change makes neither docs nor action true, a path of each does", () => {
+  const step = wf.jobs.changes.steps.find((s) => s.id === "changes");
+  const python = /<<'PY'\n([\s\S]*?)\nPY\n?/.exec(step.run)?.[1];
+  assert.ok(python, "the step holds a Python heredoc");
+  const root = mkdtempSync(join(tmpdir(), "changes-"));
+  const git = (...a) => spawnSync("git", ["-C", root, "-c", "user.name=t", "-c", "user.email=t@t", ...a], { encoding: "utf8" });
+  try {
+    mkdirSync(join(root, "tools"));
+    for (const f of readdirSync(new URL("../tools/", import.meta.url)).filter((n) => /^ci_standard.*\.py$/.test(n))) copyFileSync(new URL(`../tools/${f}`, import.meta.url), join(root, "tools", f));
+    git("init", "-q");
+    git("add", "-A");
+    git("commit", "-qm", "base");
+    const base = git("rev-parse", "HEAD").stdout.trim();
+    const read = (file, text, baseSha = base) => {
+      mkdirSync(join(root, file, ".."), { recursive: true });
+      writeFileSync(join(root, file), text);
+      git("add", "-A");
+      git("commit", "-qm", file);
+      const out = join(root, "out");
+      writeFileSync(out, "");
+      const r = spawnSync("python3", ["-I", "-", baseSha], { cwd: root, input: python, encoding: "utf8", env: { ...process.env, GITHUB_OUTPUT: out, DOCS: step.env.DOCS, ACTION: step.env.ACTION } });
+      assert.equal(r.status, 0, r.stderr);
+      const got = Object.fromEntries(readFileSync(out, "utf8").trim().split("\n").map((l) => l.split("=")));
+      git("reset", "-q", "--hard", baseSha);
+      return got;
+    };
+    assert.deepEqual(read(".github/workflows/verify.yml", "x"), { docs: "false", action: "false" }, "a workflow file alone");
+    assert.deepEqual(read("docs/a.md", "x"), { docs: "true", action: "false" }, "a doc");
+    assert.deepEqual(read("actions/pages/action.yml", "x"), { docs: "false", action: "true" }, "an action path");
+    assert.deepEqual(read("README.md", "x", "0".repeat(40)), { docs: "true", action: "true" }, "an unknown base runs both");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
