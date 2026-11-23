@@ -170,9 +170,10 @@ const METRICS = {
     },
   },
   "settings.admin_read_age_hours": {
-    source: "state: generated_at of local.json in the repo's data folder, the last collect.mjs --local run, against the time of this run",
-    async run(R, cfg, { mode, data, now }) {
+    source: "state: 0 when this CI run read the admin metrics with ADMIN_READ_TOKEN or the App token; else generated_at of local.json in the repo's data folder, the last collect.mjs --local run, against the time of this run",
+    async run(R, cfg, { mode, data, now, admin }) {
       if (mode !== "ci") return skip("this run is the refresh; the next CI run reads its age");
+      if (admin) return measured(0);
       const file = path.join(data, "local.json");
       if (!existsSync(file)) return skip("no signed-in run is recorded yet: run collect.mjs --local");
       const at = Date.parse(JSON.parse(readFileSync(file, "utf8")).generated_at);
@@ -191,7 +192,7 @@ async function entry(metric, needs, { R, RA, cfg, mode, fill, data, now }) {
   const client = clientFor({ mode, needs, gh: R, admin: RA });
   if (client.skip) return { could_not_check: client.skip, source };
   try {
-    const result = await metric.run(client.gh, cfg, { mode, data, now });
+    const result = await metric.run(client.gh, cfg, { mode, data, now, admin: Boolean(RA) });
     return result.could_not_check ? { ...result, source } : { ...result, source, read_at: new Date().toISOString() };
   } catch (err) {
     return { could_not_check: reasonFor(err, needs, mode), source };
