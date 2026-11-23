@@ -1,12 +1,12 @@
 # Git Crafter
 
-Templates for AI agents to run an open-source or open-weight repo with Claude Code or OpenCode. Git Crafter is licensed under [Apache-2.0](LICENSE) and published by SoulCraft. It began as Code-OS by Colorado Startups ([NOTICE](NOTICE)).
+Templates for AI agents to run an open-source or open-weight repo with Claude Code or OpenCode. Git Crafter is [Apache-2.0](LICENSE) licensed, published by SoulCraft, and began as Code-OS by Colorado Startups ([NOTICE](NOTICE)).
 
-![Diagram of the two pages: scores by tab with a work queue, and process maps of steps](.github/assets/pages.svg)
+![The two pages: scores by tab with a work queue, and process maps of steps](.github/assets/pages.svg)
 
 | Part | Gives a repo |
 |---|---|
-| [Quality, Speed and Consumption page](https://soulcraft-org.github.io/git-crafter/quality/) | 13 tabs, each scored against an ideal from current, dated sources |
+| [Quality, Speed and Consumption page](https://soulcraft-org.github.io/git-crafter/quality/) | 13 tabs, each scored against an ideal from dated sources |
 | [Process page](https://soulcraft-org.github.io/git-crafter/) | Process maps: each step's tool, rule and metric |
 | [CI standard](templates/ci/README.md) | One reusable workflow on GitHub's standard hosted runners |
 | [Rules](rules/) and [guards](tools/) | What Claude sessions may do, and the `permissions.deny` list and hookify rules that block one-way doors |
@@ -27,7 +27,7 @@ Both pages are public.
 
 ## The 13 tabs
 
-Each tab scores Quality, Speed and Consumption, a third each, against goals that name their source ([quality/SCORING.md](quality/SCORING.md)). `pages` scores a site, so it is off until a repo's config turns it on.
+Each tab scores Quality, Speed and Consumption, a third each, against sourced goals ([quality/SCORING.md](quality/SCORING.md)). `pages` scores a site, so it is off until a repo's config turns it on.
 
 | Tab ids | What each measures, which to drop |
 |---|---|
@@ -38,7 +38,7 @@ Each tab scores Quality, Speed and Consumption, a third each, against goals that
 ```mermaid
 flowchart LR
   AD[Adopt] --> DL[Delivery] --> DP[Deploy] --> ME[Measure]
-  DL --> RE[Release] -->|Dependabot bump| AD
+  DL --> RE[Release] -->|bump| AD
   ME --> SC[Score] -->|issue or card| DL
   DI[Discuss] -->|issue or card| DL
   CT[Contribute] --> DL
@@ -62,7 +62,7 @@ Each map's steps: [pages/maps](pages/maps/README.md).
 | [compute-detail](rules/compute-detail.md), [comfy](rules/comfy.md), [gates](rules/gates.md), [keys-detail](rules/keys-detail.md) | Matching files | CI pool, GPU tiers, gates |
 | [merging](skills/merging/SKILL.md) | Reviewing and merging | Merge conditions |
 
-What loads when: the [memory](https://code.claude.com/docs/en/memory) and [skills](https://code.claude.com/docs/en/skills) docs, read 2026-11-03. `tools/claude_os_sync.py apply` copies the rules and guards into `~/.claude` from [manifest.json](manifest.json); [CONTRIBUTING](CONTRIBUTING.md#releases) says when.
+What loads when: [memory](https://code.claude.com/docs/en/memory) and [skills](https://code.claude.com/docs/en/skills) docs, read 2026-11-03. `tools/claude_os_sync.py apply` copies rules and guards into `~/.claude` from [manifest.json](manifest.json); [CONTRIBUTING](CONTRIBUTING.md#releases) says when.
 
 ## Folder map
 
@@ -70,13 +70,13 @@ What loads when: the [memory](https://code.claude.com/docs/en/memory) and [skill
 |---|---|
 | `actions/` | The `pages` and `ci-pool` actions |
 | `config/` | Its Quality config, its collector in `config/quality/collectors/`, and [account.example.json](config/account.example.json) for a private overlay (`apply --overlay DIR`) |
-| `pages/` | The Process and Metrics builder and the map library, `pages/maps/` |
-| `quality/` | The Quality engine and its collectors ([README](quality/README.md)) |
+| `pages/` | The Process and Metrics builder and map library, `pages/maps/` |
+| `quality/` | The Quality engine and collectors ([README](quality/README.md)) |
 | `rules/` | Rules for Claude sessions |
 | `skills/` | The `merging` skill |
 | `templates/` | Starters: `quality/`, `process/`, `ci/`, `open/`, `setup.json`, `agents/` |
 | `tests/` | Page and verify tests |
-| `tools/` | Guards, lints, sync and the org collector |
+| `tools/` | Guards, lints, sync, org collector |
 | `wiki/` | Wiki pages, published on merge |
 
 ## Help
@@ -84,6 +84,6 @@ What loads when: the [memory](https://code.claude.com/docs/en/memory) and [skill
 | Need | Go to |
 |---|---|
 | Help, bugs and ideas | [SUPPORT.md](SUPPORT.md) |
-| Changes, and template fixes from adopters | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Changes and adopter template fixes | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Security problems | [SECURITY.md](SECURITY.md) |
-| Maintainer | SoulCraft, the publisher |
+| Maintainer | SoulCraft, publisher |
