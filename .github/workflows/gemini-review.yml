@@ -9,9 +9,13 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: gemini-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   review:
-    uses: SoulCraft-Org/.github/.github/workflows/gemini-review.yml@main
+    uses: SoulCraft-Org/.github/.github/workflows/gemini-review.yml@824b6cc7a019a7e455f48c69e10cfc4a213ce3f6 # main, 2026-11-22
     permissions:
       contents: read
       id-token: write
