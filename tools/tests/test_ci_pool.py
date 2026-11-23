@@ -7,6 +7,9 @@ raise Unreadable, never a quiet undercount.
 
 import datetime as dt
 import json
+import os
+import tempfile
+from types import SimpleNamespace
 
 NOW = dt.datetime(2026, 11, 20, 10, 0, tzinfo=dt.timezone.utc)
 BS = {"labels": ["blacksmith-2vcpu-ubuntu-2404"], "runner_name": "bs"}
@@ -132,6 +135,22 @@ def meter_checks(tool):
     yield "the next pass resumes and catches up", tool.meter(FakeApi(), "org", ledger, NOW)["complete"] is True
 
 
+def ledger_checks(tool):
+    """The ledger saved as the pass goes and across a failed read, and the org variable."""
+    saves, tool.SAVE_EVERY = [], 1
+    tool.meter(FakeApi(), "org", {}, NOW, save=lambda x: saves.append(len(x["runs"])))
+    tool.SAVE_EVERY = 50
+    yield "the ledger is saved as the pass goes", saves == [0, 1, 2]
+    with tempfile.TemporaryDirectory() as tmp:
+        args = SimpleNamespace(org="org", ledger=os.path.join(tmp, "ledger.json"), seconds=60)
+        failed = raises(tool, lambda: tool.run_meter(args, FakeApi("/beta/"), NOW))
+        with open(args.ledger, encoding="utf-8") as fh:
+            yield "a failed read still saves the runs read so far", failed and sorted(json.load(fh)["runs"]) == ["alpha/1"]
+    fake = FakeApi()
+    tool.write_variable(fake, "org", "{}")
+    yield "write_variable creates CI_POOL when it is missing", (fake.written or {}).get("name") == "CI_POOL"
+
+
 def cli_checks(tool):
     """Blacksmith's estimated cost from its CLI's JSON, the higher of it and the floor, and no cost read."""
     nested = json.dumps({"estimated_cost": 10.49, "repos": [{"name": "a", "estimated_cost": 6.2}], "billable_minutes": 5246})
@@ -208,4 +227,4 @@ def run(tool):
     return 1 if bad else 0
 
 
-CHECKS = (label_checks, list_checks, meter_checks, cli_checks, backstop_checks)
+CHECKS = (label_checks, list_checks, meter_checks, ledger_checks, cli_checks, backstop_checks)
