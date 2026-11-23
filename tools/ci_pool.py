@@ -258,23 +258,61 @@ def blacksmith_groups(api, org: str) -> list:
     return [g for g in groups if str(g.get("name", "")).lower().startswith("blacksmith")]
 
 
+def last_access(previous) -> dict:
+    """The repo access the last stopped reading saved for each Blacksmith group: {group id: {visibility, repos}}."""
+    try:
+        saved = json.loads(previous or "")["blacksmith"]["access"]
+    except (ValueError, KeyError, TypeError):
+        return {}
+    def whole(a) -> bool:
+        """Whether a is a saved access this meter wrote."""
+        return (isinstance(a, dict) and a.get("visibility") in ("all", "selected", "private") and isinstance(a.get("repos"), list)
+                and all(isinstance(r, int) and not isinstance(r, bool) for r in a["repos"]))
+    return {str(k): a for k, a in saved.items() if whole(a)} if isinstance(saved, dict) else {}
+
+
+def group_access(api, org: str, group: dict):
+    """The group's repo access now, or None when it is already closed to every repo, which is no earlier access."""
+    visibility, repos = group.get("visibility"), []
+    if visibility == "selected":
+        path = f"/orgs/{org}/actions/runner-groups/{group['id']}/repositories"
+        doc = api.get(path, {"per_page": PAGE})
+        found = items_of(doc, "repositories", path)
+        if doc.get("total_count", 0) > len(found):
+            raise Unreadable(f"GET {path}: more than {PAGE} repos")
+        repos = [r["id"] for r in found]
+    if visibility not in ("all", "selected", "private") or (visibility == "selected" and not repos):
+        return None
+    return {"visibility": visibility, "repos": repos}
+
+
 def backstop(api, org: str, reading: dict, hard_stop: float, resume: bool, previous) -> dict:
-    """At the hard stop, closes every Blacksmith runner group to all repos, and closes it again each pass until resume.
-    Resume opens them to all, unless the count is still at the hard stop. Never GitHub's org-wide self-hosted switch."""
+    """At the hard stop, saves each Blacksmith runner group's repo access once, closes the group to all repos, and closes
+    it again each pass until resume. Resume puts each group's saved access back, and opens a group with none saved to
+    all, unless the count is still at the hard stop. Never GitHub's org-wide self-hosted switch."""
     b = reading["blacksmith"]
     b["hard_stop"] = hard_stop
     b["stopped"] = b["cost"] >= hard_stop or (was_stopped(previous) and not resume)
     groups = blacksmith_groups(api, org)
     if b["stopped"] and not groups:
         raise Unreadable(f"{org} is at its hard stop and has no runner group whose name starts with Blacksmith")
+    saved = last_access(previous)
+    if b["stopped"]:
+        for g in groups:  # every read before any write, so an unreadable group leaves the rest open
+            access = None if str(g["id"]) in saved else group_access(api, org, g)
+            saved.update({str(g["id"]): access} if access else {})
+        b["access"] = {k: v for k, v in saved.items() if k in {str(g["id"]) for g in groups}}
     try:
         for g in groups:
             path = f"/orgs/{org}/actions/runner-groups/{g['id']}"
+            before = saved.get(str(g["id"]), {"visibility": "all", "repos": []})
             if b["stopped"]:
                 api.request("PATCH", path, body={"visibility": "selected"})
                 api.request("PUT", path + "/repositories", body={"selected_repository_ids": []})
             elif resume:
-                api.request("PATCH", path, body={"visibility": "all"})
+                api.request("PATCH", path, body={"visibility": before["visibility"]})
+                if before["visibility"] == "selected":
+                    api.request("PUT", path + "/repositories", body={"selected_repository_ids": before["repos"]})
     except FileNotFoundError as err:
         raise Unreadable(f"runner group gone mid-pass: {err}") from None
     b["groups"] = [g.get("name") for g in groups]
