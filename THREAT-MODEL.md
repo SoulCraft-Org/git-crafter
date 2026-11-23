@@ -17,12 +17,11 @@ flowchart LR
 
 | Element | Threat | STRIDE | Control | Gap |
 |---|---|---|---|---|
-| [Workflows](.github/workflows/) | PR code gets secrets or writes | Elevation | Read-only by default; each write on one job ([SECURITY.md](SECURITY.md) lists six). No `pull_request_target` workflow. [branch-cleanup.yml](.github/workflows/branch-cleanup.yml) runs on a schedule: no checkout, no event text, branch names checked before use. The policy allows GitHub-owned and verified creators' actions | branch-cleanup holds `contents: write` on a scheduled run |
+| [Workflows](.github/workflows/) | PR code gets secrets or writes | Elevation | Read-only by default; each write on one job ([SECURITY.md](SECURITY.md) lists five). No `pull_request_target` workflow. [branch-cleanup.yml](.github/workflows/branch-cleanup.yml) runs on a schedule: no checkout, no event text, branch names checked before use. The policy allows GitHub-owned and verified creators' actions | branch-cleanup holds `contents: write` on a scheduled run |
 | [Workflows](.github/workflows/) | Action tag moves | Tampering | Full-SHA pins, policy-enforced; 14-day cooldown; a pinned Node, never `lts/*` | `ossf/scorecard-action` is a Docker action. Its pinned commit pulls `ghcr.io/ossf/scorecard-action:v2.5.0` by tag, in a job with `id-token: write`. Scorecard's server refuses a digest-pinned step (scorecard-infra `verify_workflow.go`, read 2026-11-23) |
 | [Workflows](.github/workflows/) | Secret is committed | Disclosure | gitleaks on PR commits and `main` pushes, required | No Secret Protection (the owner, 2026-11-10) |
 | [Workflows](.github/workflows/) | A secret-named file is pushed | Disclosure | Push ruleset 26972270 refuses it. [push-ruleset-proof.yml](.github/workflows/push-ruleset-proof.yml) proves it by real pushes | Proven only as of the last passing hand-run |
 | [Workflows](.github/workflows/) | Runs drain the Actions pool | Denial | Timeouts, concurrency, standard runners; fewer Pages jobs | A finite org pool |
-| [claude-review.yml](.github/workflows/claude-review.yml), opt-in [template](templates/ci/claude-review.yml) | PR code reaches the review token | Elevation | No `pull_request_target` or forks; `contents: read`; the diff is data | Advisory; sensitive paths only here |
 | [actions/pages](actions/pages/action.yml) | Token lands in page data | Disclosure | Token only to `gh`; computed figures, never raw API replies; redacted transcripts | A collector bug |
 | [actions/pages](actions/pages/action.yml) | Failed read looks good | Repudiation | Refused reads are not measured | None known |
 | [templates/](templates/) | Copied config reads another repo's data | Disclosure | Repo-relative paths; the caller's read token | None known |
@@ -35,7 +34,6 @@ flowchart LR
 |---|---|---|
 | `pages.yml` deploy | Push to main, the daily schedule, or a manual run on main | `contents`, `issues`, `pages` and an OIDC token; an App token with `organization-projects: write` for the board |
 | `push-ruleset-proof.yml` probe | By hand | `contents`: throwaway branches |
-| `claude-review.yml` review | Same-repo PRs on sensitive paths | `pull-requests`: one comment |
 | `branch-cleanup.yml` | Daily and by hand; reads PRs closed unmerged | `contents`: deletes the PR's branch; no checkout |
 | `wiki.yml` | Push to main touching `wiki/`, or a manual run | `contents`: the wiki's git repo |
 | `scorecard.yml` analysis | Weekly and by hand, main only | An OIDC token that signs the published score |

@@ -2,7 +2,10 @@
 // refuses a tag at job setup, inside a reusable workflow as in the pages action. gh actions-lock's fix mode rewrites
 // these to tags; this test fails if a relock does. Named pages-* so tools/verify.sh's pages suite runs it.
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 
 const read = (rel) => readFileSync(new URL(`../${rel}`, import.meta.url), "utf8");
@@ -64,7 +67,7 @@ const workflows = readdirSync(new URL("../.github/workflows/", import.meta.url))
 
 test("the pin check reads the workflows that call remote actions", () => {
   const withRemote = workflows.filter((n) => remote(read(`.github/workflows/${n}`)).length);
-  for (const name of ["ci-standard.yml", "pages.yml", "claude-review.yml", "scorecard.yml"]) assert.ok(withRemote.includes(name), name);
+  for (const name of ["ci-standard.yml", "pages.yml", "scorecard.yml"]) assert.ok(withRemote.includes(name), name);
 });
 
 for (const name of workflows) {
@@ -126,9 +129,39 @@ test("branch-cleanup.yml sweeps on a schedule, not on every pull request close",
   assert.doesNotMatch(yml, /\$\{\{\s*github\.event\.pull_request/, "no event text reaches the shell");
 });
 
-test("claude-review.yml runs when a pull request goes ready, not on every push", () => {
-  const yml = read(".github/workflows/claude-review.yml");
-  const on = yml.slice(yml.indexOf("\non:\n"), yml.indexOf("\npermissions:"));
-  assert.match(on, /^ {4}types: \[ready_for_review, reopened\]$/m);
-  assert.doesNotMatch(on, /synchronize|opened,/, "a draft's push or open starts a run that does no work (ci.light_run_share)");
+test("branch-cleanup.yml never deletes main, cards, quality-history or the default branch, whatever protected says", () => {
+  const yml = read(".github/workflows/branch-cleanup.yml");
+  const script = yml.slice(yml.indexOf("        run: |\n") + "        run: |\n".length).replace(/^ {10}/gm, "");
+  const dir = mkdtempSync(join(tmpdir(), "cleanup-"));
+  try {
+    // A gh that lists these closed pull requests, calls every branch unprotected and at its head, and records each delete.
+    const names = ["main", "cards", "quality-history", "trunk", "claude/ok"];
+    const sha = (n) => n.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const listed = names.map((n) => `${n}\t${sha(n)}`).join("\n");
+    writeFileSync(join(dir, "list"), listed + "\n");
+    writeFileSync(join(dir, "gh"), `#!/bin/bash
+a="$*"
+case "$a" in
+  "api repos/R --jq .default_branch") echo trunk;;
+  *"state=closed"*) cat "${dir}/list";;
+  *"/branches/"*) echo false;;
+  *"/git/ref/heads/"*) b="\${a##*heads/}"; b="\${b%% *}"; echo "$b" | tr a-z A-Z | tr -cd 'A-Z0-9';;
+  *"state=open"*) echo 0;;
+  *"-X DELETE"*) echo "$a" >> "${dir}/deletes";;
+esac
+`, { mode: 0o755 });
+    const r = spawnSync("bash", ["-c", script], { encoding: "utf8", env: { ...process.env, PATH: `${dir}:${process.env.PATH}`, GITHUB_REPOSITORY: "R", GITHUB_STEP_SUMMARY: "/dev/null", OWNER: "o" } });
+    assert.equal(r.status, 0, r.stderr);
+    const deleted = readFileSync(join(dir, "deletes"), "utf8");
+    assert.match(deleted, /heads\/claude\/ok/, "an ordinary branch is still deleted");
+    for (const n of ["main", "cards", "quality-history", "trunk"]) assert.doesNotMatch(deleted, new RegExp(`heads/${n}( |$)`, "m"), n);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+  assert.match(yml, /case "\$BRANCH" in main\|cards\|quality-history\|"\$DEFAULT_BRANCH"\) /, "the guard is one case before the protection read");
+});
+
+test("claude-review.yml is gone from this repo; the adopters' template stays", () => {
+  assert.ok(!workflows.includes("claude-review.yml"));
+  assert.ok(templates.includes("templates/ci/claude-review.yml"));
 });

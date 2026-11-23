@@ -50,7 +50,8 @@ jobs:
             [ -n "$BRANCH" ] || continue
             seen=$((seen + 1))
             case "$BRANCH" in *[!A-Za-z0-9._/-]*) say "Left alone: a branch name with unusual characters."; continue;; esac
-            if [ "$BRANCH" = "$DEFAULT_BRANCH" ]; then say "Left alone: $BRANCH is the default branch."; continue; fi
+            # Never these, whatever protection says: the default branch and the two data branches.
+            case "$BRANCH" in main|cards|quality-history|"$DEFAULT_BRANCH") say "Left alone: $BRANCH is a branch this sweep never deletes."; continue;; esac
             # A long-lived branch carries protection; a pull request's own branch does not.
             prot=$(gh api "repos/$GITHUB_REPOSITORY/branches/$BRANCH" --jq .protected 2>/dev/null || echo unknown)
             if [ "$prot" != "false" ]; then continue; fi
