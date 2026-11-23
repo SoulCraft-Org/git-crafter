@@ -38,6 +38,7 @@ Each tab scores Quality, Speed and Consumption, a third each, against goals that
 flowchart LR
   AD[Adopt] --> DL[Delivery] --> DP[Deploy] --> ME[Measure]
   DL --> RE[Release] -->|Dependabot bump| AD
+  ME --> SC[Score] -->|issue or card| DL
   GU[Guard] --> DL
   CO[Code] --> DL
   ME -->|each miss a fix| DL

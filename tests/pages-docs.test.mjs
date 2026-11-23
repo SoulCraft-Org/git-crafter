@@ -228,13 +228,15 @@ const templateKinds = () => Object.fromEntries(readTargetFiles(join(ROOT, "quali
 
 test("the library: every map has its ideal and dated sources, at most MAX_STEPS steps, each step one template metric, and a step of each kind", () => {
   const library = loadLibrary();
-  assert.deepEqual(Object.keys(library).sort(), ["adopt", "board", "code", "contribute", "delivery", "deploy", "document", "measure", "release", "secure", "triage"]);
+  assert.deepEqual(Object.keys(library).sort(), ["adopt", "board", "code", "contribute", "delivery", "deploy", "document", "measure", "release", "score", "secure", "triage"]);
   for (const m of Object.values(library)) {
     const icons = m.steps.map((s) => s.icon);
     assert.deepEqual(icons.filter((i) => !ICON_IDS.includes(i)), [], `${m.id}: every step names an icon the sprite draws, never the plan fallback`);
     assert.equal(new Set(icons).size, icons.length, `${m.id}: no two steps share an icon`);
   }
   assert.ok(library.document.steps.every((s) => s.metric.startsWith("docs.")), "every Document step reads a docs metric");
+  const measured = new Set(library.measure.steps.map((s) => s.metric));
+  assert.deepEqual(library.score.steps.map((s) => s.metric).filter((id) => measured.has(id)), [], "Score shows how a page is scored, so it reads no metric Measure reads");
   assert.deepEqual(checkLibrary(library, templateIds(), templateKinds()), [], "a template metric a step names was removed, or a map lost a kind: ask the orchestrator before dropping it");
   // Git Crafter's own maps too, Spend and each override included: the library check never sees them.
   const own = readDocsFrom(ROOT, { goals: "goals.json", process: "process.json", maps: "maps.json" }).maps.maps;
@@ -282,11 +284,11 @@ test("a repo with only library maps and template defaults, web on for the deploy
   }
 });
 
-test("Git Crafter's maps use eleven library maps, and its own Quality run reads every step's metric (#330)", (t) => {
+test("Git Crafter's maps use twelve library maps, and its own Quality run reads every step's metric (#330)", (t) => {
   // This repo tracks no Mac's run (.gitignore), so only a local checkout holds it.
   if (!existsSync(join(ROOT, "data/quality/local.json"))) return t.skip("no data/quality/local.json in this tree");
   const maps = readJson("maps.json").maps;
-  assert.deepEqual(maps.map((m) => m.use ?? m.id), ["delivery", "deploy", "board", "adopt", "measure", "code", "triage", "document", "secure", "contribute", "release"]);
+  assert.deepEqual(maps.map((m) => m.use ?? m.id), ["delivery", "deploy", "board", "adopt", "measure", "code", "triage", "document", "secure", "contribute", "release", "score"]);
   const own = readJson("data/quality/local.json").metrics;
   const steps = readDocsFrom(ROOT, { goals: "goals.json", process: "process.json", maps: "maps.json" }).maps.maps.flatMap((m) => m.steps.map((s) => s.metric));
   const unread = steps.filter((id) => !own[id] || String(own[id].could_not_check ?? "").includes("no repo to read"));
