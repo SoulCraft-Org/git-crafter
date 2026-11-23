@@ -224,7 +224,7 @@
     "near": 70,
     "direction": "higher",
     "goal_source": "GitHub docs, Caching dependencies to speed up workflows; template goal: nine npm installs in ten restore the cache",
-    "source": "gh api repos/{repo}/actions/jobs/{id}/logs (setup-node's npm cache line, newest 12 jobs of the last 20 runs per workflow)",
+    "source": "gh api repos/{repo}/actions/jobs/{id}/logs (setup-node's npm cache line, newest 12 jobs of the last 20 runs per workflow); a finished job's log never changes, so its verdict (hit, miss or none) is kept in this entry's verdicts (60 jobs) and read back from the newest 3 files in data/quality/history, and a log is read only for a job no earlier run recorded",
     "needs": "none",
     "chart": "bar"
   },
