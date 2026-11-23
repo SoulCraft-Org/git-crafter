@@ -188,6 +188,8 @@ function repoLoaders(L, { gh, repo, root, cfg, fetchImpl }) {
     }),
     protection: once(() => readProtection(L, gh, repo)),
     pages: once(() => gh.rest(`repos/${repo}/pages`)),
+    // Active Actions caches: their count and bytes, as GitHub last refreshed them.
+    cacheUsage: once(() => gh.rest(`repos/${repo}/actions/cache/usage`)),
     workflowPermissions: once(() => gh.rest(`repos/${repo}/actions/permissions/workflow`)),
     actionsPermissions: once(() => gh.rest(`repos/${repo}/actions/permissions`)),
     securityReviews: once(() => securityReviews(L, gh, owner, name)),

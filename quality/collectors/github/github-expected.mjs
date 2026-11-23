@@ -38,6 +38,7 @@ export const EXPECTED = {
   "actions.pinned_share": 75, // 3 of 4; the local ./ action is left out
   "actions.permissions_share": 50,
   "actions.locked_share": 50, // good.yml is in actions.lock, loose.yml is not
+  "actions.cache_storage_pct": 30, // 3 GiB of the 10 GB limit
   "projects.cards_by_column": 1, // two cards in Doing: the open pull request is being built, the empty draft is not
   "projects.done_with_pr": 66.7, // one Done card has no link
   "projects.workflows_on": 40, // the fixture board has Item closed and Pull request merged on, Item added off, Auto-add and Pull request linked not listed

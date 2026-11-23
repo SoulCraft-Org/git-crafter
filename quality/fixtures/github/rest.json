@@ -1,5 +1,5 @@
 {
-  "_comment": "Answers by REST route for quality/collectors/github/github.test.mjs, repo fixture-org/fixture-repo. An __error entry makes the fake gh throw that GhError. Security features as on a private repo of a plan without the paid ones: code scanning, secret scanning and code quality off, nobody billed. Alerts: 5 open vulnerabilities, 1 open malware alert, 2 fixed in 2 and 6 days. Milestones: #1 is dated and open, #2 is past its date, #3 has no date, #4 has every issue closed.",
+  "_comment": "Answers by REST route for quality/collectors/github/github.test.mjs, repo fixture-org/fixture-repo. An __error entry makes the fake gh throw that GhError. Security features as on a private repo of a plan without the paid ones: code scanning, secret scanning and code quality off, nobody billed. Alerts: 5 open vulnerabilities, 1 open malware alert, 2 fixed in 2 and 6 days. Milestones: #1 is dated and open, #2 is past its date, #3 has no date, #4 has every issue closed. Actions caches: 12 hold 3 GiB.",
   "repos/fixture-org/fixture-repo": {
     "has_discussions": true,
     "default_branch": "main",
@@ -54,6 +54,7 @@
     { "name": "wontfix", "archived_at": null },
     { "name": "question", "archived_at": "2026-10-01T00:00:00Z" }
   ],
+  "repos/fixture-org/fixture-repo/actions/cache/usage": { "full_name": "fixture-org/fixture-repo", "active_caches_size_in_bytes": 3221225472, "active_caches_count": 12 },
   "repos/fixture-org/fixture-repo/milestones?state=open&per_page=100": [
     { "number": 1, "title": "v1", "due_on": "2026-11-30T08:00:00Z", "open_issues": 3, "closed_issues": 2 },
     { "number": 2, "title": "v0.9", "due_on": "2026-10-15T07:00:00Z", "open_issues": 1, "closed_issues": 4 },
