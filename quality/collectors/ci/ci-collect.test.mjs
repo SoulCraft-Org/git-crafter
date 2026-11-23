@@ -5,9 +5,9 @@ import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { after, before, describe, it } from "node:test";
-import { collect, describeRun, JOBS_BATCH, JOBS_BATCH_WITH_STEPS, LAST_RUNS, METRIC_IDS, QUEUE_SAMPLE, runJobs, settings, skipTriggers, standardCalls } from "./ci.mjs";
-import { TARGETS, TEMPLATE_PARAMS, FULL_PARAMS, NOW, REPO, T, run, RUNS, skipped, GATES, job, JOBS, CHECKS, pull, RUNS_OF, REST, fakeGh, ROOT, collectWith } from "./ci-fixtures.mjs";
+import { after, describe, it } from "node:test";
+import { collect, describeRun, JOBS_BATCH, JOBS_BATCH_WITH_STEPS, LAST_RUNS, METRIC_IDS, QUEUE_SAMPLE, runJobs, skipTriggers, standardCalls } from "./ci.mjs";
+import { TARGETS, TEMPLATE_PARAMS, FULL_PARAMS, NOW, REPO, T, run, RUNS, skipped, GATES, job, JOBS, CHECKS, RUNS_OF, REST, fakeGh, ROOT, collectWith } from "./ci-fixtures.mjs";
 // Worked by hand from the fixture.
 const EXPECTED = {
   "ci.latest_flow": 10, // the latest head that went all green, s4: 13:00 to 13:10

@@ -36,7 +36,7 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import { mapLimit } from '../ci/ci-core.mjs';
 import { ownRepo } from '../lib/paths.mjs';
-import { actionPins, adopterPins, commitMinutes, compareVersions, cooledTag, DAY, directDependencies, eligibleRelease, heldMajors, judge, lockfileVersions, nodeMajor, parseVersion, pinTag, round, sameMajor, setupNodeSteps, versionTags, NODE_FILES } from './tools-lib.mjs';
+import { actionPins, adopterPins, commitMinutes, compareVersions, cooledTag, DAY, directDependencies, eligibleRelease, heldMajors, judge, nodeMajor, parseVersion, pinTag, round, sameMajor, setupNodeSteps, versionTags, NODE_FILES } from './tools-lib.mjs';
 
 export * from './tools-lib.mjs';
 

@@ -43,7 +43,6 @@ import { runMany } from "../tools/org_many.mjs";
 import { TEST_PATTERN, hookText, jobNames, jobsText, readWorkflow, repoFlow, repoTests, runsFor, workflowStats } from "../tools/workflows.mjs";
 import { build } from "../pages/build.mjs";
 import { ciFlow } from "../quality/render/ci-flow.mjs";
-import { rate } from "../pages/model.mjs";
 import { codeLiteral } from "../quality/collectors/lib/strip.mjs";
 
 const ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..");

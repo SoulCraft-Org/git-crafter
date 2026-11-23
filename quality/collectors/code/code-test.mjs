@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join, relative, sep } from "node:path";
 import { runJobs, workflowRuns } from "../ci/ci.mjs";
 import { lcovCoverage, lcovFromLog } from "./code-lcov.mjs";
-import { measured, readJson, round, share, sum, unknown, unknownAll } from "./code-util.mjs";
+import { measured, readJson, round, unknown, unknownAll } from "./code-util.mjs";
 
 // ---- Quality: test coverage ----
 
