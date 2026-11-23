@@ -1,6 +1,6 @@
 # Repo config and overrides
 
-A repo's Quality page settings (`config.mjs`), and how its targets lie over the template's (`overlay.mjs`). Back to [README.md](README.md).
+A repo's page settings (`config.mjs`) and target overrides (`overlay.mjs`). [Back](README.md).
 
 ## Repo config
 
@@ -10,14 +10,14 @@ A repo's Quality page settings (`config.mjs`), and how its targets lie over the 
 | `name` | the repo's name | the page title |
 | `tabs` | every template tab but `pages` | tab ids in order; `["id", "Name"]` adds a tab of the repo's own; a removed id stops ([migration](../templates/quality/README.md#from-v6-to-v7)) |
 | `web` | `false` | `true` shows the Pages tab |
-| `targets` | `<repo>/quality/targets` | the repo's overrides and own metrics |
+| `targets` | `<repo>/quality/targets` | overrides and own metrics |
 | `collectors` | `<repo>/quality/collectors` | own collectors; a template collector's name is a usage error |
 | `ideals` | `<repo>/quality/ideals` | ideal states, one file per tab, replacing the template's |
 | `packs` | `[]` | other repos' tabs and maps ([below](#packs)) |
 | `reviews`, `data`, `history`, `out` | `<repo>/quality/<key>`; `out` is `<repo>/quality/dist` | folders |
 | `tokens_css` | `render/tokens.css` | page colors |
 | `budget` | 1,000,000, per `config.mjs` | page bytes; one over is exit 1 |
-| `drop_needs` | `[]` | metrics whose `needs` is listed are off, as `drop` does; an unused value is a usage error |
+| `drop_needs` | `[]` | a metric whose `needs` is listed is off, as `drop` does; an unused value is a usage error |
 | `issue_sync` | `null`, off | `{ "label", "labels", "project", "quick", "waiting" }` turns on [`sync-issues.mjs`](sync-issues.mjs): one draft card per missed metric on org project `project`, Todo, or Waiting on data for ids in `waiting`. Ids in `quick` open a Task issue instead, labeled `labels[tab]` or `label`; with no `project`, every id does. Cards need `BOARD_TOKEN` |
 | `comment` | | allowed |
 | an unknown key | | a usage error |
@@ -55,7 +55,7 @@ flowchart LR
 | `{ "id": "ci.pass_rate", "goal": 98, "near": 90, "goal_source": "…" }` | the repo's goal for a template metric |
 | `{ "id": "…", "params": { … } }` | merged key by key over the template's params |
 | `{ "id": "ci.latest_flow", "params": { "always_run": { "<workflow>": "<why>" } } }` | CI shares leave it out and say why |
-| `{ "id": "…", "drop": true }` | off: not shown, not scored; collected only with `gate` |
+| `{ "id": "…", "drop": true }` | off: not shown, not scored; collected only with `gate`. The page counts it and lists its `goal_source` |
 | `{ "id": "…", "gate": true }` | a miss fails the repo's pull request ([SCORING.md](SCORING.md)), even with `drop: true` |
 | `{ "id": "…", "gate": "warn" }` | a miss warns; the pull request passes |
 | an id the template lacks | the repo's own metric, a full definition |

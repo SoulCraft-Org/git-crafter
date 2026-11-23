@@ -38,7 +38,7 @@ export function sizeCheck(html, budget = PAGE_BUDGET) {
 // `template` is Git Crafter's quality/ folder; the self-test points it at a seed.
 export function readInputs(config, { template = QUALITY } = {}) {
   const tabIds = new Set(config.tabs.map(([id]) => id));
-  const { defs } = configDefs(config, join(template, "targets"));
+  const { defs, dropped } = configDefs(config, join(template, "targets"));
   const ideals = configIdeals(config, join(template, "ideals"));
   // A review of a template tab the repo turned off stays on disk and off the
   // page, never a usage error.
@@ -57,7 +57,7 @@ export function readInputs(config, { template = QUALITY } = {}) {
       console.error(`skipping history/${f}: ${err.message}`);
     }
   }
-  return { code: 0, defs, ideals, reviewHistory, latest, local, history };
+  return { code: 0, defs, dropped, ideals, reviewHistory, latest, local, history };
 }
 
 // Reads the targets, data and reviews in config and renders the page; a
@@ -65,7 +65,7 @@ export function readInputs(config, { template = QUALITY } = {}) {
 export function buildPage(config, { now = new Date(), template } = {}) {
   const inputs = readInputs(config, { template });
   if (inputs.code) return inputs;
-  const { defs, ideals, reviewHistory, latest, local, history } = inputs;
+  const { defs, dropped, ideals, reviewHistory, latest, local, history } = inputs;
   // Each tab needs an ideal and a metric in each category. The template's
   // self-test blocks on its own tabs; a repo's page still builds and says
   // what is missing, on the page and here.
@@ -73,6 +73,7 @@ export function buildPage(config, { now = new Date(), template } = {}) {
   const css = existsSync(config.tokens_css) ? readFileSync(config.tokens_css, "utf8") : (console.error(`${config.tokens_css} is missing; the page builds unstyled`), "");
   const html = render({
     defs,
+    dropped,
     metrics: mergeMetrics(local, latest),
     reviews: newestReviews(reviewHistory),
     reviewHistory,
