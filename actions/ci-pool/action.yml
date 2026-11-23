@@ -11,7 +11,7 @@
 # writes the reading to the org variable CI_POOL, and at hard-stop closes every runner group whose name starts with
 # Blacksmith until a run with resume. The ledger rides in the Actions cache, so each pass reads only what changed; a
 # pass stops after seconds and the next one catches up. mode usage reads Blacksmith's estimated cost with
-# BLACKSMITH_ORG_TOKEN in a job of its own, since its installer runs unpinned code: the meter job never sees it.
+# BLACKSMITH_ORG_TOKEN in a job of its own, with the CLI pinned by SHA-256 (below): the meter job never sees it.
 # Without that cost the reading is complete: false, so no chooser takes Blacksmith.
 # Exit 3 from the meter leaves CI_POOL as it was, so it goes stale and every chooser falls back to ubuntu-latest.
 name: Git Crafter CI pool
@@ -58,12 +58,20 @@ runs:
       env:
         BLACKSMITH_ORG_TOKEN: ${{ inputs.blacksmith-token }}
         BLACKSMITH_DISABLE_AUTO_UPDATE: "1"
+        # The linux/amd64 CLI of the latest channel, published 2026-10-23: its published .sha256 file, not a download.
+        # The channel has no versioned path, so this hash is the pin; a newer build fails the check, the reading
+        # stays incomplete and no chooser takes Blacksmith until the hash is raised from the new .sha256 file.
+        BLACKSMITH_CLI_URL: https://clireleases.blacksmith.sh/cli/latest/linux/amd64/blacksmith
+        BLACKSMITH_CLI_SHA256: 089a301ea5cc93a7560c7f1106911547fdfd46fc5c0cef7079e2a62a22e971ce
       run: |
         [ -n "$BLACKSMITH_ORG_TOKEN" ] || exit 0
-        PATH="$HOME/.local/bin:$HOME/.blacksmith/bin:$PATH"
-        out="$( (curl -fsSL https://get.blacksmith.sh | sh >&2 &&
-          printf '%s' "$BLACKSMITH_ORG_TOKEN" | blacksmith auth login --api-token - --non-interactive --organization "$GITHUB_REPOSITORY_OWNER" >&2 &&
-          blacksmith usage --since 30d --format json) || echo "blacksmith usage failed")"
+        bin="$RUNNER_TEMP/blacksmith-cli"
+        out="$( (mkdir -p "$bin" && [ "$(uname -s)-$(uname -m)" = Linux-x86_64 ] &&
+          curl -fsSL --max-time 120 --retry 2 "$BLACKSMITH_CLI_URL" -o "$bin/blacksmith" &&
+          printf '%s  %s\n' "$BLACKSMITH_CLI_SHA256" "$bin/blacksmith" | sha256sum -c - >&2 &&
+          chmod +x "$bin/blacksmith" &&
+          printf '%s' "$BLACKSMITH_ORG_TOKEN" | "$bin/blacksmith" auth login --api-token - --non-interactive --organization "$GITHUB_REPOSITORY_OWNER" >&2 &&
+          "$bin/blacksmith" usage --since 30d --format json) || echo "blacksmith usage failed")"
         mark="BLACKSMITH_USAGE_$RANDOM$RANDOM"
         printf 'json<<%s\n%s\n%s\n' "$mark" "$out" "$mark" >> "$GITHUB_OUTPUT"
     - name: Mint the CI pool App's token

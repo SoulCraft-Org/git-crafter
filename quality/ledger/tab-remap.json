@@ -23,7 +23,8 @@
   {"from":"design","to":"pages","status":"moved","ids":["design.cls_mobile","design.contrast_violations","design.font_sizes_off_scale","design.lcp_mobile","design.raw_hex","design.raw_px","design.text_colors_off_token","design.total_bytes"]},
   {"from":"security","to":"pages","status":"moved","ids":["security.headers"]},
   {"from":"settings","to":"pages","status":"moved","ids":["settings.pages_private"]},
-  {"from":"usability","to":"pages","status":"moved","ids":["usability.axe_violations","usability.broken_links","usability.form_page_kib","usability.keyboard_task_share","usability.long_sentences","usability.reading_grade","usability.target_size_375","usability.task_clicks","usability.tbt_mobile","usability.unlabeled_fields","usability.words_before_action"]}
+  {"from":"usability","to":"pages","status":"moved","ids":["usability.axe_violations","usability.broken_links","usability.form_page_kib","usability.keyboard_task_share","usability.long_sentences","usability.reading_grade","usability.target_size_375","usability.task_clicks","usability.tbt_mobile","usability.unlabeled_fields","usability.words_before_action"]},
+  {"from":null,"to":"discussions","status":"new","reason":"the Discussions tab's first readers: a question left unanswered, and the oldest one's wait (2026-11-23)","ids":["discussions.oldest_unanswered_hours","discussions.unanswered_old"]}
  ],
  "own": [
   {"from":"code","to":"code","status":"kept","ids":["engine.page_seconds"]},
@@ -33,6 +34,7 @@
   {"from":"settings","to":"settings","status":"dropped","reason":"this repo is public, so the reading is not measured (Git Crafter, 2026-11-23)","ids":["settings.metered_on"]},
   {"from":"settings","to":"pages","status":"dropped","reason":"this repo is public, so its Pages site is public (Git Crafter, 2026-11-23)","ids":["settings.pages_private"]},
   {"from":"deploy","to":"pages","status":"dropped","reason":"it reads only after a failed deploy, and deploy.latest_failed counts one (Git Crafter, 2026-11-23)","ids":["deploy.latest_restore_hours"]},
-  {"from":"usability","to":"pages","status":"dropped","reason":"Git Crafter ships no form page (Git Crafter, 2026-11-23)","ids":["usability.form_page_kib"]}
+  {"from":"usability","to":"pages","status":"dropped","reason":"Git Crafter ships no form page (Git Crafter, 2026-11-23)","ids":["usability.form_page_kib"]},
+  {"from":null,"to":"discussions","status":"new","reason":"the template's two Discussions readers score on the page from the day they land (2026-11-23)","ids":["discussions.oldest_unanswered_hours","discussions.unanswered_old"]}
  ]
 }

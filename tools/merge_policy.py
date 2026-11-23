@@ -2,8 +2,11 @@
 """merge_policy.py: may an agent merge this outside pull request, by its paths?
 
 Default deny: a PR is AI-mergeable only when every changed path matches
-ai_mergeable and none matches maintainer_only (skills/merging/outside.md). It
-answers the path question only, and never checks out or runs the PR's code.
+ai_mergeable and none matches maintainer_only (skills/merging/outside.md). With
+--pr or --base it also reads each added or changed file's mode, and refuses a
+symlink or a submodule (gitlink) on any path: path text alone would pass one on
+an allowlisted path. The PATH form has no modes, so it is the path question
+only. It never checks out or runs the PR's code.
 
   python3 -I tools/merge_policy.py PATH [PATH ...]
   python3 -I tools/merge_policy.py --pr N --sha HEAD_SHA [--repo OWNER/NAME]
@@ -31,6 +34,9 @@ DEFAULT_REPO = "{owner}/{repo}"  # gh api fills both from the checkout (gh help 
 GITHUB_FILES_CAP = 3000  # REST docs, "List pull requests files"
 GRANT_ALL = {"**", "*", "**/*"}
 EXIT_MERGEABLE, EXIT_WAITS, EXIT_USAGE, EXIT_INFRA = 0, 1, 2, 3
+# Git file modes that are not a plain file. A link on an allowlisted path can point anywhere, and a gitlink pulls in
+# another repo's commit, so neither is AI-mergeable on any path.
+SPECIAL_MODES = {"120000": "a symlink", "160000": "a submodule (gitlink)"}
 
 
 class InfraError(Exception):
@@ -119,11 +125,18 @@ def why_blocked(policy, path):
     return None
 
 
-def verdict(policy, paths):
-    """(exit code, [(path, reason)] for every path that is not AI-mergeable)."""
+def mode_refusal(mode):
+    """Why a path's new git file mode is refused, or None for a plain file."""
+    return "refused: %s, mode %s" % (SPECIAL_MODES[mode], mode) if mode in SPECIAL_MODES else None
+
+
+def verdict(policy, paths, modes=None):
+    """(exit code, [(path, reason)] for every path that is not AI-mergeable); modes maps an added or changed path to
+    its new git file mode."""
     if not paths:
         raise InfraError("no changed paths: an empty list is never mergeable")
-    blocked = [(p, r) for p, r in ((p, why_blocked(policy, p)) for p in paths) if r]
+    modes = modes or {}
+    blocked = [(p, r) for p, r in ((p, mode_refusal(modes.get(p)) or why_blocked(policy, p)) for p in paths) if r]
     return (EXIT_WAITS if blocked else EXIT_MERGEABLE), blocked
 
 
@@ -138,8 +151,23 @@ def run(cmd):
     return proc.stdout
 
 
+def head_modes(repo, head, entries, gh=run):
+    """{path: git file mode at head} for each file the PR adds or changes. The files API gives a status but no mode,
+    so the modes come from the head commit's tree, read whole or could not check."""
+    tree = json.loads(gh(["gh", "api", "repos/%s/git/trees/%s?recursive=1" % (repo, head)]))
+    if tree.get("truncated"):
+        raise InfraError("the tree at %s is too large for one read, so its file modes are unread" % head)
+    modes = {t["path"]: str(t["mode"]) for t in tree["tree"]}
+    kept = [f["filename"] for f in entries if f.get("status") != "removed"]
+    missing = [p for p in kept if p not in modes]
+    if missing:
+        raise InfraError("%d changed path(s) are not in the tree at %s, first %r" % (len(missing), head, missing[0]))
+    return {p: modes[p] for p in kept}
+
+
 def pr_facts(number, repo, gh=run):
-    """(head SHA, base, default branch, every path, both names of a rename), whole or could not check."""
+    """(head SHA, base, default branch, every path, both names of a rename, {path: mode} of each added or changed
+    file), whole or could not check."""
     try:
         pull = json.loads(gh(["gh", "api", "repos/%s/pulls/%d" % (repo, number)]))
         pages = json.loads(gh(["gh", "api", "--paginate", "--slurp", "repos/%s/pulls/%d/files" % (repo, number)]))
@@ -147,23 +175,39 @@ def pr_facts(number, repo, gh=run):
         base, default = pull["base"]["ref"], pull["base"]["repo"]["default_branch"]
         entries = [f for page in pages for f in page]
         paths = {f["filename"] for f in entries} | {f["previous_filename"] for f in entries if f.get("previous_filename")}
-    except (KeyError, TypeError, ValueError) as exc:
+        if changed > GITHUB_FILES_CAP:
+            raise InfraError("the PR changes %d files; GitHub lists at most %d" % (changed, GITHUB_FILES_CAP))
+        if len(entries) != changed:
+            raise InfraError("read %d files, but the PR says it changes %d" % (len(entries), changed))
+        modes = head_modes(repo, head, entries, gh)
+    except (AttributeError, KeyError, TypeError, ValueError) as exc:
         raise InfraError("gh api returned an unexpected answer (%s)" % exc)
-    if changed > GITHUB_FILES_CAP:
-        raise InfraError("the PR changes %d files; GitHub lists at most %d" % (changed, GITHUB_FILES_CAP))
-    if len(entries) != changed:
-        raise InfraError("read %d files, but the PR says it changes %d" % (len(entries), changed))
-    return head, base, default, sorted(paths)
+    return head, base, default, sorted(paths), modes
+
+
+def diff_facts(base, head, git=run):
+    """(every path, {path: new git file mode} of each added or changed one) since base's merge base with head, from
+    git diff --raw: one ':old-mode new-mode old-sha new-sha status' record and one path per change."""
+    fields = git(["git", "diff", "--raw", "-z", "--no-renames", "--no-abbrev", "%s...%s" % (base, head)]).split("\0")
+    paths, modes = set(), {}
+    for meta, path in zip(fields[0::2], fields[1::2]):
+        parts = meta.split()
+        if not meta.startswith(":") or len(parts) != 5:
+            raise InfraError("git diff --raw gave an unexpected record %r" % meta[:80])
+        paths.add(path)
+        if parts[4] != "D":
+            modes[path] = parts[1]
+    return sorted(paths), modes
 
 
 def check_pr(policy, number, repo, sha, gh=run):
     """(exit code, lines to print, paths read, paths blocked) for one PR at one head SHA."""
-    head, base, default, paths = pr_facts(number, repo, gh)
+    head, base, default, paths, modes = pr_facts(number, repo, gh)
     if head != sha:
         return EXIT_WAITS, ["not AI-mergeable: head is %s, not --sha %s" % (head, sha)], len(paths), 0
     if base != default:
         return EXIT_WAITS, ["not AI-mergeable: base is %s, not %s" % (base, default)], len(paths), 0
-    code, blocked = verdict(policy, paths)
+    code, blocked = verdict(policy, paths, modes)
     return code, ["not AI-mergeable: %r: %s" % b for b in blocked] + ["checked head %s" % head], len(paths), len(blocked)
 
 
@@ -202,11 +246,10 @@ def check(args, policy):
         code, lines, n, nblocked = check_pr(policy, args.pr, args.repo, args.sha)
         print("\n".join(lines))
         return code, n, nblocked
-    paths = args.paths
+    paths, modes = args.paths, {}
     if args.base:
-        out = run(["git", "diff", "--name-only", "--no-renames", "%s...%s" % (args.base, args.head)])
-        paths = sorted({l for l in out.splitlines() if l.strip()})
-    code, blocked = verdict(policy, paths)
+        paths, modes = diff_facts(args.base, args.head)
+    code, blocked = verdict(policy, paths, modes)
     for path, reason in blocked:
         print("not AI-mergeable: %r: %s" % (path, reason))
     return code, len(paths), len(blocked)

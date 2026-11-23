@@ -124,6 +124,17 @@ export const VULNERABILITY_ALERTS = `query VulnerabilityAlerts($owner: String!, 
   repository(owner: $owner, name: $name) { hasVulnerabilityAlertsEnabled }
 }`;
 
+// Open discussions, oldest first. isAnswered is null, not false, on a category with no answers to choose, so a
+// reader filters it client-side: the answered: false argument leaves those out (checked live, 2026-11-23).
+export const OPEN_DISCUSSIONS = `query OpenDiscussions($owner: String!, $name: String!, $cursor: String) {
+  repository(owner: $owner, name: $name) {
+    discussions(first: 100, after: $cursor, states: [OPEN], orderBy: {field: CREATED_AT, direction: ASC}) {
+      pageInfo { hasNextPage endCursor }
+      nodes { number createdAt isAnswered category { isAnswerable } }
+    }
+  }
+}`;
+
 export const PROJECT_FIND = `query ProjectFind($owner: String!, $title: String!) {
   repositoryOwner(login: $owner) { ... on ProjectV2Owner { projectsV2(first: 20, query: $title) { nodes { id title } } } }
 }`;
