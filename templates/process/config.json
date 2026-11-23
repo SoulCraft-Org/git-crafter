@@ -1,5 +1,5 @@
 {
- "comment": "Starter Process page config. Copy it to quality/process/config.json, set repos and repo_url to this repo, and keep or drop maps. It is also the repo's maps file (docs.maps names it), so the starter is one file. Each map step reads its metric from this repo's Quality page; drop a step whose tab the Quality config drops. Keys: Git Crafter actions/pages/action.yml; maps: pages/maps/README.md.",
+ "comment": "Starter Process page config. Copy it to quality/process/config.json and replace my-repo (repos, repo_url, heading) and OWNER (repo_url). It is also the repo's maps file (docs.maps names it). Keep or drop maps: templates/process/README.md says which token each needs. A map step reads its metric from this repo's Quality page; drop a step whose tab the Quality config drops. Keys: Git Crafter actions/pages/action.yml; maps: pages/maps/README.md.",
  "repos": [
   "my-repo"
  ],

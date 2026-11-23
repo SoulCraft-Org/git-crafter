@@ -20,7 +20,7 @@ flowchart LR
 | Goal or process-map step | `goals.json`, `maps.json` | `tests/pages-docs.test.mjs` |
 | Files installed into `~/.claude` | `manifest.json` | `claude_os_sync.py --self-test` |
 | A file another repo needs | a copy there, first lines naming its path and SHA | that repo's CI |
-| Collector | `quality/collectors/<tab>/`, helpers in `quality/collectors/lib/`, goals in `quality/targets/` | the `*.test.mjs` beside it |
+| Collector | `quality/collectors/<collector>/`, helpers in `quality/collectors/lib/`, goals in `quality/targets/` | the `*.test.mjs` beside it |
 | Adopter starter | `templates/quality/`, `templates/process/`, `templates/ci/` | `tests/pages-build.test.mjs` |
 
 Other repos send changes by PR too, and keep only [their config and overrides](quality/CONFIG.md).

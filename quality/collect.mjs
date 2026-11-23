@@ -2,12 +2,12 @@
 // Runs every collector, the template's and the repo's own, against the repo
 // in the current folder and writes what they read.
 //
-//   node <code-os>/quality/collect.mjs [--config FILE]           CI: writes <data>/latest.json
-//   node <code-os>/quality/collect.mjs [--config FILE] --local   a session on a
+//   node <git-crafter>/quality/collect.mjs [--config FILE]           CI: writes <data>/latest.json
+//   node <git-crafter>/quality/collect.mjs [--config FILE] --local   a session on a
 //       maintainer's machine: writes <data>/local.json and <history>/<date>.json
-//   node <code-os>/quality/collect.mjs [--config FILE] --out RUN    CI, the run
+//   node <git-crafter>/quality/collect.mjs [--config FILE] --out RUN    CI, the run
 //       to RUN only (actions/pages mode collect uploads it)
-//   node <code-os>/quality/collect.mjs [--config FILE] --from RUN   no collector:
+//   node <git-crafter>/quality/collect.mjs [--config FILE] --from RUN   no collector:
 //       RUN, a CI run another job wrote, becomes <data>/latest.json (mode render)
 //   --only NAME   runs one collector (NAME.mjs) alone; a --local run merges
 //       its metrics into <data>/local.json and skips the quota check

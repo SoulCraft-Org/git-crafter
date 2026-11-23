@@ -3,7 +3,7 @@
 // open issue per metric that misses its goal. The status is the page's own:
 // build.mjs readInputs, the CI and local runs merged, scored by score.mjs.
 //
-//   node <code-os>/quality/sync-issues.mjs [--config FILE] [--dry-run]
+//   node <git-crafter>/quality/sync-issues.mjs [--config FILE] [--dry-run]
 //
 // Off unless the repo's config sets issue_sync (config.mjs). Per metric on
 // issue_sync.quick, or every metric when issue_sync.project is unset:
