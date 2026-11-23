@@ -6,8 +6,8 @@ repo calls it in about ten lines, pinned to a full Git Crafter commit SHA with a
 GitHub's pool only for now: ubuntu-slim for short jobs, ubuntu-latest for standard ones, and the org's $0 Actions
 budget with prevent_further_usage as the hard stop. Free tiers and included minutes only (owner, 2026-11-02).
 
-This file, ci_standard_yaml.py (the parser) and ci_standard_rules.py (the rules) are the one definition. `embed`
-writes the three, verbatim, into the workflow's run block, so a caller's run uses the copies at the caller's pin: a
+This file, ci_standard_yaml.py (the parser), ci_standard_rules.py (the rules) and ci_standard_actions.py (the pinned
+rule) are the one definition. `embed` writes the four, verbatim, into the workflow's run block, so a caller's run uses the copies at the caller's pin: a
 called workflow cannot read private Git Crafter files with the caller's token, and a pull request in the caller cannot
 edit them. tools/verify.sh runs `embed` to prove the copies are current. Actions evaluates an expression anywhere in a
 workflow, so these sources never spell one (EXPR). The embed command (ci_standard_embed.py) and the self-test
@@ -22,7 +22,7 @@ workflow, so these sources never spell one (EXPR). The embed command (ci_standar
         A glob that starts with /, ./ or ! can never match a git path: exit 2, so ci-ok fails (#199). A glob that
         matches no file git tracks at HEAD prints a ::warning::
     ci_standard.py embed [--write]
-        whether ci-standard.yml holds the three files verbatim; --write puts them there
+        whether ci-standard.yml holds the four files verbatim; --write puts them there
     ci_standard.py --self-test
         seeded known-good and known-bad repos, changes in a scratch git repo, the parser and the embed
 
@@ -41,7 +41,8 @@ Rules, one id each; templates/ci/README.md explains each one:
     timeout      every job that runs steps has timeout-minutes
     runner       every job runs on ubuntu-slim or a standard GitHub-hosted label. vars.CI_RUNNER, macOS, Windows, a
                  larger, self-hosted or computed runner needs an exception
-    pinned       every remote uses:, on a step or a job, is pinned to a full commit SHA, or a step's is locked in actions.lock
+    pinned       every remote uses:, on a step or a job, is pinned to a full commit SHA, or a step's is locked in actions.lock;
+                 a local action's (uses: ./PATH) own steps too, read from PATH/action.yml
     cache        a job that runs npm ci or pip install uses setup-node or setup-python with cache
     no-share     no per-repo minute guard (build_minutes_guard.py): the org pool replaces per-repo shares
     blacksmith   no Blacksmith label outside ci-standard.yml's chooser, and no Blacksmith sticky disk or Docker layer

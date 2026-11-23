@@ -22,8 +22,8 @@ name: ci-standard
 # Jobs: changes (ubuntu-slim) applies the path filter and runs the conformance check; short and standard run the
 # caller's commands; ci-ok is the one verdict, the check a ruleset requires (the caller's job id, then ci-ok).
 #
-# The checks are tools/ci_standard.py and the two modules it imports, ci_standard_yaml.py and ci_standard_rules.py,
-# embedded below verbatim by `ci_standard.py embed --write`, because a called workflow cannot read private Git Crafter
+# The checks are tools/ci_standard.py and the three modules it imports, ci_standard_yaml.py, ci_standard_actions.py
+# and ci_standard_rules.py, embedded below verbatim by `ci_standard.py embed --write`, because a called workflow cannot read private Git Crafter
 # files with the caller's token, and a ./ path here means the caller's repo. So every line that runs is at the
 # caller's pin, and no pull request in the caller can edit it. tools/verify.sh fails when any copy differs from its
 # file. The embed command and the self-test stay out of the workflow; there they exit 2.
@@ -98,8 +98,8 @@ jobs:
           GitHub's pool only for now: ubuntu-slim for short jobs, ubuntu-latest for standard ones, and the org's $0 Actions
           budget with prevent_further_usage as the hard stop. Free tiers and included minutes only (owner, 2026-11-02).
 
-          This file, ci_standard_yaml.py (the parser) and ci_standard_rules.py (the rules) are the one definition. `embed`
-          writes the three, verbatim, into the workflow's run block, so a caller's run uses the copies at the caller's pin: a
+          This file, ci_standard_yaml.py (the parser), ci_standard_rules.py (the rules) and ci_standard_actions.py (the pinned
+          rule) are the one definition. `embed` writes the four, verbatim, into the workflow's run block, so a caller's run uses the copies at the caller's pin: a
           called workflow cannot read private Git Crafter files with the caller's token, and a pull request in the caller cannot
           edit them. tools/verify.sh runs `embed` to prove the copies are current. Actions evaluates an expression anywhere in a
           workflow, so these sources never spell one (EXPR). The embed command (ci_standard_embed.py) and the self-test
@@ -114,7 +114,7 @@ jobs:
                   A glob that starts with /, ./ or ! can never match a git path: exit 2, so ci-ok fails (#199). A glob that
                   matches no file git tracks at HEAD prints a ::warning::
               ci_standard.py embed [--write]
-                  whether ci-standard.yml holds the three files verbatim; --write puts them there
+                  whether ci-standard.yml holds the four files verbatim; --write puts them there
               ci_standard.py --self-test
                   seeded known-good and known-bad repos, changes in a scratch git repo, the parser and the embed
 
@@ -133,7 +133,8 @@ jobs:
               timeout      every job that runs steps has timeout-minutes
               runner       every job runs on ubuntu-slim or a standard GitHub-hosted label. vars.CI_RUNNER, macOS, Windows, a
                            larger, self-hosted or computed runner needs an exception
-              pinned       every remote uses:, on a step or a job, is pinned to a full commit SHA, or a step's is locked in actions.lock
+              pinned       every remote uses:, on a step or a job, is pinned to a full commit SHA, or a step's is locked in actions.lock;
+                           a local action's (uses: ./PATH) own steps too, read from PATH/action.yml
               cache        a job that runs npm ci or pip install uses setup-node or setup-python with cache
               no-share     no per-repo minute guard (build_minutes_guard.py): the org pool replaces per-repo shares
               blacksmith   no Blacksmith label outside ci-standard.yml's chooser, and no Blacksmith sticky disk or Docker layer
@@ -619,6 +620,82 @@ jobs:
                   raise ParseError("a workflow is a mapping at the top")
               return doc
           CI_STANDARD_YAML_PY
+          cat > "$RUNNER_TEMP/ci_standard_actions.py" <<'CI_STANDARD_ACTIONS_PY'
+          """ci_standard_actions.py: the pinned rule, on a job's steps and the local actions they call (#200). Embedded with
+          ci_standard.py. A step's uses: ./PATH or $/PATH runs PATH/action.yml in the caller's job, so its steps are read too; a
+          link or a path out of the repo is never read (could not check). Standard library only."""
+
+          from __future__ import annotations
+
+          import os
+          import re
+
+          from ci_standard_yaml import ParseError, parse
+
+          SHA_RE = re.compile(r"[^@\s]+@[0-9a-f]{40}")
+          # This repo's own actions: ./ runs the checkout's copy, $/ the copy at the workflow's commit (gh actions-lock).
+          OWN = ("./", "$/")
+          LOCK_FILE = "actions.lock"
+          ACTION_FILES = ("action.yml", "action.yaml")
+
+
+          def pin_findings(where: str, steps: list, locked=frozenset()) -> list:
+              """Each step's uses: pinned to a full SHA or locked in actions.lock, a docker:// image to a digest."""
+              found = []
+              for s in steps:
+                  uses = str(s.get("uses") or "")
+                  if uses and not uses.startswith(OWN + ("docker://",)) and not SHA_RE.fullmatch(uses) and uses not in locked:
+                      found.append(("pinned", where, f"{uses} is not pinned to a full commit SHA, and {LOCK_FILE} does not lock it"))
+                  if uses.startswith("docker://") and "@sha256:" not in uses:
+                      found.append(("pinned", where, f"{uses} is not pinned to a digest"))
+              return found
+
+
+          def read_action(repo: str, rel: str) -> tuple:
+              """(the parsed action, None), or (None, why it could not be read): a link and a path out of the repo never are."""
+              root = os.path.realpath(repo)
+              for name in ACTION_FILES:
+                  path = os.path.normpath(os.path.join(root, rel, name))
+                  if os.path.commonpath([root, path]) != root:
+                      return None, "a path that leaves the repo; never read"
+                  if not os.path.lexists(path):
+                      continue
+                  if os.path.realpath(path) != path:
+                      return None, "a link, or a file inside one; never read"
+                  try:
+                      with open(path, encoding="utf-8") as fh:
+                          doc = parse(fh.read())
+                  except (OSError, UnicodeDecodeError, ParseError) as exc:
+                      return None, str(exc)
+                  return (doc, None) if isinstance(doc, dict) else (None, "not a mapping")
+              return None, f"no {' or '.join(ACTION_FILES)} in the checkout"
+
+
+          def action_steps(doc: dict) -> list:
+              """A composite action's steps, and a Docker action's docker:// image as one more step."""
+              runs = doc.get("runs") if isinstance(doc.get("runs"), dict) else {}
+              image = str(runs.get("image") or "")
+              return [s for s in runs.get("steps") or [] if isinstance(s, dict)] + ([{"uses": image}] if image.startswith("docker://") else [])
+
+
+          def local_action_findings(repo: str, steps: list) -> tuple:
+              """(findings, unread) for each local action the steps call, and each local action those call, read once each."""
+              found, unread, seen, todo = [], [], set(), list(steps)
+              while todo:
+                  uses = str(todo.pop(0).get("uses") or "")
+                  rel = os.path.normpath(uses[2:] or ".") if uses.startswith(OWN) else None
+                  if rel is None or rel in seen:
+                      continue
+                  seen.add(rel)
+                  doc, why = read_action(repo, rel)
+                  if why:
+                      unread.append((rel, f"local action: {why}"))
+                      continue
+                  inner = action_steps(doc)
+                  found += pin_findings(rel, inner)
+                  todo += inner
+              return found, unread
+          CI_STANDARD_ACTIONS_PY
           cat > "$RUNNER_TEMP/ci_standard_rules.py" <<'CI_STANDARD_RULES_PY'
           """ci_standard_rules.py: the CI standard's rules, and check_repo, which applies them to one checkout.
 
@@ -633,6 +710,7 @@ jobs:
           import re
           import subprocess
 
+          from ci_standard_actions import LOCK_FILE, SHA_RE, local_action_findings, pin_findings
           from ci_standard_yaml import EXPR, ParseError, parse
 
           RULES = ("caller", "pin", "dependabot", "permissions", "concurrency", "timeout", "runner", "pinned", "cache", "no-share", "blacksmith")
@@ -649,11 +727,7 @@ jobs:
           STANDARD = "<owner>/git-crafter/.github/workflows/ci-standard.yml"
           STANDARD_RE = re.compile(r"([A-Za-z0-9][\w.-]*)/(" + REPO_NAMES + r")/\.github/workflows/ci-standard\.yml@")
           LOCAL_STANDARD = "./.github/workflows/ci-standard.yml"
-          SHA_RE = re.compile(r"[^@\s]+@[0-9a-f]{40}")
           FULL_SHA = re.compile(r"[0-9a-f]{40}")
-          # This repo's own actions: ./ runs the checkout's copy, $/ the copy at the workflow's commit (gh actions-lock).
-          OWN = ("./", "$/")
-          LOCK_FILE = "actions.lock"
           PIN_LINE_RE = re.compile(r"uses:\s*[\"']?[A-Za-z0-9][\w.-]*/" + REPO_NAMES + r"/\.github/workflows/ci-standard\.yml@([^\s\"'#]+)[\"']?\s*(#\s*(\S+))?")
           NPM_RE = re.compile(r"\b(npm (ci|install)|pnpm install|yarn install)\b")
           PIP_RE = re.compile(r"\bpip3? install\b")
@@ -775,18 +849,6 @@ jobs:
                   name = str(s.get("uses") or "").split("@", 1)[0].lower()
                   if name in BLACKSMITH_CACHES:
                       found.append(("blacksmith", where, f"{name} keeps storage Blacksmith bills, which no meter here stops"))
-              return found
-
-
-          def pin_findings(where: str, steps: list, locked=frozenset()) -> list:
-              """Each step's uses: pinned to a full SHA or locked in actions.lock, a docker:// image to a digest."""
-              found = []
-              for s in steps:
-                  uses = str(s.get("uses") or "")
-                  if uses and not uses.startswith(OWN + ("docker://",)) and not SHA_RE.fullmatch(uses) and uses not in locked:
-                      found.append(("pinned", where, f"{uses} is not pinned to a full commit SHA, and {LOCK_FILE} does not lock it"))
-                  if uses.startswith("docker://") and "@sha256:" not in uses:
-                      found.append(("pinned", where, f"{uses} is not pinned to a digest"))
               return found
 
 
@@ -1021,7 +1083,9 @@ jobs:
               docs, texts, unread = read_workflows(folder, [f for f in files if f not in config["skip"]])
               house, excepted = house_findings(docs, config["exceptions"], unread, read_lock(folder))
               caller_found, caller = check_caller(repo, docs, texts)
-              findings = caller_found + house + share_findings(repo)
+              local_found, local_unread = local_action_findings(repo, [s for doc in docs.values() for job in doc["jobs"].values() for s in steps_of(job)])
+              findings = caller_found + house + local_found + share_findings(repo)
+              unread += local_unread
               return {"follows": not findings and not unread, "workflows": len(files), "caller": caller, "behind": lag_of(caller, ask_behind),
                       "findings": findings, "excepted": excepted, "could_not_check": unread}
           CI_STANDARD_RULES_PY
