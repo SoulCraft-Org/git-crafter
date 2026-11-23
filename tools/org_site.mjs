@@ -9,12 +9,14 @@ import { overlayTargets, readTargetFiles } from "../quality/overlay.mjs";
 
 import { isMeasured, notMeasured, ORG, SITE_REPO, TEMPLATE_TARGETS } from "./org_base.mjs";
 
-// The template's targets, then each pack's (site.packs, their targets folders), with the site's laid over them, as definitions; why when the overlay refuses.
+// The template's targets, then each pack's (site.packs: its folder and targets folder), with the site's laid over them, as definitions; why when the overlay refuses.
 function siteDefs(site, targets, base) {
   try {
     const files = readTargetFiles(TEMPLATE_TARGETS);
-    for (const dir of site.packs ?? []) {
-      for (const f of readTargetFiles(resolve(base, dir))) {
+    for (const pack of site.packs ?? []) {
+      // A pack not checked out is a usage error, as collect.mjs reads it, never an empty tab.
+      if (!existsSync(resolve(base, pack.dir))) throw new Error(`pack ${pack.dir} is not checked out`);
+      for (const f of readTargetFiles(resolve(base, pack.targets))) {
         if (files.some((g) => g.file === f.file)) throw new Error(`pack targets ${f.file} is named like another targets file; rename the pack's`);
         files.push(f);
       }
