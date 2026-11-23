@@ -250,6 +250,23 @@ def test_action_link(wrong: list):
             wrong.append(f"a local action through a link at {link}: {r['findings']} {r['could_not_check']}")
 
 
+def test_unreadable(wrong: list):
+    """A non-UTF-8 dependabot.yml and an exception whose rules hold a list exit 3, could not check, with no
+    traceback (#203)."""
+    cases = [("a dependabot.yml that is not UTF-8", ".github/dependabot.yml", DEPENDABOT.encode() + b"# caf\xe9\n"),
+             ("an exception whose rules hold a list", ".github/ci-standard.json",
+              json.dumps({"version": 1, "exceptions": {"deploy.yml": {"rules": [["runner"]], "why": "x"}}}).encode())]
+    for label, rel, data in cases:
+        with tempfile.TemporaryDirectory() as tmp:
+            for name, text in {**GOOD, rel: data}.items():
+                os.makedirs(os.path.dirname(os.path.join(tmp, name)), exist_ok=True)
+                with open(os.path.join(tmp, name), "wb") as fh:
+                    fh.write(text if isinstance(text, bytes) else text.encode())
+            r = subprocess.run([sys.executable, "-I", CLI, "check", "--repo", tmp], capture_output=True, text=True)
+        if r.returncode != 3 or "Traceback" in r.stderr or "ci-standard:" not in r.stdout:
+            wrong.append(f"{label}: exit {r.returncode}, want 3 with a summary line: {r.stdout}{r.stderr}")
+
+
 def test_exceptions(wrong: list):
     """An exception with a why applies; a bad one is a usage error; the local caller and an empty repo."""
     r = repo_with({**GOOD, ".github/workflows/deploy.yml": DEPLOY.replace("runs-on: ubuntu-slim", "runs-on: macos-15"),
@@ -438,7 +455,7 @@ def test_alone(wrong: list):
 def run() -> int:
     """Every part; prints each failure and PASS or FAIL, and returns 0 or 1."""
     wrong = []
-    for part in (test_repos, test_lock_link, test_action_link, test_exceptions, test_changes, test_parser, test_embed, test_alone):
+    for part in (test_repos, test_lock_link, test_action_link, test_unreadable, test_exceptions, test_changes, test_parser, test_embed, test_alone):
         part(wrong)
     for line in wrong:
         print(f"ci-standard self-test: FAIL: {line}")
