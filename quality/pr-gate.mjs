@@ -6,6 +6,8 @@
 //   pull_requests.linked_issue_share  it links no issue or card
 //   pull_requests.body_table_share    it shows no table
 //   pull_requests.latest_body_words   it has more prose words than the goal
+//   (no metric)                        a table headed Left, Not fixed or Follow-up
+//                                     has a row naming no issue and no card
 //   pull_requests.latest_lines        it asks a reviewer to read more lines
 //                                     than the goal (reviewedLines, which
 //                                     leaves out lockfiles, generated files,
@@ -28,12 +30,13 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isDependabot } from './collectors/github/github-flow.mjs';
 import { diffFiles, movedPairs, readLines } from './collectors/github/github-reviews.mjs';
-import { hasTable, linksIssue, proseWords } from './collectors/github/github-text.mjs';
+import { hasTable, linksIssue, proseWords, unlinkedLeftRows } from './collectors/github/github-text.mjs';
 import { overlayTargets, readTargetFiles } from './overlay.mjs';
 
 const QUALITY = fileURLToPath(new URL('.', import.meta.url));
 const WORDS = 'pull_requests.latest_body_words';
 const LINES = 'pull_requests.latest_lines';
+const leftFix = (row) => `the row "${row.length > 60 ? `${row.slice(0, 57)}...` : row}" of a Left, Not fixed or Follow-up table names no issue or card: add "#N" or "PVTI_..." to the row, or remove it, then re-run this job`;
 export const FIX = 'add a line "Closes #N" (or Fixes, Resolves) for the issue this closes, or "Part of #N" when it only serves the issue or card; a draft card has no number yet, so write "Card: PVTI_..." (its board id), then re-run this job';
 
 /** { ignore, words, lines, notReviewed }: the text a description is read without, its prose-word goal, the reviewed-lines goal and the repo's not-reviewed files, the template's under the repo's. */
@@ -55,6 +58,7 @@ export function misses(body, author = '', { ignore = [], words = Infinity } = {}
   return [
     !linksIssue(body, ignore) && `the description links no issue: ${FIX}`,
     !hasTable(body ?? '', ignore) && 'the description shows no table: put its facts in a table, then re-run this job',
+    ...unlinkedLeftRows(body, ignore).map(leftFix),
     count > words && `the description has ${count} prose words, goal ${words}: move facts into a table or diagram, which are not counted, then re-run this job`,
   ].filter(Boolean);
 }

@@ -89,6 +89,24 @@ describe('pr-gate', () => {
     assert.equal(misses('', 'someone', TEMPLATE).length, 2, 'an empty description misses the link and the table');
   });
 
+  it('fails a Left, Not fixed or Follow-up table row that names no issue or card, and names the row', () => {
+    const left = (head, ...rows) => `${CLEAN}\n\n| ${head} | Why |\n|---|---|\n${rows.join('\n')}`;
+    for (const head of ['Left', 'not fixed', 'Follow-up', 'Follow up']) {
+      const found = misses(left(head, '| milestones reader | waits on a token |', '| caches | #305 |'), 'someone');
+      assert.equal(found.length, 1, head);
+      assert.match(found[0], /the row "milestones reader \| waits on a token" of a Left, Not fixed or Follow-up table names no issue or card: add "#N" or "PVTI_..."/);
+    }
+    assert.equal(misses(left('Left', '| a | nothing |', '| b | nothing |'), 'someone').length, 2, 'one fix per row');
+    assert.match(run({ PR_BODY: left('Left', '| a | nothing |'), PR_AUTHOR: 'someone' }).lines.join('\n'), /::error::pr-gate: the row "a \| nothing"/);
+  });
+
+  it('passes a Left table whose rows each name an issue, a repo issue, an issue URL or a card, and other tables', () => {
+    const rows = ['| milestones | #305 |', '| caches | SoulCraft-Org/git-crafter#306 |', '| maps | https://github.com/SoulCraft-Org/git-crafter/issues/307 |', '| card | PVTI_lADOE8y6T84BqPGMzhHt8f0 |', '| | |'];
+    assert.deepEqual(misses(`${CLEAN}\n\n| Left | Why |\n|---|---|\n${rows.join('\n')}`, 'someone'), []);
+    assert.deepEqual(misses(`${CLEAN}\n\n| Moves | Detail |\n|---|---|\n| nothing linked | here |`, 'someone'), [], 'a table with another header is not read');
+    assert.deepEqual(misses(`${CLEAN}\n\n\`\`\`\n| Left | Why |\n|---|---|\n| a | b |\n\`\`\``, 'someone'), [], 'a table inside a fence is not read');
+  });
+
   it('exempts Dependabot, which writes its own description', () => {
     assert.deepEqual(misses('Bumps a package.', 'dependabot[bot]', TEMPLATE), []);
     assert.deepEqual(misses('Bumps a package.', 'app/dependabot', TEMPLATE), []);
