@@ -5,6 +5,7 @@ import { LAST_CARDS } from "./github-queries.mjs";
 import { cardsOr, workflowsOr, usesTargets, stepTargets, projectOr } from "./github-helpers.mjs";
 import { proseWords, hasVisual, hasPicture } from "./github-text.mjs";
 import { readForms } from "./github-loaders.mjs";
+import { lockKey } from "../lib/lock-key.mjs";
 import { existsSync } from "node:fs";
 
 /** Each metric reads through the loaders and returns measured(...) or skip(...). */
@@ -148,8 +149,9 @@ export const ACTION_METRICS = {
       const files = await workflowsOr(L);
       if (files.could_not_check) return files;
       const lock = await L.lockedWorkflows();
-      // GitHub runs the recorded commit of a locked reference, so it is as fixed as a SHA.
-      const fixed = (file, target) => /@[0-9a-f]{40}$/.test(target) || (!lock.could_not_check && lock.get(file)?.has(target) === true);
+      // GitHub runs the recorded commit of a locked reference, so it is as fixed as a SHA. The lock files
+      // owner/repo/sub@ref under owner/repo@ref, so a sub-path action matches through lockKey.
+      const fixed = (file, target) => /@[0-9a-f]{40}$/.test(target) || (!lock.could_not_check && lock.get(file)?.has(lockKey(target)) === true);
       const detail = [];
       let pinned = 0;
       let total = 0;

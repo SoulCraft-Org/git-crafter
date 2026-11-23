@@ -4,6 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parse as parseYaml } from 'yaml';
+import { lockKey } from '../lib/lock-key.mjs';
 
 export const DAY = 864e5;
 // Rounds to d decimals (one by default).
@@ -208,11 +209,11 @@ export function directDependencies(root) {
 
 // ---- Actions -----------------------------------------------------------------
 
-// Each reference gh actions-lock has locked, with the commit it recorded; empty with no readable lockfile.
+// Each reference gh actions-lock has locked, by lockKey, with the commit it recorded; empty with no readable lockfile.
 function lockedCommits(dir) {
   try {
     const deps = parseYaml(fs.readFileSync(path.join(dir, 'actions.lock'), 'utf8'))?.dependencies ?? {};
-    return new Map(Object.entries(deps).map(([key, dep]) => [key, String(dep?.commit ?? '').replace(/^sha1-/, '')]));
+    return new Map(Object.entries(deps).map(([key, dep]) => [lockKey(key), String(dep?.commit ?? '').replace(/^sha1-/, '')]));
   } catch {
     return new Map();
   }
@@ -226,8 +227,8 @@ export function actionPins(root) {
   for (const f of fs.existsSync(dir) ? fs.readdirSync(dir).filter((n) => /\.ya?ml$/.test(n)) : []) {
     for (const m of fs.readFileSync(path.join(dir, f), 'utf8').matchAll(/^\s*-?\s*uses:\s*([\w.-]+)\/([\w.-]+)(\/[^@\s]*)?@([^\s#]+)/gm)) {
       const key = `${m[1]}/${m[2]}${m[3] ?? ''}@${m[4]}`;
-      // A locked tag reads as its recorded commit, which is what runs.
-      if (!pins.has(key)) pins.set(key, { owner: m[1], repo: m[2], path: m[3] ?? '', ref: locked.get(key) || m[4], files: [] });
+      // A locked tag reads as its recorded commit, which is what runs; the lock keys a sub-path action by its repo.
+      if (!pins.has(key)) pins.set(key, { owner: m[1], repo: m[2], path: m[3] ?? '', ref: locked.get(lockKey(key)) || m[4], files: [] });
       pins.get(key).files.push(f);
     }
   }

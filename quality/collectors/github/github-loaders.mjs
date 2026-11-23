@@ -7,6 +7,7 @@ import { connection, GhError } from "./github-core.mjs";
 import { ISSUES, RECENT_ISSUES, OPEN_ISSUE_TYPES, LABEL_USE, MERGED_PULLS, MERGED_PAGE, OPEN_PULLS, BRANCH_COMMITS, SECURITY_POLICY, VULNERABILITY_ALERTS } from "./github-queries.mjs";
 import { readProtection, readProject } from "./github-reads.mjs";
 import { diffFiles } from "./github-reviews.mjs";
+import { lockKey } from "../lib/lock-key.mjs";
 
 // Last-N bases, never calendar windows: each metric reads the latest events,
 // which new work replaces. The sources in targets/github.json say why each N.
@@ -33,15 +34,15 @@ export function readWorkflows(root) {
 
 /**
  * The workflows onboarded to .github/workflows/actions.lock (gh actions-lock),
- * each file name with the uses: lines locked for it: an empty map with no
- * lockfile, a skip when it does not parse.
+ * each file name with the uses: lines locked for it, as lockKey writes them:
+ * an empty map with no lockfile, a skip when it does not parse.
  */
 function readLock(root) {
   const file = path.join(root, ".github", "workflows", "actions.lock");
   if (!existsSync(file)) return new Map();
   try {
     const flows = YAML.parse(readFileSync(file, "utf8"))?.workflows ?? {};
-    return new Map(Object.entries(flows).map(([p, uses]) => [path.basename(p), new Set(Array.isArray(uses) ? uses : [])]));
+    return new Map(Object.entries(flows).map(([p, uses]) => [path.basename(p), new Set((Array.isArray(uses) ? uses : []).map(lockKey))]));
   } catch (err) {
     return { could_not_check: `.github/workflows/actions.lock does not parse as YAML: ${err.message.split("\n")[0]}` };
   }

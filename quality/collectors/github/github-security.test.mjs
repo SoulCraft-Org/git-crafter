@@ -232,6 +232,15 @@ describe("Security and quality: Actions hardening, supply chain and Claude Code"
     assert.equal(await pinned({}), 0, "no lockfile");
   });
 
+  it("a sub-path action counts as pinned through the lock's owner/repo@ref key, whatever the owner's case", async () => {
+    const wf = ["name: w", "on: push", "jobs:", "  a:", "    runs-on: ubuntu-latest", "    steps:", "      - uses: Acme/Kit/sub/path@v1.2.3", "      - uses: acme/other@v2"].join("\n");
+    const lock = (...uses) => ["version: 'v0.0.3'", "workflows:", "    '.github/workflows/a.yml':", ...uses.map((u) => `        - '${u}'`), "dependencies: {}"].join("\n");
+    const pinned = async (text) => (await run({ root: repoWith({ ".github/workflows/a.yml": wf, ".github/workflows/actions.lock": text }) }))["actions.pinned_share"].value;
+    assert.equal(await pinned(lock("acme/kit@v1.2.3", "acme/other@v2")), 100, "gh actions-lock drops the sub-path and lower-cases the owner");
+    assert.equal(await pinned(lock("acme/kit@v1.2.3")), 50, "the plain action is still unlocked");
+    assert.equal(await pinned(lock("acme/kit@v1.0.0", "acme/other@v2")), 50, "locked at another ref");
+  });
+
   it("finds a pull_request_target job that checks out the pull request's head, and only that", async () => {
     const wf = (ref) => ["name: label", "on: pull_request_target", "jobs:", "  label:", "    runs-on: ubuntu-latest", "    steps:", "      - uses: actions/checkout@1111111111111111111111111111111111111111", ...(ref ? ["        with:", `          ref: ${ref}`] : [])].join("\n");
     const bad = await run({ root: repoWith({ ".github/workflows/label.yml": wf("${{ github.event.pull_request.head.sha }}") }) });
