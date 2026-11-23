@@ -149,7 +149,7 @@ def merge_problems():
         merge_local(shared, [])
         out.append("merge_local accepted a local list that is not an object")
     except ValueError:
-        pass
+        pass  # expected: merge_local refuses a list that is not an object, which is the pass case
     return out
 
 
