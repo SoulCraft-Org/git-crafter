@@ -1,20 +1,23 @@
-// Reads the GitHub repo switches templates/setup.json lists, through gh api.
+// Sets the GitHub repo switches templates/setup.json lists, through gh api.
 //
-//   node tools/apply_setup.mjs --repo owner/name [--check]
+//   node tools/apply_setup.mjs --repo owner/name [--apply] [--check]
 //
-// Each row prints as same, would change, by hand, optional, org's rules, no
-// value or unreadable; nothing changes. --check exits 1 when a row that is not
-// optional differs or cannot be read. Exit 2: a usage error.
+// A dry run by default: each row prints as same, would change, by hand,
+// optional, org's rules, no value or unreadable, and nothing changes.
+// --apply sets each "would change" row, then reads it back: changed or failed;
+// after the first failure the rest read skipped and are not written.
+// --check exits 1 when a row that is not optional differs (after --apply, as
+// read back) or cannot be read. Exit 2: a usage error.
 
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { reader, rowState } from "./apply_setup_rows.mjs";
+import { fill, reader, rowState } from "./apply_setup_rows.mjs";
 
 /** The setup list this tool reads by default. */
 export const SETUP = fileURLToPath(new URL("../templates/setup.json", import.meta.url));
-const USAGE = "usage: node tools/apply_setup.mjs --repo owner/name [--check]";
+const USAGE = "usage: node tools/apply_setup.mjs --repo owner/name [--apply] [--check]";
 
 /** gh as a function of its arguments and stdin: its stdout, or an Error carrying the HTTP status gh names. */
 export function ghRunner(exec = spawnSync) {
@@ -29,12 +32,12 @@ export function ghRunner(exec = spawnSync) {
   };
 }
 
-const SWITCHES = new Set(["--check"]);
+const SWITCHES = new Set(["--apply", "--check"]);
 const OPTIONS = new Set(["--repo"]);
 
 // The command line as options, or { problem }.
 function parseArgs(argv) {
-  const opts = { check: false };
+  const opts = { apply: false, check: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (SWITCHES.has(a)) opts[a.slice(2)] = true;
@@ -43,6 +46,20 @@ function parseArgs(argv) {
   }
   if (!/^[\w.-]+\/[\w.-]+$/.test(opts.repo ?? "")) return { problem: "--repo must be owner/name" };
   return opts;
+}
+
+// Sets one row through gh api, then reads it back.
+function applyRow(row, ctx) {
+  try {
+    const args = ["api", "-X", row.method, fill(row.path, ctx.vars)];
+    const body = row.body === undefined ? undefined : JSON.stringify(fill(row.body, ctx.vars));
+    ctx.run(body === undefined ? args : [...args, "--input", "-"], body);
+  } catch (err) {
+    return { status: "failed", note: err.message, failed: true };
+  }
+  ctx.read.forget();
+  const back = rowState(row, ctx);
+  return back.status === "same" ? { status: "changed", note: "read back" } : { status: "failed", note: `read back ${back.status}: ${back.note}`, failed: true };
 }
 
 // The context every row reads through: cached GETs and GraphQL, no per-repo values and no optional row turned on.
@@ -65,20 +82,31 @@ export function main(argv = process.argv.slice(2), { run = ghRunner(), setup = S
   }
   const [owner, repo] = opts.repo.split("/");
   const ctx = context(run, owner, repo);
-  const results = JSON.parse(readFileSync(setup, "utf8")).rows.map((row) => ({ row, ...rowState(row, ctx) }));
+  const results = [];
+  let stopped = false;
+  for (const row of JSON.parse(readFileSync(setup, "utf8")).rows) {
+    const state = rowState(row, ctx);
+    if (!opts.apply || state.status !== "would change") results.push({ row, ...state });
+    else if (stopped) results.push({ row, status: "skipped", note: "an earlier write failed", failed: true });
+    else {
+      const done = applyRow(row, ctx);
+      stopped = Boolean(done.failed);
+      results.push({ row, ...done });
+    }
+  }
   return report(results, opts, log);
 }
 
-// Prints one line per row and a tally; the exit code is 1 for a failed row under --check.
+// Prints one line per row and a tally; the exit code: 1 for a failed write, or a failed row under --check.
 function report(results, opts, log) {
   for (const r of results) log(`${r.status.padEnd(13)} ${r.row.id}${r.note ? `  ${r.note}` : ""}`);
   const unset = results.filter((r) => r.status === "no value");
   if (unset.length) log(`warning: ${unset.length} row(s) read no value and never fail --check: ${unset.map((r) => r.row.id).join(", ")}`);
   const tally = Object.entries(Object.groupBy(results, (r) => r.status)).map(([s, rs]) => `${rs.length} ${s}`);
-  log(`${opts.repo}: ${tally.join(", ")} (nothing changed)`);
+  log(`${opts.repo}: ${tally.join(", ")}${opts.apply ? "" : " (dry run: nothing changed)"}`);
   const failed = opts.check ? results.filter((r) => r.failed) : [];
   if (failed.length) log(`check failed: ${failed.map((r) => r.row.id).join(", ")}`);
-  return failed.length ? 1 : 0;
+  return failed.length || results.some((r) => r.status === "failed") ? 1 : 0;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exitCode = main();
