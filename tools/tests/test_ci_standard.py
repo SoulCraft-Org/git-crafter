@@ -270,6 +270,23 @@ def test_changes(wrong: list):
             wrong.append("a change to a workflow file did not run")
 
         output_flag(g, git, wrong)
+        never_match(g, wrong)
+
+
+def never_match(g: str, wrong: list):
+    """A glob that can never match a git path is a usage error, exit 2, so ci-ok fails; a glob that matches no
+    tracked file warns (#199)."""
+    for label, paths, code, text in [
+        ("a leading ./", "docs/**\n./src/**", 2, "'./src/**'"),
+        ("a leading /", "/src/**", 2, "'/src/**'"),
+        ("a ! negation", "!docs/**", 2, "'!docs/**'"),
+        ("a glob that matches no file", "dcos/**", 0, "::warning::"),
+        ("a glob that matches a file", "docs/**", 0, "run=true"),
+    ]:
+        r = subprocess.run([sys.executable, "-I", CLI, "changes", "--paths=" + paths, "--base=" + "0" * 40], cwd=g,
+                           capture_output=True, text=True, env={k: v for k, v in os.environ.items() if k != "GITHUB_OUTPUT"})
+        if r.returncode != code or text not in r.stdout or (code == 0 and paths == "docs/**" and "::warning::" in r.stdout):
+            wrong.append(f"changes, {label}: exit {r.returncode}, want {code} with {text!r}: {r.stdout}")
 
 
 def output_flag(g: str, git, wrong: list):
@@ -319,9 +336,9 @@ def test_parser(wrong: list):
     ]:
         try:
             parse(text)
-            wrong.append(f"parsed {label}")
         except ParseError:
-            pass
+            continue  # the parser must refuse it
+        wrong.append(f"parsed {label}")
 
 
 def quiet(fn, *args):
