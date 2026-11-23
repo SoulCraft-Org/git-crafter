@@ -1,6 +1,6 @@
 // How the CI collector reads a workflow file: its triggers, hooks, runners and the graph of its jobs.
 import path from "node:path";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import YAML from "yaml";
 
 // A repo file's text, or null when it is missing.
@@ -39,6 +39,26 @@ export function runsOnPush(root, rel, branch) {
   const file = path.join(root, rel ?? "");
   if (!rel || !existsSync(file)) return false;
   return firesOn((YAML.parse(readFileSync(file, "utf8")) ?? {}).on, branch).push;
+}
+
+/**
+ * The workflow files (as `workflows/<file>/runs` names them) that run on a pull
+ * request and have a step calling the local actions/pages action, whatever the
+ * file is called: a repo may split its Pages check from its publish. A file
+ * that does not parse is left out.
+ */
+export function pagesWorkflows(root) {
+  const dir = path.join(root, ".github", "workflows");
+  const files = existsSync(dir) ? readdirSync(dir).filter((f) => /\.ya?ml$/.test(f)).sort() : [];
+  return files.filter((file) => {
+    try {
+      const doc = YAML.parse(readFileSync(path.join(dir, file), "utf8")) ?? {};
+      const calls = Object.values(doc.jobs ?? {}).some((job) => (job?.steps ?? []).some((s) => /(^|\/)actions\/pages(\/|@|$)/.test(String(s?.uses ?? ""))));
+      return calls && "pull_request" in triggers(doc.on);
+    } catch {
+      return false;
+    }
+  });
 }
 
 // A step's name, else "uses <action>" or "run".

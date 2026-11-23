@@ -168,9 +168,9 @@ describe("collect", () => {
     assert.equal(count(/\/pulls\?/), 1);
     assert.equal(count(/\/check-runs/), 3, "one per merge commit of the last merged pull requests");
     assert.equal(count(/search\/issues|billing|commits\?/), 0);
-    // 1 repo + 1 list + 2 run lists + 11 jobs + 5 logs + 1 attempt + 1 pulls + 3 check runs + 1 rate_limit + 1 pages.yml pull_request list = 27 REST and text calls.
+    // 1 repo + 1 list + 2 run lists + 11 jobs + 5 logs + 1 attempt + 1 pulls + 3 check runs + 1 rate_limit = 26 REST and text calls; the fixture has no workflow calling actions/pages, so no pull request list.
     assert.equal(count(new RegExp(`^repos/${REPO}$`)), 1, "the default branch, read once");
-    assert.equal(calls.filter((c) => !c.startsWith("graphql")).length, 27);
+    assert.equal(calls.filter((c) => !c.startsWith("graphql")).length, 26);
   });
 
   it("reads jobs with their steps in GraphQL calls small enough to finish within GitHub's timeout", async () => {
@@ -216,7 +216,7 @@ describe("collect", () => {
     const calls = [];
     await collect({ root: ROOT, mode: "local", params: FULL_PARAMS, gh: fakeGh({}, calls), now: NOW, repo: REPO });
     assert.equal(calls.filter((c) => /billing/.test(c)).length, 0, "no billing read");
-    assert.equal(calls.filter((c) => !c.startsWith("graphql")).length, 27, "the same 27 as a ci run");
+    assert.equal(calls.filter((c) => !c.startsWith("graphql")).length, 26, "the same 26 as a ci run");
   });
 
   it("prices each workflow's billed minutes at its runners' list rate", async () => {
@@ -362,7 +362,8 @@ describe("repo settings", () => {
       const calls = [];
       const got = await collect({ root: ROOT, mode: "local", params: { ...FULL_PARAMS, default_branch: "main" }, gh: fakeGh({}, calls), now: NOW });
       assert.equal(calls.length, 0);
-      for (const id of METRIC_IDS.filter((x) => x !== "ci.skip_unchanged_share")) {
+      // These two read the workflow files only: the repo is no part of what they find.
+      for (const id of METRIC_IDS.filter((x) => !["ci.skip_unchanged_share", "ci.pr_run_requests"].includes(x))) {
         assert.match(got[id].could_not_check, /params\.repo .* is not owner\/name, and GITHUB_REPOSITORY is unset/, id);
       }
       assert.equal(got["ci.skip_unchanged_share"].value, 40, "the files need no repo once params name the branch");

@@ -2,7 +2,10 @@
 // The collect and repo-settings cases are in ci-collect.test.mjs; shared fixtures in ci-fixtures.mjs.
 // Run with: node --test quality/collectors/ci/ci.test.mjs
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { after, describe, it } from "node:test";
 import { cacheVerdict, collect, commonStart, describeRun, flakyChecks, hookCode, hookRuns, jobGraph, jobNames, METRIC_IDS, pipelineStages, latestPriced, priceRuns, prRuns, pushToGreen, reasonFor, runnerRate, settings, shardCount, skipTriggers, weightedLightShare } from "./ci.mjs";
 import { GhError } from "../github/github.mjs";
 import { TARGETS, TEMPLATE_PARAMS, PARAMS, NOW, REPO, T, run, RUNS, LIGHT_SITE, GATES, job, JOBS, LOGS, PULLS, RUNS_OF, REST, fakeGh, ROOT, collectWith } from "./ci-fixtures.mjs";
@@ -297,27 +300,55 @@ describe("fail open", () => {
 describe("ci.pr_run_requests", () => {
   const only = TARGETS.filter((t) => t.id === "ci.pr_run_requests");
   const notice = { title: "GitHub requests", message: "live 12 REST, 3 GraphQL; 140 replayed from main (replay)" };
+  const roots = [];
+  after(() => roots.forEach((d) => rmSync(d, { recursive: true, force: true })));
+  // A repo root with these workflow files; a Pages check is one with a pull_request trigger and a step calling actions/pages.
+  const rootWith = (files) => {
+    const dir = mkdtempSync(path.join(tmpdir(), "ci-pages-"));
+    roots.push(dir);
+    mkdirSync(path.join(dir, ".github", "workflows"), { recursive: true });
+    for (const [name, text] of Object.entries(files)) writeFileSync(path.join(dir, ".github", "workflows", name), text);
+    return dir;
+  };
+  const pages = (uses, on = "[pull_request]") => `name: w\non: ${on}\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: ${uses}\n`;
+  const listOf = (file) => `repos/${REPO}/actions/workflows/${file}/runs?event=pull_request&status=success&per_page=10`;
   // Runs 91 to 94, newest first; `noted` names the runs whose one job printed a notice.
-  const prRest = (noted) => ({
-    [`repos/${REPO}/actions/workflows/pages.yml/runs?event=pull_request&status=success&per_page=10`]: { workflow_runs: [91, 92, 93, 94].map((id) => ({ id, head_repository: { full_name: REPO } })) },
+  const prRest = (noted, file = "pages.yml") => ({
+    [listOf(file)]: { workflow_runs: [91, 92, 93, 94].map((id) => ({ id, head_repository: { full_name: REPO } })) },
     ...Object.fromEntries([91, 92, 93, 94].flatMap((id) => [
       [`repos/${REPO}/actions/runs/${id}/jobs?per_page=100`, { jobs: [{ id: id * 10, name: "build", conclusion: "success" }, { id: id * 10 + 1, name: "deploy", conclusion: "skipped" }] }],
       [`repos/${REPO}/check-runs/${id * 10}/annotations`, noted.includes(id) ? [notice] : []],
     ])),
   });
+  const read = (files, rest, calls) => collectWith({ root: rootWith(files), targets: only, gh: fakeGh({ rest }, calls) }).then((r) => r["ci.pr_run_requests"]);
 
   it("reads the newest run whose jobs printed a notice", async () => {
-    const got = (await collectWith({ targets: only, gh: fakeGh({ rest: prRest([92, 93]) }) }))["ci.pr_run_requests"];
+    const got = await read({ "pages.yml": pages("$/actions/pages") }, prRest([92, 93]));
     assert.equal(got.value, 15);
     assert.match(got.source, /; run 92$/);
   });
 
   it("skips after 3 runs with no notice and never reads a 4th", async () => {
     const calls = [];
-    const got = (await collectWith({ targets: only, gh: fakeGh({ rest: prRest([94]) }, calls) }))["ci.pr_run_requests"];
+    const got = await read({ "pages.yml": pages("$/actions/pages") }, prRest([94]), calls);
     assert.equal(got.value, undefined);
     assert.match(got.could_not_check, /runs 91, 92, 93 printed no GitHub requests notice/);
     assert.ok(!calls.some((c) => /\/94\/jobs|\/940\//.test(c)), "run 94 is not read");
+  });
+
+  it("reads the workflow that calls actions/pages, whatever its file is named", async () => {
+    const calls = [];
+    const got = await read({ "site-check.yml": pages("./actions/pages"), "pages.yml": "name: pages\non: [push]\njobs:\n  deploy:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo publish\n" }, prRest([91], "site-check.yml"), calls);
+    assert.equal(got.value, 15);
+    assert.ok(calls.some((c) => c.includes("workflows/site-check.yml/runs")), "the caller of actions/pages is read");
+    assert.ok(!calls.some((c) => c.includes("workflows/pages.yml/runs")), "a file named pages.yml that does not call it is not");
+  });
+
+  it("skips with no workflow that runs on pull requests and calls actions/pages", async () => {
+    const calls = [];
+    const got = await read({ "pages.yml": pages("$/actions/pages", "[push]"), "ci.yml": pages("actions/checkout@v7") }, prRest([91]), calls);
+    assert.match(got.could_not_check, /no workflow .* calls actions\/pages/);
+    assert.equal(calls.length, 0, "nothing is asked of GitHub");
   });
 });
 
