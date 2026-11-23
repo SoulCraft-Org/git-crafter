@@ -81,6 +81,25 @@ const STYLE = (light, dark) => `
   text{font:14px system-ui,-apple-system,"Segoe UI",sans-serif}.b{font-weight:600}.h{font-size:34px;font-weight:600}.u{font-size:14px;font-weight:400}
   @media (prefers-color-scheme:dark){.bg{fill:#1a1a19;stroke:#3a3a37}.p{fill:#f0efec}.s{fill:#c3c2b7}.track{fill:#33332f}.box{stroke:#55544e}.arrow{stroke:#c3c2b7}.fill{fill:${dark}}}`;
 
+/**
+ * The spec of the picture for a card the Quality sync makes: the metric's pillar (its kind), the area label, the
+ * metric from now to goal, and three short steps. `row` is { def, entry } as the page scores it.
+ */
+export function cardSpec({ def, entry }, area = "") {
+  const goal = `${def.direction === "lower" ? "at most" : "at least"} ${def.goal}${def.unit ? ` ${def.unit}` : ""}`;
+  const unit = def.unit ?? "";
+  return {
+    pillar: def.kind ? def.kind[0].toUpperCase() + def.kind.slice(1) : "Quality",
+    area,
+    metric: { label: def.label ?? def.id, now: entry.value, goal: def.goal, unit },
+    steps: [
+      ["Need", `${def.label ?? def.id} misses its goal`],
+      ["Change", `Move it ${def.direction === "lower" ? "down" : "up"} to ${goal}`],
+      ["Done when", `the Quality page shows ${goal}`],
+    ],
+  };
+}
+
 /** The card's picture as one SVG document. Throws a usage error for an unknown pillar or a spec with no steps. */
 export function picture(spec) {
   const hues = PILLARS[spec.pillar];

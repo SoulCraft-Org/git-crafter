@@ -1,7 +1,7 @@
 // The card picture: wrapping, the meter's share, and the SVG a spec draws.
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { picture, progress, wrap } from "./picture.mjs";
+import { cardSpec, picture, progress, wrap } from "./picture.mjs";
 
 const SPEC = {
   pillar: "Speed",
@@ -43,5 +43,15 @@ describe("card picture", () => {
   it("refuses a pillar or steps it cannot draw", () => {
     assert.throws(() => picture({ ...SPEC, pillar: "Luck" }), /pillar must be one of Quality, Speed, Consumption/);
     assert.throws(() => picture({ ...SPEC, steps: [] }), /steps must list 1 to 4/);
+  });
+});
+
+describe("the sync's card spec", () => {
+  it("draws the metric's pillar, area, now and goal, and three steps; an unlabeled metric takes its id", () => {
+    const row = { def: { id: "ci.main_red_minutes", kind: "speed", label: "Main red minutes", unit: "min", goal: 0, direction: "lower" }, entry: { value: 40 } };
+    assert.deepEqual([cardSpec(row, "ci").pillar, cardSpec(row, "ci").area, cardSpec(row).steps.length], ["Speed", "ci", 3]);
+    assert.ok(picture(cardSpec(row)).includes("at most 0 min"));
+    const bare = cardSpec({ def: { id: "a.b", goal: 1, direction: "higher" }, entry: { value: 0 } });
+    assert.deepEqual([bare.pillar, bare.metric.label], ["Quality", "a.b"]);
   });
 });
