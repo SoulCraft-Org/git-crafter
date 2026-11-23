@@ -20,3 +20,12 @@ never reads the diffs itself.
 | Verdict | The orchestrator, not the reviewer, posts the `Review: MERGE at <sha>` line ([Who merges](SKILL.md#who-merges)). |
 | Passes | A reviewer works in two passes, mechanical then judgment. Two real problems beat ten vague ones. |
 | A fix after a passed review | needs only its delta from the reviewed SHA reviewed, at the row its files fall in. |
+
+## Claim
+
+| Claim | Rule |
+|---|---|
+| Post | When a review starts, the orchestrator comments `Reviewing <40-hex head sha>` on the PR. It never starts with `Review:`, so no reader takes it for a verdict. |
+| Lease | A claim lasts 2 minutes; its session renews it every minute while the review runs (Amazon SQS visibility timeout, read 2026-11-23). |
+| Void | A claim on an older SHA, or from a session that has ended, counts for nothing. A second merge attempt fails harmlessly under `--match-head-commit`. |
+| Basis | 22 reviews on 2026-11-23 took 5 s to 3.6 min, median about 1 min. |

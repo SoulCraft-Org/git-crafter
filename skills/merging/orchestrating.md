@@ -9,7 +9,7 @@ Part of the [`merging`](SKILL.md) skill, with its authority and precedence.
 | Always | Orchestrates and alone merges |
 | First | Starts every foreseeable session at once, no two writing the same file; a worker opens its PR once its branch is pushed |
 | On each wake-up | Checks every session, side sessions included. Nudges a quiet one, resumes one a usage limit stopped, and answers questions within `rules/delegation.md`, recording each answer and reversal in the PR description |
-| Other orchestrators | Reviews, merges or closes only its own workers' PRs, or a green PR the Waiting row frees ([Who merges](SKILL.md#who-merges)); comments on others'. Claims a card by setting it In Progress; skips one In Progress or with an open PR |
+| Other orchestrators | Reviews, merges or closes its own workers' PRs and [unclaimed](reviewing.md#claim) green ones; comments on others'. Claims a card by setting it In Progress; skips one In Progress or with an open PR |
 | Review | As [Who merges](SKILL.md#who-merges) says; only its own review counts |
 | Then | Archives finished sessions, then itself once nothing waits on the owner |
 
