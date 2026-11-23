@@ -2,15 +2,28 @@
 """ci_pool.py: the org's Blacksmith pool meter, the dollars used of Blacksmith's $12 monthly credit and the stop.
 
 Usage:
+    ci_pool.py meter --org=ORG --ledger=FILE [--seconds=N] [--cli-usage=FILE] [--hard-stop=N] [--resume] [--write]
+        Reads every repo's job records with $GH_TOKEN (the CI pool App's installation token), saves the ledger as it
+        goes and prints the reading. --cli-usage takes `blacksmith usage --since 30d --format json` output: its
+        estimated cost is the reading, the job records' cost its floor, and the higher counts. Without that cost the
+        reading is complete: false, so no chooser takes Blacksmith. With --write, at the hard stop (default $11.40)
+        every runner group whose name starts with Blacksmith is closed to all repos, again on each pass, until a pass
+        with --resume opens them to all. $CI_POOL_PREVIOUS, the last reading, carries the stop from pass to pass.
+        --write also stores the reading in the org variable CI_POOL. A pass stops on its own after N seconds
+        (default 900) and reads complete: false until a later pass catches up.
+        Exit 0 read, 2 usage error, 3 could not read.
     ci_pool.py --self-test
         Runs tools/tests/test_ci_pool.py with fake APIs.
 
-Each job counts as Blacksmith bills it: rounded up to the minute and weighted against an x64 2-vCPU minute. Standard
-library only.
+Blacksmith's free tier is a credit worth FREE x64 2-vCPU minutes at list price, so the meter works in dollars. Each
+job in the floor counts as Blacksmith bills it: rounded up to the minute, weighted against an x64 2-vCPU minute, times
+RATE. The stop is STOP_SHARE of the credit and the hard stop HARD_SHARE. A run whose jobs the meter could not all
+read makes the reading complete: false, and a chooser treats that as no reading. Standard library only.
 """
 
 from __future__ import annotations
 
+import argparse
 import datetime as dt
 import json
 import math
@@ -268,6 +281,41 @@ def backstop(api, org: str, reading: dict, hard_stop: float, resume: bool, previ
     return reading
 
 
+def write_variable(api, org: str, value: str) -> None:
+    """Stores the reading in the org variable CI_POOL, creating it the first time."""
+    body = {"name": "CI_POOL", "value": value, "visibility": "all"}
+    try:
+        api.request("PATCH", f"/orgs/{org}/actions/variables/CI_POOL", body=body)
+    except FileNotFoundError:
+        api.request("POST", f"/orgs/{org}/actions/variables", body=body)
+
+
+def save_ledger(path: str, ledger: dict) -> None:
+    """Writes the ledger whole or not at all: a pass killed mid-write leaves the last good copy."""
+    with open(path + ".tmp", "w", encoding="utf-8") as handle:
+        json.dump(ledger, handle, separators=(",", ":"))
+    os.replace(path + ".tmp", path)
+
+
+def load_ledger(path: str) -> dict:
+    """The saved ledger; empty when there is none or it cannot be read."""
+    try:
+        with open(path, encoding="utf-8") as handle:
+            ledger = json.load(handle)
+        return ledger if isinstance(ledger, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def run_meter(args, api, now: dt.datetime, clock=time.monotonic) -> dict:
+    """One pass: the ledger saved as it goes and once more at the end, even when a read fails."""
+    ledger = load_ledger(args.ledger)
+    try:
+        return meter(api, args.org, ledger, now, clock() + args.seconds, clock, lambda x: save_ledger(args.ledger, x))
+    finally:
+        save_ledger(args.ledger, ledger)
+
+
 def self_test() -> int:
     """Runs tools/tests/test_ci_pool.py; exit 2 where it is absent."""
     tests = os.path.join(HERE, "tests")
@@ -283,8 +331,41 @@ def main(argv: list) -> int:
     """The command line; the exit code."""
     if argv == ["--self-test"]:
         return self_test()
-    print("usage: ci_pool.py --self-test", file=sys.stderr)
-    return 2
+    parser = argparse.ArgumentParser(prog="ci_pool.py", description=__doc__.split("\n\n")[0])
+    sub = parser.add_subparsers(dest="mode", required=True)
+    p = sub.add_parser("meter")
+    p.add_argument("--org", required=True)
+    p.add_argument("--ledger", required=True)
+    p.add_argument("--seconds", type=int, default=900)
+    p.add_argument("--cli-usage")
+    p.add_argument("--hard-stop", type=float, default=HARD_STOP)
+    p.add_argument("--resume", action="store_true")
+    p.add_argument("--write", action="store_true")
+    args = parser.parse_args(argv)
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]{0,38}", args.org):
+        print(f"::error title=ci-pool usage::not an org name: {args.org!r}")
+        return 2
+    if not 0 < args.hard_stop <= CREDIT:
+        print(f"::error title=ci-pool usage::--hard-stop must be over 0 and at most {CREDIT} dollars, not {args.hard_stop}")
+        return 2
+    try:
+        api = Api(os.environ.get("GH_TOKEN", ""))
+        reading = cross_check(run_meter(args, api, dt.datetime.now(dt.timezone.utc)), read_text(args.cli_usage))
+        if args.write:
+            backstop(api, args.org, reading, args.hard_stop, args.resume, os.environ.get("CI_POOL_PREVIOUS"))
+        reading["api_calls"] = api.calls
+        print(json.dumps(reading, indent=1))
+        if args.write:
+            write_variable(api, args.org, json.dumps(reading, separators=(",", ":")))
+    except Unreadable as err:
+        print(f"::warning title=ci-pool could not check::{err}; CI_POOL is left as it was, and goes stale")
+        return 3
+    b = reading["blacksmith"]
+    with open(os.environ.get("GITHUB_STEP_SUMMARY") or os.devnull, "a", encoding="utf-8") as handle:
+        handle.write(f"## CI pool\n\n| Cost $ | Stop $ | Left $ | Floor $ | Complete | Stopped |\n|---|---|---|---|---|---|\n"
+                     f"| {b['cost']} | {b['stop']} | {b['left']} | {b['floor_cost']} | {reading['complete']} | "
+                     f"{b.get('stopped', 'not checked')} |\n")
+    return 0
 
 
 if __name__ == "__main__":
