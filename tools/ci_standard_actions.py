@@ -51,13 +51,6 @@ def read_action(repo: str, rel: str) -> tuple:
     return None, f"no {' or '.join(ACTION_FILES)} in the checkout"
 
 
-def action_steps(doc: dict) -> list:
-    """A composite action's steps, and a Docker action's docker:// image as one more step, to check as a job's."""
-    runs = doc.get("runs") if isinstance(doc.get("runs"), dict) else {}
-    image = str(runs.get("image") or "")
-    return [s for s in runs.get("steps") or [] if isinstance(s, dict)] + ([{"uses": image}] if image.startswith("docker://") else [])
-
-
 def local_action_findings(repo: str, steps: list) -> tuple:
     """(findings, unread) for each local action the steps call, and each local action those call, read once each."""
     found, unread, seen, todo = [], [], set(), list(steps)
@@ -71,7 +64,9 @@ def local_action_findings(repo: str, steps: list) -> tuple:
         if why:
             unread.append((rel, f"local action: {why}"))
             continue
-        inner = action_steps(doc)
+        runs = doc.get("runs") if isinstance(doc.get("runs"), dict) else {}
+        image = str(runs.get("image") or "")  # a Docker action's image is checked as one more step
+        inner = [s for s in runs.get("steps") or [] if isinstance(s, dict)] + ([{"uses": image}] if image.startswith("docker://") else [])
         found += pin_findings(rel, inner)
         todo += inner
     return found, unread
