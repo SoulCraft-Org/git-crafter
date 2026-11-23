@@ -60,6 +60,7 @@ export const MERGED_PULLS = `query MergedPulls($owner: String!, $name: String!, 
         ${PULL_FIELDS}
         ${MARKER_FIELDS}
         body baseRefName baseRepository { defaultBranchRef { name } } stack { number } mergeCommit { oid }
+        author { login } closingIssuesReferences(first: 10) { nodes { number createdAt } }
         ${HEAD_ROLLUP}
       }
     }

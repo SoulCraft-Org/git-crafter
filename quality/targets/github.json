@@ -386,6 +386,22 @@
     "chart": "gauge"
   },
   {
+    "id": "pull_requests.issue_before_pr_share",
+    "tab": "pull-requests",
+    "kind": "quality",
+    "label": "Issue made before the pull request",
+    "means": "Of merged pull requests that close an issue, the share whose issue came first; higher is better.",
+    "unit": "%",
+    "goal": 100,
+    "near": 80,
+    "direction": "higher",
+    "goal_source": "GitHub Copilot coding-agent docs, Get the best results (read 2026-11-23): an issue works like a prompt, so write it first, with the problem and what a good solution is; template goal (2026-11-23): issue first, for every pull request that closes one",
+    "source": "state: gh api graphql: the last 20 merged pullRequests that close an issue (closingIssuesReferences), those whose every issue has a createdAt before the pull request's own; Dependabot's pull requests are left out",
+    "needs": "none",
+    "chart": "gauge",
+    "group": "Size"
+  },
+  {
     "id": "pull_requests.latest_lines",
     "tab": "pull-requests",
     "kind": "quality",

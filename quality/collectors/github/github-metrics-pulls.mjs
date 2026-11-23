@@ -138,6 +138,17 @@ export const PULL_METRICS = {
       return measured(pct(linked, pulls.length), [count("linking an issue", linked), count("merged PRs read", pulls.length)]);
     },
   },
+  // The issue a PR closes, as GitHub links it (a closing keyword or the sidebar), against the day the PR opened.
+  // Dependabot opens PRs for no issue, and a PR that closes none has nothing to date.
+  "pull_requests.issue_before_pr_share": {
+    source: "gh api graphql: the last 20 merged pullRequests (createdAt, author, closingIssuesReferences' createdAt): of those that close an issue, the share whose every issue was created before the PR opened; Dependabot's left out",
+    async run(L) {
+      const pulls = (await L.merged()).filter((p) => !isDependabot(p.author?.login) && p.closingIssuesReferences?.nodes?.length);
+      if (!pulls.length) return skip("no merged PR closes an issue yet");
+      const first = pulls.filter((p) => p.closingIssuesReferences.nodes.every((i) => Date.parse(i.createdAt) < Date.parse(p.createdAt))).length;
+      return measured(pct(first, pulls.length), [count("issue first", first), count("merged PRs that close an issue", pulls.length)]);
+    },
+  },
   "pull_requests.latest_lines": {
     source: "gh api graphql: the latest merged pullRequest (additions, deletions, files, mergeCommit); git diff of its merge commit for moved lines",
     async run(L, { cfg }) {
