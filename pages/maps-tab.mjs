@@ -117,26 +117,36 @@ function timeBarHead(ro) {
 
 const KIND_NAMES = { quality: "Quality", speed: "Speed", consumption: "Consumption" };
 
-function panel(map, step, i, ro, critical, cfg, data, shared) {
-  const key = `${map.id}-${step.id}`;
-  const per = (ro2, title) => {
-    const list = ro2 ? repoBars(ro2.entry, cfg.repos) : [];
-    return list.some((d) => d.value !== 0) ? `<figure class="p-fig"><figcaption>${esc(title)}</figcaption>${bars(list, ro2.unit)}</figure>` : "";
-  };
-  // The step's one metric (checkMaps holds a step to exactly one).
-  const figs = [per(ro, `${ro.label} by repo`)].filter(Boolean).join("");
-  const ref = step.rule_ref;
+function panelFigs(ro, cfg) {
+  const list = repoBars(ro.entry, cfg.repos);
+  return list.some((d) => d.value !== 0) ? `<figure class="p-fig"><figcaption>${esc(`${ro.label} by repo`)}</figcaption>${bars(list, ro.unit)}</figure>` : "";
+}
+
+function panelHead(step, i, key, crit) {
   const icon = ICON_IDS.includes(step.icon ?? step.id) ? (step.icon ?? step.id) : "plan";
-  return `<article class="panel" id="step-${esc(key)}" data-step="${esc(key)}" aria-labelledby="h-${esc(key)}">
-<header class="p-head"><span class="p-num${critical.has(step.id) ? " crit" : ""}">${i + 1}</span><h3 id="h-${esc(key)}">${cicon(icon)}${esc(step.name)}</h3>${critical.has(step.id) ? '<span class="chip">critical path</span>' : ""}${step.actor ? `<span class="chip actor">${esc(ACTORS[step.actor] ?? step.actor)}</span>` : ""}</header>
-<div class="tiles">${tile(KIND_NAMES[ro.kind] ?? "Metric", ro, shared)}</div>
-<div class="p-body">
-<div class="p-figs">${figs || '<p class="empty">No per-repo data for this step.</p>'}</div>
-<div class="p-side">
+  const actor = step.actor ? `<span class="chip actor">${esc(ACTORS[step.actor] ?? step.actor)}</span>` : "";
+  return `<header class="p-head"><span class="p-num${crit ? " crit" : ""}">${i + 1}</span><h3 id="h-${esc(key)}">${cicon(icon)}${esc(step.name)}</h3>${crit ? '<span class="chip">critical path</span>' : ""}${actor}</header>`;
+}
+
+function panelSide(step, cfg, data) {
+  const ref = step.rule_ref;
+  return `<div class="p-side">
 <blockquote class="rule"><p>${esc(step.rule)}</p><a href="${esc(/^https:\/\//.test(ref) ? ref : `${cfg.repo_url}/${ref}`)}">${esc(step.rule_label ?? ref)}</a></blockquote>
 ${gates(step, data, cfg.repos)}
 <ul class="tools">${step.tools.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
-</div>
+</div>`;
+}
+
+function panel(map, step, i, ro, critical, cfg, data, shared) {
+  const key = `${map.id}-${step.id}`;
+  // The step's one metric (checkMaps holds a step to exactly one).
+  const figs = panelFigs(ro, cfg);
+  return `<article class="panel" id="step-${esc(key)}" data-step="${esc(key)}" aria-labelledby="h-${esc(key)}">
+${panelHead(step, i, key, critical.has(step.id))}
+<div class="tiles">${tile(KIND_NAMES[ro.kind] ?? "Metric", ro, shared)}</div>
+<div class="p-body">
+<div class="p-figs">${figs || '<p class="empty">No per-repo data for this step.</p>'}</div>
+${panelSide(step, cfg, data)}
 </div>
 </article>`;
 }
