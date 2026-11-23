@@ -23,6 +23,7 @@ that disagrees.
 | GitHub repos | create, publish or archive one. |
 | One-way deletes | a repo, Cloudflare resource, ruleset, branch protection or unread repo secret. Read the target and check nothing uses it (the owner, 2026-11-10). |
 | IT and settings | GitHub org, repo and App settings and permissions, rulesets and branch protection; any service's settings within the spending rule. Claude analyses, reviews and applies them (the owner, 2026-11-09). |
+| Tracking | Issues and cards: [rules/gates.md](gates.md#tracking). |
 
 Never push to `main`, force-push, hard-reset, take one side of a conflict
 wholesale, or turn on GitHub auto-merge.

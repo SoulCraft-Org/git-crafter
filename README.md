@@ -10,7 +10,6 @@ Templates for AI agents to run an open-source or open-weight repo with Claude Co
 | [Process page](https://soulcraft-org.github.io/git-crafter/) | Process maps: each step's tool, rule and metric |
 | [CI standard](templates/ci/README.md) | One reusable workflow on GitHub's standard hosted runners |
 | [Rules](rules/) and [guards](tools/) | What Claude sessions may do, and the `permissions.deny` list and hookify rules that block one-way doors |
-| [AGENTS.md](AGENTS.md) | The 300-token file Claude Code, OpenCode and other agents read before a change here |
 
 Both pages are public.
 

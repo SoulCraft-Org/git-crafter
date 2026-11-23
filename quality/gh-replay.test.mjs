@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { keyOf, readOnly, summary, writeShim } from "./gh-replay.mjs";
+import { keyOf, readOnly, saveRuns, summary, writeShim } from "./gh-replay.mjs";
 it("gh-replay replays reads only, never a write or a mutation", () => {
   for (const a of [["api", "repos/o/r/pulls"], ["api", "graphql", "-f", "query=query { viewer { login } }"], ["pr", "list"], ["api", "x", "-X", "GET"]]) assert.ok(readOnly(a), a.join(" "));
   for (const a of [["api", "x", "-f", "a=1"], ["api", "x", "--method=POST"], ["api", "x", "-X", "PATCH"], ["api", "x", "--input", "-"], ["api", "graphql", "-f", "query=mutation { a }"], ["pr", "merge"], ["run", "download"]]) assert.ok(!readOnly(a), a.join(" "));
@@ -55,21 +55,56 @@ it("gh-replay refuses -XPOST and --method=POST, saves no climbing path or token-
   const report = spawnSync(process.execPath, [fileURLToPath(new URL("gh-replay.mjs", import.meta.url)), "report"], { env: env("replay"), cwd: tmp }).stdout.toString();
   assert.match(report, /::warning title=GitHub requests::6 saved reads from main were unreadable/);
 });
-it("gh-replay setup on a pull request replays the newest push or schedule run on main, else the next under 24 h old (#61)", () => {
-  const [at, old] = [0, 25].map((h) => new Date(Date.now() - h * 3_600_000).toISOString().slice(0, 19) + "Z");
-  const runs = { workflow_runs: [["workflow_dispatch", 3, at], ["schedule", 2, at], ["push", 1, at], ["push", 0, old]].map(([event, id, t]) => ({ id, event, updated_at: t, head_repository: { full_name: "o/r" } })) };
-  // [the run that holds a save, the run replayed, the REST requests logged]
-  for (const [saved, chosen, rest] of [[2, "run 2", 3], [1, "run 1", 4], [0, "none", 3]]) {
+it("gh-replay saveRuns takes the two newest main saves under 24 h old, a failed run's included, never a branch's, a fork's, an expired or a stale one (#38)", () => {
+  const [now, ago] = [Date.parse("2026-11-23T12:00:00Z"), (h) => new Date(Date.parse("2026-11-23T12:00:00Z") - h * 3_600_000).toISOString()];
+  const save = (id, h, extra = {}) => ({ expired: false, created_at: ago(h), workflow_run: { id, head_branch: "main", repository_id: 7, head_repository_id: 7 }, ...extra });
+  const listing = [save(1, 30), save(2, 5), save(3, 1), save(4, 0.5, { expired: true }), { ...save(5, 0.2), workflow_run: { id: 5, head_branch: "claude/x" } }, { ...save(6, 0.1), workflow_run: { id: 6, head_branch: "main", repository_id: 7, head_repository_id: 9 } }];
+  assert.deepEqual(saveRuns(listing, now), ["3", "2"]);
+  assert.deepEqual(saveRuns(listing, now, 1), ["3"]);
+  assert.deepEqual(saveRuns([], now), []);
+});
+it("gh-replay setup on a pull request replays the newest main save, tops a failed run's reads up from the next, and logs each request (#38)", () => {
+  const ago = (h) => new Date(Date.now() - h * 3_600_000).toISOString();
+  const art = (id, h) => ({ expired: false, created_at: ago(h), workflow_run: { id, head_branch: "main" } });
+  const listing = { artifacts: [art(3, 1), art(2, 2), art(1, 25)] };
+  // [the runs that hold a save, the line printed, the requests logged, the calls after the listing]
+  const cases = [
+    [{ 3: ["r/x.json:new", "r/y.json:y", "latest.json:3"], 2: ["r/x.json:old"] }, "run 3", 3, ["run download 3"]],
+    [{ 3: ["r/x.json:new", "r/y.json:y"], 2: ["r/x.json:old", "r/z.json:z", "latest.json:2"] }, "run 3 + 2", 5, ["run download 3", "run download 2"]],
+    [{ 2: ["r/z.json:z", "latest.json:2"] }, "run 2", 4, ["run download 3", "run download 2"]],
+    [{}, "none", 3, ["run download 3", "run download 2"]],
+  ];
+  for (const [saves, chosen, rest, after] of cases) {
     const tmp = mkdtempSync(path.join(tmpdir(), "gh-replay-"));
-    writeFileSync(path.join(tmp, "runs.json"), JSON.stringify(runs));
-    writeFileSync(path.join(tmp, "gh"), `#!/bin/sh\necho "$*" >> "${tmp}/calls"\nif [ "$1" = api ]; then jq -r "$4" "${tmp}/runs.json"; else [ "$3" = ${saved} ]; fi\n`, { mode: 0o755 });
+    writeFileSync(path.join(tmp, "listing.json"), JSON.stringify(listing));
+    for (const [run, files] of Object.entries(saves)) for (const f of files) {
+      const [name, body] = f.split(":");
+      mkdirSync(path.dirname(path.join(tmp, `save-${run}`, name)), { recursive: true });
+      writeFileSync(path.join(tmp, `save-${run}`, name), body);
+    }
+    const fake = ["#!/bin/sh", `echo "$*" >> "${tmp}/calls"`, `if [ "$1" = api ]; then cat "${tmp}/listing.json"; exit 0; fi`, "run=$3", `[ -d "${tmp}/save-$run" ] || exit 1`, 'while [ $# -gt 0 ]; do [ "$1" = -D ] && into=$2; shift; done', `mkdir -p "$into" && cp -R "${tmp}/save-$run/." "$into"`, ""].join("\n");
+    writeFileSync(path.join(tmp, "gh"), fake, { mode: 0o755 });
     writeFileSync(path.join(tmp, "event.json"), JSON.stringify({ pull_request: { number: 7, head: { sha: "abc" } } }));
     const files = Object.fromEntries(["GITHUB_ENV", "GITHUB_PATH", "GITHUB_OUTPUT"].map((k) => [k, path.join(tmp, k)]));
     const env = { ...process.env, ...files, PATH: `${tmp}:${process.env.PATH}`, RUNNER_TEMP: tmp, GITHUB_EVENT_PATH: path.join(tmp, "event.json"), GITHUB_REPOSITORY: "o/r", GITHUB_WORKFLOW_REF: "o/r/.github/workflows/pages.yml@refs/pull/7/merge" };
     const out = spawnSync(process.execPath, [fileURLToPath(new URL("gh-replay.mjs", import.meta.url)), "setup"], { env }).stdout.toString();
-    assert.match(out, new RegExp(`main save under 24 h old: ${chosen}$`, "m"), `save in run ${saved}: the dispatch run and the 25 h old run are never tried`);
+    assert.ok(out.includes(`main save under 24 h old: ${chosen}\n`), out);
     const calls = readFileSync(path.join(tmp, "calls"), "utf8").trim().split("\n");
-    assert.deepEqual(calls.map((l) => l.split(" ").slice(0, 3).join(" ")), ["api repos/o/r/actions/workflows/pages.yml/runs?branch=main&status=success&per_page=10 --jq", "run download 2", ...(saved === 2 ? [] : ["run download 1"])]);
+    assert.deepEqual(calls.map((l) => l.split(" ").slice(0, 3).join(" ")), ["api repos/o/r/actions/artifacts?name=main-reads&per_page=10", ...after]);
     assert.equal(readFileSync(path.join(tmp, "gh-replay.log"), "utf8"), `rest ${rest}\n`);
+    const read = (f) => (existsSync(path.join(tmp, "gh-replay", f)) ? readFileSync(path.join(tmp, "gh-replay", f), "utf8") : null);
+    if (chosen === "run 3 + 2") assert.deepEqual(["r/x.json", "r/y.json", "r/z.json", "latest.json"].map(read), ["new", "y", "z", "2"], "the newer save wins; the older one adds only what it lacks");
+    assert.match(readFileSync(path.join(tmp, "GITHUB_OUTPUT"), "utf8"), chosen === "none" ? /latest=false/ : /latest=true/);
+  }
+});
+it("gh-replay report saves main's scored run only from a run that passed (#38)", () => {
+  for (const [status, saved] of [["success", true], ["failure", false]]) {
+    const tmp = mkdtempSync(path.join(tmpdir(), "gh-replay-"));
+    mkdirSync(path.join(tmp, "save"), { recursive: true });
+    mkdirSync(path.join(tmp, "data", "quality"), { recursive: true });
+    writeFileSync(path.join(tmp, "data", "quality", "latest.json"), "{}");
+    const run = { ...process.env, GH_REPLAY_DIR: path.join(tmp, "save"), GH_REPLAY_MODE: "record", GH_REPLAY_JOB_STATUS: status };
+    spawnSync(process.execPath, [fileURLToPath(new URL("gh-replay.mjs", import.meta.url)), "report"], { env: run, cwd: tmp });
+    assert.equal(existsSync(path.join(tmp, "save", "latest.json")), saved, status);
   }
 });
