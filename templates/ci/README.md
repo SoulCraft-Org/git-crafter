@@ -3,7 +3,7 @@
 | What | Holds |
 | --- | --- |
 | A repo's CI | runs through one reusable workflow, [ci-standard.yml](../../.github/workflows/ci-standard.yml), on free and included minutes only (the owner, 2026-11-02) |
-| The workflow's checks | [ci_standard.py](../../tools/ci_standard.py), with exit codes and exceptions, and the modules it imports, all embedded. |
+| The workflow's checks | [ci_standard.py](../../tools/ci_standard.py), its modules, exit codes and exceptions embedded |
 | Where this page and `rules/compute-detail.md` disagree | the rule wins |
 | Each dated decision, with how to reverse it | [DECISIONS.md](DECISIONS.md) |
 
@@ -11,7 +11,7 @@
 
 ```mermaid
 flowchart LR
-  C["1 Copy the five files<br/>in one pull request, and nothing else"] --> R["2 Require ci / ci-ok<br/>in a ruleset on the default branch"]
+  C["1 Copy the starter files<br/>in one pull request, and nothing else"] --> R["2 Require ci / ci-ok<br/>in a ruleset on the default branch"]
   R --> G["3 Settings, Pages<br/>source: GitHub Actions"]
   G --> P[PR: ci.yml checks<br/>Push to main: pages.yml publishes]
 ```
@@ -23,9 +23,16 @@ flowchart LR
 | [ci.yml](ci.yml) | `<repo>/.github/workflows/ci.yml` | set `paths`, `short` and `standard` |
 | [pages.yml](pages.yml) | `<repo>/.github/workflows/pages.yml` | add the repo's doc globs to its `pull_request` paths |
 | [dependabot.yml](dependabot.yml) | `<repo>/.github/dependabot.yml` | or add its `github-actions` entry to the repo's own; it bumps both Git Crafter pins together |
-| [wiki.yml](wiki.yml) | `<repo>/.github/workflows/wiki.yml` | optional; publishes `wiki/` ([setup](../open/README.md#settings)) |
 
-[pages.yml](pages.yml) calls `actions/pages` with `pages: process quality` and both configs.
+Optional, to `<repo>/.github/workflows/` unless noted:
+
+| File | For |
+| --- | --- |
+| [wiki.yml](wiki.yml) | publishing `wiki/` ([setup](../open/README.md#settings)) |
+| [scorecard.yml](scorecard.yml) | an advisory Scorecard, public repos only |
+| [claude-review.yml](claude-review.yml) | an advisory Claude security review of each PR |
+| [deploy-gate.yml](deploy-gate.yml) | a deploy branch's soak, with `tools/deploy_gate.sh` |
+| [ci-pool.yml](ci-pool.yml), [ci-pool-app.json](ci-pool-app.json) | the org's pool meter, to `<org>/.github` once ([CI-POOL.md](CI-POOL.md)) |
 
 ## Jobs
 
@@ -36,29 +43,25 @@ flowchart LR
 | `standard` | `ubuntu-latest` | The `standard` commands, when the change touched `standard-paths` (default `paths`) |
 | `ci-ok` | `ubuntu-slim` | Fails on a failed job, a failed check, or work skipped although its paths changed |
 
-| Source | 1-core minute | 2-core minute |
-| --- | --- | --- |
-| [GitHub's runner pricing](https://docs.github.com/en/billing/reference/actions-runner-pricing) (read 2026-11-03) | $0.002 | $0.006 |
+GitHub's runner pricing (read 2026-11-03): $0.002 a minute on 1 core, $0.006 on 2 ([source](https://docs.github.com/en/billing/reference/actions-runner-pricing)).
 
 ## Rules
 
 | Rule | Passes when |
 | --- | --- |
 | `caller` | a `pull_request` workflow calls `ci-standard.yml` |
-| `pin` | at a full SHA with a `# v7.0.0` comment |
+| `pin` | at a full SHA with a `# vX.Y.Z` comment |
 | `dependabot` | a `github-actions` entry exists |
 | `permissions` | top-level `read` or `none`; no `write-all` |
 | `concurrency` | a group that cancels superseded runs, never a deploy |
 | `timeout` | every job has `timeout-minutes` |
-| `runner` | `ubuntu-slim` or a standard hosted label. Another runner needs an exception with a reason in `<repo>/.github/ci-standard.json` |
-| `pinned` | every remote `uses:`, local actions' steps included, at a full SHA, or a step's reference locked in `.github/workflows/actions.lock` |
+| `runner` | `ubuntu-slim` or a standard hosted label; else an exception with a reason in `<repo>/.github/ci-standard.json`, five jobs at most |
+| `pinned` | every remote `uses:`, local actions' steps included, at a full SHA or locked in `.github/workflows/actions.lock` |
 | `cache` | `npm ci` or `pip install` with a setup cache |
 | `no-share` | no per-repo minute guard |
 | `blacksmith` | Blacksmith labels only via the chooser; no sticky disk or layer cache |
 
 ## Overflow switch
-
-Git Crafter's `pages.yml`, and the standard job of any caller that opts in through `ci-overflow.yml`. [DECISIONS.md](DECISIONS.md) has the meter.
 
 ```mermaid
 flowchart LR
@@ -72,8 +75,6 @@ flowchart LR
 | --- | --- |
 | On | `gh variable set CI_OVERFLOW_RUNNER --body blacksmith-2vcpu-ubuntu-2404` |
 | Off | `gh variable delete CI_OVERFLOW_RUNNER` |
-| Opt in | a `runner` job that calls `ci-overflow.yml` with `actions: read`, and `runner:` its label on the `ci` job ([example](../../.github/workflows/ci-overflow.yml)) |
-| A second repo | the org's [CI pool](CI-POOL.md) |
-| Meter | `runner` job log |
+| Opt in | a `runner` job that calls `ci-overflow.yml` with `actions: read`, and `runner:` its label on the `ci` job ([example](../../.github/workflows/ci-overflow.yml)); `pages.yml` is in already |
+| Meter | `runner` job log, [DECISIONS.md](DECISIONS.md) |
 | New lane | a `lanes` entry, `.github/ci-overflow.json` |
-| Exception | `runner`, five jobs, `.github/ci-standard.json` |
