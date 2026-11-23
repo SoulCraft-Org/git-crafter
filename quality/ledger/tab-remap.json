@@ -35,6 +35,7 @@
   {"from":"settings","to":"pages","status":"dropped","reason":"this repo is public, so its Pages site is public (Git Crafter, 2026-11-23)","ids":["settings.pages_private"]},
   {"from":"deploy","to":"pages","status":"dropped","reason":"it reads only after a failed deploy, and deploy.latest_failed counts one (Git Crafter, 2026-11-23)","ids":["deploy.latest_restore_hours"]},
   {"from":"usability","to":"pages","status":"dropped","reason":"Git Crafter ships no form page (Git Crafter, 2026-11-23)","ids":["usability.form_page_kib"]},
-  {"from":null,"to":"discussions","status":"new","reason":"the template's two Discussions readers score on the page from the day they land (2026-11-23)","ids":["discussions.oldest_unanswered_hours","discussions.unanswered_old"]}
+  {"from":null,"to":"discussions","status":"new","reason":"the template's two Discussions readers score on the page from the day they land (2026-11-23)","ids":["discussions.oldest_unanswered_hours","discussions.unanswered_old"]},
+  {"from":"projects","to":"projects","status":"dropped","reason":"GitHub refuses the App installation token for a board's workflows, and only a user token reads them (Git Crafter, 2026-11-23)","ids":["projects.workflows_on"]}
  ]
 }
