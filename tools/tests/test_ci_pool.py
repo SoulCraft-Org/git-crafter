@@ -189,8 +189,25 @@ class GroupApi:
         return {"total_count": len(self.groups), "runner_groups": self.groups}
 
     def request(self, method, path, params=None, body=None):
-        """Records the write."""
+        """Records the write and applies it to the groups."""
         self.writes.append((method, path.rsplit("/", 1)[-1], body))
+        parts = path.split("/")
+        gid = int(parts[-2] if parts[-1] == "repositories" else parts[-1])
+        if parts[-1] == "repositories":
+            self.repos[gid] = body["selected_repository_ids"]
+        else:
+            next(g for g in self.groups if g["id"] == gid)["visibility"] = body["visibility"]
+
+
+class FailingGroups(GroupApi):
+    """GroupApi whose PATCH of group 8 raises once, as a failed call does."""
+
+    def request(self, method, path, params=None, body=None):
+        """Raises Unreadable on the first PATCH of group 8, then behaves as GroupApi."""
+        if method == "PATCH" and path.endswith("/8") and not getattr(self, "failed", False):
+            self.failed = True
+            raise self.tool.Unreadable("PATCH group 8: HTTP 500")
+        super().request(method, path, params, body)
 
 
 def backstop_checks(tool):
@@ -226,6 +243,24 @@ def backstop_checks(tool):
     yield "resume at the hard stop keeps the saved access", at(11.9, held, True)[2] == saved
     shut = at(11.4, api=GroupApi(access={"Blacksmith": ("selected", [])}))
     yield "a group already closed has no earlier access saved", shut[2] == {"8": {"visibility": "all", "repos": []}}
+    # The access is published before any group closes, so a failed PATCH on a later group loses nothing.
+    FailingGroups.tool = tool
+    api, posted = FailingGroups(access=limited), []
+    def stop(previous, resume=False, cost=11.4):
+        """One pass's reading, as the last publish() left it; an Unreadable pass still leaves its published reading."""
+        reading = {"blacksmith": {"cost": cost}}
+        try:
+            tool.backstop(api, "org", reading, tool.HARD_STOP, resume, previous, lambda: posted.append(json.dumps(reading)))
+        except tool.Unreadable:
+            pass
+        return posted[-1] if posted else None
+    first = stop(None)
+    yield "the access is published before the failed PATCH", first is not None and json.loads(first)["blacksmith"]["access"] == saved and api.failed
+    second = stop(first, cost=1.0)
+    yield "a second pass closes the rest and keeps the first group's saved repos", json.loads(second)["blacksmith"]["access"] == saved
+    api.writes.clear()
+    stop(second, True, 1.0)
+    yield "resume then restores the first group's repos", ("PUT", "repositories", {"selected_repository_ids": [31, 32]}) in api.writes and api.groups[0]["visibility"] == "selected" and api.repos[7] == [31, 32]
     yield "garbled saved access is none", at(1.0, json.dumps({"blacksmith": {"stopped": True, "access": {"7": {"visibility": "x"}, "8": 1}}}), True)[1] == [
         ("PATCH", "7", {"visibility": "all"}), ("PATCH", "8", {"visibility": "all"})]
 
