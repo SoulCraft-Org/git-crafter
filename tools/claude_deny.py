@@ -153,17 +153,19 @@ def merge_problems():
     return out
 
 
+def duplicate_problems(data, rules):
+    """A deny rule listed twice, or a rule id used twice."""
+    out = ["a deny rule is listed twice"] if len(rules) != sum(len(r["deny"]) for r in data["rules"]) else []
+    ids = [r["id"] for r in data["rules"]]
+    return out + ["rule id %s is used twice" % i for i in sorted(set(ids)) if ids.count(i) > 1]
+
+
 def self_test(data):
     """Run every rule's examples, the accounting and the model's own test; 0 when all pass."""
     rules = deny_list(data)
     problems = [p for rule in data["rules"] for p in rule_problems(rule, rules)]
     accounting, accounted = accounting_problems(data)
-    problems += accounting
-    if len(rules) != sum(len(r["deny"]) for r in data["rules"]):
-        problems.append("a deny rule is listed twice")
-    ids = [r["id"] for r in data["rules"]]
-    problems += ["rule id %s is used twice" % i for i in sorted(set(ids)) if ids.count(i) > 1]
-    problems += merge_problems()
+    problems += accounting + duplicate_problems(data, rules) + merge_problems()
     for p in problems:
         print("FAIL " + p)
     print("claude_deny self-test: %d rules for %d retired guard rules, %s"
