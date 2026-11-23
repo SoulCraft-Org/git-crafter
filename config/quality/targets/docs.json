@@ -241,11 +241,12 @@
     {
      "doc": "AGENTS.md",
      "area": [
+      "CONTRIBUTING.md",
       "tools/verify.sh",
       ".github/workflows/verify.yml",
       "skills/merging/outside.md"
      ],
-     "why": "the rows name the verify entry point, the workflow that runs it and the outside-pull-request rule; a changed check in them does not change a row"
+     "why": "the rows name the CONTRIBUTING table, the verify entry point, the workflow that runs it and the outside-pull-request rule; a changed check in them does not change a row"
     },
     {
      "doc": "CLAUDE.md",
