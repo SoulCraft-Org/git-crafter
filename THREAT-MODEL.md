@@ -33,11 +33,11 @@ flowchart LR
 
 | Job that writes | Runs on | Writes |
 |---|---|---|
-| `pages.yml` deploy | Push to main | `contents`, `issues`, `pages` and an OIDC token; an App token with `organization-projects: write` for the board |
+| `pages.yml` deploy | Push to main, the daily schedule, or a manual run on main | `contents`, `issues`, `pages` and an OIDC token; an App token with `organization-projects: write` for the board |
 | `push-ruleset-proof.yml` probe | By hand | `contents`: throwaway branches |
 | `claude-review.yml` review | Same-repo PRs on sensitive paths | `pull-requests`: one comment |
 | `branch-cleanup.yml` | `pull_request_target`, closed unmerged | `contents`: deletes the PR's branch; no checkout |
-| `wiki.yml` | Push to main touching `wiki/` | `contents`: the wiki's git repo |
+| `wiki.yml` | Push to main touching `wiki/`, or a manual run | `contents`: the wiki's git repo |
 | `scorecard.yml` analysis | Weekly and by hand, main only | An OIDC token that signs the published score |
 
 Report findings: [SECURITY.md](SECURITY.md).
