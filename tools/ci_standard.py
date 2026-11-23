@@ -40,12 +40,14 @@ Rules, one id each; templates/ci/README.md explains each one:
                  name never does), and never a deploy (cancel-in-progress unset, false, or exactly the templates'
                  expression that is true only on pull requests)
     timeout      every job that runs steps has timeout-minutes
-    runner       every job runs on ubuntu-slim or a standard GitHub-hosted label. A Blacksmith label, vars.CI_RUNNER,
-                 macOS, Windows, a larger, self-hosted or computed runner needs an exception
+    runner       every job runs on ubuntu-slim or a standard GitHub-hosted label. vars.CI_RUNNER, macOS, Windows, a
+                 larger, self-hosted or computed runner needs an exception
     pinned       every remote uses:, on a step or a job, is pinned to a full commit SHA, or a step's is locked in actions.lock;
                  a local action's (uses: ./PATH) own steps too, read from PATH/action.yml
     cache        a job that runs npm ci or pip install uses setup-node or setup-python with cache
     no-share     no per-repo minute guard (build_minutes_guard.py): the org pool replaces per-repo shares
+    blacksmith   no Blacksmith label outside ci-standard.yml's chooser, and no Blacksmith sticky disk or Docker layer
+                 cache action; no exception waives it, since no meter stops either bill
 
 Exceptions live in the repo's .github/ci-standard.json, each with a reason a reviewer reads:
 

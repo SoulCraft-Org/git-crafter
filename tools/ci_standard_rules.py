@@ -14,7 +14,13 @@ import subprocess
 from ci_standard_actions import LOCK_FILE, SHA_RE, local_action_findings, pin_findings
 from ci_standard_yaml import EXPR, ParseError, parse
 
-RULES = ("caller", "pin", "dependabot", "permissions", "concurrency", "timeout", "runner", "pinned", "cache", "no-share")
+RULES = ("caller", "pin", "dependabot", "permissions", "concurrency", "timeout", "runner", "pinned", "cache", "no-share", "blacksmith")
+# Rules no .github/ci-standard.json can waive: each one is a bill that no meter stops.
+NEVER_EXCEPTED = ("blacksmith",)
+# ci-standard.yml's standard job: a Blacksmith label only from its runner input, and only one of the listed lanes.
+CHOOSER_RE = re.compile(r"\$\{\{ contains\(fromJSON\('\[[^\]]*\]'\), inputs\.runner\) && inputs\.runner \|\| 'ubuntu-latest' \}\}")
+# Blacksmith's sticky disk and Docker layer cache actions: they keep storage Blacksmith bills, which the pool meter does not count.
+BLACKSMITH_CACHES = ("useblacksmith/stickydisk", "useblacksmith/build-push-action", "useblacksmith/setup-docker-builder")
 STANDARD_LABELS = {"ubuntu-latest", "ubuntu-24.04", "ubuntu-22.04"}
 SLIM = "ubuntu-slim"
 # Any owner's Git Crafter: the public repo, or an org's own copy of it. code-os is its name before 2026-11-11.
@@ -135,11 +141,25 @@ def runner_finding(runs_on) -> str | None:
     text = runs_on if isinstance(runs_on, str) else json.dumps(runs_on)
     if text == SLIM or text in STANDARD_LABELS:
         return None
-    if "blacksmith-" in text:
-        return "a Blacksmith label; the standard runs on GitHub's pool only (templates/ci/README.md)"
+    if "blacksmith" in text.lower():
+        return "the chooser's runs-on; a lane label only from ci-overflow.yml" if CHOOSER_RE.fullmatch(text) else None
     if "vars.CI_RUNNER" in text:
         return "reads vars.CI_RUNNER; the standard runs on fixed GitHub-hosted labels"
     return f"runs-on {text}: computed, macOS, Windows, larger or self-hosted; use ubuntu-slim or ubuntu-latest, or add an exception"
+
+
+def blacksmith_findings(where: str, job: dict) -> list:
+    """A Blacksmith label outside the chooser, and Blacksmith's cache actions: neither stops at the pool meter."""
+    runs_on = job.get("runs-on")
+    text = runs_on if isinstance(runs_on, str) else json.dumps(runs_on)
+    found = []
+    if "blacksmith" in text.lower() and not CHOOSER_RE.fullmatch(text):
+        found.append(("blacksmith", where, "a Blacksmith label outside the chooser; only ci-overflow.yml's label stops at the meter"))
+    for s in steps_of(job):
+        name = str(s.get("uses") or "").split("@", 1)[0].lower()
+        if name in BLACKSMITH_CACHES:
+            found.append(("blacksmith", where, f"{name} keeps storage Blacksmith bills, which no meter here stops"))
+    return found
 
 
 def cached(steps: list, prefix: str) -> bool:
@@ -174,7 +194,7 @@ def job_findings(where: str, job: dict, locked=frozenset()) -> list:
     if why:
         found.append(("runner", where, why))
     steps = steps_of(job)
-    return found + pin_findings(where, steps, locked) + cache_findings(where, steps)
+    return found + blacksmith_findings(where, job) + pin_findings(where, steps, locked) + cache_findings(where, steps)
 
 
 def check_workflow(name: str, doc: dict, locked=frozenset()) -> list:
@@ -354,7 +374,7 @@ def house_findings(docs: dict, exceptions: dict, unread: list, lock=None) -> tup
             continue
         for rule, where, why in results:
             e = exceptions.get(where) or exceptions.get(where.split("/", 1)[0])
-            if e and rule in e["rules"]:
+            if e and rule in e["rules"] and rule not in NEVER_EXCEPTED:
                 excepted.append((rule, where, e["why"]))
             else:
                 house.append((rule, where, why))

@@ -144,7 +144,14 @@ CASES = [
     ("concurrency that never cancels", edit(".github/workflows/ci.yml", CANCEL, ""), {"concurrency"}),
     ("a deploy that cancels", edit(".github/workflows/deploy.yml", "  cancel-in-progress: false\n", "  cancel-in-progress: true\n"), {"concurrency"}),
     ("no timeout", edit(".github/workflows/deploy.yml", "    timeout-minutes: 10\n", ""), {"timeout"}),
-    ("a hard-coded Blacksmith label", edit(".github/workflows/deploy.yml", "runs-on: ubuntu-slim", "runs-on: blacksmith-2vcpu-ubuntu-2404"), {"runner"}),
+    ("a hard-coded Blacksmith label", edit(".github/workflows/deploy.yml", "runs-on: ubuntu-slim", "runs-on: blacksmith-2vcpu-ubuntu-2404"), {"blacksmith"}),
+    ("a Blacksmith label in a list", edit(".github/workflows/deploy.yml", "runs-on: ubuntu-slim", "runs-on: [Blacksmith-4vcpu-ubuntu-2404]"), {"blacksmith"}),
+    ("a Blacksmith sticky disk", edit(".github/workflows/deploy.yml", "      - run: |\n          npm ci\n",
+                                      "      - uses: useblacksmith/stickydisk@" + "1" * 40 + "\n      - run: |\n          npm ci\n"), {"blacksmith"}),
+    ("a Blacksmith Docker layer cache", edit(".github/workflows/deploy.yml", "      - run: |\n          npm ci\n",
+                                             "      - uses: useblacksmith/build-push-action@" + "1" * 40 + "\n      - run: |\n          npm ci\n"), {"blacksmith"}),
+    ("the chooser's runs-on is only a runner finding", edit(".github/workflows/deploy.yml", "runs-on: ubuntu-slim",
+                                                           f"runs-on: {EXPR} contains(fromJSON('[\"blacksmith-2vcpu-ubuntu-2404\"]'), inputs.runner) && inputs.runner || 'ubuntu-latest' }}}}"), {"runner"}),
     ("vars.CI_RUNNER read directly", edit(".github/workflows/deploy.yml", "runs-on: ubuntu-slim", f"runs-on: {EXPR} vars.CI_RUNNER || 'ubuntu-latest' }}}}"), {"runner"}),
     ("a fallback to a larger runner", edit(".github/workflows/deploy.yml", "runs-on: ubuntu-slim",
                                                  f"runs-on: {EXPR} needs.x.outputs.runner || 'ubuntu-latest-64-cores' }}}}"), {"runner"}),
@@ -273,6 +280,10 @@ def test_exceptions(wrong: list):
                    ".github/ci-standard.json": json.dumps({"version": 1, "exceptions": {"deploy.yml/deploy": {"rules": ["runner"], "why": "a test"}}})})
     if not r.get("follows") or len(r.get("excepted", [])) != 1:
         wrong.append(f"an exception with a why did not apply: {r}")
+    r = repo_with({**GOOD, ".github/workflows/deploy.yml": DEPLOY.replace("runs-on: ubuntu-slim", "runs-on: blacksmith-2vcpu-ubuntu-2404"),
+                   ".github/ci-standard.json": json.dumps({"version": 1, "exceptions": {"deploy.yml": {"rules": ["blacksmith", "runner"], "why": "a test"}}})})
+    if r.get("follows") or {f[0] for f in r.get("findings", [])} != {"blacksmith"}:
+        wrong.append(f"an exception waived the blacksmith rule: {r}")
     for label, cfg in [("no why", {"deploy.yml": {"rules": ["runner"], "why": ""}}),
                        ("an unknown rule", {"deploy.yml": {"rules": ["speed"], "why": "x"}}),
                        ("an exception to the pin", {"ci.yml": {"rules": ["pin"], "why": "x"}})]:

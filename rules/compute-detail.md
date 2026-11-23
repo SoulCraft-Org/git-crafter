@@ -34,11 +34,13 @@ a file these paths match.
 | It runs on GitHub's pool only: `ubuntu-slim` for short jobs, since Linux 1-core bills at a third of 2-core; `ubuntu-latest` for standard ones | [runner pricing](https://docs.github.com/en/billing/reference/actions-runner-pricing) |
 | Hard stop: the budget `ci.budget` names. No pool runs without one | `account.json` |
 | Overflow: only the lane `ci.overflow` names, and only once the stop it names exists | `account.json` |
+| One Blacksmith meter per org, `templates/ci/ci-pool.yml`, replaces per-repo shares. It reads Blacksmith's estimated cost against its $12 credit, writes the org variable `CI_POOL`, and closes every `Blacksmith*` runner group at its hard stop | Git Crafter `templates/ci/CI-POOL.md` |
 | Paid security features stay off unless `ci.paid_features` lists one; the free secret scan and Dependabot stay on | `account.json` |
 
 | Runner labels | Rule |
 |---|---|
-| CI jobs | run inside `ci-standard.yml`, on `ubuntu-slim` or `ubuntu-latest`. Its standard job takes a lane label only from `ci-overflow.yml`, which a caller opts in to with `actions: read`, while the meter reads it under its stop |
+| CI jobs | run inside `ci-standard.yml`, on `ubuntu-slim` or `ubuntu-latest`. Its standard job takes a lane label only from `ci-overflow.yml`, which a caller opts in to with `actions: read`. The lane holds while the org's `CI_POOL` reading is under its stop, or the repo's own meter where an org has no pool |
+| Blacksmith | a label only through that chooser, and never a sticky disk or Docker layer cache action. The `blacksmith` rule fails both, with no exception |
 | Any other workflow | hard-codes `ubuntu-slim` or a standard GitHub-hosted label |
 | `CI_RUNNER` | reaches a job only through the shared `cloud-test` validator |
 | Any other label | needs an exception with a reason in `<repo>/.github/ci-standard.json` |
