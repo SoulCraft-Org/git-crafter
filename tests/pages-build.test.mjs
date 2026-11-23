@@ -236,6 +236,16 @@ test("a trail step's link name starts with the words the step shows (axe label-c
   for (const m of links) assert.equal(m[2], m[1], "the tooltip is its description");
 });
 
+test("a one-step map draws a click area as wide as the step and no line of zero length, as a trail and as a grid (#109)", () => {
+  const map = { id: "m", name: "Map", steps: [{ id: "plan", name: "Plan" }] };
+  const readouts = { plan: { label: "Plan", value: 1, unit: "on/off", kind: "speed" } };
+  const one = [trail(map, readouts, new Set(["plan"]), "plan"), grid({ ...map, steps: [{ ...map.steps[0], at: [0, 0] }] }, readouts, new Set(["plan"]), "plan")];
+  for (const svg of one) {
+    assert.deepEqual([...svg.matchAll(/class="t-hit"[^>]* width="(-?[\d.]+)"/g)].map((m) => Number(m[1])), [132], "the click area is the step's box");
+    assert.doesNotMatch(svg, /class="t-(main|off)"/, "no line from the step to itself");
+  }
+});
+
 test("a fork's nodes keep the trail's link markup and accessible name, and every column joins every step in the next", () => {
   const fork = readJson("tests/fixtures/maps/good.json").maps.find((m) => m.steps.some((s) => s.at));
   const readouts = Object.fromEntries(fork.steps.map((s) => [s.id, { label: s.name, value: s.id === "fix" ? 1 : null, unit: s.id === "fix" ? "on/off" : "h", kind: "speed" }]));
