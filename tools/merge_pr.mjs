@@ -46,18 +46,18 @@ function pullProblem(pull, { sha, base }) {
 }
 
 // The flags as options, or { problem }.
-function readFlags(argv) {
+export function readFlags(argv, names) {
   const o = { base: "main", wait: 60, check: false };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--check") o.check = true;
-    else if (["--repo", "--pr", "--sha", "--followups", "--base", "--wait"].includes(argv[i]) && argv[i + 1]) o[argv[i].slice(2)] = argv[++i];
+    else if (names.includes(argv[i]) && argv[i + 1]) o[argv[i].slice(2)] = argv[++i];
     else return { problem: `unknown or incomplete argument ${argv[i]}` };
   }
   return o;
 }
 
 // The --followups value as { followups: "a, b" }, or { problem }.
-function readFollowups(value) {
+export function readFollowups(value) {
   const items = (value ?? "").split(",").map((i) => i.trim());
   if (value === undefined) return { problem: "--followups is required: the issues and cards the review left, or none" };
   return value === "none" || items.every((i) => /^(#\d+|PVTI_[\w-]+)$/.test(i)) ? { followups: items.join(", ") } : { problem: "--followups takes #<digits> or PVTI_... items, comma separated, or none" };
@@ -65,7 +65,7 @@ function readFollowups(value) {
 
 // The command line as options, or { problem }.
 function parseArgs(argv) {
-  const o = readFlags(argv);
+  const o = readFlags(argv, ["--repo", "--pr", "--sha", "--followups", "--base", "--wait"]);
   if (o.problem) return o;
   if (!/^[\w.-]+\/[\w.-]+$/.test(o.repo ?? "")) return { problem: "--repo must be owner/name" };
   if (!/^[1-9]\d*$/.test(o.pr ?? "")) return { problem: "--pr must be a pull request number" };
