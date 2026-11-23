@@ -176,7 +176,7 @@ def main(argv: list) -> int:
         print(f"public-scan: could not read: {exc.strerror}", file=sys.stderr)
         return 3
     except UnicodeDecodeError as exc:
-        print(f"public-scan: could not read: {exc.reason} in the TERMS file", file=sys.stderr)
+        print(f"public-scan: could not read {argv[2]}: {exc.reason}", file=sys.stderr)
         return 3
     return report(hits, argv[0])
 

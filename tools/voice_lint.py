@@ -208,7 +208,7 @@ def _check_shape(data):
     if not isinstance(data.get("severity", {}), dict) or not isinstance(pats, list) or not all(
             isinstance(p, dict) and isinstance(p.get("regex"), str) for p in pats):
         raise ValueError("severity must be an object, and patterns a list of objects each with a regex string")
-    if isinstance(words, bool) or not isinstance(words, int) or words < 1:
+    if isinstance(words, bool) or not isinstance(words, (int, float)) or words < 1 or words % 1:
         raise ValueError("max_words must be a positive integer")
 
 
@@ -222,8 +222,8 @@ def load_rules_from_obj(data, max_words=None):
         raise ValueError("severity names unknown check %r; known: %s" % (unknown[0], ", ".join(BUILTIN_CHECKS)))
     try:
         return Rules(data, max_words)
-    except re.error as exc:
-        raise ValueError("a pattern has a bad regex: %s" % exc)
+    except (re.error, TypeError, AttributeError) as exc:  # a bad regex, or a word list holding a non-string
+        raise ValueError("malformed rules file: %s" % exc)
 
 
 def strip_noise(line):
@@ -410,7 +410,6 @@ DOC_TABLE_RE = re.compile(r"^  ([a-z][a-z-]+)\s+(FAIL|WARN)\s", re.MULTILINE)
 SELF_TEST_RULES = {"max_words": 30, "severity": {"hedge-word": "off"}, "patterns": [
     {"id": "banned-term", "severity": "FAIL", "regex": r"\bsynergy\b", "message": "say what actually happens"}]}
 
-SELF_TEST_PROJECT = "We unlocked real synergy this quarter.\n"
 
 
 def _graded(findings, check_id):
@@ -420,7 +419,7 @@ def _graded(findings, check_id):
 
 def _exit(text=b"ok.\n", rules=None):
     """The exit code main gives a Markdown file holding these bytes, with a rules file of this JSON when given."""
-    with tempfile.TemporaryDirectory() as tmp, contextlib.redirect_stderr(io.StringIO()):
+    with tempfile.TemporaryDirectory() as tmp, contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
         md, cfg = pathlib.Path(tmp, "a.md"), pathlib.Path(tmp, "rules.json")
         md.write_bytes(text), cfg.write_text(json.dumps(rules), encoding="utf-8")
         return main([str(md)] + ([] if rules is None else ["--rules", str(cfg)]))
@@ -478,16 +477,17 @@ def rules_checks():
         ("a rules file regrades a built-in default in either direction",
          _graded(regraded, "spaced-en-dash") == {"WARN"} and _graded(regraded, "unattributed-figure") == {"FAIL"}),
         ("project pattern flagged at its declared severity",
-         "FAIL" in _graded(lint_text(SELF_TEST_PROJECT, Rules(SELF_TEST_RULES)), "banned-term")),
+         "FAIL" in _graded(lint_text("We unlocked real synergy this quarter.\n", Rules(SELF_TEST_RULES)), "banned-term")),
         ("severity off suppresses a built-in check", not _graded(off, "hedge-word")),
         ("project rules do not replace the built-ins", bool(_graded(off, "em-dash"))),
         # Each of these is a rules error, exit 2, not a traceback and exit 1: a pattern severity outside FAIL, WARN and off.
         ("a malformed rules file is rejected, an unknown check name too", all(_exit(rules=d) == 2 for d in (
             {"severity": {"no-such-check": "off"}}, {"patterns": [{"regex": "x", "severity": "FAILL"}]}, {"patterns": [{"regex": "("}]},
-            {"severity": []}, {"max_words": "30"}, {"max_words": 0}, {"patterns": ["x"]}, {"patterns": [{"regex": 1}]}))),
+            {"severity": []}, {"max_words": "30"}, {"patterns": ["x"]}, {"hedge_words": [1]}, {"attribution_cues": [1]}, {"figure_nouns": 5}))),
+        ("an integral float max_words loads as before", _exit(rules={"max_words": 30.0}) == 0),
         ("a file that is not UTF-8 is a read error, exit 2", _exit(b"caf\xe9 ok.\n") == 2),
         ("an in-memory rules object loads like a file",
-         _graded(lint_text(SELF_TEST_PROJECT, load_rules_from_obj(SELF_TEST_RULES)), "banned-term") == {"FAIL"}),
+         _graded(lint_text("We unlocked real synergy this quarter.\n", load_rules_from_obj(SELF_TEST_RULES)), "banned-term") == {"FAIL"}),
         # The run's last line is the summary docs.lint_warn reads: every file,
         # and the findings of all of them.
         ("summary line closes the run", code == 1 and last == want)]
