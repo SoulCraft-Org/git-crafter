@@ -1,21 +1,20 @@
-// Merges one reviewed pull request: reads its base, its head and the latest run of every check, posts the
-// verdict, then merges.
+// Merges one reviewed pull request: reads its base, head and each check's latest run, posts the verdict, merges.
 //
-//   node tools/merge_pr.mjs --repo owner/name --pr N --sha <40-hex head the review passed> [--base main] [--wait 60] [--check]
+//   node tools/merge_pr.mjs --repo owner/name --pr N --sha <40-hex head the review passed> --followups <#n,PVTI_...|none> [--base main] [--wait 60] [--check]
 //
-// Run it after the review at that head passed. It refuses a base other than --base (a stacked pull request
-// merged into its parent branch on 2026-11-23), a head that is not --sha, a draft, a conflict, any check whose
-// latest run failed, and no checks at all. Judging each check by its latest run, an older cancelled run beside a
-// newer one is no failure. Pending checks exit 3 (`gh pr checks N --watch --interval 60`, then run it again);
-// mergeable UNKNOWN, which reads so for seconds after another merge, is re-read for up to --wait seconds, then
-// exits 3. --check reads and judges, posts and merges nothing. Merges with --squash and --match-head-commit
-// <sha>, never --auto or --admin. Exit 0 merged (or ready under --check), 1 refused, 2 usage, 3 not yet.
+// Run it after the review at that head passed. It refuses a base other than --base (a stacked pull request was
+// merged into its parent on 2026-11-23), a moved head, a draft, a conflict, no checks and any check whose latest run
+// failed: an older cancelled run beside a newer one is no failure. Pending checks exit 3 (`gh pr checks N --watch
+// --interval 60`, then again); mergeable UNKNOWN is re-read for up to --wait seconds, then exits 3. --followups
+// lands on line 2 of the verdict, below the `Review: MERGE at <sha>` line the reviews collector reads. --check
+// posts and merges nothing. Merges with --squash --match-head-commit <sha>, never --auto or --admin. Exit 0 merged
+// (or ready under --check), 1 refused, 2 usage, 3 not yet.
 
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ghRunner } from "./apply_setup.mjs";
 
-const USAGE = "usage: node tools/merge_pr.mjs --repo owner/name --pr N --sha <40 hex> [--base main] [--wait seconds] [--check]";
+const USAGE = "usage: node tools/merge_pr.mjs --repo owner/name --pr N --sha <40 hex> --followups <#n,PVTI_...|none> [--base main] [--wait seconds] [--check]";
 const PASS = new Set(["success", "neutral", "skipped"]);
 const STATUS = { success: "pass", pending: "pending" };
 const STEP = 5;
@@ -46,12 +45,16 @@ function parseArgs(argv) {
   const o = { base: "main", wait: 60, check: false };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--check") o.check = true;
-    else if (["--repo", "--pr", "--sha", "--base", "--wait"].includes(argv[i]) && argv[i + 1]) o[argv[i].slice(2)] = argv[++i];
+    else if (["--repo", "--pr", "--sha", "--followups", "--base", "--wait"].includes(argv[i]) && argv[i + 1]) o[argv[i].slice(2)] = argv[++i];
     else return { problem: `unknown or incomplete argument ${argv[i]}` };
   }
   if (!/^[\w.-]+\/[\w.-]+$/.test(o.repo ?? "")) return { problem: "--repo must be owner/name" };
   if (!/^[1-9]\d*$/.test(o.pr ?? "")) return { problem: "--pr must be a pull request number" };
   if (!/^[0-9a-f]{40}$/.test(o.sha ?? "")) return { problem: "--sha must be the full 40-hex head the review passed" };
+  const items = String(o.followups ?? "").split(",").map((i) => i.trim());
+  if (o.followups === undefined) return { problem: "--followups is required: the issues and cards the review left, or none" };
+  if (o.followups !== "none" && !items.every((i) => /^(#\d+|PVTI_[\w-]+)$/.test(i))) return { problem: "--followups takes #<digits> or PVTI_... items, comma separated, or none" };
+  o.followups = items.join(", ");
   return /^\d+$/.test(String(o.wait)) ? { ...o, wait: Number(o.wait) } : { problem: "--wait must be seconds" };
 }
 
@@ -69,10 +72,10 @@ async function assess({ read, repo, pr, sha, base, wait, sleep }) {
   }
 }
 
-// Posts `Review: MERGE at <sha>` on the pull request unless a comment already opens with that line; a verdict is never edited.
-function verdict(run, { repo, pr, sha }) {
+// Posts `Review: MERGE at <sha>`, then a `Follow-ups:` line, unless a comment already opens with the first line; a verdict is never edited.
+function verdict(run, { repo, pr, sha, followups }) {
   const route = `repos/${repo}/issues/${pr}/comments`;
-  if (!run(["api", route, "--paginate", "-q", '.[].body | split("\\n")[0]']).split("\n").includes(`Review: MERGE at ${sha}`)) run(["api", route, "-f", `body=Review: MERGE at ${sha}`]);
+  if (!run(["api", route, "--paginate", "-q", '.[].body | split("\\n")[0]']).split("\n").includes(`Review: MERGE at ${sha}`)) run(["api", route, "-f", `body=Review: MERGE at ${sha}\nFollow-ups: ${followups}`]);
 }
 
 /** The command line. `run` is gh, `sleep` the wait between reads (both injectable for tests). Returns the exit code. */

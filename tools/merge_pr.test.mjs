@@ -7,7 +7,7 @@ import { decide, judge, main } from "./merge_pr.mjs";
 
 const SHA = "a".repeat(40);
 const REPO = "acme/widget";
-const ARGV = ["--repo", REPO, "--pr", "7", "--sha", SHA];
+const ARGV = ["--repo", REPO, "--pr", "7", "--sha", SHA, "--followups", "none"];
 const run = (id, name, status, conclusion, app = 1) => ({ id, name, status, conclusion, app: { id: app } });
 const PASSING = [run(1, "ci / ci-ok", "completed", "success"), run(2, "dco", "completed", "success", 2)];
 
@@ -40,22 +40,16 @@ test("judge reads each check's latest run: a cancelled run beside a newer pass i
 test("decide refuses a draft, a closed pull request, a stacked base, a moved head, no checks and a failed check", () => {
   const ok = [{ name: "ci", state: "pass" }];
   const opts = { sha: SHA, base: "main" };
-  const why = (p, checks = ok) => decide(p, checks, opts);
-  assert.equal(why(pull()).act, "merge");
-  assert.match(why(pull({ draft: true })).why, /draft/);
-  assert.match(why(pull({ state: "closed", merged: true })).why, /merged/);
-  assert.match(why(pull({ base: { ref: "claude/parent" } })).why, /base is claude\/parent, not main/);
-  assert.match(why(pull({ head: { sha: "b".repeat(40) } })).why, /head moved to bbbbbbb/);
-  assert.match(why(pull(), []).why, /no checks/);
-  assert.match(why(pull(), [{ name: "build", state: "fail" }]).why, /failed: build/);
-  assert.match(why(pull({ mergeable: false })).why, /conflicts/);
-  assert.deepEqual(why(pull(), [{ name: "build", state: "pending" }]).on, "checks");
+  assert.equal(decide(pull(), ok, opts).act, "merge");
+  const bad = [{ name: "build", state: "fail" }];
+  for (const [p, checks, re] of [[pull({ draft: true }), ok, /draft/], [pull({ state: "closed", merged: true }), ok, /merged/], [pull({ base: { ref: "claude/parent" } }), ok, /base is claude\/parent, not main/], [pull({ head: { sha: "b".repeat(40) } }), ok, /head moved to bbbbbbb/], [pull(), [], /no checks/], [pull(), bad, /failed: build/], [pull({ mergeable: false }), ok, /conflicts/]]) assert.match(decide(p, checks, opts).why, re);
+  assert.deepEqual(decide(pull(), [{ name: "build", state: "pending" }], opts).on, "checks");
 });
 
 test("a clean pull request gets the verdict, then a squash merge pinned to the head", async () => {
   const r = await merge(ARGV, { pulls: [pull()], runs: [run(5, "ci / ci-ok", "completed", "cancelled"), run(9, "ci / ci-ok", "completed", "success")] });
   assert.equal(r.code, 0);
-  assert.deepEqual(r.writes, [`api repos/${REPO}/issues/7/comments -f body=Review: MERGE at ${SHA}`, `pr merge 7 --repo ${REPO} --squash --match-head-commit ${SHA}`]);
+  assert.deepEqual(r.writes, [`api repos/${REPO}/issues/7/comments -f body=Review: MERGE at ${SHA}\nFollow-ups: none`, `pr merge 7 --repo ${REPO} --squash --match-head-commit ${SHA}`]);
   assert.ok(!r.calls.some((c) => /--auto|--admin/.test(c)));
 });
 
@@ -85,5 +79,16 @@ test("pending checks exit 3 and --check writes nothing", async () => {
 test("a verdict already posted is not posted again, and bad arguments exit 2", async () => {
   const r = await merge(ARGV, { pulls: [pull()], comments: [`Review: MERGE at ${SHA}`] });
   assert.deepEqual(r.writes, [`pr merge 7 --repo ${REPO} --squash --match-head-commit ${SHA}`]);
-  for (const bad of [[], ["--repo", REPO, "--pr", "7", "--sha", "abc"], [...ARGV, "--auto"], [...ARGV, "--wait", "x"]]) assert.equal((await merge(bad, { pulls: [pull()] })).code, 2);
+  for (const bad of [[], ["--repo", REPO, "--pr", "7", "--sha", "abc", "--followups", "none"], [...ARGV, "--auto"], [...ARGV, "--wait", "x"]]) assert.equal((await merge(bad, { pulls: [pull()] })).code, 2);
+});
+
+test("--followups is required, takes #n, PVTI_ ids or none, and lands on line 2 of the verdict", async () => {
+  const bare = ARGV.slice(0, -2);
+  const refused = await merge(bare, { pulls: [pull()] });
+  assert.deepEqual([refused.code, refused.calls.length], [2, 0]);
+  for (const bad of ["", "12", "#", "#1a", "PR_1", "none,#1", "#1;rm"]) assert.equal((await merge([...bare, "--followups", bad], { pulls: [pull()] })).code, 2, bad);
+  const r = await merge([...bare, "--followups", "#12, PVTI_lADO-1"], { pulls: [pull()] });
+  assert.equal(r.code, 0);
+  const body = r.writes[0].split("-f body=")[1];
+  assert.deepEqual(body.split("\n"), [`Review: MERGE at ${SHA}`, "Follow-ups: #12, PVTI_lADO-1"]);
 });
