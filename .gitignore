@@ -1,4 +1,5 @@
 __pycache__/
+.claude/worktrees/
 pages/dist/
 node_modules/
 data/quality/latest.json

@@ -52,3 +52,4 @@ A targets entry may set `gate: true`: a reading worse than the goal is a problem
 | 1 | self-test failed, or page over budget (`build.mjs` still writes it) | |
 | 2 | usage error | usage error |
 | 3 | nothing to render (`build.mjs` with no data file) | the run is written, but a gate metric missed its goal |
+| 4 | | a full `--local` run stopped: this hour's GitHub quota would not fit it; nothing is written |

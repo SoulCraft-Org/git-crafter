@@ -12,7 +12,7 @@ Git Crafter holds the engine, collectors and template goals. A repo holds only i
 
 ```mermaid
 flowchart LR
-  T[code-os targets/*.json<br/>template goals] --> O
+  T[git-crafter targets/*.json<br/>template goals] --> O
   RT[repo targets/*.json<br/>overrides by id] --> O[overlay.mjs]
   O --> C["collectors/TAB/*.mjs and lib/<br/>template's + repo's"]
   C -->|ci| L[data/latest.json]
@@ -30,7 +30,7 @@ flowchart LR
 The call, with this repo's Quality config as the example:
 
 ```yaml
-- uses: SoulCraft-Org/git-crafter/actions/pages@<full sha> # v4.0.0
+- uses: SoulCraft-Org/git-crafter/actions/pages@<full sha> # v7.0.0
   with:
     pages: quality            # or: process quality
     quality-config: config/quality.json
@@ -39,10 +39,10 @@ The call, with this repo's Quality config as the example:
 | Command | Does | Fires or waits |
 | --- | --- | --- |
 | `actions/pages`, `pages: quality` | `npm ci`, then `collect.mjs` (ci) and `build.mjs`. Modes `collect` and `render` split it over two jobs. Optional `admin-read-token` reads admin metrics in CI; `hf-token` and `openrouter-api-key` serve a pack's collectors | Fires: the repo's workflow |
-| `node <code-os>/quality/collect.mjs --local` | admin, transcript and other local-only metrics into `<data>/local.json` and `<history>/<date>.json`. It runs from a Git Crafter checkout at the repo's pinned SHA. It exits 4 when this hour's quota left is under a full run's last recorded spend. `--only NAME` runs one collector alone | Waits for a session; commit the result by PR |
-| `node <code-os>/quality/build.mjs` | render `<out>/index.html`, print its size, exit 1 over the budget | Either |
+| `node <git-crafter>/quality/collect.mjs --local` | admin, transcript and other local-only metrics into `<data>/local.json` and `<history>/<date>.json`. It runs from a Git Crafter checkout at the repo's pinned SHA. It exits 4 when this hour's quota left is under a full run's last recorded spend. `--only NAME` runs one collector alone | Waits for a session; commit the result by PR |
+| `node <git-crafter>/quality/build.mjs` | render `<out>/index.html`, print its size, exit 1 over the budget | Either |
 | `node quality/selftest.mjs` | the engine's self-test, which runs `render/*.test.mjs` | Fires: `tools/verify.sh` in CI |
-| `node <code-os>/quality/cards/picture.mjs spec.json > card.svg` | a board card's picture: its pillar, a meter from now to goal, its steps. Push the file to the repo's `cards` branch and link it from the card as `https://github.com/<owner>/<repo>/raw/cards/<file>.svg` | Waits for a session adding or changing a card |
+| `node <git-crafter>/quality/cards/picture.mjs spec.json > card.svg` | a board card's picture: its pillar, a meter from now to goal, its steps. Push the file to the repo's `cards` branch and link it from the card as `https://github.com/<owner>/<repo>/raw/cards/<file>.svg` | Waits for a session adding or changing a card |
 
 Every command runs in the repo's root. It reads `<repo>/quality/config.json`, or the file `--config` names.
 
