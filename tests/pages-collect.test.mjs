@@ -424,6 +424,48 @@ test("a repo's scope reads its own repos, never the org's list, and a branch it 
   assert.equal(SCOPE.repos, null, "Git Crafter's own run still lists the org");
 });
 
+test("an adopter's override of a pack's metric rates: the config's packs resolve before the site targets are read", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cos-pack-"));
+  // Actions sets GITHUB_ACTIONS, which refuses the local-path pack this test uses; the last step sets it back.
+  const actions = process.env.GITHUB_ACTIONS;
+  delete process.env.GITHUB_ACTIONS;
+  try {
+    mkdirSync(join(dir, "pack", "targets"), { recursive: true });
+    mkdirSync(join(dir, "cfg", "targets"), { recursive: true });
+    mkdirSync(join(dir, "out"));
+    writeFileSync(join(dir, "pack", "pack.json"), JSON.stringify({ tabs: [["credits", "Credits"]] }));
+    const idle = { id: "credits.idle_replaceable", tab: "credits", kind: "quality", group: "Credits", label: "Idle credits", means: "Credits idle", unit: "%", goal: 10, near: 20, direction: "lower", goal_source: "fixture", source: "fixture", needs: "none", chart: "bar", params: { days: 7 } };
+    writeFileSync(join(dir, "pack", "targets", "credits.json"), JSON.stringify([idle]));
+    writeFileSync(join(dir, "cfg", "targets", "credits.json"), JSON.stringify([{ id: "credits.idle_replaceable", params: { days: 30 } }]));
+    writeFileSync(join(dir, "cfg", "quality.json"), JSON.stringify({ data: "out", targets: "cfg/targets", packs: ["pack"], tabs: ["credits"] }));
+    writeFileSync(join(dir, "out", "local.json"), JSON.stringify({ metrics: { "credits.idle_replaceable": { value: 4, unit: "%", read_at: ago(1) } } }));
+    const scope = { ...SCOPE, own_repo: "adopter", quality_config: "cfg/quality.json" };
+    const spec = ownQuality(dir, scope);
+    assert.deepEqual(spec.packs, [{ dir: join(dir, "pack"), targets: join(dir, "pack", "targets") }], "the pack's folders, absolute");
+    const own = readSiteFromDisk(dir, spec, null, () => "abc1234\n");
+    assert.equal(own.defs_error, undefined, "the override finds the pack's metric");
+    const def = own.defs.find((d) => d.id === "credits.idle_replaceable");
+    assert.deepEqual([def.goal, def.params.days, def.overridden_in], [10, 30, "credits.json"], "the pack's goal, the adopter's params");
+    // Without the pack's targets the override has nothing under it, which is how the page read before.
+    const bare = readSiteFromDisk(dir, { ...spec, packs: undefined }, null, () => "abc1234\n");
+    assert.match(bare.defs_error, /credits\.json: credits\.idle_replaceable: no template metric/);
+    // A pack that is not checked out is refused, never read as no metrics.
+    const gone = { ...spec, packs: [{ dir: join(dir, "nowhere"), targets: join(dir, "nowhere", "targets") }] };
+    assert.match(readSiteFromDisk(dir, gone, null, () => "abc1234\n").defs_error, /pack .*nowhere is not checked out/);
+    // In Actions a local-path pack is refused, as collect.mjs refuses it.
+    process.env.GITHUB_ACTIONS = "true";
+    assert.throws(() => ownQuality(dir, scope), /local path, which only a --local run takes/);
+    delete process.env.GITHUB_ACTIONS;
+    // A pack file named like a template targets file is the same usage error collect.mjs gives.
+    writeFileSync(join(dir, "pack", "targets", "ci.json"), "[]");
+    assert.match(readSiteFromDisk(dir, spec, null, () => "abc1234\n").defs_error, /pack targets ci\.json is named like another targets file/);
+  } finally {
+    if (actions === undefined) delete process.env.GITHUB_ACTIONS;
+    else process.env.GITHUB_ACTIONS = actions;
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("--config picks a repo's scope; anything else is a usage error", () => {
   const dir = mkdtempSync(join(tmpdir(), "cos-scope-"));
   try {

@@ -9,10 +9,19 @@ import { overlayTargets, readTargetFiles } from "../quality/overlay.mjs";
 
 import { isMeasured, notMeasured, ORG, SITE_REPO, TEMPLATE_TARGETS } from "./org_base.mjs";
 
-// The template's targets with the site's laid over them, as definitions; why when the overlay refuses.
-function siteDefs(site, targets) {
+// The template's targets, then each pack's (site.packs: its folder and targets folder), with the site's laid over them, as definitions; why when the overlay refuses.
+function siteDefs(site, targets, base) {
   try {
-    return { defs: overlayTargets(readTargetFiles(TEMPLATE_TARGETS), targets === TEMPLATE_TARGETS ? [] : readTargetFiles(targets)).entries.filter((d) => d.drop !== true), defsError: null };
+    const files = readTargetFiles(TEMPLATE_TARGETS);
+    for (const pack of site.packs ?? []) {
+      // A pack not checked out is a usage error, as collect.mjs reads it, never an empty tab.
+      if (!existsSync(resolve(base, pack.dir))) throw new Error(`pack ${pack.dir} is not checked out`);
+      for (const f of readTargetFiles(resolve(base, pack.targets))) {
+        if (files.some((g) => g.file === f.file)) throw new Error(`pack targets ${f.file} is named like another targets file; rename the pack's`);
+        files.push(f);
+      }
+    }
+    return { defs: overlayTargets(files, targets === TEMPLATE_TARGETS ? [] : readTargetFiles(targets)).entries.filter((d) => d.drop !== true), defsError: null };
   } catch (err) {
     return { defs: [], defsError: `${site.targets}: ${err.message}` };
   }
@@ -56,7 +65,7 @@ function pagesUrlOf(gh, site) {
 // why; the numbers still read.
 export function readSiteFromDisk(root, site, gh = null, exec = execFileSync) {
   const base = join(root, site.root);
-  const { defs, defsError } = siteDefs(site, resolve(base, site.targets));
+  const { defs, defsError } = siteDefs(site, resolve(base, site.targets), base);
   const metrics = diskMetrics(base, site);
   const commit = headCommit(base, exec);
   return { repo: site.repo, defs, data: { metrics }, commit: commit ?? "unknown", pagesUrl: pagesUrlOf(gh, site), ...(defsError ? { defs_error: defsError } : {}) };
