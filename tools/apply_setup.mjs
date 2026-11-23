@@ -1,14 +1,13 @@
 // Sets the GitHub repo switches templates/setup.json lists, through gh api.
 //
-//   node tools/apply_setup.mjs --repo owner/name [--values file.json] [--apply] [--check]
+//   node tools/apply_setup.mjs --repo owner/name [--apply] [--check]
 //
 // A dry run by default: each row prints as same, would change, by hand,
 // optional, org's rules, no value or unreadable, and nothing changes.
-// --apply sets each "would change" row, then reads it back: changed or failed.
+// --apply sets each "would change" row, then reads it back: changed or failed;
+// after the first failure the rest read skipped and are not written.
 // --check exits 1 when a row that is not optional differs (after --apply, as
-// read back) or cannot be read. --values holds the per-repo values (topics,
-// homepage, description) and optional_on, the optional rows to turn on.
-// Exit 2: a usage error.
+// read back) or cannot be read. Exit 2: a usage error.
 
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -18,7 +17,7 @@ import { fill, reader, rowState } from "./apply_setup_rows.mjs";
 
 /** The setup list this tool reads by default. */
 export const SETUP = fileURLToPath(new URL("../templates/setup.json", import.meta.url));
-const USAGE = "usage: node tools/apply_setup.mjs --repo owner/name [--values file.json] [--apply] [--check]";
+const USAGE = "usage: node tools/apply_setup.mjs --repo owner/name [--apply] [--check]";
 
 /** gh as a function of its arguments and stdin: its stdout, or an Error carrying the HTTP status gh names. */
 export function ghRunner(exec = spawnSync) {
@@ -34,7 +33,7 @@ export function ghRunner(exec = spawnSync) {
 }
 
 const SWITCHES = new Set(["--apply", "--check"]);
-const OPTIONS = new Set(["--repo", "--values"]);
+const OPTIONS = new Set(["--repo"]);
 
 // The command line as options, or { problem }.
 function parseArgs(argv) {
@@ -47,18 +46,6 @@ function parseArgs(argv) {
   }
   if (!/^[\w.-]+\/[\w.-]+$/.test(opts.repo ?? "")) return { problem: "--repo must be owner/name" };
   return opts;
-}
-
-// The values file as { values, optionalOn }, or { problem }.
-function loadValues(file, root) {
-  if (!file) return { values: {}, optionalOn: new Set() };
-  try {
-    const { comment: _, optional_on: on = [], ...values } = JSON.parse(readFileSync(resolve(root, file), "utf8"));
-    if (!Array.isArray(on)) return { problem: `optional_on in ${file} must be a list of row ids` };
-    return { values, optionalOn: new Set(on) };
-  } catch (err) {
-    return { problem: `cannot read ${file}: ${err.message}` };
-  }
 }
 
 // Sets one row through gh api, then reads it back.
@@ -75,38 +62,46 @@ function applyRow(row, ctx) {
   return back.status === "same" ? { status: "changed", note: "read back" } : { status: "failed", note: `read back ${back.status}: ${back.note}`, failed: true };
 }
 
-// The context every row reads through: cached GETs, GraphQL, the values and the optional rows turned on.
-function context(run, owner, repo, { values, optionalOn }) {
+// The context every row reads through: cached GETs and GraphQL, no per-repo values and no optional row turned on.
+function context(run, owner, repo) {
   const read = reader(run);
   const graphql = (query) => JSON.parse(run(["api", "graphql", "-f", `query=${query}`, "-f", `owner=${owner}`, "-f", `repo=${repo}`]));
-  const vars = { ...values, owner, repo, node_id: () => read(`repos/${owner}/${repo}`)?.node_id };
-  return { run, read, graphql, vars, optionalOn };
+  const vars = { owner, repo, node_id: () => read(`repos/${owner}/${repo}`)?.node_id };
+  return { run, read, graphql, vars, optionalOn: new Set() };
 }
 
 /**
  * The command line. `run` is gh (injectable for tests), `setup` the setup
- * list's path, `root` where --values resolves, `log` and `error` where
- * lines go. Returns the exit code.
+ * list's path, `log` and `error` where lines go. Returns the exit code.
  */
-export function main(argv = process.argv.slice(2), { run = ghRunner(), setup = SETUP, root = process.cwd(), log = console.log, error = console.error } = {}) {
+export function main(argv = process.argv.slice(2), { run = ghRunner(), setup = SETUP, log = console.log, error = console.error } = {}) {
   const opts = parseArgs(argv);
-  const loaded = opts.problem ? opts : loadValues(opts.values, root);
-  if (loaded.problem) {
-    error(`${loaded.problem}\n${USAGE}`);
+  if (opts.problem) {
+    error(`${opts.problem}\n${USAGE}`);
     return 2;
   }
   const [owner, repo] = opts.repo.split("/");
-  const ctx = context(run, owner, repo, loaded);
-  const results = JSON.parse(readFileSync(setup, "utf8")).rows.map((row) => {
+  const ctx = context(run, owner, repo);
+  const results = [];
+  let stopped = false;
+  for (const row of JSON.parse(readFileSync(setup, "utf8")).rows) {
     const state = rowState(row, ctx);
-    return { row, ...(opts.apply && state.status === "would change" ? applyRow(row, ctx) : state) };
-  });
+    if (!opts.apply || state.status !== "would change") results.push({ row, ...state });
+    else if (stopped) results.push({ row, status: "skipped", note: "an earlier write failed", failed: true });
+    else {
+      const done = applyRow(row, ctx);
+      stopped = Boolean(done.failed);
+      results.push({ row, ...done });
+    }
+  }
   return report(results, opts, log);
 }
 
 // Prints one line per row and a tally; the exit code: 1 for a failed write, or a failed row under --check.
 function report(results, opts, log) {
   for (const r of results) log(`${r.status.padEnd(13)} ${r.row.id}${r.note ? `  ${r.note}` : ""}`);
+  const unset = results.filter((r) => r.status === "no value");
+  if (unset.length) log(`warning: ${unset.length} row(s) read no value and never fail --check: ${unset.map((r) => r.row.id).join(", ")}`);
   const tally = Object.entries(Object.groupBy(results, (r) => r.status)).map(([s, rs]) => `${rs.length} ${s}`);
   log(`${opts.repo}: ${tally.join(", ")}${opts.apply ? "" : " (dry run: nothing changed)"}`);
   const failed = opts.check ? results.filter((r) => r.failed) : [];
