@@ -55,10 +55,10 @@ it("gh-replay refuses -XPOST and --method=POST, saves no climbing path or token-
   const report = spawnSync(process.execPath, [fileURLToPath(new URL("gh-replay.mjs", import.meta.url)), "report"], { env: env("replay"), cwd: tmp }).stdout.toString();
   assert.match(report, /::warning title=GitHub requests::6 saved reads from main were unreadable/);
 });
-it("gh-replay saveRuns takes the two newest main saves under 24 h old, a failed run's included, never a branch's, an expired or a stale one (#38)", () => {
+it("gh-replay saveRuns takes the two newest main saves under 24 h old, a failed run's included, never a branch's, a fork's, an expired or a stale one (#38)", () => {
   const [now, ago] = [Date.parse("2026-11-23T12:00:00Z"), (h) => new Date(Date.parse("2026-11-23T12:00:00Z") - h * 3_600_000).toISOString()];
-  const save = (id, h, extra = {}) => ({ expired: false, created_at: ago(h), workflow_run: { id, head_branch: "main" }, ...extra });
-  const listing = [save(1, 30), save(2, 5), save(3, 1), save(4, 0.5, { expired: true }), { ...save(5, 0.2), workflow_run: { id: 5, head_branch: "claude/x" } }];
+  const save = (id, h, extra = {}) => ({ expired: false, created_at: ago(h), workflow_run: { id, head_branch: "main", repository_id: 7, head_repository_id: 7 }, ...extra });
+  const listing = [save(1, 30), save(2, 5), save(3, 1), save(4, 0.5, { expired: true }), { ...save(5, 0.2), workflow_run: { id: 5, head_branch: "claude/x" } }, { ...save(6, 0.1), workflow_run: { id: 6, head_branch: "main", repository_id: 7, head_repository_id: 9 } }];
   assert.deepEqual(saveRuns(listing, now), ["3", "2"]);
   assert.deepEqual(saveRuns(listing, now, 1), ["3"]);
   assert.deepEqual(saveRuns([], now), []);
