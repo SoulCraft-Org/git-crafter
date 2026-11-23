@@ -66,7 +66,7 @@ What loads when: the [memory](https://code.claude.com/docs/en/memory) and [skill
 | Folder | Holds |
 |---|---|
 | `actions/` | The `pages` and `ci-pool` actions |
-| `config/` | Git Crafter's own Quality config and collector, and [account.example.json](config/account.example.json) for a private overlay (`apply --overlay DIR`) |
+| `config/` | Its Quality config, its collector in `config/quality/collectors/`, and [account.example.json](config/account.example.json) for a private overlay (`apply --overlay DIR`) |
 | `data/` | Readings generated in CI, never committed |
 | `pages/` | The Process and Metrics builder and the map library, `pages/maps/` |
 | `quality/` | The Quality engine and its collectors ([README](quality/README.md)) |
