@@ -7,10 +7,26 @@ import { reaches } from "./repo-settings-refs.mjs";
 // A workflow that hands every secret on, or reads one by a computed name: its files cannot show which secrets it uses.
 const OPAQUE = /secrets:\s*inherit|secrets\s*\[|toJSON\(\s*secrets\s*\)/i;
 
+// The General switches GraphQL answers to any reader, by their REST name. GitHub sends the merge ones in REST to a push token only.
+const GENERAL = {
+  allow_squash_merge: "squashMergeAllowed", allow_merge_commit: "mergeCommitAllowed", allow_rebase_merge: "rebaseMergeAllowed", allow_auto_merge: "autoMergeAllowed",
+  delete_branch_on_merge: "deleteBranchOnMerge", allow_update_branch: "allowUpdateBranch", web_commit_signoff_required: "webCommitSignoffRequired",
+  has_wiki: "hasWikiEnabled", has_discussions: "hasDiscussionsEnabled", has_projects: "hasProjectsEnabled",
+};
+
 /** Memoized reads of one repo's settings. */
 export function reads({ gh, repo, root }) {
   const R = {
     repo: once(() => gh.rest(`repos/${repo}`)),
+    // The repo's REST answer with each of `keys` it lacks filled from GraphQL (one query, for the keys GraphQL names).
+    general: async (keys) => {
+      const rest = await R.repo();
+      const asked = keys.filter((k) => rest[k] === undefined && GENERAL[k]);
+      if (!asked.length) return rest;
+      const [owner, name] = repo.split("/");
+      const got = (await gh.graphql(`query($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { ${asked.map((k) => GENERAL[k]).join(" ")} } }`, { owner, name })).repository;
+      return { ...Object.fromEntries(asked.map((k) => [k, got[GENERAL[k]]])), ...rest };
+    },
     branch: once(async () => (await R.repo()).default_branch),
     // Every active ruleset that reaches the repo, its own and its organization's, with its rules.
     rulesets: once(async () => {
