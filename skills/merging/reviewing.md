@@ -25,7 +25,7 @@ never reads the diffs itself.
 
 | Claim | Rule |
 |---|---|
-| Post | When a review starts, the orchestrator comments `Reviewing <40-hex head sha>` on the PR. It never starts with `Review:`, so no reader takes it for a verdict. |
+| Post | When a review starts, the orchestrator posts a PR comment whose first line is `Reviewing <40-hex head sha>`. It never starts with `Review:`, so no reader takes it for a verdict. |
 | Lease | A claim lasts 2 minutes; its session renews it every minute while the review runs (Amazon SQS visibility timeout, read 2026-11-23). |
 | Void | A claim on an older SHA, or from a session that has ended, counts for nothing. A second merge attempt fails harmlessly under `--match-head-commit`. |
-| Basis | 22 reviews on 2026-11-23 took 5 s to 3.6 min, median about 1 min. |
+| Basis | 22 reviews on 2026-11-23 took 5 s to 3.6 min, median about 1 min (the owner, 2026-11-23; replaces 2026-11-10's 20 minutes). |
