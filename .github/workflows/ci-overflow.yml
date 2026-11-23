@@ -20,6 +20,8 @@ name: ci-overflow
 # Off, the repo variable CI_OVERFLOW_RUNNER is unset, runner is skipped, and ci runs on ubuntu-latest as before. On,
 # it holds a lane's label: tools/ci_overflow.py sums this cycle's minutes on that lane from the caller's run and job
 # data and names the label until the lane's stop, then ubuntu-latest. Anything it cannot read is ubuntu-latest too.
+# Where the org runs the pool meter (templates/ci/ci-pool.yml), the org variable CI_POOL holds its reading, and the
+# label comes from that alone, with no API call (templates/ci/CI-POOL.md).
 # The meter and .github/ci-overflow.json are embedded below verbatim by `ci_standard.py embed --write`, as
 # ci-standard.yml embeds its checks, so the lanes and the stop are Git Crafter's at the caller's pin and no pull request
 # in the caller can edit them. templates/ci/DECISIONS.md, 2026-11-11.
@@ -60,7 +62,9 @@ jobs:
                   GITHUB_API_URL, CI_OVERFLOW_SAVE ("true" on the trusted branch) and CI_OVERFLOW_WORKFLOWS (the workflow files
                   to meter, comma- or space-separated, each a name or a workflow ref; empty is the config's workflows). Writes
                   label, minutes, reason and artifact to GITHUB_OUTPUT (stdout when unset). With CI_OVERFLOW_SAVE, writes the
-                  meter's state to FILE for upload-artifact.
+                  meter's state to FILE for upload-artifact. With CI_POOL, the org's reading from tools/ci_pool.py, no token
+                  is used: the lane's label only while that reading is fresh, whole, has Blacksmith's own cost and is under its
+                  stop.
               ci_overflow.py --self-test
                   Runs tools/tests/test_ci_overflow.py: under, at and over the stop, an unreadable API, off, a backlog, a repo
                   off the lane, a workflow list, and ci-standard.yml's lane labels against the config.
@@ -69,7 +73,8 @@ jobs:
           each job rounded up to the minute and weighted by its vCPUs. The newest state artifact from the trusted branch carries
           the runs already summed, so a run reads only the runs since. Exit 0 always: anything it cannot read is the fallback
           label, GitHub's own runner (rules/gates.md, fail open). The lanes live in .github/ci-overflow.json. A lane serves only
-          the repos its `repos` names, since its free minutes are per organization and this meter reads one repo.
+          the repos its `repos` names, since its free minutes are per organization and this meter reads one repo. An org that
+          runs the pool meter (templates/ci/ci-pool.yml) sets CI_POOL for every repo, and this per-repo meter then stays idle.
           .github/workflows/ci-overflow.yml embeds this file and that config, so any repo that calls ci-standard.yml can meter.
           """
 
@@ -92,6 +97,8 @@ jobs:
           SETTLE = timedelta(seconds=60)  # runs created in the last minute wait for the next meter run
           SAFE = re.compile(r"[A-Za-z0-9 _.:;,()'-]*")  # one output value: no line break, no = or other control
           STOCK = {"label": "ubuntu-latest", "minutes": "", "artifact": ""}
+          POOL_AGE = timedelta(minutes=75)  # tools/ci_pool.py's MAX_AGE: an older reading is stale
+          POOL_SKEW = timedelta(minutes=5)  # a reading this far ahead of the runner's clock is still fresh
           WORKFLOW_FILE = re.compile(r"[A-Za-z0-9_.-]+\.ya?ml")  # one workflow file name, safe in an API path
 
 
@@ -288,12 +295,43 @@ jobs:
               if not found:
                   return "CI_OVERFLOW_RUNNER is no lane's label"
               name, lane = found
-              if env.get("GITHUB_REPOSITORY", "").lower() not in {r.lower() for r in lane["repos"]}:
+              if not env.get("CI_POOL", "").strip() and env.get("GITHUB_REPOSITORY", "").lower() not in {r.lower() for r in lane["repos"]}:
                   return "this repo is not on the lane's meter (repos in .github/ci-overflow.json)"
               workflows = workflows_of(env.get("CI_OVERFLOW_WORKFLOWS", ""), cfg)
               if workflows is None:
                   return "CI_OVERFLOW_WORKFLOWS names a file that is not a workflow"
               return name, lane, label, {**cfg, "workflows": workflows}
+
+
+          def pool_reason(raw: str, now: datetime) -> str:
+              """Why the org's CI_POOL reading keeps the lane off, or "" when it lets the lane run."""
+              try:
+                  doc = json.loads(raw)
+                  b, age = doc["blacksmith"], now - when(doc["at"])
+                  cost, stop = float(b["cost"]), float(b["stop"])
+              except (ValueError, KeyError, TypeError, AttributeError):
+                  return "CI_POOL is not a pool reading"
+              if doc.get("version") != 3:
+                  return "CI_POOL is not a version 3 reading"
+              if not -POOL_SKEW <= age < POOL_AGE:
+                  return f"CI_POOL was read {int(age.total_seconds() // 60)} minutes ago"
+              if doc.get("complete") is not True or not isinstance(b.get("cli_cost"), (int, float)):
+                  return "the pool meter has not caught up, or has no cost from Blacksmith"
+              if b.get("stopped") is not False or cost >= stop:
+                  return f"{cost:.2f} of a {stop:.2f} dollar stop, or stopped"
+              return ""
+
+
+          def pooled(raw: str, label: str, fallback: str, now: datetime) -> dict:
+              """The outputs from the org's reading: label while it lets the lane run, else the fallback. No API call."""
+              why = pool_reason(raw, now)
+              try:
+                  b = json.loads(raw)["blacksmith"]
+                  minutes, cost = f"{float(b['floor_minutes']):g}", f"{float(b['cost']):.2f}"
+              except (ValueError, KeyError, TypeError):
+                  minutes, cost = "", ""
+              pick = fallback if why else label
+              return {"label": pick, "minutes": minutes, "artifact": "", "reason": f"pool: {why or cost + ' dollars used'}; {pick}"}
 
 
           def decide(env: dict, cfg: dict, api, now: datetime) -> tuple:
@@ -304,6 +342,8 @@ jobs:
               if isinstance(admitted, str):
                   return {**off, "reason": admitted}, None
               name, lane, label, cfg = admitted
+              if env.get("CI_POOL", "").strip():
+                  return pooled(env["CI_POOL"], label, fallback, now), None
               start = period_start(now, lane["cycle_day"])
               trusted = env.get("CI_OVERFLOW_SAVE") == "true"
               budget = cfg["budget_calls"]["main" if trusted else "pull_request"]
@@ -375,7 +415,7 @@ jobs:
           cat > "$RUNNER_TEMP/ci-overflow.json" <<'CI_OVERFLOW_JSON'
           {
             "version": 1,
-            "$comment": "The overflow lanes tools/ci_overflow.py meters. The repo variable CI_OVERFLOW_RUNNER names one lane's label; unset is off, and every job runs on fallback. A second lane is one more entry here. workflows are the files whose heavy jobs take the chosen label; a caller of ci-overflow.yml names its own. A lane's repos are the only repos it serves: its free minutes are per organization and the meter reads one repo, so a second repo waits for an org-wide meter. Empty repos: the lane is off, as in Git Crafter, whose public repo runs free on GitHub's runners. budget_calls caps the GitHub API calls one meter run spends; a backlog over it means GitHub's runner. templates/ci/DECISIONS.md, 2026-11-10 and 2026-11-11.",
+            "$comment": "The overflow lanes tools/ci_overflow.py meters. The repo variable CI_OVERFLOW_RUNNER names one lane's label; unset is off, and every job runs on fallback. A second lane is one more entry here. workflows are the files whose heavy jobs take the chosen label; a caller of ci-overflow.yml names its own. A lane's repos are the only repos it serves: its free minutes are per organization and the meter reads one repo, so a second repo takes the org's pool meter instead: with CI_POOL set, the chooser reads that and ignores repos. Empty repos: the lane is off, as in Git Crafter, whose public repo runs free on GitHub's runners. budget_calls caps the GitHub API calls one meter run spends; a backlog over it means GitHub's runner. templates/ci/DECISIONS.md, 2026-11-10, 2026-11-11 and 2026-11-20.",
             "fallback": "ubuntu-latest",
             "workflows": ["pages.yml", "verify.yml"],
             "trusted_branch": "main",
@@ -399,6 +439,7 @@ jobs:
         continue-on-error: true
         env:
           CI_OVERFLOW_RUNNER: ${{ vars.CI_OVERFLOW_RUNNER }}
+          CI_POOL: ${{ vars.CI_POOL }}
           CI_OVERFLOW_WORKFLOWS: ${{ inputs.workflows || github.workflow_ref }}
           CI_OVERFLOW_SAVE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           GITHUB_TOKEN: ${{ github.token }}
