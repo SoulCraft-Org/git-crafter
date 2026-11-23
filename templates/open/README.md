@@ -1,6 +1,6 @@
 # Open-repo starter
 
-Files and settings that open a Git Crafter repo to outside contributors, with AI agents reviewing and merging ([outside PRs](../../skills/merging/outside.md)).
+Files and settings that open a repo to outside contributors, with AI agents reviewing and merging ([outside PRs](../../skills/merging/outside.md)).
 
 ```mermaid
 flowchart LR
@@ -15,43 +15,54 @@ flowchart LR
 
 | File | To | Set |
 |---|---|---|
-| `CONTRIBUTING.md`, `GOVERNANCE.md`, `MAINTAINERS.md`, `SECURITY.md` | the repo root | `<owner>/<repo>`, the run commands, the maintainer row |
+| `CONTRIBUTING.md`, `GOVERNANCE.md`, `MAINTAINERS.md`, `SECURITY.md`, `SUPPORT.md` | the repo root | the [placeholders](#placeholders) |
 | `LICENSE`, such as MIT or Apache-2.0 | the repo root | the year and holder |
-| Git Crafter's [`CODE_OF_CONDUCT.md`](../../CODE_OF_CONDUCT.md), [`SUPPORT.md`](../../SUPPORT.md) | the repo root | the project name |
+| Git Crafter's [`CODE_OF_CONDUCT.md`](../../CODE_OF_CONDUCT.md) | the repo root | the project name |
 | [`templates/agents/`](../agents/) | the repo root | as that folder says |
-| `.github/PULL_REQUEST_TEMPLATE.md`, `.github/ISSUE_TEMPLATE/`, `.github/DISCUSSION_TEMPLATE/`, `.github/CODEOWNERS`, `.github/dco.yml`, `.github/release.yml`, `.github/FUNDING.yml` | the same paths | the owner login in `CODEOWNERS`; your `FUNDING.yml` destinations |
-| `labels.json` | the label step reads it | nothing |
+| `.github/PULL_REQUEST_TEMPLATE.md`, `.github/ISSUE_TEMPLATE/`, `.github/DISCUSSION_TEMPLATE/`, `.github/CODEOWNERS`, `.github/dco.yml`, `.github/release.yml`, `.github/FUNDING.yml` | the same paths | your `FUNDING.yml` destinations |
+| `labels.json` | anywhere; the Labels row below reads it | nothing |
 | [`merge_policy.json`](merge_policy.json) and [`tools/merge_policy.py`](../../tools/merge_policy.py) | `tools/`, side by side | `ai_mergeable` to your content paths |
 | [`wiki/`](wiki/), [`wiki.yml`](../ci/wiki.yml) | `wiki/`, `.github/workflows/` | `<owner>/<repo>` |
 
+## Placeholders
+
+| Placeholder | In | Set it to |
+|---|---|---|
+| `<owner>`, `<repo>` | every file | the GitHub owner and repo names |
+| `<Owner>`, `<project>` | `GOVERNANCE.md`, `wiki/Home.md` | the owner's and the project's name |
+| `<Name>`, `<role>`, `<year>` | `MAINTAINERS.md` | a maintainer's name, role and first year |
+| `@<login>` | `MAINTAINERS.md`, `CODEOWNERS` | a GitHub login: the maintainer's, the owner's |
+| `<contact address>` | `SECURITY.md` | an address for reporters off GitHub |
+| `<deploy doc>` | `SECURITY.md` | the doc on staging and rollback |
+| `<install command>`, `<run command>`, `<check command>` | `CONTRIBUTING.md` | your commands |
+
 ## Settings
 
-[`setup.json`](../setup.json) lists each repo switch these files assume, one row each (GitHub Docs and the gh manual, read 2026-11-12 and 2026-11-13). Apply each row signed in to `gh` as the repo admin.
+[`setup.json`](../setup.json) holds one row per repo switch these files assume (GitHub Docs and the gh manual, read 2026-11-12 and 2026-11-13). Apply each as the repo admin, signed in to `gh`.
 
 | Row | Do |
 |---|---|
 | `method`, `path`, `body` | `gh api -X <method> <path> --input body.json`, the row's `body` in `body.json`; no `body`, no `--input` |
 | `{owner}`, `{repo}`, `{topics}`, `{homepage}`, `{description}` | your values; `{node_id}` is `gh api repos/<owner>/<repo> -q .node_id` |
 | `check` | `gh api` its `get`, or `path`: `field` should equal `value` |
-| `api: false` | its `reason` names the web UI step |
-| `when: no_org_ruleset` | skip it if your org sets a ruleset of that target |
+| `api: false`, `when: no_org_ruleset` | its `reason` names the web UI step; skip a `no_org_ruleset` row if your org sets that ruleset |
 
 The list leaves out three:
 
 | Setting | Call |
 |---|---|
-| Required checks | a `required_status_checks` rule naming your CI and DCO, in the default branch ruleset |
+| Required checks | a `required_status_checks` rule naming CI and DCO in the default branch ruleset |
 | Labels | `gh label create <name> --color <hex> --description <text>` per `labels.json` entry |
 | A Release per tag | `gh release create <tag> --verify-tag --generate-notes` |
 
 ## Options, off by default
 
-Each is an `optional: true` row: apply it only if your repo needs it.
+Each is an `optional: true` row, for repos that need it.
 
 | Option | For | Row, and what else it needs |
 |---|---|---|
-| Merge queue | a busy branch, with several human maintainers | `rules.merge_queue`; CI runs `on: merge_group`; `gh pr merge` after checks pass: `repo.no_auto_merge` keeps auto-merge off |
-| Artifact attestations | a repo that publishes a built artifact | `manual.artifact_attestations`: `actions/attest`, with `id-token: write` and `attestations: write` |
+| Merge queue | a busy branch, several maintainers | `rules.merge_queue`; CI runs `on: merge_group`; `gh pr merge` after checks pass: `repo.no_auto_merge` keeps auto-merge off |
+| Artifact attestations | a repo that publishes a built artifact | `manual.artifact_attestations`: [actions/attest](https://github.com/actions/attest), with `id-token: write` and `attestations: write` |
 
 ## Check
 
@@ -59,4 +70,4 @@ Each is an `optional: true` row: apply it only if your repo needs it.
 |---|---|---|
 | Community profile `health_percentage` | 100 | `gh api repos/<owner>/<repo>/community/profile -q .health_percentage` |
 | Merge policy self-test | PASS | `python3 -I tools/merge_policy.py --self-test` |
-| OpenSSF Scorecard, from [`scorecard.yml`](../ci/scorecard.yml) | Advisory, not a goal: bot and AI reviews do not count toward Code-Review, and Maintained succeeds only for a repo over 90 days old (ossf/scorecard docs/checks.md, read 2026-11-14) | `curl -s https://api.scorecard.dev/projects/github.com/<owner>/<repo> \| jq .score` |
+| OpenSSF Scorecard, from [`scorecard.yml`](../ci/scorecard.yml) | Advisory. Bot and AI reviews do not count toward Code-Review. Maintained needs a repo over 90 days old (ossf/scorecard docs/checks.md, read 2026-11-14) | `curl -s https://api.scorecard.dev/projects/github.com/<owner>/<repo> \| jq .score` |
