@@ -7,4 +7,9 @@
 | Contribute | [CONTRIBUTING.md](https://github.com/SoulCraft-Org/git-crafter/blob/main/CONTRIBUTING.md) |
 | Ask a question | [Discussions](https://github.com/SoulCraft-Org/git-crafter/discussions) |
 
+```mermaid
+flowchart LR
+  E[Pull request edits wiki/] -->|merge, wiki.yml publishes| W[This wiki]
+```
+
 To change a page, open a pull request that edits [`wiki/`](https://github.com/SoulCraft-Org/git-crafter/tree/main/wiki) in the repo. A workflow publishes it here on merge; editing here is limited to maintainers.
