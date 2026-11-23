@@ -1,0 +1,13 @@
+{
+ "name": "CI pool meter",
+ "url": "https://github.com/SoulCraft-Org/git-crafter/blob/main/templates/ci/CI-POOL.md",
+ "description": "Meters the org's Blacksmith minutes into the org variable CI_POOL and closes the Blacksmith runner groups at the hard stop.",
+ "public": false,
+ "hook_attributes": {"url": "https://github.com/SoulCraft-Org/git-crafter", "active": false},
+ "default_events": [],
+ "default_permissions": {
+  "actions": "read",
+  "organization_actions_variables": "write",
+  "organization_self_hosted_runners": "write"
+ }
+}
