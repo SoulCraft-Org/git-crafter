@@ -4,7 +4,7 @@
 // byDesc, byAsc, parsed, src }.
 import { datedPhrase } from './docs-checks.mjs';
 import { areaEntry, areaFor, globToRegExp } from './docs-files.mjs';
-import { lastCommit, lastCommitDay, trackedFiles } from './docs-git.mjs';
+import { lastCodeCommit, lastCommit, lastCommitDay, trackedFiles } from './docs-git.mjs';
 import { byFolder, daysBetween, escapeRe, round1, sum, TARGETS } from './docs-util.mjs';
 
 // ---- speed: reading time, and consumption: the tokens Claude loads past it ----
@@ -111,8 +111,8 @@ export function markupMetric({ param, parsed, ok, cnc, src }) {
     `${headings} headings (a skipped level, a second H1, a heading repeated at its level) and ${images} images (no alt text, or over ${max} characters) outside code, ${src}`);
 }
 
-// A doc's area's last change, as a time and as the committer's own day, each
-// read once. A doc's dates are written in its author's calendar, so the day is
+// A doc's area's last change, as a time (the last commit that changes more than
+// comments, for the lag) and as the committer's own day, each read once. A doc's dates are written in its author's calendar, so the day is
 // never UTC. null for a record or an area with no history.
 export function areaLookups(root, areas) {
   const cached = (read) => {
@@ -125,7 +125,7 @@ export function areaLookups(root, areas) {
       return cache.get(doc);
     };
   };
-  return { areaTsFor: cached(lastCommit), areaDayFor: cached(lastCommitDay) };
+  return { areaTsFor: cached(lastCodeCommit), areaDayFor: cached(lastCommitDay) };
 }
 
 // The one doc that trails its area the most, now: a state, never a mean
@@ -144,7 +144,7 @@ export function lagMetric({ root, param, history, parsed, ok, cnc, byDesc, areaT
   if (!detail.length) return cnc('docs.oldest_lag_days', 'no doc maps to an area with git history; check params.areas', TARGETS);
   detail.sort(byDesc);
   ok('docs.oldest_lag_days', detail[0].value, detail,
-    `git log -1 --format=%ct -- <doc>, and -- <area> (params.areas); the doc that trails its area most, ${detail[0].label}`);
+    `git log -1 --format=%ct -- <doc>, and the newest commit to <area> (params.areas) that changes more than comments; the doc that trails its area most, ${detail[0].label}`);
 }
 
 const excluded = (p) => /^:(\(exclude\)|!|\^)/.test(p);
