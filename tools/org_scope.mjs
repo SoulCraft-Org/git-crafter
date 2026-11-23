@@ -69,11 +69,14 @@ export function configScope(json) {
 
 // The repo's own Quality run on disk, as a site spec: the data folder and
 // targets its Quality config names, CI's fresh latest.json ahead of the
-// committed local.json. Paths relative to root.
+// committed local.json. Paths relative to root. The config's packs resolve
+// first, so their targets folders (absolute, in `packs`) lie under the repo's
+// targets, as collect.mjs reads them: an override of a pack's metric has one to
+// override.
 export function ownQuality(root, scope) {
-  const c = loadConfig({ root, file: scope.quality_config ?? null, env: {} });
+  const c = loadConfig({ root, file: scope.quality_config ?? null, env: { CODE_OS_PACKS: process.env.CODE_OS_PACKS } });
   const rel = (p) => relative(resolve(root), p) || ".";
-  return { repo: scope.own_repo, root: ".", data: ["latest.json", "local.json"].map((f) => rel(join(c.data, f))), targets: rel(c.targets) };
+  return { repo: scope.own_repo, root: ".", data: ["latest.json", "local.json"].map((f) => rel(join(c.data, f))), targets: rel(c.targets), ...(c.packs.length ? { packs: c.packs.map((p) => p.targets) } : {}) };
 }
 
 // The maps folders of the packs a Quality config names; none when it cannot
