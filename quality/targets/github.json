@@ -549,7 +549,7 @@
     "tab": "actions",
     "kind": "quality",
     "label": "Workflows locked to recorded commits",
-    "means": "Share of workflows that call outside actions and are in the lockfile, or pin every one to a full commit SHA, so each run uses a fixed commit.",
+    "means": "Share of workflows using outside actions that are in the lockfile or pin each one to a full commit SHA.",
     "unit": "%",
     "goal": 100,
     "near": 80,
