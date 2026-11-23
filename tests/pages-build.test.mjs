@@ -11,6 +11,8 @@ import { fileURLToPath } from "node:url";
 
 import { configScope, namedIds, ownQuality, ownSteps, finishCollect, readDocs as readDocsFrom, readSiteFromDisk, SCOPE } from "../tools/collect_org.mjs";
 import { loadLibrary, resolveMaps } from "../pages/library.mjs";
+import { buildPage } from "../quality/build.mjs";
+import { loadConfig } from "../quality/config.mjs";
 import { TABS as TEMPLATE_TABS } from "../quality/score.mjs";
 import { BUDGET, build, checkDocs, checkMaps, CODE_OS_QUALITY_CONFIG, MAX_STEPS, qualityDefs } from "../pages/build.mjs";
 import { PROCESS_TABS, renderMetrics, renderProcess } from "../pages/render.mjs";
@@ -84,6 +86,26 @@ test("the starters: the Quality config turns every tab on, and the Process confi
     assert.deepEqual(checkMaps(maps, new Set(Object.keys(defs)), "config.json"), []);
     const pagesYml = readFileSync(join(ROOT, "templates/ci/pages.yml"), "utf8");
     for (const want of [/pages: process quality/, /config: quality\/process\/config\.json/, /quality-config: quality\/config\.json/, /"\*\*\/\*\.md"/]) assert.match(pagesYml, want, "pages.yml builds both pages from the starters' paths, on doc changes too");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("the Quality starter builds a page with all 13 tabs, and its web example names the site the Pages tab reads", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cos-quality-starter-"));
+  try {
+    mkdirSync(join(dir, "quality", "data"), { recursive: true });
+    cpSync(join(ROOT, "templates/quality/config.json"), join(dir, "quality", "config.json"));
+    cpSync(join(ROOT, "templates/quality/targets"), join(dir, "quality", "targets"), { recursive: true });
+    writeFileSync(join(dir, "quality", "data", "latest.json"), JSON.stringify({ generated_at: ago(1), commit: "abc1234", mode: "ci", metrics: {} }));
+    const config = loadConfig({ root: dir, file: "quality/config.json", env: {} });
+    assert.equal(config.tabs.length, 13, "all 13 tabs are on");
+    const page = buildPage(config, { now: NOW });
+    assert.equal(page.code, 0, "the starter builds with no data of its own");
+    for (const [id] of TEMPLATE_TABS) assert.ok(page.html.includes(`<section id="${id}" class="view tab"`), `${id} has a panel on the page`);
+    const { defs } = qualityDefs(dir, "quality/config.json");
+    for (const id of ["design.raw_hex", "usability.reading_grade"]) assert.match(defs[id].params.origin, /^https:\/\/OWNER\.github\.io\/my-repo\/$/, `${id} reads the example site`);
+    assert.equal(defs["deploy.waiting_merges"].params.platform, "pages", "the Deploy metrics read GitHub Pages");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
