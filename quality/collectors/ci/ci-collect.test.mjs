@@ -252,6 +252,62 @@ describe("api headroom", () => {
     assert.match((await collectWith({ gh: fakeGh({ rest }) }))["ci.api_headroom"].could_not_check, /no core or graphql/);
   });
 });
+describe("ci.cache_hit_rate keeps each job's verdict", () => {
+  const roots = [];
+  after(() => roots.forEach((d) => rmSync(d, { recursive: true, force: true })));
+  const ID = "ci.cache_hit_rate";
+  const only = TARGETS.filter((t) => t.id === ID);
+  // A root whose history folder holds these files, by name.
+  const rootWith = (files) => {
+    const dir = mkdtempSync(path.join(tmpdir(), "ci-logs-"));
+    roots.push(dir);
+    mkdirSync(path.join(dir, "data", "quality", "history"), { recursive: true });
+    for (const [name, text] of Object.entries(files)) writeFileSync(path.join(dir, "data", "quality", "history", name), text);
+    return dir;
+  };
+  const day = (verdicts) => JSON.stringify({ mode: "ci", metrics: { [ID]: { value: 1, verdicts } } });
+  const read = async (root) => {
+    const calls = [];
+    const got = (await collect({ root, mode: "ci", params: FULL_PARAMS, targets: only, gh: fakeGh({}, calls), now: NOW, repo: REPO }))[ID];
+    return { got, logs: calls.filter((c) => /\/logs$/.test(c)).length };
+  };
+
+  it("reads each job's log once, then records the verdicts for the next run", async () => {
+    const first = await read(rootWith({}));
+    assert.equal(first.got.value, 75);
+    assert.equal(first.logs, 5, "no earlier run: all five logs are read");
+    assert.deepEqual(first.got.verdicts, { 109: "hit", 105: "hit", 101: "hit", 103: "miss", 112: "none" });
+    assert.match(first.got.source, /; 5 of 5 job logs read now, the rest from earlier runs$/);
+    // The next run finds that entry in a history file: the same reading, no log read.
+    const next = await read(rootWith({ "2026-11-22.json": JSON.stringify({ mode: "ci", metrics: { [ID]: first.got } }) }));
+    assert.equal(next.logs, 0);
+    assert.equal(next.got.value, 75);
+    assert.deepEqual(next.got.verdicts, first.got.verdicts);
+    assert.match(next.got.source, /; 0 of 5 job logs read now/);
+  });
+
+  it("reads only the jobs no earlier run recorded, and takes the newest of the last three files", async () => {
+    const some = await read(rootWith({ "2026-11-20.json": day({ 109: "miss", 103: "miss" }), "2026-11-21.json": day({ 109: "hit" }) }));
+    assert.equal(some.logs, 3, "109 and 103 are known; 105, 101 and 112 are read");
+    assert.equal(some.got.value, 75, "109 reads as the newer file's hit");
+    const old = await read(rootWith({ "2026-11-01.json": day({ 109: "miss", 105: "miss", 101: "miss", 103: "miss", 112: "none" }), "2026-11-02.json": day({ 2: "hit" }), "2026-11-03.json": day({ 3: "hit" }), "2026-11-04.json": day({ 4: "hit" }) }));
+    assert.equal(old.logs, 5, "a file beyond the newest three is not read");
+  });
+
+  it("ignores a history file that is not JSON or holds a verdict that is none of the three", async () => {
+    const got = await read(rootWith({ "2026-11-22.json": "{ not json", "2026-11-21.json": day({ 109: "maybe", 105: 5 }), "notes.txt": "x" }));
+    assert.equal(got.logs, 5);
+    assert.equal(got.got.value, 75);
+  });
+
+  it("keeps at most 60 verdicts, this run's first", async () => {
+    const old = Object.fromEntries(Array.from({ length: 80 }, (_, i) => [1000 + i, "hit"]));
+    const { got } = await read(rootWith({ "2026-11-22.json": day(old) }));
+    const ids = Object.keys(got.verdicts);
+    assert.equal(ids.length, 60);
+    assert.ok(["109", "105", "101", "103", "112"].every((id) => id in got.verdicts), "the sample's own five are kept");
+  });
+});
 describe("repo settings", () => {
   const roots = [];
   const repoWith = (files) => {

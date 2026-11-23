@@ -68,6 +68,7 @@ import { skipTriggers, standardCalls } from "./ci-stages.mjs";
 import { pipelineDetail } from "./ci-detail.mjs";
 import { reasonFor, settings } from "./ci-settings.mjs";
 import { workflowRuns, runJobs, flakyChecks } from "./ci-runs.mjs";
+import { keptVerdicts, logVerdicts, savedVerdicts, VERDICTS_KEPT, HISTORY_READ } from "./ci-logs.mjs";
 import { INSIGHT_METRICS } from "./ci-insights.mjs";
 import { SPEND_METRICS } from "./ci-spend.mjs";
 import { headroom, QUOTA_SOURCE, readQuota } from "../github/github-quota.mjs";
@@ -249,18 +250,20 @@ const METRICS = {
     },
   },
   "ci.cache_hit_rate": {
-    source: `gh api repos/{repo}/actions/jobs/{id}/logs (setup-node's npm cache line, newest ${LOG_SAMPLE} jobs)`,
-    async run(L, { gh, repo }) {
+    source: `gh api repos/{repo}/actions/jobs/{id}/logs (setup-node's npm cache line, newest ${LOG_SAMPLE} jobs); a job's verdict is kept in this entry (verdicts, ${VERDICTS_KEPT} jobs) and read back from the newest ${HISTORY_READ} files in data/quality/history, so a finished job's log is read once`,
+    async run(L, { gh, repo, root }) {
       const jobs = (await L.described())
         .flatMap((r) => r.jobs.filter((j) => j.restoresCache).map((j) => ({ ...j, workflow: r.workflow })))
         .sort((a, b) => ms(b.completed_at) - ms(a.completed_at))
         .slice(0, LOG_SAMPLE);
       if (!jobs.length) return skip("no job read ran setup-node with a cache");
-      const verdicts = await mapLimit(jobs, 4, async (j) => cacheVerdict(await gh.text(`repos/${repo}/actions/jobs/${j.id}/logs`)));
-      const read = jobs.map((j, i) => ({ workflow: j.workflow, v: verdicts[i] })).filter((x) => x.v);
+      const saved = savedVerdicts(root, "ci.cache_hit_rate");
+      const { verdicts, live } = await logVerdicts(gh, repo, jobs, saved);
+      const read = jobs.map((j) => ({ workflow: j.workflow, v: verdicts.get(String(j.id)) })).filter((x) => x.v !== "none");
+      const kept = { verdicts: keptVerdicts(verdicts, saved), note: `${live} of ${jobs.length} job logs read now, the rest from earlier runs` };
       if (!read.length) return skip("no log read had setup-node's cache line");
       const detail = [...groupBy(read, (x) => x.workflow)].map(([label, g]) => ({ label, value: pct(g.filter((x) => x.v === "hit").length, g.length) }));
-      return measured(pct(read.filter((x) => x.v === "hit").length, read.length), detail);
+      return { ...measured(pct(read.filter((x) => x.v === "hit").length, read.length), detail), ...kept };
     },
   },
   // Point in time: the latest green head, each stage's latest run, never a median.
