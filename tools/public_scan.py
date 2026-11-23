@@ -134,12 +134,10 @@ def report(hits: list, label: str) -> int:
     return 1 if hits else 0
 
 
-def self_test() -> int:
-    """Scan a seeded tree of known-bad and clean files; 0 when every scan matches."""
-    wrong = []
+def _seed(tree: str, at: str) -> None:
+    """Write the seeded known-bad and clean files under tree."""
     key = "gh" + "p_" + "a" * 36
     home = "/Users" + "/alice/x"
-    at = "@"
     files = {
         "README.md": "Published by Acme Corp.\nmail ops" + "@acme.io\n",
         "rules/bad.md": f"Ask Alice Smith.\nacme-corp owns it. {home}\ntoken {key}\nuses: Acme-Corp/tool@v1, acme-corp/tool\n",
@@ -151,40 +149,62 @@ def self_test() -> int:
         "terms.txt": "# private\nAlice Smith\n!Acme-Corp/tool\nAcme Corp :: README.md\n",
         "bin.dat": "Alice Smith\0",
     }
+    for rel, text in files.items():
+        os.makedirs(os.path.dirname(os.path.join(tree, rel)), exist_ok=True)
+        with open(os.path.join(tree, rel), "w", encoding="utf-8") as fh:
+            fh.write(text)
+
+
+def _check_scans(tree: str, wrong: list) -> None:
+    """Check the generic scan (with and without ALLOW) and the term scan on the seeded tree."""
+    got = generic(tree)
+    want = [("README.md", 2, "email"), ("SECURITY.md", 1, "email"), ("SECURITY.md", 1, "email"),
+            ("SECURITY.md", 1, "email"), ("allow.txt", 2, "email"), ("rules/bad.md", 2, "home path"),
+            ("rules/bad.md", 3, "github token")]
+    if got != want:
+        wrong.append(f"generic: {got}, want {want}")
+    got = generic(tree, os.path.join(tree, "allow.txt"))
+    want = [("README.md", 2, "email"), ("SECURITY.md", 1, "email"), ("SECURITY.md", 1, "email"),
+            ("rules/bad.md", 2, "home path"), ("rules/bad.md", 3, "github token")]
+    if got != want:
+        wrong.append(f"generic with ALLOW: {got}, want {want}")
+    got = term_scan(tree, os.path.join(tree, "terms.txt"))
+    want = [("rules/bad.md", 1, 1), ("rules/bad.md", 2, 2), ("rules/bad.md", 4, 2)]
+    if got != want:
+        wrong.append(f"terms: {got}, want {want}")
+
+
+def _check_exit_codes(tree: str, at: str, wrong: list) -> None:
+    """Check the generic exit codes without and with ALLOW on a one-file folder."""
+    only = os.path.join(tree, "only")
+    os.makedirs(only)
+    with open(os.path.join(only, "SECURITY.md"), "w", encoding="utf-8") as fh:
+        fh.write(f"Report to security{at}acme.io\n")
+    with contextlib.redirect_stdout(io.StringIO()):
+        got = [main(["generic", only]), main(["generic", only, os.path.join(tree, "allow.txt")])]
+    if got != [1, 0]:
+        wrong.append(f"generic exit codes without and with ALLOW: {got}, want [1, 0]")
+
+
+def _check_not_utf8(tree: str, wrong: list) -> None:
+    """Check that a terms file that is not UTF-8 exits 3."""
+    with open(os.path.join(tree, "latin.txt"), "wb") as fh:
+        fh.write(b"Alice\n\xe9\n")
+    with contextlib.redirect_stderr(io.StringIO()):
+        got = main(["terms", tree, os.path.join(tree, "latin.txt")])
+    if got != 3:
+        wrong.append(f"terms file that is not UTF-8: exit {got}, want 3")
+
+
+def self_test() -> int:
+    """Scan a seeded tree of known-bad and clean files; 0 when every scan matches."""
+    wrong = []
+    at = "@"
     with tempfile.TemporaryDirectory() as tree:
-        for rel, text in files.items():
-            os.makedirs(os.path.dirname(os.path.join(tree, rel)), exist_ok=True)
-            with open(os.path.join(tree, rel), "w", encoding="utf-8") as fh:
-                fh.write(text)
-        got = generic(tree)
-        want = [("README.md", 2, "email"), ("SECURITY.md", 1, "email"), ("SECURITY.md", 1, "email"),
-                ("SECURITY.md", 1, "email"), ("allow.txt", 2, "email"), ("rules/bad.md", 2, "home path"),
-                ("rules/bad.md", 3, "github token")]
-        if got != want:
-            wrong.append(f"generic: {got}, want {want}")
-        got = generic(tree, os.path.join(tree, "allow.txt"))
-        want = [("README.md", 2, "email"), ("SECURITY.md", 1, "email"), ("SECURITY.md", 1, "email"),
-                ("rules/bad.md", 2, "home path"), ("rules/bad.md", 3, "github token")]
-        if got != want:
-            wrong.append(f"generic with ALLOW: {got}, want {want}")
-        got = term_scan(tree, os.path.join(tree, "terms.txt"))
-        want = [("rules/bad.md", 1, 1), ("rules/bad.md", 2, 2), ("rules/bad.md", 4, 2)]
-        if got != want:
-            wrong.append(f"terms: {got}, want {want}")
-        only = os.path.join(tree, "only")
-        os.makedirs(only)
-        with open(os.path.join(only, "SECURITY.md"), "w", encoding="utf-8") as fh:
-            fh.write(f"Report to security{at}acme.io\n")
-        with contextlib.redirect_stdout(io.StringIO()):
-            got = [main(["generic", only]), main(["generic", only, os.path.join(tree, "allow.txt")])]
-        if got != [1, 0]:
-            wrong.append(f"generic exit codes without and with ALLOW: {got}, want [1, 0]")
-        with open(os.path.join(tree, "latin.txt"), "wb") as fh:
-            fh.write(b"Alice\n\xe9\n")
-        with contextlib.redirect_stderr(io.StringIO()):
-            got = main(["terms", tree, os.path.join(tree, "latin.txt")])
-        if got != 3:
-            wrong.append(f"terms file that is not UTF-8: exit {got}, want 3")
+        _seed(tree, at)
+        _check_scans(tree, wrong)
+        _check_exit_codes(tree, at, wrong)
+        _check_not_utf8(tree, wrong)
     for w in wrong:
         print(f"public-scan self-test: {w}")
     print(f"public-scan self-test: {'FAIL' if wrong else 'PASS'}")
