@@ -22,6 +22,7 @@
   {"use": "code", "why": "Git Crafter's own code, from measured to simplified, deleted, explained, checked and held small"},
   {"use": "triage", "why": "A finding in Git Crafter, from intake to the issue or card a merged pull request closes", "steps": {"intake": {"rule_ref": "SUPPORT.md"}, "issue": {"rule_ref": "CONTRIBUTING.md"}, "card": {"rule_ref": "CONTRIBUTING.md"}, "link": {"rule_ref": "CONTRIBUTING.md"}}},
   {"use": "document"},
-  {"use": "secure", "why": "Git Crafter's security, from keys no session reads to alerts closed within a week", "steps": {"keys": {"rule_ref": "rules/keys.md"}, "scan": {"rule_ref": "SECURITY.md"}, "model": {"rule_ref": "THREAT-MODEL.md"}, "report": {"rule_ref": "SECURITY.md"}, "alerts": {"rule_ref": "SECURITY.md"}}}
+  {"use": "secure", "why": "Git Crafter's security, from keys no session reads to alerts closed within a week", "steps": {"keys": {"rule_ref": "rules/keys.md"}, "scan": {"rule_ref": "SECURITY.md"}, "model": {"rule_ref": "THREAT-MODEL.md"}, "report": {"rule_ref": "SECURITY.md"}, "alerts": {"rule_ref": "SECURITY.md"}}},
+  {"use": "contribute"}
  ]
 }

@@ -36,6 +36,7 @@
   {
    "id": "idea",
    "name": "Idea",
+   "icon": "mail",
    "tools": [
     "GitHub Discussions",
     "Issue forms"
@@ -51,6 +52,7 @@
   {
    "id": "approve",
    "name": "Approve run",
+   "icon": "shield",
    "tools": [
     "Fork run approval",
     "gh pr diff"
@@ -66,6 +68,7 @@
   {
    "id": "review",
    "name": "Review",
+   "icon": "review",
    "tools": [
     "Pull request reviews",
     "gh pr view and gh pr diff only"
@@ -81,6 +84,7 @@
   {
    "id": "merge",
    "name": "Merge",
+   "icon": "merge",
    "tools": [
     "merge_policy.py --pr N --sha",
     "gh pr merge --match-head-commit"
@@ -96,6 +100,7 @@
   {
    "id": "rebuild",
    "name": "Rebuild",
+   "icon": "build",
    "tools": [
     "The orchestrator's own branch",
     "Co-authored-by trailer"
@@ -111,6 +116,7 @@
   {
    "id": "deploy",
    "name": "Deploy",
+   "icon": "deploy",
    "tools": [
     "deploy-gate.yml",
     "Rollback"

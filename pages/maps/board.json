@@ -41,6 +41,7 @@
   {
    "id": "card",
    "name": "Card",
+   "icon": "plan",
    "tools": [
     "A draft card on the project board",
     "quality/cards/picture.mjs"
@@ -52,6 +53,7 @@
   {
    "id": "split",
    "name": "Split",
+   "icon": "sessions",
    "tools": [
     "The Area field",
     "Pull requests of 400 lines or fewer"
@@ -63,6 +65,7 @@
   {
    "id": "start",
    "name": "Start",
+   "icon": "speed",
    "tools": [
     "One app session per card, in its own worktree",
     "Workflow: Pull request linked to issue"
@@ -74,6 +77,7 @@
   {
    "id": "finish",
    "name": "Finish",
+   "icon": "merge",
    "tools": [
     "The app's PR monitor with Auto-fix",
     "gh pr merge --match-head-commit"
@@ -85,6 +89,7 @@
   {
    "id": "done",
    "name": "Done",
+   "icon": "ci",
    "tools": [
     "Workflows: Pull request merged, Item closed",
     "Auto-archive the session on merge"
@@ -96,6 +101,7 @@
   {
    "id": "watch",
    "name": "Watch",
+   "icon": "clock",
    "tools": [
     "The Stuck view",
     "Insights charts"
