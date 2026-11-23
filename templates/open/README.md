@@ -16,7 +16,7 @@ flowchart LR
 | File | To | Set |
 |---|---|---|
 | `CONTRIBUTING.md`, `GOVERNANCE.md`, `MAINTAINERS.md`, `SECURITY.md`, `SUPPORT.md` | the repo root | the [placeholders](#placeholders) |
-| `LICENSE`, such as MIT or Apache-2.0 | the repo root | the year and holder |
+| `LICENSE` | the repo root | your license, year and holder |
 | Git Crafter's [`CODE_OF_CONDUCT.md`](../../CODE_OF_CONDUCT.md) | the repo root | the project name |
 | [`templates/agents/`](../agents/) | the repo root | as that folder says |
 | `.github/PULL_REQUEST_TEMPLATE.md`, `.github/ISSUE_TEMPLATE/`, `.github/DISCUSSION_TEMPLATE/`, `.github/CODEOWNERS`, `.github/dco.yml`, `.github/release.yml`, `.github/FUNDING.yml` | the same paths | your `FUNDING.yml` destinations |
@@ -32,8 +32,7 @@ flowchart LR
 | `<Owner>`, `<project>` | `GOVERNANCE.md`, `wiki/Home.md` | the owner's and the project's name |
 | `<Name>`, `<role>`, `<year>` | `MAINTAINERS.md` | a maintainer's name, role and first year |
 | `@<login>` | `MAINTAINERS.md`, `CODEOWNERS` | a GitHub login: the maintainer's, the owner's |
-| `<contact address>` | `SECURITY.md` | an address for reporters off GitHub |
-| `<deploy doc>` | `SECURITY.md` | the doc on staging and rollback |
+| `<contact address>`, `<deploy doc>` | `SECURITY.md` | an address for reporters off GitHub; the doc on staging and rollback |
 | `<install command>`, `<run command>`, `<check command>` | `CONTRIBUTING.md` | your commands |
 
 ## Settings
@@ -42,14 +41,12 @@ flowchart LR
 
 | Row | Do |
 |---|---|
+| `node tools/apply_setup.mjs --repo <owner>/<repo>` | a dry run; `--apply` sets each row it would change, then reads it back; `--check` exits 1 on drift |
 | `method`, `path`, `body` | `gh api -X <method> <path> --input body.json`, the row's `body` in `body.json`; no `body`, no `--input` |
 | `{owner}`, `{repo}`, `{topics}`, `{homepage}`, `{description}` | your values; `{node_id}` is `gh api repos/<owner>/<repo> -q .node_id` |
-| `check` | `gh api` its `get`, or `path`: `field` should equal `value` |
 | `api: false`, `when: no_org_ruleset` | its `reason` names the web UI step; skip a `no_org_ruleset` row if your org sets that ruleset |
 
-The list leaves out three:
-
-| Setting | Call |
+| Not in the list | Call |
 |---|---|
 | Required checks | a `required_status_checks` rule naming CI and DCO in the default branch ruleset |
 | Labels | `gh label create <name> --color <hex> --description <text>` per `labels.json` entry |
@@ -57,11 +54,9 @@ The list leaves out three:
 
 ## Options, off by default
 
-Each is an `optional: true` row, for repos that need it.
-
-| Option | For | Row, and what else it needs |
+| Option (`optional: true`) | For | Row, and what else it needs |
 |---|---|---|
-| Merge queue | a busy branch, several maintainers | `rules.merge_queue`; CI runs `on: merge_group`; `gh pr merge` after checks pass: `repo.no_auto_merge` keeps auto-merge off |
+| Merge queue | a busy branch | `rules.merge_queue`; CI runs `on: merge_group`; `gh pr merge` after checks pass: `repo.no_auto_merge` keeps auto-merge off |
 | Artifact attestations | a repo that publishes a built artifact | `manual.artifact_attestations`: [actions/attest](https://github.com/actions/attest), with `id-token: write` and `attestations: write` |
 
 ## Check
