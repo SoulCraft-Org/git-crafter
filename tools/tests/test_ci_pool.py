@@ -176,36 +176,94 @@ def cli_checks(tool):
 class GroupApi:
     """An org's runner groups; records each write as (method, last path part, body)."""
 
-    def __init__(self, names=("Blacksmith", "blacksmith-arm", "Default")):
-        self.groups, self.writes = [{"id": i, "name": n} for i, n in enumerate(names, 7)], []
+    def __init__(self, names=("Blacksmith", "blacksmith-arm", "Default"), access=None):
+        """access maps a group's name to (visibility, the ids of its selected repos); the default is all."""
+        access = access or {}
+        self.groups = [{"id": i, "name": n, "visibility": access.get(n, ("all", []))[0]} for i, n in enumerate(names, 7)]
+        self.repos, self.writes = {g["id"]: access.get(g["name"], ("all", []))[1] for g in self.groups}, []
 
     def get(self, path, params=None):
-        """The groups, on one page."""
+        """The groups on one page, or one group's selected repos."""
+        if path.endswith("/repositories"):
+            ids = self.repos[int(path.split("/")[-2])]
+            return {"total_count": len(ids), "repositories": [{"id": i} for i in ids]}
         return {"total_count": len(self.groups), "runner_groups": self.groups}
 
     def request(self, method, path, params=None, body=None):
-        """Records the write."""
+        """Records the write and applies it to the groups."""
         self.writes.append((method, path.rsplit("/", 1)[-1], body))
+        parts = path.split("/")
+        gid = int(parts[-2] if parts[-1] == "repositories" else parts[-1])
+        if parts[-1] == "repositories":
+            self.repos[gid] = body["selected_repository_ids"]
+        else:
+            next(g for g in self.groups if g["id"] == gid)["visibility"] = body["visibility"]
+
+
+class FailingGroups(GroupApi):
+    """GroupApi whose PATCH of group 8 raises once, as a failed call does."""
+
+    def request(self, method, path, params=None, body=None):
+        """Raises Unreadable on the first PATCH of group 8, then behaves as GroupApi."""
+        if method == "PATCH" and path.endswith("/8") and not getattr(self, "failed", False):
+            self.failed = True
+            raise self.tool.Unreadable("PATCH group 8: HTTP 500")
+        super().request(method, path, params, body)
 
 
 def backstop_checks(tool):
-    """The hard stop closes the Blacksmith groups, holds them closed, and opens them only on resume."""
+    """The hard stop closes the Blacksmith groups, holds them closed, and resume restores each group's earlier access."""
     def at(cost, previous=None, resume=False, api=None):
-        """(stopped, the writes) for a pass at cost dollars."""
+        """(stopped, the writes, the saved access) for a pass at cost dollars."""
         api = api or GroupApi()
         b = tool.backstop(api, "org", {"blacksmith": {"cost": cost}}, tool.HARD_STOP, resume, previous)["blacksmith"]
-        return b["stopped"], api.writes
+        return b["stopped"], api.writes, b.get("access")
     closed = [("PATCH", "7", {"visibility": "selected"}), ("PUT", "repositories", {"selected_repository_ids": []}),
               ("PATCH", "8", {"visibility": "selected"}), ("PUT", "repositories", {"selected_repository_ids": []})]
     stopped = json.dumps({"blacksmith": {"stopped": True}})
-    yield "under the hard stop nothing changes", at(11.39) == (False, [])
-    yield "at the hard stop both Blacksmith groups close and Default does not", at(11.4) == (True, closed)
-    yield "once stopped, each pass closes them again", at(1.0, stopped) == (True, closed)
-    yield "resume opens them to all", at(1.0, stopped, True) == (False, [("PATCH", "7", {"visibility": "all"}),
-                                                                         ("PATCH", "8", {"visibility": "all"})])
-    yield "resume at the hard stop stays stopped", at(11.9, stopped, True) == (True, closed)
-    yield "a garbled last reading is not a stop", at(1.0, "{not json") == (False, [])
+    yield "under the hard stop nothing changes", at(11.39)[:2] == (False, [])
+    yield "at the hard stop both Blacksmith groups close and Default does not", at(11.4)[:2] == (True, closed)
+    yield "once stopped, each pass closes them again", at(1.0, stopped)[:2] == (True, closed)
+    yield "resume with no saved access opens them to all", at(1.0, stopped, True)[:2] == (False, [("PATCH", "7", {"visibility": "all"}),
+                                                                                                 ("PATCH", "8", {"visibility": "all"})])
+    yield "resume at the hard stop stays stopped", at(11.9, stopped, True)[:2] == (True, closed)
+    yield "a garbled last reading is not a stop", at(1.0, "{not json")[:2] == (False, [])
     yield "a stop with no Blacksmith group is Unreadable", raises(tool, lambda: at(11.4, api=GroupApi(("Default",))))
+    # Resume restores what each group had before the stop (#210).
+    limited = {"Blacksmith": ("selected", [31, 32]), "blacksmith-arm": ("private", [])}
+    first = at(11.4, api=GroupApi(access=limited))
+    saved = {"7": {"visibility": "selected", "repos": [31, 32]}, "8": {"visibility": "private", "repos": []}}
+    yield "the stop saves each group's access before it closes it", first[0] is True and first[1] == closed and first[2] == saved
+    held = json.dumps({"blacksmith": {"stopped": True, "access": saved}})
+    again = at(1.0, held, api=GroupApi(access={"Blacksmith": ("selected", []), "blacksmith-arm": ("selected", [])}))
+    yield "a later stopped pass keeps the saved access, not the closed groups", again[1] == closed and again[2] == saved
+    back = at(1.0, held, True)
+    yield "resume puts each group's access back", back[:2] == (False, [("PATCH", "7", {"visibility": "selected"}),
+                                                                       ("PUT", "repositories", {"selected_repository_ids": [31, 32]}),
+                                                                       ("PATCH", "8", {"visibility": "private"})]) and back[2] is None
+    yield "resume at the hard stop keeps the saved access", at(11.9, held, True)[2] == saved
+    shut = at(11.4, api=GroupApi(access={"Blacksmith": ("selected", [])}))
+    yield "a group already closed has no earlier access saved", shut[2] == {"8": {"visibility": "all", "repos": []}}
+    # The access is published before any group closes, so a failed PATCH on a later group loses nothing.
+    FailingGroups.tool = tool
+    api, posted = FailingGroups(access=limited), []
+    def stop(previous, resume=False, cost=11.4):
+        """One pass's reading, as the last publish() left it; an Unreadable pass still leaves its published reading."""
+        reading = {"blacksmith": {"cost": cost}}
+        try:
+            tool.backstop(api, "org", reading, tool.HARD_STOP, resume, previous, lambda: posted.append(json.dumps(reading)))
+        except tool.Unreadable:
+            pass  # the failing pass is the case under test; its published reading is what we return
+        return posted[-1] if posted else None
+    first = stop(None)
+    yield "the access is published before the failed PATCH", first is not None and json.loads(first)["blacksmith"]["access"] == saved and api.failed
+    second = stop(first, cost=1.0)
+    yield "a second pass closes the rest and keeps the first group's saved repos", json.loads(second)["blacksmith"]["access"] == saved
+    api.writes.clear()
+    stop(second, True, 1.0)
+    yield "resume then restores the first group's repos", ("PUT", "repositories", {"selected_repository_ids": [31, 32]}) in api.writes and api.groups[0]["visibility"] == "selected" and api.repos[7] == [31, 32]
+    yield "garbled saved access is none", at(1.0, json.dumps({"blacksmith": {"stopped": True, "access": {"7": {"visibility": "x"}, "8": 1}}}), True)[1] == [
+        ("PATCH", "7", {"visibility": "all"}), ("PATCH", "8", {"visibility": "all"})]
 
 
 def manifest_checks(tool):
@@ -217,6 +275,13 @@ def manifest_checks(tool):
     yield "the App's webhook is off", app["hook_attributes"]["active"] is False and app["default_events"] == []
     with open(os.path.join(tool.HERE, "..", "actions", "ci-pool", "action.yml"), encoding="utf-8") as fh:
         action = fh.read()
+    yield "the stop flag is 1 at the stop or once stopped, else 0", [
+        tool.stop_flag({"blacksmith": {"cost": c, "stop": 10.8, "stopped": s}}) for c, s in ((10.79, False), (10.8, False), (1.0, True))] == ["0", "1", "1"]
+    sent = []
+    tool.publish(SimpleNamespace(request=lambda m, p, params=None, body=None: sent.append((m, p.rsplit("/", 1)[-1], body["value"]))),
+                 "org", {"blacksmith": {"cost": 11.5, "stop": 10.8, "stopped": True}})
+    yield "the flag is written first, to its own org variable, then the reading", sent == [
+        ("PATCH", "CI_POOL_STOP", "1"), ("PATCH", "CI_POOL", '{"blacksmith":{"cost":11.5,"stop":10.8,"stopped":true}}')]
     yield "the action's hard stop default is the meter's", f'default: "{tool.HARD_STOP}"' in action
     # The usage step runs Blacksmith's CLI beside BLACKSMITH_ORG_TOKEN (#184): it is pinned by hash, never piped to a shell.
     yield "the CLI is not piped to a shell", re.search(r"\|\s*(?:sudo\s+)?(?:ba|z|da)?sh\b", action) is None and "get.blacksmith.sh" not in action

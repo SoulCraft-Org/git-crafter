@@ -9,8 +9,9 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { GhError, NEEDS } from "../github/github-core.mjs";
 import { loadTargets } from "../lib/score.mjs";
-import { area, collect, METRIC_IDS } from "./repo-settings.mjs";
-import { reaches, secretsRead } from "./repo-settings-reads.mjs";
+import { area, collect, METRIC_IDS, setupExpected } from "./repo-settings.mjs";
+import { reaches } from "./repo-settings-refs.mjs";
+import { secretsRead } from "./repo-settings-reads.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(HERE, "..", "..", "fixtures", "settings");
@@ -20,7 +21,7 @@ const R = (route) => `repos/${REPO}${route}`;
 const AGE = "settings.admin_read_age_hours";
 const EXPECTED = { allow_squash_merge: true, allow_merge_commit: false, allow_auto_merge: false };
 
-// A gh client that answers from the fixture; `over` replaces or adds routes.
+// A gh client that answers from the fixture; `over` replaces or adds routes. over.graphql is the repository GraphQL answers; asked lists each query's fields.
 function fakeGh(over = {}) {
   const rest = { ...REST, ...over };
   const answer = async (route) => {
@@ -29,7 +30,13 @@ function fakeGh(over = {}) {
     if (entry?.__error) throw new GhError(entry.__error.message, entry.__error);
     return structuredClone(entry);
   };
-  return { rest: answer, restAll: answer };
+  const asked = [];
+  const graphql = async (query) => {
+    if (rest.graphql === null) throw new GhError("GraphQL refused", { type: "FORBIDDEN" });
+    asked.push(query.match(/\{ (\w[\w ]*) \} \}$/)?.[1].split(" ") ?? ["rulesets"]);
+    return { repository: structuredClone(rest.graphql ?? {}) };
+  };
+  return { rest: answer, restAll: answer, graphql, asked };
 }
 
 const run = (over = {}, opts = {}) => collect({ root: path.join(FIXTURES, "repo"), mode: "local", params: { expected: EXPECTED }, gh: fakeGh(over), repo: REPO, ...opts });
@@ -99,10 +106,13 @@ test("protections: a guard with nothing to guard has no row", async () => {
   assert.deepEqual(Object.keys(rows(bare[id])), ["No one can bypass the default branch's rules", "A push rule blocks secret file names"]);
 });
 
-test("protections: a hidden bypass list is not measured, never read as none", async () => {
+test("protections: a bypass list REST hides reads through GraphQL's count; with neither it is not measured, never read as none", async () => {
+  const id = "settings.protections_missing";
   const { bypass_actors: _, ...hidden } = REST[R("/rulesets/1")];
-  const got = await run({ [R("/rulesets/1")]: hidden });
-  assert.match(got["settings.protections_missing"].could_not_check, /bypass list is hidden/);
+  const count = (totalCount) => ({ rulesets: { nodes: [{ databaseId: 1, bypassActors: { totalCount } }] } });
+  assert.equal((await run({ [R("/rulesets/1")]: hidden, graphql: count(0) }))[id].value, 0);
+  assert.equal((await run({ [R("/rulesets/1")]: hidden, graphql: count(2) }))[id].value, 1);
+  for (const graphql of [{}, null]) assert.match((await run({ [R("/rulesets/1")]: hidden, graphql }))[id].could_not_check, /bypass list is hidden/);
 });
 
 test("general drift: counts fields off the repo's standard; no standard is not measured", async () => {
@@ -113,6 +123,29 @@ test("general drift: counts fields off the repo's standard; no standard is not m
   assert.match((await run({}, { params: {} }))[id].could_not_check, /params\.expected .* is empty/);
   const { allow_auto_merge: _, ...withheld } = REST[R("")];
   assert.match((await run({ [R("")]: withheld }))[id].could_not_check, /answered without allow_auto_merge/);
+});
+
+test("general drift: a switch the repos answer withholds reads through GraphQL; the repos answer wins where it has one", async () => {
+  const id = "settings.general_drift";
+  const { allow_squash_merge: _, ...withheld } = REST[R("")];
+  const gh = fakeGh({ [R("")]: withheld, graphql: { squashMergeAllowed: true, autoMergeAllowed: true } });
+  const got = await collect({ root: path.join(FIXTURES, "repo"), mode: "local", params: { expected: EXPECTED }, gh, repo: REPO });
+  assert.equal(got[id].value, 0, "squash is true by GraphQL; auto merge is false by the repos answer, whatever GraphQL says");
+  assert.deepEqual(gh.asked, [["squashMergeAllowed"]], "one query, for the one switch withheld");
+  assert.equal((await run({ [R("")]: withheld, graphql: { squashMergeAllowed: false } }))[id].value, 1);
+});
+
+test("general drift: expected_from_setup takes setup.json's General rows, with params.expected over them", async () => {
+  const id = "settings.general_drift";
+  assert.deepEqual(setupExpected(), {
+    has_wiki: true, has_discussions: true, has_projects: true, allow_update_branch: true, web_commit_signoff_required: true,
+    allow_squash_merge: true, allow_merge_commit: false, allow_rebase_merge: false, delete_branch_on_merge: true, allow_auto_merge: false,
+  });
+  const switches = { has_wiki: true, has_discussions: true, has_projects: true, allow_update_branch: true, web_commit_signoff_required: true, allow_rebase_merge: false, delete_branch_on_merge: true };
+  const repo = { [R("")]: { ...REST[R("")], ...switches, has_wiki: false } };
+  assert.equal((await run(repo, { params: { expected_from_setup: true } }))[id].value, 1);
+  assert.equal((await run(repo, { params: { expected_from_setup: true, expected: { has_wiki: false } } }))[id].value, 0);
+  assert.match((await run({}, { params: { expected_from_setup: "yes" } }))[id].could_not_check, /expected_from_setup .* true or false/);
 });
 
 test("outside access: collaborators and open invitations add up", async () => {
@@ -212,6 +245,12 @@ test("admin read age: a CI run reads the hours since the last signed-in run; tha
   const now = Date.parse("2026-11-10T12:00:00Z");
   const ci = (opts = {}) => run({}, { mode: "ci", data, now, ...opts });
   assert.match((await ci())[AGE].could_not_check, /no signed-in run is recorded/);
+  assert.equal((await ci({ admin: fakeGh() }))[AGE].value, 0, "a CI run with an admin token read the settings itself");
+  const refuse = async () => {
+    throw new GhError("Bad credentials", { status: 401 });
+  };
+  const expired = { rest: refuse, restAll: refuse, graphql: refuse };
+  assert.match((await ci({ admin: expired }))[AGE].could_not_check, /no signed-in run is recorded/, "a token that is set but refused read nothing, so it is no reading");
   writeFileSync(path.join(data, "local.json"), JSON.stringify({ generated_at: "2026-11-09T06:00:00Z" }));
   assert.equal((await ci())[AGE].value, 30);
   assert.equal((await ci({ now: Date.parse("2026-11-08T00:00:00Z") }))[AGE].value, 0, "a clock behind the file never reads below 0");

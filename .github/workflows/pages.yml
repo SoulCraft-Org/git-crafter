@@ -27,9 +27,10 @@ name: pages
 # fails a doc made worse than on the base branch, and a doc-only change also runs the docs.unmapped gate through
 # quality/collect.mjs on the documentation tab (build runs it otherwise). Any other path in the trigger list, or a
 # workflow file, runs build. The action jobs run only on a pull request that touches the action's own paths (ACTION
-# below), or on a dispatch; a push to main runs build and deploy alone. Each action run spends about 140 GITHUB_TOKEN
-# REST calls of the repo's hourly limit, which setup-node shares (#274). The paths are tools/ci_standard.py changes,
-# the CI standard's one path filter, called with --output.
+# below), or on a dispatch; a push to main runs build and deploy alone. A workflow file alone runs build, and
+# neither docs-gate nor the action jobs (the step comment in changes says why). Each action run spends about 140
+# GITHUB_TOKEN REST calls of the repo's hourly limit, which setup-node shares (#274). The paths are tools/ci_standard.py
+# changes, the CI standard's one path filter, called with --output; docs and action read the same filter in Python.
 #
 # action: runs actions/pages on Git Crafter itself, as a repo's workflow calls it
 # (tests/action-config.json), so a broken action shows here before any repo
@@ -147,6 +148,7 @@ jobs:
             package-lock.json
             actions/**
             tests/action-config.json
+          DOCS: "**/*.md"
           # The action jobs test actions/pages itself; a change to the page engine, its data or the Quality
           # collectors alone is built by the build job (#274).
           ACTION: |
@@ -172,9 +174,22 @@ jobs:
         run: |
           python3 -I tools/ci_standard.py changes --paths="$FULL" --base="$BASE" --output=full
           python3 -I tools/ci_standard.py changes --paths="$CODE" --base="$BASE" --output=code
-          python3 -I tools/ci_standard.py changes --paths="**/*.md" --base="$BASE" --output=docs
-          python3 -I tools/ci_standard.py changes --paths="$ACTION" --base="$BASE" --output=action
           python3 -I tools/ci_standard.py changes --paths="$COLLECT" --base="$BASE" --output=collect
+          # docs and action are the paths alone. ci_standard.py changes also answers true for any file under
+          # .github/workflows/, right for full and collect (a workflow edit can break a page), wrong for these two:
+          # a workflow is no doc, and the action jobs test the action's own paths (2026-11-23). Same glob, same base,
+          # and unknown means run, as the tool does.
+          python3 -I - "$BASE" <<'PY'
+          import os, sys
+          sys.path.insert(0, "tools")
+          import ci_standard as cs
+          base = sys.argv[1]
+          files = cs.changed_files(base, ".") if cs.known_base(base) else "no base commit: run"
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              for name in ("docs", "action"):
+                  hit = isinstance(files, str) or any(cs.glob_re(p).fullmatch(f) for p in cs.patterns_of(os.environ[name.upper()]) for f in files)
+                  out.write(f"{name}={'true' if hit else 'false'}\n")
+          PY
 
   # On any pull request that touches a doc: each changed doc against its base (quality/docs-gate.mjs), and on a
   # doc-only one the docs.unmapped gate too, the documentation tab alone with no page built.

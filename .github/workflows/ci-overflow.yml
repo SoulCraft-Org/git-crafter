@@ -21,7 +21,8 @@ name: ci-overflow
 # it holds a lane's label: tools/ci_overflow.py sums this cycle's minutes on that lane from the caller's run and job
 # data and names the label until the lane's stop, then ubuntu-latest. Anything it cannot read is ubuntu-latest too.
 # Where the org runs the pool meter (templates/ci/ci-pool.yml), the org variable CI_POOL holds its reading, and the
-# label comes from that alone, with no API call (templates/ci/CI-POOL.md).
+# label comes from that alone, with no API call (templates/ci/CI-POOL.md). The org variable CI_POOL_STOP is 1 at the
+# meter's stop; a repo that sets its own CI_POOL shadows the org's reading, but not that flag.
 # The meter and .github/ci-overflow.json are embedded below verbatim by `ci_standard.py embed --write`, as
 # ci-standard.yml embeds its checks, so the lanes and the stop are Git Crafter's at the caller's pin and no pull request
 # in the caller can edit them. templates/ci/DECISIONS.md, 2026-11-11.
@@ -64,7 +65,8 @@ jobs:
                   label, minutes, reason and artifact to GITHUB_OUTPUT (stdout when unset). With CI_OVERFLOW_SAVE, writes the
                   meter's state to FILE for upload-artifact. With CI_POOL, the org's reading from tools/ci_pool.py, no token
                   is used: the lane's label only while that reading is fresh, whole, has Blacksmith's own cost and is under its
-                  stop.
+                  stop. CI_POOL_STOP, the org variable the meter sets to 1 at its stop and 0 below it, wins over any CI_POOL: a
+                  repo's own CI_POOL shadows the org's in vars, but not this.
               ci_overflow.py --self-test
                   Runs tools/tests/test_ci_overflow.py: under, at and over the stop, an unreadable API, off, a backlog, a repo
                   off the lane, a workflow list, and ci-standard.yml's lane labels against the config.
@@ -342,6 +344,8 @@ jobs:
               if isinstance(admitted, str):
                   return {**off, "reason": admitted}, None
               name, lane, label, cfg = admitted
+              if env.get("CI_POOL_STOP", "").strip() == "1":  # the org's own flag: a repo's CI_POOL shadows vars.CI_POOL, not this
+                  return {**off, "reason": f"the org's pool reading says stop (CI_POOL_STOP); {fallback}"}, None
               if env.get("CI_POOL", "").strip():
                   return pooled(env["CI_POOL"], label, fallback, now), None
               start = period_start(now, lane["cycle_day"])
@@ -440,6 +444,7 @@ jobs:
         env:
           CI_OVERFLOW_RUNNER: ${{ vars.CI_OVERFLOW_RUNNER }}
           CI_POOL: ${{ vars.CI_POOL }}
+          CI_POOL_STOP: ${{ vars.CI_POOL_STOP }}
           CI_OVERFLOW_WORKFLOWS: ${{ inputs.workflows || github.workflow_ref }}
           CI_OVERFLOW_SAVE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           GITHUB_TOKEN: ${{ github.token }}
