@@ -14,7 +14,7 @@ import { loadLibrary, resolveMaps } from "../pages/library.mjs";
 import { buildPage } from "../quality/build.mjs";
 import { loadConfig } from "../quality/config.mjs";
 import { TABS as TEMPLATE_TABS } from "../quality/score.mjs";
-import { BUDGET, build, checkDocs, checkMaps, CODE_OS_QUALITY_CONFIG, MAX_STEPS, qualityDefs } from "../pages/build.mjs";
+import { BUDGET, build, checkDocs, checkMaps, CODE_OS_QUALITY_CONFIG, MAX_STEPS, PAGE_DEFAULTS, qualityDefs } from "../pages/build.mjs";
 import { PROCESS_TABS, renderMetrics, renderProcess } from "../pages/render.mjs";
 import { GAP, places, trail, TRAIL } from "../pages/draw.mjs";
 import { GRID, grid } from "../pages/draw-grid.mjs";
@@ -126,7 +126,7 @@ test("the Process starter's README names every library map, marks the ones the c
     else assert.equal([...rows.get(id).needs.matchAll(/`([a-z-]+)`/g)].length, tokens.length, `${id}: the table names no other token`);
   }
   const readme = readFileSync(join(ROOT, "templates/process/README.md"), "utf8");
-  for (const key of ["repos", "repo_url", "docs", "maps", "data", "history", "out", "pages", "tabs", "heading", "collector", "nav"]) assert.ok(readme.includes(`| \`${key}\` |`), `the key table names ${key}`);
+  for (const key of [...Object.keys(PAGE_DEFAULTS), "repos", "repo_url", "docs", "maps", "data", "history"]) assert.ok(readme.includes(`| \`${key}\` |`), `the key table names ${key}`);
   for (const key of Object.keys(readJson("templates/process/config.json")).filter((k) => k !== "comment")) assert.ok(readme.includes(`| \`${key}\` |`), `${key} is in the starter, so the key table names it`);
   assert.doesNotMatch(readme, /\b(seven|ten)\b/i, "no hard-coded map count");
 });
