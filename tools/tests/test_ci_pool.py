@@ -6,6 +6,7 @@ raise Unreadable, never a quiet undercount.
 """
 
 import datetime as dt
+import json
 
 NOW = dt.datetime(2026, 11, 20, 10, 0, tzinfo=dt.timezone.utc)
 BS = {"labels": ["blacksmith-2vcpu-ubuntu-2404"], "runner_name": "bs"}
@@ -131,6 +132,62 @@ def meter_checks(tool):
     yield "the next pass resumes and catches up", tool.meter(FakeApi(), "org", ledger, NOW)["complete"] is True
 
 
+def cli_checks(tool):
+    """Blacksmith's estimated cost from its CLI's JSON, the higher of it and the floor, and no cost read."""
+    nested = json.dumps({"estimated_cost": 10.49, "repos": [{"name": "a", "estimated_cost": 6.2}], "billable_minutes": 5246})
+    yield "the CLI's total is its highest cost", tool.cli_cost(nested) == 10.49
+    yield "a camelCase field counts too", tool.cli_cost('{"usage": {"estimatedCost": 3}}') == 3.0
+    for name, text in (("not JSON", "Error: not signed in"), ("no cost field", '{"billable_minutes": 5246}')):
+        yield f"CLI output with {name} gives no cost", tool.cli_cost(text) is None
+
+    def reading():
+        """A complete reading whose floor is $0.04."""
+        return {"complete": True, "blacksmith": {"cost": 0.04, "stop": 10.8, "left": 10.76}}
+    up = tool.cross_check(reading(), nested)
+    yield "a higher CLI cost raises cost and lowers left", up["complete"] and (up["blacksmith"]["cost"], up["blacksmith"][
+        "left"]) == (10.49, 0.31)
+    low = tool.cross_check(reading(), '{"estimated_cost": 0.01}')["blacksmith"]
+    yield "a CLI cost under the floor leaves the floor", low["cost"] == 0.04 and low["cli_cost"] == 0.01
+    for name, text in (("no token, so no CLI output,", None), ("unreadable CLI output", "")):
+        got = tool.cross_check(reading(), text)
+        yield f"{name} is not complete: no Blacksmith", got["complete"] is False and got["notes"] and got["blacksmith"]["cost"] == 0.04
+
+
+class GroupApi:
+    """An org's runner groups; records each write as (method, last path part, body)."""
+
+    def __init__(self, names=("Blacksmith", "blacksmith-arm", "Default")):
+        self.groups, self.writes = [{"id": i, "name": n} for i, n in enumerate(names, 7)], []
+
+    def get(self, path, params=None):
+        """The groups, on one page."""
+        return {"total_count": len(self.groups), "runner_groups": self.groups}
+
+    def request(self, method, path, params=None, body=None):
+        """Records the write."""
+        self.writes.append((method, path.rsplit("/", 1)[-1], body))
+
+
+def backstop_checks(tool):
+    """The hard stop closes the Blacksmith groups, holds them closed, and opens them only on resume."""
+    def at(cost, previous=None, resume=False, api=None):
+        """(stopped, the writes) for a pass at cost dollars."""
+        api = api or GroupApi()
+        b = tool.backstop(api, "org", {"blacksmith": {"cost": cost}}, tool.HARD_STOP, resume, previous)["blacksmith"]
+        return b["stopped"], api.writes
+    closed = [("PATCH", "7", {"visibility": "selected"}), ("PUT", "repositories", {"selected_repository_ids": []}),
+              ("PATCH", "8", {"visibility": "selected"}), ("PUT", "repositories", {"selected_repository_ids": []})]
+    stopped = json.dumps({"blacksmith": {"stopped": True}})
+    yield "under the hard stop nothing changes", at(11.39) == (False, [])
+    yield "at the hard stop both Blacksmith groups close and Default does not", at(11.4) == (True, closed)
+    yield "once stopped, each pass closes them again", at(1.0, stopped) == (True, closed)
+    yield "resume opens them to all", at(1.0, stopped, True) == (False, [("PATCH", "7", {"visibility": "all"}),
+                                                                         ("PATCH", "8", {"visibility": "all"})])
+    yield "resume at the hard stop stays stopped", at(11.9, stopped, True) == (True, closed)
+    yield "a garbled last reading is not a stop", at(1.0, "{not json") == (False, [])
+    yield "a stop with no Blacksmith group is Unreadable", raises(tool, lambda: at(11.4, api=GroupApi(("Default",))))
+
+
 def raises(tool, fn) -> bool:
     """Whether fn raises Unreadable."""
     try:
@@ -151,4 +208,4 @@ def run(tool):
     return 1 if bad else 0
 
 
-CHECKS = (label_checks, list_checks, meter_checks)
+CHECKS = (label_checks, list_checks, meter_checks, cli_checks, backstop_checks)
