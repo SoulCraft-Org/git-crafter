@@ -22,7 +22,7 @@ exit 0
 // Runs `script` as tools/verify.sh in a temp tree, failing call `failAt`
 // (0: none). Returns its exit status, whether it printed "verify: ok", and
 // how many stand-in calls it made.
-function run(script, failAt) {
+function run(script, failAt, event = "push") {
   const dir = mkdtempSync(join(tmpdir(), "verify-"));
   try {
     mkdirSync(join(dir, "tools"));
@@ -35,7 +35,7 @@ function run(script, failAt) {
     const calls = join(dir, "calls");
     const r = spawnSync("bash", [join(dir, "tools", "verify.sh")], {
       encoding: "utf8",
-      env: { ...process.env, PATH: `${join(dir, "bin")}:${process.env.PATH}`, CALLS: calls, FAIL_AT: String(failAt) },
+      env: { ...process.env, GITHUB_EVENT_NAME: event, PATH: `${join(dir, "bin")}:${process.env.PATH}`, CALLS: calls, FAIL_AT: String(failAt) },
     });
     return { status: r.status, ok: r.stdout.includes("verify: ok"), calls: existsSync(calls) ? Number(readFileSync(calls, "utf8")) : 0 };
   } finally {
@@ -63,6 +63,25 @@ test("a seeded `a && b` line runs past its failing first command", () => {
 
 test("verify.sh stops at every failing command", () => {
   assert.deepEqual(leaks(VERIFY), []);
+});
+
+// A pull request's run measures no coverage, for no reader reads it there: it makes the two code-lcov.mjs calls fewer,
+// and still stops at a failing suite.
+test("verify.sh on a pull request runs the suites without coverage and still stops at a failing one", () => {
+  const push = run(VERIFY, 0);
+  const pr = run(VERIFY, 0, "pull_request");
+  assert.ok(pr.ok && pr.status === 0, "a clean pull request run reaches verify: ok");
+  assert.equal(pr.calls, push.calls - 2, "no code-lcov.mjs call for Pages or Quality");
+  for (const n of [pr.calls - 1, pr.calls]) {
+    const r = run(VERIFY, n, "pull_request");
+    assert.ok(r.status !== 0 && !r.ok && r.calls === n, `call ${n} failing stops verify`);
+  }
+});
+
+test("verify.yml runs its standard job on a pull request only, so a merge repeats no 2-core job", () => {
+  const yml = readFileSync(new URL("../.github/workflows/verify.yml", import.meta.url), "utf8");
+  assert.match(yml, /^ {6}standard: \$\{\{ github\.event_name == 'pull_request' && 'python3 -I tools\/ci_standard\.py embed' \|\| '' \}\}$/m);
+  assert.match(yml, /^ {6}short: bash tools\/verify\.sh$/m, "short still runs on every change, a push included");
 });
 
 // tools/private_paths.sh on a seeded checkout: it names only the org's own files.

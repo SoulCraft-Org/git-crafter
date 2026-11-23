@@ -10,13 +10,26 @@
 # tests/verify.test.mjs fails any command in turn and expects verify to stop.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-# The pages and quality suites run once, with coverage: each writes an lcov
-# file, and code-lcov.mjs prints its summary to this log, where the Quality
-# page's code.test_coverage_pct reads it (params.test_suites). No second run.
+# The pages and quality suites run once. On a push, each runs with coverage: it writes an lcov file, and
+# code-lcov.mjs prints its summary to this log, where the Quality page's code.test_coverage_pct reads it from
+# the newest successful run on main (params.test_suites). A pull request's run is read by no one for coverage,
+# so it runs the same tests without it (2026-11-23). No second run either way.
 cov="$(mktemp -d)"
 trap 'rm -rf "$cov"' EXIT
 COVER=(--experimental-test-coverage "--test-coverage-exclude=**/*.test.mjs" --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov)
 LCOV=quality/collectors/code/code-lcov.mjs
+
+# suite LABEL FILE TEST...: one node --test run, with coverage unless this is a pull request.
+suite() {
+  local label="$1" file="$2"
+  shift 2
+  if [ "${GITHUB_EVENT_NAME:-}" = "pull_request" ]; then
+    node --test --test-reporter=spec "$@"
+  else
+    node --test "${COVER[@]}" --test-reporter-destination="$cov/$file" "$@"
+    node "$LCOV" "$label" "$cov/$file"
+  fi
+}
 
 echo "== deny rules";   python3 -I tools/claude_deny.py --self-test
 echo "== hookify rules"; python3 -I tools/hookify_check.py --self-test
@@ -34,10 +47,8 @@ echo "== merge policy"; python3 -I tools/merge_policy.py --self-test --policy te
 echo "== clauses";      python3 -I tools/clause_check.py --self-test
                         python3 -I tools/clause_check.py
 echo "== prose";        python3 -I tools/voice_lint.py README.md rules/*.md skills/*/SKILL.md
-echo "== pages";        node --test "${COVER[@]}" --test-reporter-destination="$cov/pages.lcov" tests/pages*.test.mjs
-                        node "$LCOV" Pages "$cov/pages.lcov"
+echo "== pages";        suite Pages pages.lcov tests/pages*.test.mjs
 echo "== quality";      node quality/selftest.mjs
-                        node --test "${COVER[@]}" --test-reporter-destination="$cov/quality.lcov" 'quality/**/*.test.mjs' 'config/**/*.test.mjs'
-                        node "$LCOV" Quality "$cov/quality.lcov"
+                        suite Quality quality.lcov 'quality/**/*.test.mjs' 'config/**/*.test.mjs'
 echo "== verify";       node --test tests/verify.test.mjs
 echo "verify: ok"
