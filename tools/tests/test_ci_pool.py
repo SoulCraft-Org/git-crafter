@@ -106,6 +106,31 @@ def list_checks(tool):
     yield "the repo list skips archived repos", tool.org_repos(FakeApi(), "org") == ["alpha", "beta"]
 
 
+def meter_checks(tool):
+    """The floor's minutes and dollars, the stop, the ledger across passes, and the time budget."""
+    api = FakeApi()
+    ledger = {}
+    got = tool.meter(api, "org", ledger, NOW)
+    b = got["blacksmith"]
+    yield "the meter counts 8.5 finished and 2 still going", b["floor_minutes"] == 10.5 and b["by_repo"] == {"alpha": 10.5}
+    yield "the floor is $0.004 a minute, and the reading starts as its cost", b["floor_cost"] == b["cost"] == 0.04 and got["complete"]
+    yield "the ledger keeps only finished runs", sorted(ledger["runs"]) == ["alpha/1", "beta/3"] and got["repos"] == 2
+    yield "version 3: the stop is 90 % of the $12 credit", got["version"] == 3 and b["credit"] == 12.0 and b["stop"] == 10.8
+    again = FakeApi()
+    yield "a second pass reads only what changed", tool.meter(again, "org", ledger, NOW)["blacksmith"]["floor_minutes"] == 10.5 and again.calls < api.calls
+    busy = {"version": 2, "runs": {"alpha/9": {"u": "x", "h": "2026-11-19T15", "m": 1000}}}
+    heavy = tool.meter(FakeApi(), "org", busy, NOW)["blacksmith"]
+    yield "1,010.5 minutes cost $4.04 and leave $6.76 under the stop", heavy["cost"] == 4.04 and heavy["left"] == 6.76
+    for name, old in (("a version 1 ledger", {"runs": {"alpha/1": {"u": "u1", "h": "2026-11-20T08", "m": 999}}}),
+                      ("a ledger run from before the window", {"version": 2, "runs": {"alpha/0": {"u": "x", "h": "2026-09-01T08", "m": 999}}})):
+        yield f"the meter does not trust {name}", tool.meter(FakeApi(), "org", old, NOW)["blacksmith"]["floor_minutes"] == 10.5
+    yield "a pass out of reads is not complete", tool.meter(FakeApi(), "org", {}, NOW, reads=1)["complete"] is False
+    ticks, ledger = iter(range(100)), {}
+    cut = tool.meter(FakeApi(), "org", ledger, NOW, deadline=3, clock=lambda: next(ticks))
+    yield "a pass past its deadline stops and is not complete", cut["complete"] is False and sorted(ledger["runs"]) == ["alpha/1"]
+    yield "the next pass resumes and catches up", tool.meter(FakeApi(), "org", ledger, NOW)["complete"] is True
+
+
 def raises(tool, fn) -> bool:
     """Whether fn raises Unreadable."""
     try:
@@ -126,4 +151,4 @@ def run(tool):
     return 1 if bad else 0
 
 
-CHECKS = (label_checks, list_checks)
+CHECKS = (label_checks, list_checks, meter_checks)
