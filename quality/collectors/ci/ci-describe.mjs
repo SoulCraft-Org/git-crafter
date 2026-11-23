@@ -23,6 +23,18 @@ const TIER_JOB = /\s\/\s(short|standard)$/;
 /** A passing run that skipped something and finished within this is light. */
 export const LIGHT_SPAN_SECONDS = 60;
 
+// Whether a run did no real work (describeRun): skipped, or passed with something skipped, in under a minute, and no short or standard job ran.
+function isLight(run, jobs, ran, byDesign) {
+  if (run.conclusion === "skipped") return true;
+  if (run.conclusion !== "success" || ran.some((j) => TIER_JOB.test(String(j.name ?? "")))) return false;
+  const guarded = (j) => byDesign.calls.some((c) => String(j.name ?? "").startsWith(`${c} / `));
+  const skippedSomething =
+    jobs.some((j) => j.conclusion === "skipped" && !byDesign.unset.includes(j.name)) ||
+    ran.some((j) => !guarded(j) && (j.steps ?? []).some((s) => !WRAPPER_STEP.test(s.name ?? "") && s.conclusion === "skipped"));
+  const span = ran.length ? (Math.max(...ran.map((j) => ms(j.completed_at))) - Math.min(...ran.map((j) => ms(j.started_at)))) / 1000 : 0;
+  return skippedSomething && span < LIGHT_SPAN_SECONDS;
+}
+
 /**
  * One run with its jobs, reduced to what the metrics need. A run is light when
  * it did no real work: it was skipped, or it passed, skipped a step or a whole
@@ -45,13 +57,7 @@ export const LIGHT_SPAN_SECONDS = 60;
  */
 export function describeRun(run, jobs, byDesign = { calls: [], unset: [] }) {
   const ran = jobs.filter((j) => j.conclusion !== "skipped" && j.started_at && j.completed_at);
-  const guarded = (j) => byDesign.calls.some((c) => String(j.name ?? "").startsWith(`${c} / `));
-  const skippedSomething =
-    jobs.some((j) => j.conclusion === "skipped" && !byDesign.unset.includes(j.name)) ||
-    ran.some((j) => !guarded(j) && (j.steps ?? []).some((s) => !WRAPPER_STEP.test(s.name ?? "") && s.conclusion === "skipped"));
-  const span = ran.length ? (Math.max(...ran.map((j) => ms(j.completed_at))) - Math.min(...ran.map((j) => ms(j.started_at)))) / 1000 : 0;
-  const worked = ran.some((j) => TIER_JOB.test(String(j.name ?? "")));
-  const light = run.conclusion === "skipped" || (run.conclusion === "success" && !worked && skippedSomething && span < LIGHT_SPAN_SECONDS);
+  const light = isLight(run, jobs, ran, byDesign);
   const end = ran.length ? Math.max(...ran.map((j) => ms(j.completed_at))) : null;
   return {
     id: run.id,
