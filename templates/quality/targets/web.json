@@ -1,0 +1,25 @@
+[
+ {
+  "id": "design.raw_hex",
+  "params": {
+   "comment": "Starter for a repo that serves a site. Replace OWNER and my-repo with yours. origin is the production URL. For a built site folder instead, set site_dir (for example dist, which needs an index.html) and origin to an empty string. No site: delete this file and drop pages from quality/config.json. The design tab reads the site from this entry.",
+   "origin": "https://OWNER.github.io/my-repo/",
+   "site_dir": ""
+  }
+ },
+ {
+  "id": "usability.reading_grade",
+  "params": {
+   "comment": "The usability tab reads the site from this entry: keep origin and site_dir the same as design.raw_hex.",
+   "origin": "https://OWNER.github.io/my-repo/",
+   "site_dir": ""
+  }
+ },
+ {
+  "id": "deploy.waiting_merges",
+  "params": {
+   "comment": "platform pages reads GitHub Pages deploys through the GitHub API. For a Cloudflare Worker, delete this entry and log in to Wrangler (wrangler-login).",
+   "platform": "pages"
+  }
+ }
+]
