@@ -55,7 +55,7 @@ test("one daily schedule, and the scheduled run acts as a push to main", () => {
   assert.match(replay.run, /if \[ "\$GITHUB_EVENT_NAME" = schedule \]; then export GITHUB_EVENT_NAME=push; fi\n\s*node quality\/gh-replay\.mjs setup/, "it records the main-reads save");
   const save = steps[at((s) => s.with?.name === "main-reads", "the main-reads upload")];
   const admin = steps[at((s) => s.id === "admin-app", "the App token")];
-  for (const [what, cond] of [["main-reads", save.if], ["admin reads", admin.if.replace(/ && env\.\w+ == 'true'/, "")], ["deploy", wf.jobs.deploy.if.replace(/!cancelled\(\) && needs\.build\.result == 'success' && /, "")], ["build", wf.jobs.build.if.replace(/!cancelled\(\) && \(|\|\| needs\.changes\.outputs\.full == 'true'\)/g, "")]]) {
+  for (const [what, cond] of [["main-reads", save.if.replace(/!cancelled\(\) && /, "")], ["admin reads", admin.if.replace(/ && env\.\w+ == 'true'/, "")], ["deploy", wf.jobs.deploy.if.replace(/!cancelled\(\) && needs\.build\.result == 'success' && /, "")], ["build", wf.jobs.build.if.replace(/!cancelled\(\) && \(|\|\| needs\.changes\.outputs\.full == 'true'\)/g, "")]]) {
     assert.equal(holds(cond, "schedule"), holds(cond, "push"), `${what}: the schedule as a push`);
     assert.equal(holds(cond, "schedule"), true, `${what} runs on the schedule`);
   }

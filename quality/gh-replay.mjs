@@ -3,7 +3,7 @@
 // repo's artifact, so a REST read is saved only on a PUBLIC family (each 200 to a tokenless curl, 2026-11-13), never DENY.
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
-import { appendFileSync, copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { appendFileSync, copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 const [MAX_AGE_H, ISO] = [24, /\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?Z?)?/g];
@@ -73,19 +73,30 @@ export function summary(rows, mode) {
   const sum = (k) => rows.filter((r) => r[0] === k).reduce((n, r) => n + Number(r[1]), 0);
   return `live ${sum("rest")} REST, ${sum("graphql")} GraphQL; ${sum("replayed")} replayed from main (${mode})`;
 }
-/** Download main's save into `dir` from the newest run that has one; return its run id and the REST requests spent. */
+/** The run ids of the `limit` newest main-reads artifacts under MAX_AGE_H old, from one artifacts listing: this repo's own main, never a fork's branch named main; a push or the daily run (#55), passed or failed. */
+export function saveRuns(artifacts, now = Date.now(), limit = 2) {
+  const fresh = artifacts.filter((a) => !a.expired && a.workflow_run?.head_branch === "main" && a.workflow_run.head_repository_id === a.workflow_run.repository_id && now - Date.parse(a.created_at) < MAX_AGE_H * 3_600_000);
+  return fresh.sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).slice(0, limit).map((a) => String(a.workflow_run.id));
+}
+/** Download main's newest save into `dir`; a failed run's save has reads but no scored run, so the next one tops it up. Return the run ids and the REST requests spent. */
 function fetchSave(real, dir, env) {
-  // The two newest successful main runs under 24 h old that record a save: a push, or the daily schedule (#55). One request.
-  const jq = `limit(2; .workflow_runs[] | select((.event == "push" or .event == "schedule") and .head_repository.full_name == "${env.GITHUB_REPOSITORY}") | select(now - (.updated_at | fromdateiso8601) < ${MAX_AGE_H * 3600}) | .id)`;
-  const ids = spawnSync(real, ["api", `repos/${env.GITHUB_REPOSITORY}/actions/workflows/${path.basename(env.GITHUB_WORKFLOW_REF.split("@")[0])}/runs?branch=main&status=success&per_page=10`, "--jq", jq]).stdout.toString().split("\n").filter(Boolean);
-  // A download lists the run's artifacts, then fetches one: 2 requests, or 1 when the run saved nothing, so the fallback adds 1 (#61).
+  // One request lists the saves, so a failed main run's reads count too, and a run that saved nothing costs no download.
+  let artifacts = [];
+  try { artifacts = JSON.parse(spawnSync(real, ["api", `repos/${env.GITHUB_REPOSITORY}/actions/artifacts?name=main-reads&per_page=10`]).stdout.toString()).artifacts ?? []; } catch { artifacts = []; }
+  // A download lists the run's artifacts, then fetches one: 2 requests, or 1 when the run saved nothing (#61).
   let n = 1;
-  for (const run of ids) {
-    const ok = spawnSync(real, ["run", "download", run, "-n", "main-reads", "-D", dir, "-R", env.GITHUB_REPOSITORY]).status === 0;
+  const got = [];
+  for (const run of saveRuns(artifacts)) {
+    const into = got.length ? `${dir}-older` : dir;
+    const ok = spawnSync(real, ["run", "download", run, "-n", "main-reads", "-D", into, "-R", env.GITHUB_REPOSITORY]).status === 0;
     n += ok ? 2 : 1;
-    if (ok) return [run, n];
+    if (!ok) continue;
+    // The newer save wins: the older one adds only what it lacks, never a read the newer one made.
+    if (got.length) cpSync(into, dir, { recursive: true, force: false });
+    got.push(run);
+    if (existsSync(path.join(dir, "latest.json"))) break;
   }
-  return ["", n];
+  return [got.join(" + "), n];
 }
 function setup(env) {
   const dir = path.join(env.RUNNER_TEMP, "gh-replay");
@@ -104,7 +115,8 @@ function setup(env) {
 function report(env) {
   const file = `${env.GH_REPLAY_DIR}.log`;
   const rows = existsSync(file) ? readFileSync(file, "utf8").trim().split("\n").filter(Boolean).map((l) => l.split(" ")) : [];
-  if (env.GH_REPLAY_MODE === "record" && existsSync("data/quality/latest.json")) copyFileSync("data/quality/latest.json", path.join(env.GH_REPLAY_DIR, "latest.json"));
+  // A failed run still saves its reads, never its scored run: a gate miss or a read cut short would show as main's scores.
+  if (env.GH_REPLAY_MODE === "record" && env.GH_REPLAY_JOB_STATUS === "success" && existsSync("data/quality/latest.json")) copyFileSync("data/quality/latest.json", path.join(env.GH_REPLAY_DIR, "latest.json"));
   console.log(`::notice title=GitHub requests::${summary(rows, env.GH_REPLAY_MODE)}`);
   const bad = rows.filter((r) => r[0] === "unreadable").length;
   if (bad) console.log(`::warning title=GitHub requests::${bad} saved reads from main were unreadable, so each ran live`);
