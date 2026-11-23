@@ -87,7 +87,7 @@ export const MAIN_LOG = [
 export const BASE_SHA = "19".repeat(20); // the 20th PR merge, #611
 // main's tree before #611: 400 code lines in two files, plus a test file, a
 // file in a skipped folder and a non-code file, which never count.
-export const lines = (n) => Array.from({ length: n }, (_, i) => `export const v${i} = ${i};`).join("\n") + "\n";
+const lines = (n) => Array.from({ length: n }, (_, i) => `export const v${i} = ${i};`).join("\n") + "\n";
 const BASE_TREE = [
   ["a".repeat(40), "site/src/lib/math.ts", lines(250)],
   ["b".repeat(40), "scripts/old.mjs", lines(150)],

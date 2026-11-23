@@ -10,7 +10,7 @@ import { stripAll } from "./collectors/lib/strip.mjs";
 export const up = { id: "t.up", tab: "code", kind: "quality", label: "Pass rate", unit: "%", goal: 90, near: 70, direction: "higher", goal_source: "fixture" };
 export const down = { id: "t.down", tab: "code", kind: "speed", label: "Build time", unit: "s", goal: 60, near: 120, direction: "lower", goal_source: "fixture" };
 export const blind = { id: "t.blind", tab: "code", kind: "quality", label: "Coverage", unit: "%", goal: 80, near: 60, direction: "higher", goal_source: "fixture" };
-export const at = "2026-11-02T20:00:00Z";
+const at = "2026-11-02T20:00:00Z";
 // A fixture metric entry with this value, read at the fixture time.
 export const val = (value, extra = {}) => ({ value, source: "fixture", read_at: at, ...extra });
 
