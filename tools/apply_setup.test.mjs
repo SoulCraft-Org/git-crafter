@@ -70,6 +70,7 @@ test("a repo at the standard reads same everywhere, passes --check and is never 
   assert.equal(got.code, 0, got.lines.join("\n"));
   assert.equal(count(got.byId, "same"), LIST.rows.filter((r) => !r.optional && r.check && !r.id.startsWith("values.")).length);
   assert.equal(count(got.byId, "no value"), 3, "the per-repo values rows have no value without a values file");
+  assert.match(got.lines.at(-2), /^warning: 3 row\(s\) read no value .*values\.topics/);
   assert.ok(!got.calls.some((c) => c[1] === "graphql"), "an optional row is not even read");
   assert.equal(count(got.byId, "optional"), LIST.rows.filter((r) => r.optional).length);
   assert.equal(count(got.byId, "by hand"), LIST.rows.filter((r) => !r.optional && !r.check).length);

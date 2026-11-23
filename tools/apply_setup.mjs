@@ -72,6 +72,8 @@ export function main(argv = process.argv.slice(2), { run = ghRunner(), setup = S
 // Prints one line per row and a tally; the exit code is 1 for a failed row under --check.
 function report(results, opts, log) {
   for (const r of results) log(`${r.status.padEnd(13)} ${r.row.id}${r.note ? `  ${r.note}` : ""}`);
+  const unset = results.filter((r) => r.status === "no value");
+  if (unset.length) log(`warning: ${unset.length} row(s) read no value and never fail --check: ${unset.map((r) => r.row.id).join(", ")}`);
   const tally = Object.entries(Object.groupBy(results, (r) => r.status)).map(([s, rs]) => `${rs.length} ${s}`);
   log(`${opts.repo}: ${tally.join(", ")} (nothing changed)`);
   const failed = opts.check ? results.filter((r) => r.failed) : [];
