@@ -36,7 +36,12 @@ export function settings(params) {
   const apps = listOf(params, "deploy_apps", (a) => typeof a === "string", "must be a list of GitHub App slugs");
   const checks = text("hook_checks", "");
   const scans = text("security_workflows", "codeql|secret|security|scan|dependency.review");
+  const always = params.always_run ?? {};
+  if (!always || typeof always !== "object" || Array.isArray(always) || !Object.values(always).every((why) => typeof why === "string" && why.trim())) {
+    fail("always_run", 'must map each workflow to the reason it must run every time: { "<workflow>": "<why>" }');
+  }
   return {
+    alwaysRun: always,
     branch: text("default_branch", "") || null,
     hooksDir: text("hooks_dir", ".githooks"),
     hookSays: says.map((s) => ({ match: pattern("hook_says", s.match), says: s.says })),
