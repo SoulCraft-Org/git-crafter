@@ -8,6 +8,7 @@ raise Unreadable, never a quiet undercount.
 import datetime as dt
 import json
 import os
+import re
 import tempfile
 from types import SimpleNamespace
 
@@ -217,6 +218,11 @@ def manifest_checks(tool):
     with open(os.path.join(tool.HERE, "..", "actions", "ci-pool", "action.yml"), encoding="utf-8") as fh:
         action = fh.read()
     yield "the action's hard stop default is the meter's", f'default: "{tool.HARD_STOP}"' in action
+    # The usage step runs Blacksmith's CLI beside BLACKSMITH_ORG_TOKEN (#184): it is pinned by hash, never piped to a shell.
+    yield "the CLI is not piped to a shell", re.search(r"\|\s*(?:sudo\s+)?(?:ba|z|da)?sh\b", action) is None and "get.blacksmith.sh" not in action
+    yield "the CLI's SHA-256 is pinned and checked before it runs", (
+        re.search(r"^\s+BLACKSMITH_CLI_SHA256: [0-9a-f]{64}$", action, re.M) is not None
+        and 0 < action.find("sha256sum -c") < action.find('"$bin/blacksmith" auth login'))
 
 
 def raises(tool, fn) -> bool:
