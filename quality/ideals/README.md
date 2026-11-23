@@ -11,7 +11,7 @@ flowchart LR
 
 ## Ideal states
 
-`ideals/<tab>.json`, one per tab: the template's in this folder, a repo's in its `ideals` folder in place of the template's.
+`ideals/<tab>.json`, one per tab: the template's here, a repo's in config `ideals` (default `quality/ideals`), in place of it.
 
 | Field | Shape |
 | --- | --- |
@@ -35,7 +35,7 @@ flowchart LR
 
 ## Review files
 
-`reviews/<tab>-YYYY-MM.yaml`, in the repo.
+`<tab>-YYYY-MM.yaml`, in the folder config `reviews` names.
 
 | Field | Shape |
 | --- | --- |

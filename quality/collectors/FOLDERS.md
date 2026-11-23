@@ -9,13 +9,13 @@ flowchart LR
 
 | Folder | Collector | Fills the tabs |
 | --- | --- | --- |
-| `ci/` | `ci.mjs` | Actions, Pull requests, Issues, Projects, Security and quality, Insights |
-| `code/` | `code.mjs` | Code, Tests |
+| `ci/` | `ci.mjs` | Actions, Code, Insights, Issues, Projects, Pull requests, Scanning |
+| `code/` | `code.mjs` | Code |
 | `docs/` | `docs.mjs` | Documentation |
-| `github/` | `github.mjs` | Issues, Pull requests, Security and quality, Actions, Projects |
+| `github/` | `github.mjs` | Actions, Code, Dependabot, Discussions, Issues, Pages, Projects, Pull requests, Scanning, Security and quality, Settings |
 | `insights/` | `insights.mjs` | Insights |
 | `lib/` | shared helpers, no collector | none |
 | `settings/` | `repo-settings.mjs` | Settings |
-| `site/` | `deploy.mjs`, `design.mjs`, `usability.mjs` | Deploy, Design, Usability |
-| `tests/` | `tests.mjs` | Tests |
-| `tools/` | `tools.mjs` | Tools |
+| `site/` | `deploy.mjs`, `design.mjs`, `usability.mjs` | Pages |
+| `tests/` | `tests.mjs` | Actions |
+| `tools/` | `tools.mjs` | Dependabot |

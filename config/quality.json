@@ -18,7 +18,6 @@
  "targets": "config/quality/targets",
  "collectors": "config/quality/collectors",
  "ideals": "config/quality/ideals",
- "reviews": "config/quality/reviews",
  "data": "data/quality",
  "history": "data/quality/history",
  "out": "pages/dist/quality",

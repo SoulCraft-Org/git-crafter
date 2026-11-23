@@ -18,3 +18,12 @@ Please do not open a public issue. A person replies.
 | Build, CI, dependency and gate changes are rebuilt by the orchestrator, never merged as sent | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
 | Secret scanning and push protection on | Repo settings |
 | A merged change soaks on staging and can be rolled back | <deploy doc> |
+
+```mermaid
+flowchart LR
+  F[Fork PR] -->|run waits for approval, no secrets| C[Checks]
+  C --> P{Path on ai_mergeable?}
+  P -->|yes| A[AI agent merges at the reviewed SHA]
+  P -->|no| O[Orchestrator rebuilds it]
+  A --> S[Soaks on staging,<br/>can roll back]
+```

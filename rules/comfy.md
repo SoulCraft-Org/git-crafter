@@ -35,3 +35,5 @@ Climb one tier only when the one below cannot do the job; say why first.
 | `compute.comfy.guard`, run by hand | the stop where the hook is not wired. Go is exit 1 only: 0 is paused, 2 unknown, so never chain it with `&&` |
 | The deny list's `local-compute` rule (`tools/claude_deny.json`) | `comfy launch` and an explicit `--where local`. A `comfy run` with no `--where` passes, so pass `--where cloud`; a case it misses still applies |
 | No gate | tier 4; the ask in chat is its stop. `comfy build push`, `build release create`, `deploy up`, `start`, `scale` and `run` all spend |
+
+Checked against `tools/comfy_guard.py` at 3210091, 2026-11-23.
