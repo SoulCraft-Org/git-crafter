@@ -11,7 +11,7 @@ import { collectorFiles, runCollectors, runRecord } from "./collect.mjs";
 import { loadConfig, resolveTabs } from "./config.mjs";
 import { master } from "./render/model.mjs";
 import { checkDef, checkIdeal, DEFAULT_TABS, isMeasured, loadDefs, loadIdeals, loadTargets, mergeMetrics, overlayTargets, scoreTab, TABS, tabGaps, WEB_TABS } from "./score.mjs";
-import { at, check, down, seedRepo, shown, up, val, writeTargets, blind } from "./selftest-lib.mjs";
+import { check, down, seedRepo, shown, up, val, writeTargets } from "./selftest-lib.mjs";
 
 check("a missing value never scores 0, from the collector's return to the master score", async () => {
   const { base, template, root } = seedRepo();

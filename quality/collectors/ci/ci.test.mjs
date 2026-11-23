@@ -2,10 +2,10 @@
 // The collect and repo-settings cases are in ci-collect.test.mjs; shared fixtures in ci-fixtures.mjs.
 // Run with: node --test quality/collectors/ci/ci.test.mjs
 import assert from "node:assert/strict";
-import { after, before, describe, it } from "node:test";
+import { describe, it } from "node:test";
 import { cacheVerdict, collect, commonStart, describeRun, flakyChecks, hookCode, hookRuns, jobGraph, jobNames, METRIC_IDS, pipelineStages, latestPriced, priceRuns, prRuns, pushToGreen, reasonFor, runnerRate, settings, shardCount, skipTriggers, weightedLightShare } from "./ci.mjs";
 import { GhError } from "../github/github.mjs";
-import { TARGETS, TEMPLATE_PARAMS, PARAMS, NOW, REPO, T, run, RUNS, skipped, LIGHT_SITE, GATES, job, JOBS, LOGS, pull, PULLS, RUNS_OF, REST, fakeGh, ROOT, collectWith } from "./ci-fixtures.mjs";
+import { TARGETS, TEMPLATE_PARAMS, PARAMS, NOW, REPO, T, run, RUNS, LIGHT_SITE, GATES, job, JOBS, LOGS, PULLS, RUNS_OF, REST, fakeGh, ROOT, collectWith } from "./ci-fixtures.mjs";
 
 describe("ci collector pieces", () => {
   it("marks a passing run light when it skipped something and finished within a minute", () => {
