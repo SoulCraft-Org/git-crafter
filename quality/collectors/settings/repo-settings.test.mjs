@@ -9,7 +9,7 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { GhError, NEEDS } from "../github/github-core.mjs";
 import { loadTargets } from "../lib/score.mjs";
-import { area, collect, METRIC_IDS } from "./repo-settings.mjs";
+import { area, collect, METRIC_IDS, setupExpected } from "./repo-settings.mjs";
 import { reaches } from "./repo-settings-refs.mjs";
 import { secretsRead } from "./repo-settings-reads.mjs";
 
@@ -21,7 +21,7 @@ const R = (route) => `repos/${REPO}${route}`;
 const AGE = "settings.admin_read_age_hours";
 const EXPECTED = { allow_squash_merge: true, allow_merge_commit: false, allow_auto_merge: false };
 
-// A gh client that answers from the fixture; `over` replaces or adds routes.
+// A gh client that answers from the fixture; `over` replaces or adds routes. over.graphql is the repository GraphQL answers; asked lists each query's fields.
 function fakeGh(over = {}) {
   const rest = { ...REST, ...over };
   const answer = async (route) => {
@@ -30,7 +30,9 @@ function fakeGh(over = {}) {
     if (entry?.__error) throw new GhError(entry.__error.message, entry.__error);
     return structuredClone(entry);
   };
-  return { rest: answer, restAll: answer };
+  const asked = [];
+  const graphql = async (query) => (asked.push(query.match(/\{ (\w[\w ]*) \} \}$/)[1].split(" ")), { repository: structuredClone(rest.graphql ?? {}) });
+  return { rest: answer, restAll: answer, graphql, asked };
 }
 
 const run = (over = {}, opts = {}) => collect({ root: path.join(FIXTURES, "repo"), mode: "local", params: { expected: EXPECTED }, gh: fakeGh(over), repo: REPO, ...opts });
@@ -114,6 +116,29 @@ test("general drift: counts fields off the repo's standard; no standard is not m
   assert.match((await run({}, { params: {} }))[id].could_not_check, /params\.expected .* is empty/);
   const { allow_auto_merge: _, ...withheld } = REST[R("")];
   assert.match((await run({ [R("")]: withheld }))[id].could_not_check, /answered without allow_auto_merge/);
+});
+
+test("general drift: a switch the repos answer withholds reads through GraphQL; the repos answer wins where it has one", async () => {
+  const id = "settings.general_drift";
+  const { allow_squash_merge: _, ...withheld } = REST[R("")];
+  const gh = fakeGh({ [R("")]: withheld, graphql: { squashMergeAllowed: true, autoMergeAllowed: true } });
+  const got = await collect({ root: path.join(FIXTURES, "repo"), mode: "local", params: { expected: EXPECTED }, gh, repo: REPO });
+  assert.equal(got[id].value, 0, "squash is true by GraphQL; auto merge is false by the repos answer, whatever GraphQL says");
+  assert.deepEqual(gh.asked, [["squashMergeAllowed"]], "one query, for the one switch withheld");
+  assert.equal((await run({ [R("")]: withheld, graphql: { squashMergeAllowed: false } }))[id].value, 1);
+});
+
+test("general drift: expected_from_setup takes setup.json's General rows, with params.expected over them", async () => {
+  const id = "settings.general_drift";
+  assert.deepEqual(setupExpected(), {
+    has_wiki: true, has_discussions: true, has_projects: true, allow_update_branch: true, web_commit_signoff_required: true,
+    allow_squash_merge: true, allow_merge_commit: false, allow_rebase_merge: false, delete_branch_on_merge: true, allow_auto_merge: false,
+  });
+  const switches = { has_wiki: true, has_discussions: true, has_projects: true, allow_update_branch: true, web_commit_signoff_required: true, allow_rebase_merge: false, delete_branch_on_merge: true };
+  const repo = { [R("")]: { ...REST[R("")], ...switches, has_wiki: false } };
+  assert.equal((await run(repo, { params: { expected_from_setup: true } }))[id].value, 1);
+  assert.equal((await run(repo, { params: { expected_from_setup: true, expected: { has_wiki: false } } }))[id].value, 0);
+  assert.match((await run({}, { params: { expected_from_setup: "yes" } }))[id].could_not_check, /expected_from_setup .* true or false/);
 });
 
 test("outside access: collaborators and open invitations add up", async () => {
