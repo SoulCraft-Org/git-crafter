@@ -18,7 +18,7 @@ flowchart LR
 | Element | Threat | STRIDE | Control | Gap |
 |---|---|---|---|---|
 | [Workflows](.github/workflows/) | PR code gets secrets or writes | Elevation | No `pull_request_target`; read-only by default; only GitHub-owned actions run | None known |
-| [Workflows](.github/workflows/) | Action tag moves | Tampering | Full-SHA pins, policy-enforced; 14-day cooldown; a pinned Node, never `lts/*` | None known |
+| [Workflows](.github/workflows/) | Action tag moves | Tampering | Full-SHA pins, policy-enforced; 14-day cooldown; a pinned Node, never `lts/*` | `ossf/scorecard-action` is a Docker action. Its pinned commit pulls `ghcr.io/ossf/scorecard-action:v2.5.0` by tag, in a job with `id-token: write`. Scorecard's server refuses a digest-pinned step (scorecard-infra `verify_workflow.go`, read 2026-11-23) |
 | [Workflows](.github/workflows/) | Secret is committed | Disclosure | gitleaks on PR commits and `main` pushes, required | No Secret Protection (the owner, 2026-11-10) |
 | [Workflows](.github/workflows/) | A secret-named file is pushed | Disclosure | Push ruleset 26972270 refuses it. [push-ruleset-proof.yml](.github/workflows/push-ruleset-proof.yml) proves it by real pushes | Proven only as of the last passing hand-run |
 | [Workflows](.github/workflows/) | Runs drain the Actions pool | Denial | Timeouts, concurrency, standard runners; fewer Pages jobs | A finite org pool |
