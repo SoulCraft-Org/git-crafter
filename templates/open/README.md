@@ -58,8 +58,8 @@ flowchart LR
 
 | Option (`optional: true`) | For | Row and needs |
 |---|---|---|
-| Merge queue | a busy branch | `rules.merge_queue`; CI runs `on: merge_group`; `gh pr merge` after checks pass: `repo.no_auto_merge` keeps auto-merge off |
-| Artifact attestations | a repo that publishes an artifact | `manual.artifact_attestations`: [actions/attest](https://github.com/actions/attest), with `id-token: write` and `attestations: write` |
+| Merge queue | a busy branch | `rules.merge_queue`; CI runs `on: merge_group` ([how](OPTIONS.md#merge-queue)); `gh pr merge` after checks pass: `repo.no_auto_merge` keeps auto-merge off |
+| Artifact attestations | a repo that publishes an artifact | `manual.artifact_attestations`: [actions/attest](https://github.com/actions/attest), with `id-token: write` and `attestations: write` ([step](OPTIONS.md#attestations)) |
 
 ## Check
 
