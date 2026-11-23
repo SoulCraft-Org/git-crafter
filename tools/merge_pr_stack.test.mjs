@@ -14,7 +14,7 @@ const STACKED = { 7: pr(7, "main", "claude/one"), 8: pr(8, "claude/one", "claude
 const stack = (...numbers) => ({ open: true, pull_requests: numbers.map((number) => ({ number })) });
 
 // Runs main against a fake repo. `mergedAfter` is how many reads of the top pull request pass before the merge shows.
-async function merge(argv, { pulls = STACKED, runs = PASS, stacks = [], mergedAfter = 0, wait = [] } = {}) {
+async function merge(argv, { pulls = STACKED, runs = PASS, stacks = [], mergedAfter = 0, wait = [], drift = null } = {}) {
   const writes = [], sleeps = [], lines = [];
   let put = false, reads = 0;
   const gh = (args) => {
@@ -22,6 +22,7 @@ async function merge(argv, { pulls = STACKED, runs = PASS, stacks = [], mergedAf
     if (args.includes("POST") || args.includes("PUT") || args.includes("-f")) writes.push(args.slice(1).join(" "));
     if (args.includes("PUT")) put = true;
     const n = /pulls\/(\d)$/.exec(route)?.[1];
+    if (n && drift === n && writes.length) return JSON.stringify({ ...pulls[n], head: { ...pulls[n].head, sha: "c".repeat(40) } });
     if (n) return JSON.stringify({ ...pulls[n], merged: put && (n !== "8" || reads++ >= mergedAfter) });
     if (route.includes("/check-runs")) return JSON.stringify({ total_count: runs.length, check_runs: runs });
     if (route.includes("/status")) return JSON.stringify({ total_count: 0, statuses: [] });
@@ -68,4 +69,13 @@ test("--check writes nothing, a slow merge is polled, a stuck one exits 3 and ba
   assert.deepEqual([slow.code, slow.sleeps], [0, [5000, 5000]]);
   assert.equal((await merge([...ARGV, "--wait", "5"], { mergedAfter: 99 })).code, 3);
   for (const bad of [["--repo", REPO, "--prs", `7:${SHA[7]}`, "--followups", "none"], ARGV.slice(0, -2), [...ARGV, "--admin"], [...ARGV.slice(0, -1), "12"], ["--repo", REPO, "--prs", "7:x,8:y"]]) assert.equal((await merge(bad)).code, 2);
+});
+
+test("a layer whose head moves after the checks stops the merge before the PUT, whichever layer it is", async () => {
+  for (const layer of ["7", "8"]) {
+    const r = await merge(ARGV, { drift: layer });
+    assert.equal(r.code, 1);
+    assert.ok(!r.writes.some((w) => w.includes("merge-async")));
+    assert.match(r.lines.join("\n"), new RegExp(`#${layer} moved since its review`));
+  }
 });

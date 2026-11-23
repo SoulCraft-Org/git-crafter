@@ -57,6 +57,9 @@ export async function main(argv = process.argv.slice(2), { run = ghRunner(), sle
     if (!open.length) run(["api", "-X", "POST", `repos/${o.repo}/stacks`, ...o.prs.flatMap((p) => ["-F", `pull_requests[]=${p.pr}`])]);
     for (const p of o.prs) verdict(run, { repo: o.repo, followups: o.followups, ...p });
     const top = o.prs.at(-1);
+    // merge-async pins only the top sha, so every layer's head is read again just before the PUT.
+    const moved = o.prs.filter((p) => read(`repos/${o.repo}/pulls/${p.pr}`).head.sha !== p.sha);
+    if (moved.length) throw new Error(`${moved.map((p) => `#${p.pr}`).join(", ")} moved since its review, so nothing merged`);
     run(["api", "-X", "PUT", `repos/${o.repo}/pulls/${top.pr}/merge-async`, "-f", `sha=${top.sha}`, "-f", "merge_method=squash"]);
     for (let waited = 0; !read(`repos/${o.repo}/pulls/${top.pr}`).merged; waited += STEP) {
       if (waited >= o.wait) return log(`wait #${top.pr}: the merge has not finished; read repos/${o.repo}/pulls/${top.pr}/merge-async/<id>`) ?? 3;
