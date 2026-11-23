@@ -33,6 +33,18 @@ const SYMBOLS = {
 // Every icon id the Git Crafter sprite draws.
 export const ICON_IDS = Object.keys(SYMBOLS);
 
+// Who does a step, by id: a map whose steps all name one is drawn as lanes (draw-lanes.mjs).
+export const ACTORS = {
+  owner: "Owner",
+  orchestrator: "Orchestrator",
+  worker: "Worker",
+  reviewer: "Reviewer",
+  contributor: "Contributor",
+  ci: "CI",
+  dependabot: "Dependabot",
+  github: "GitHub",
+};
+
 // The Git Crafter icon sprite: one hidden <svg> of <symbol id="c-<id>">, placed once per page.
 export const COS_SPRITE = `<svg class="sprite" aria-hidden="true" focusable="false" width="0" height="0">${Object.entries(SYMBOLS)
   .map(([id, body]) => `<symbol id="c-${id}" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${body}</symbol>`)
@@ -101,11 +113,11 @@ export function trail(map, readouts, critical, selected) {
   return `<svg class="trail" viewBox="0 0 ${T.width} ${T.height}" role="group" aria-label="${esc(map.name)}: ${steps.length} steps; the critical path is the thick line">${main}${back}${nodes}</svg>`;
 }
 
-// A step's tooltip: its number and name, then its metric's label, value and status in words.
+// A step's tooltip: its number, name and actor, then its metric's label, value and status in words.
 function stepTip(s, i, ro) {
   const value = !finite(ro.value) ? "not measured" : ro.unit === "on/off" ? shown(ro, ro.value) : fmt(ro.value, ro.unit);
   const status = STATUS_WORD[ro.status] && finite(ro.value) ? `; ${STATUS_WORD[ro.status]}` : "";
-  return `${i + 1} ${s.name}; ${ro.label}: ${value}${status}`;
+  return `${i + 1} ${s.name}${s.actor ? ` by ${ACTORS[s.actor] ?? s.actor}` : ""}; ${ro.label}: ${value}${status}`;
 }
 
 // One step's link at (x, y): ring, node, number, name and value line; every map shape draws it, so the client sees one markup.

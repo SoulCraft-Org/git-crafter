@@ -3,7 +3,7 @@
 // reads nothing from disk; build.mjs re-exports them, so callers import from there.
 
 import { checkIdeal } from "../quality/score.mjs";
-import { ICON_IDS } from "./draw.mjs";
+import { ACTORS, ICON_IDS } from "./draw.mjs";
 import { PROCESS_TABS } from "./render.mjs";
 
 const https = (u) => /^https:\/\//.test(u ?? "");
@@ -110,12 +110,13 @@ function stepShape(s, where) {
   return errs;
 }
 
-// A step's optional icon, gate source and cell.
+// A step's optional icon, gate source, cell and actor.
 function stepExtras(s, where) {
   const errs = [];
   if (s?.icon !== undefined && !ICON_IDS.includes(s.icon)) errs.push(`${where}: icon must be one of ${ICON_IDS.join(", ")}`);
   if (s?.gates_from !== undefined && !GATE_SOURCES.includes(s.gates_from)) errs.push(`${where}: gates_from must be one of ${GATE_SOURCES.join(", ")}`);
   if (s?.at !== undefined && !isCell(s.at)) errs.push(`${where}: at needs [column, row]`);
+  if (s?.actor !== undefined && !(s.actor in ACTORS)) errs.push(`${where}: actor must be one of ${Object.keys(ACTORS).join(", ")}`);
   return errs;
 }
 
@@ -135,6 +136,8 @@ function placementErrors(steps, at) {
   if (placed && placed < steps.length) errs.push(`${at}: ${placed} of ${steps.length} steps have at; a fork places every step`);
   const cells = steps.filter((s) => isCell(s?.at)).map((s) => s.at.join());
   if (new Set(cells).size < cells.length) errs.push(`${at}: two steps share one cell; each step has its own at`);
+  const acted = steps.filter((s) => s?.actor !== undefined).length;
+  if (acted && acted < steps.length) errs.push(`${at}: ${acted} of ${steps.length} steps have an actor; lanes need every step to have one`);
   return errs;
 }
 

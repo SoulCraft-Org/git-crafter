@@ -3,8 +3,9 @@
 
 import { bars, bullet, esc, finite, fmtCompact, glyph, spark, stack, statusCounts, statusStack } from "../quality/render/charts.mjs";
 import { historyFor } from "../quality/render/model.mjs";
-import { ICON_IDS, cicon, trail } from "./draw.mjs";
+import { ACTORS, ICON_IDS, cicon, trail } from "./draw.mjs";
 import { grid } from "./draw-grid.mjs";
+import { lanes } from "./draw-lanes.mjs";
 import { goalIndex, goalText, openingStep, stepReadout } from "./model.mjs";
 import { atLeast, ideal, rateOf, repoBars, srcTip, when } from "./ui.mjs";
 
@@ -127,7 +128,7 @@ function panel(map, step, i, ro, critical, cfg, data, shared) {
   const ref = step.rule_ref;
   const icon = ICON_IDS.includes(step.icon ?? step.id) ? (step.icon ?? step.id) : "plan";
   return `<article class="panel" id="step-${esc(key)}" data-step="${esc(key)}" aria-labelledby="h-${esc(key)}">
-<header class="p-head"><span class="p-num${critical.has(step.id) ? " crit" : ""}">${i + 1}</span><h3 id="h-${esc(key)}">${cicon(icon)}${esc(step.name)}</h3>${critical.has(step.id) ? '<span class="chip">critical path</span>' : ""}</header>
+<header class="p-head"><span class="p-num${critical.has(step.id) ? " crit" : ""}">${i + 1}</span><h3 id="h-${esc(key)}">${cicon(icon)}${esc(step.name)}</h3>${critical.has(step.id) ? '<span class="chip">critical path</span>' : ""}${step.actor ? `<span class="chip actor">${esc(ACTORS[step.actor] ?? step.actor)}</span>` : ""}</header>
 <div class="tiles">${tile(KIND_NAMES[ro.kind] ?? "Metric", ro, shared)}</div>
 <div class="p-body">
 <div class="p-figs">${figs || '<p class="empty">No per-repo data for this step.</p>'}</div>
@@ -172,13 +173,13 @@ export function mapsTab(data, goalsDoc, mapsDoc, defs, repos, metricsHref, histo
     return `<section class="map" id="map-${esc(m.id)}" data-map="${esc(m.id)}" aria-labelledby="h-map-${esc(m.id)}">
 <header class="map-head"><h2 id="h-map-${esc(m.id)}">${esc(m.name)}</h2><p>${esc(m.why)}</p></header>
 ${ideal(`map-${m.id}`, m, m.name)}
-<div class="hero flow"><div class="trail-box">${(steps.some((s) => s.at) ? grid : trail)({ ...m, steps }, readouts, critical, selected)}</div></div>
+<div class="hero flow"><div class="trail-box">${(steps.every((s) => s.actor) ? lanes : steps.some((s) => s.at) ? grid : trail)({ ...m, steps }, readouts, critical, selected)}</div></div>
 ${timeBar(m, data, { defs, goals, ownRepo: data.own_repo ?? null })}
 ${stepbar}
 <section class="panels">${m.steps.map((s, i) => panel(m, s, i, readouts[s.id], critical, cfg, data, shared)).join("\n")}</section>
 </section>`;
   });
-  const legend = `<ul class="t-key"><li><svg viewBox="0 0 28 10" aria-hidden="true"><path class="k-main" d="M0 5h28"/></svg>critical path</li><li><svg viewBox="0 0 14 14" aria-hidden="true"><circle class="k-ring" cx="7" cy="7" r="5.5" pathLength="100" stroke-dasharray="70 100" transform="rotate(-90 7 7)"/></svg>ring: a share, fuller is better</li><li>Select a step for its detail</li></ul>`;
+  const legend = `<ul class="t-key"><li><svg viewBox="0 0 28 10" aria-hidden="true"><path class="k-main" d="M0 5h28"/></svg>critical path</li><li><svg viewBox="0 0 14 14" aria-hidden="true"><circle class="k-ring" cx="7" cy="7" r="5.5" pathLength="100" stroke-dasharray="70 100" transform="rotate(-90 7 7)"/></svg>ring: a share, fuller is better</li><li>Lanes: who does each step</li><li>Select a step for its detail</li></ul>`;
   // One tile per map: its name and a bar of its steps' statuses, linking to its section.
   const index = maps.map((m) => {
     const counts = statusCounts(m.steps.map((s) => ({ status: readoutsByMap[m.id][s.id]?.status ?? "not-measured" })));
