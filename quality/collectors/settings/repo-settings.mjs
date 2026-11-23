@@ -88,7 +88,7 @@ const sum = (rows) => rows.reduce((n, r) => n + r.value, 0);
 
 const METRICS = {
   "settings.protections_missing": {
-    source: "state: gh api repos/{repo}/rulesets and each active one (bypass_actors, tag rules deletion and update, push rule file_path_restriction against params.blocked_paths), branches/{branch}/protection (enforce_admins), tags (the first listed), environments (deployment_branch_policy); a row with nothing to guard is left out",
+    source: "state: gh api repos/{repo}/rulesets and each active one (bypass_actors, else GraphQL rulesets.bypassActors.totalCount when REST hides the list, read 2026-11-23; tag rules deletion and update, push rule file_path_restriction against params.blocked_paths), branches/{branch}/protection (enforce_admins), tags (the first listed), environments (deployment_branch_policy); a row with nothing to guard is left out",
     async run(R, cfg) {
       const rows = (await Promise.all([bypassRow(R), tagsRow(R), pushRow(R, cfg), environmentsRow(R)])).filter(Boolean);
       const hidden = rows.find((r) => r.hidden);
@@ -98,7 +98,7 @@ const METRICS = {
     },
   },
   "settings.general_drift": {
-    source: "state: gh api repos/{repo} (GraphQL repository for a merge setting it withholds), each field named in params.expected (over templates/setup.json's General rows when params.expected_from_setup) against its value there",
+    source: "state: gh api repos/{repo} (GraphQL repository squashMergeAllowed and the other merge fields when REST withholds them, read 2026-11-23), each field named in params.expected (over templates/setup.json's General rows when params.expected_from_setup) against its value there",
     async run(R, cfg) {
       const keys = Object.keys(cfg.expected);
       if (!keys.length) return skip(`params.expected in ${TARGETS_FILE} is empty: name the General settings this repo holds itself to, or set expected_from_setup`);
@@ -170,10 +170,11 @@ const METRICS = {
     },
   },
   "settings.admin_read_age_hours": {
-    source: "state: 0 when this CI run read the admin metrics with ADMIN_READ_TOKEN or the App token; else generated_at of local.json in the repo's data folder, the last collect.mjs --local run, against the time of this run",
-    async run(R, cfg, { mode, data, now, admin }) {
+    last: true,
+    source: "state: 0 when this CI run measured an admin metric with ADMIN_READ_TOKEN or the App token; else generated_at of local.json in the repo's data folder, the last collect.mjs --local run, against the time of this run",
+    async run(R, cfg, { mode, data, now, adminRead }) {
       if (mode !== "ci") return skip("this run is the refresh; the next CI run reads its age");
-      if (admin) return measured(0);
+      if (adminRead) return measured(0);
       const file = path.join(data, "local.json");
       if (!existsSync(file)) return skip("no signed-in run is recorded yet: run collect.mjs --local");
       const at = Date.parse(JSON.parse(readFileSync(file, "utf8")).generated_at);
@@ -186,13 +187,13 @@ const METRICS = {
 export const METRIC_IDS = Object.keys(METRICS);
 
 // One metric's entry: its value and rows, or why it could not be read.
-async function entry(metric, needs, { R, RA, cfg, mode, fill, data, now }) {
+async function entry(metric, needs, { R, RA, cfg, mode, fill, data, now, adminRead }) {
   const source = fill(metric.source);
   // A CI run reads an admin metric with ADMIN_READ_TOKEN's reads (RA), or not at all.
   const client = clientFor({ mode, needs, gh: R, admin: RA });
   if (client.skip) return { could_not_check: client.skip, source };
   try {
-    const result = await metric.run(client.gh, cfg, { mode, data, now, admin: Boolean(RA) });
+    const result = await metric.run(client.gh, cfg, { mode, data, now, adminRead });
     return result.could_not_check ? { ...result, source } : { ...result, source, read_at: new Date().toISOString() };
   } catch (err) {
     return { could_not_check: reasonFor(err, needs, mode), source };
@@ -223,6 +224,11 @@ export async function collect({ root = process.cwd(), mode = "local", data = pat
   const branch = mode === "ci" ? "the default branch" : await R.branch().catch(() => "the default branch");
   const fill = (text) => text.replaceAll("{repo}", slug ?? "owner/name").replaceAll("{branch}", branch);
   const needs = new Map(targets.map((t) => [t.id, t.needs]));
-  const entries = await Promise.all(active.map(async ([id, metric]) => [id, await entry(metric, needs.get(id), { R, RA, cfg, mode, fill, data, now: Number(now) })]));
-  return Object.fromEntries(entries);
+  const read = ([id, metric], adminRead) => entry(metric, needs.get(id), { R, RA, cfg, mode, fill, data, now: Number(now), adminRead }).then((e) => [id, e]);
+  const early = await Promise.all(active.filter(([, m]) => !m.last).map((m) => read(m)));
+  // The age metric reads last: 0 only when an admin metric came back measured in this run, so a token that is set but refused or expired counts for nothing.
+  const adminRead = mode === "ci" && early.some(([id, e]) => needs.get(id) === "github-admin" && !e.could_not_check);
+  const late = await Promise.all(active.filter(([, m]) => m.last).map((m) => read(m, adminRead)));
+  const byId = new Map([...early, ...late]);
+  return Object.fromEntries(active.map(([id]) => [id, byId.get(id)]));
 }

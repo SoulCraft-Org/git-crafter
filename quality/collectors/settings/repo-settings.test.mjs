@@ -246,6 +246,11 @@ test("admin read age: a CI run reads the hours since the last signed-in run; tha
   const ci = (opts = {}) => run({}, { mode: "ci", data, now, ...opts });
   assert.match((await ci())[AGE].could_not_check, /no signed-in run is recorded/);
   assert.equal((await ci({ admin: fakeGh() }))[AGE].value, 0, "a CI run with an admin token read the settings itself");
+  const refuse = async () => {
+    throw new GhError("Bad credentials", { status: 401 });
+  };
+  const expired = { rest: refuse, restAll: refuse, graphql: refuse };
+  assert.match((await ci({ admin: expired }))[AGE].could_not_check, /no signed-in run is recorded/, "a token that is set but refused read nothing, so it is no reading");
   writeFileSync(path.join(data, "local.json"), JSON.stringify({ generated_at: "2026-11-09T06:00:00Z" }));
   assert.equal((await ci())[AGE].value, 30);
   assert.equal((await ci({ now: Date.parse("2026-11-08T00:00:00Z") }))[AGE].value, 0, "a clock behind the file never reads below 0");

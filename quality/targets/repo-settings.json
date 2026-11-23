@@ -11,7 +11,7 @@
     "near": 1,
     "direction": "lower",
     "goal_source": "GitHub docs, About rulesets (bypass lists), Available rules for rulesets (Restrict updates, Restrict deletions, Restrict file paths) and Deployments and environments (deployment branches and tags), read 2026-11-10; goal: none missing",
-    "source": "state: gh api rulesets and each active one (bypass_actors, tag rules deletion and update, push rule file_path_restriction against params.blocked_paths), branches/{branch}/protection (enforce_admins), tags (the first listed), environments (deployment_branch_policy); a row with nothing to guard is left out",
+    "source": "state: gh api rulesets and each active one (bypass_actors, else GraphQL rulesets.bypassActors.totalCount when REST hides the list, read 2026-11-23; tag rules deletion and update, push rule file_path_restriction against params.blocked_paths), branches/{branch}/protection (enforce_admins), tags (the first listed), environments (deployment_branch_policy); a row with nothing to guard is left out",
     "needs": "github-admin",
     "chart": "table",
     "params": {
@@ -35,7 +35,7 @@
     "near": 0.5,
     "direction": "lower",
     "goal_source": "template goal: a repo names the General settings it holds itself to and none drifts; GitHub docs, REST API endpoints for repositories, Get a repository, lists the fields (read 2026-11-10)",
-    "source": "state: gh api repos/{repo} (GraphQL repository for a merge setting it withholds), each field named in params.expected (over templates/setup.json's General rows when params.expected_from_setup) against its value there",
+    "source": "state: gh api repos/{repo} (GraphQL repository squashMergeAllowed and the other merge fields when REST withholds them, read 2026-11-23), each field named in params.expected (over templates/setup.json's General rows when params.expected_from_setup) against its value there",
     "needs": "github-admin",
     "chart": "table"
   },
@@ -130,7 +130,7 @@
     "goal": 24,
     "near": 72,
     "direction": "lower",
-    "goal_source": "template goal, no public benchmark: a setting changed today shows on the page by tomorrow, so the signed-in run that reads these settings is at most a day old",
+    "goal_source": "template goal, no public benchmark: a setting changed today shows on the page by tomorrow, so the admin readings, a CI run's admin token or a signed-in run, are at most a day old",
     "source": "state: 0 when this CI run read the admin metrics with ADMIN_READ_TOKEN or the App token; else generated_at of local.json in the repo's data folder, the last collect.mjs --local run, against the time of this CI run",
     "needs": "none",
     "chart": "number"
