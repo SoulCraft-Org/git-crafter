@@ -106,6 +106,20 @@ describe("Security and quality: GitHub's five features, their findings, fix time
     assert.equal(off["security.oldest_open_alert_days"].value, 32.8, "a repo with code quality off counts the other alerts");
   });
 
+  it("reads code quality on, and its findings, when setup is refused to a read-only token but the findings answer", async () => {
+    const refused = { __error: { status: 403, message: "Resource not accessible by integration" } };
+    const findings = `repos/${REPO}/code-quality/findings?state=open&per_page=100`;
+    const rows = [{ state: "open", created_at: "2026-10-31T00:00:00Z", rule: { severity: "warning" } }];
+    const on = await run({ gh: withRest({ [`repos/${REPO}/code-quality/setup`]: refused, [findings]: rows }) });
+    assert.deepEqual([on["security.code_quality_on"].value, on["security.code_quality_open"].value], [1, 1]);
+    const none = await run({ gh: withRest({ [`repos/${REPO}/code-quality/setup`]: refused, [findings]: [] }) });
+    assert.deepEqual([none["security.code_quality_on"].value, none["security.code_quality_open"].value], [1, 0], "answering with no findings is on, and 0 open");
+    const off = { __error: { status: 403, message: "Code quality is not enabled for this repository." } };
+    assert.equal((await run({ gh: withRest({ [`repos/${REPO}/code-quality/setup`]: refused, [findings]: off }) }))["security.code_quality_on"].value, 0, "the findings say it is off");
+    const both = await run({ gh: withRest({ [`repos/${REPO}/code-quality/setup`]: refused, [findings]: refused }) });
+    for (const id of ["security.code_quality_on", "security.code_quality_open"]) assert.ok(both[id].could_not_check, `${id}: neither call reads, so not measured`);
+  });
+
   it("prices the paid features by the committers billed now", async () => {
     const billed = (n) => ({ total_advanced_security_committers: n });
     const out = await run({

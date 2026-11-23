@@ -766,7 +766,7 @@
     "near": 0.5,
     "direction": "higher",
     "goal_source": "GitHub docs, GitHub Code Quality",
-    "source": "state: gh api repos/{repo}/code-quality/setup (state configured); off is a miss even when the plan charges for it",
+    "source": "state: gh api repos/{repo}/code-quality/setup (state configured), or where a read-only token is refused it (403), code-quality/findings answering; off is a miss even when the plan charges for it",
     "needs": "github-admin",
     "chart": "number"
   },
