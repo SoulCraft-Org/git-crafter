@@ -21,6 +21,8 @@
 //                          as not planned, with one comment linking the card.
 //                          The board needs env BOARD_TOKEN: without it, each
 //                          card is only logged and no issue opens
+//                          A card's body links its picture (cards/picture.mjs),
+//                          written to the `cards` branch as metric-<id>.svg
 //
 // An issue or card is matched to its metric by a hidden marker line. One with
 // several markers, or not the sync's own table, is hand-written: it covers its
@@ -30,9 +32,11 @@
 // Exit 0 synced or off, 1 a GitHub call failed, 2 usage error.
 
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 
 import { readInputs } from "./build.mjs";
+import { cardSpec, picture } from "./cards/picture.mjs";
 import { loadConfig } from "./config.mjs";
 import { mergeMetrics, scoreMetric, TABS } from "./score.mjs";
 
@@ -44,6 +48,11 @@ export const OPEN_CAP = 5;
 export const marker = (id) => `<!-- quality-metric: ${id} -->`;
 // Where pages.yml deploys the Quality page, under the repo's Pages site.
 const PAGE_PATH = "quality/";
+// The branch the card pictures live on, one SVG per metric.
+const PICTURE_BRANCH = "cards";
+const pictureFile = (id) => `metric-${id}.svg`;
+// The picture line of a body, between its first line and its table.
+const PICTURE_LINE = /\n!\[[^\]\n]*\]\([^)\n]*\)\n/;
 
 // A gh client over `gh api`: call(args, body) returns the parsed JSON; a token goes in GH_TOKEN, never logged.
 export function ghCli(run = execFileSync, token = null) {
@@ -119,14 +128,16 @@ export function meter(def, value) {
 }
 
 // The issue's body: the marker, one line (now, meter, goal, the metric on the
-// Quality page when its address is known), then one table row. No prose paragraph.
-export function issueBody({ def, entry }, change, page = null) {
+// Quality page when its address is known), the card's picture when `pictures`
+// (the base of its URL) is given, then one table row. No prose paragraph.
+export function issueBody({ def, entry }, change, page = null, pictures = null) {
   const goal = `${def.direction === "lower" ? "at most" : "at least"} ${unitOf(def, def.goal)}`;
   const now = unitOf(def, entry.value);
   const link = page ? ` · [Quality page](${page}#m-${def.id})` : "";
   const line = `🔴 ${now} · ${meter(def, entry.value)} · 🎯 ${goal}${link}`;
   const row = [def.id, now, goal, entry.source ?? def.file, change].map(cell);
-  return `${marker(def.id)}\n\n${line}\n\n${HEADER}\n|---|---|---|---|---|\n| ${row.join(" | ")} |\n`;
+  const image = pictures ? `![${cell(`${def.label ?? def.id}: ${now} to ${goal}`)}](${pictures}${pictureFile(def.id)})\n\n` : "";
+  return `${marker(def.id)}\n\n${line}\n\n${image}${HEADER}\n|---|---|---|---|---|\n| ${row.join(" | ")} |\n`;
 }
 
 // The Now and Change cells of a body issueBody wrote, or null.
@@ -145,10 +156,11 @@ export function pageUrl(gh, repo) {
 }
 
 // What to do for one metric: { op, ... } or null when nothing changes. cards
-// is the board's cards by metric id, or null when no token can read it.
-export function plan(row, open, sync = {}, page = null, cards = null) {
+// is the board's cards by metric id, or null when no token can read it. pictures
+// is the base URL of the card pictures, or null for none.
+export function plan(row, open, sync = {}, page = null, cards = null, pictures = null) {
   const issue = open.get(row.def.id);
-  if (sync.project && !(sync.quick ?? []).includes(row.def.id)) return cardPlan(row, issue, cards, sync, page);
+  if (sync.project && !(sync.quick ?? []).includes(row.def.id)) return cardPlan(row, issue, cards, sync, page, pictures);
   if (row.status === "meets") return issue ? { op: "close", issue, row } : null;
   if (row.status !== "misses") return null;
   return issue ? updateStep(row, issue, page) : { op: "open", row, body: issueBody(row, "opened", page) };
@@ -156,11 +168,11 @@ export function plan(row, open, sync = {}, page = null, cards = null) {
 
 // A board metric's step: its card's new body or Status, and an old issue to
 // close linking the card. A card's own issue is never closed as its old issue.
-function cardPlan(row, issue, cards, sync, page) {
+function cardPlan(row, issue, cards, sync, page, pictures) {
   if (!cards) return row.status === "misses" ? { op: "log", row, issue } : null;
   const card = cards.get(row.def.id);
   const old = issue && issue.number !== card?.number ? issue : null;
-  const step = cardStep(row, card, sync, page);
+  const step = cardStep(row, card, sync, page, pictures);
   if (!old) return step;
   if (step || card) return { ...(step ?? { op: "card", row, card }), issue: old };
   return row.status === "meets" ? { op: "close", issue: old, row } : null;
@@ -168,32 +180,38 @@ function cardPlan(row, issue, cards, sync, page) {
 
 // The card's change: a new card or a new body or Status for a miss, Done for
 // a meet. A hand-written card is never changed.
-function cardStep(row, card, sync, page) {
+function cardStep(row, card, sync, page, pictures) {
   const reopen = (sync.waiting ?? []).includes(row.def.id) ? "Waiting on data" : "Todo";
-  if (!card) return row.status === "misses" ? { op: "card", row, body: issueBody(row, "opened", page), status: reopen } : null;
+  if (!card) return row.status === "misses" ? { op: "card", row, body: issueBody(row, "opened", page, pictures), status: reopen, picture: Boolean(pictures) } : null;
   if (card.hand) return null;
   if (row.status === "meets") return card.status === "Done" ? null : { op: "card", row, card, status: "Done" };
-  return row.status === "misses" ? missStep(row, card, reopen, page) : null;
+  return row.status === "misses" ? missStep(row, card, reopen, page, pictures) : null;
 }
 
 // A missed metric's card: a new body when its Now cell moved, and Status back
 // from Done.
-function missStep(row, card, reopen, page) {
-  const body = updateStep(row, card, page)?.body ?? null;
+function missStep(row, card, reopen, page, pictures) {
+  const body = updateStep(row, card, page, pictures)?.body ?? null;
   const status = card.status === "Done" ? reopen : null;
-  return body || status ? { op: "card", row, card, body, status } : null;
+  return body || status ? { op: "card", row, card, body, status, picture: Boolean(body && pictures) } : null;
 }
 
 // An open issue's update when its Now cell no longer matches, else null. With
 // Now the same, a body in an older format is rewritten with its old Change
 // cell; without the page's address it waits, so a failed read never strips a link.
-function updateStep(row, issue, page) {
+function updateStep(row, issue, page, pictures = null) {
   const was = nowCell(issue.body);
-  if (was !== unitOf(row.def, row.entry.value)) return { op: "update", issue, row, body: issueBody(row, `was ${was ?? "unknown"}`, page) };
+  if (was !== unitOf(row.def, row.entry.value)) return { op: "update", issue, row, body: issueBody(row, `was ${was ?? "unknown"}`, page, pictures) };
   const kept = changeCell(issue.body);
-  const body = kept && page ? issueBody(row, kept, page) : null;
+  const body = kept && page ? issueBody(row, kept, page, pictures) : null;
   return body && body !== issue.body ? { op: "update", issue, row, body } : null;
 }
+
+// A function that runs fn on its first call and answers that result every time after.
+const once = (fn) => {
+  let value;
+  return () => (value ??= fn());
+};
 
 const tabName = (id) => new Map(TABS).get(id) ?? id;
 const labelFor = (sync, tab) => sync.labels?.[tab] ?? sync.label;
@@ -227,10 +245,38 @@ function said(step) {
   return `card ${id}: ${what}${step.issue ? `, closes${n}` : ""}`;
 }
 
-// Writes a card step: the card, then the old issue's comment and close.
-function applyCard(step, { gh, board, repo, sync }) {
+// The git blob id of a file's text, as the contents API lists it.
+const blobSha = (text) => createHash("sha1").update(`blob ${Buffer.byteLength(text)}\0`).update(text).digest("hex");
+
+// The cards branch's files by name, with their blob ids; empty when unreadable.
+export function cardFiles(gh, repo) {
+  try {
+    return new Map(gh([`repos/${repo}/contents/?ref=${PICTURE_BRANCH}`]).filter((f) => f.type === "file").map((f) => [f.name, f.sha]));
+  } catch {
+    return new Map();
+  }
+}
+
+// Writes the card's SVG to the cards branch unless it holds it already; false, with a warning, when refused.
+function putPicture(step, { gh, repo, files }) {
+  const file = pictureFile(step.row.def.id);
+  const svg = picture(cardSpec(step.row, step.area));
+  const sha = files().get(file);
+  if (sha === blobSha(svg)) return true;
+  try {
+    gh(["--method", "PUT", `repos/${repo}/contents/${file}`], { message: `Card picture for ${step.row.def.id}`, content: Buffer.from(svg).toString("base64"), branch: PICTURE_BRANCH, ...(sha ? { sha } : {}) });
+    return true;
+  } catch (err) {
+    console.warn(`::warning::quality: no picture for ${step.row.def.id}: ${String(err.message).split("\n")[0]}`);
+    return false;
+  }
+}
+
+// Writes a card step: its picture, the card, then the old issue's comment and close.
+function applyCard(step, { gh, board, repo, sync, files }) {
   const { def } = step.row;
   let card = step.card;
+  if (step.body && step.picture && !putPicture({ ...step, area: labelFor(sync, def.tab) }, { gh, repo, files })) step = { ...step, body: step.body.replace(PICTURE_LINE, "") };
   if (!card) {
     const made = board.gq(ADD, { p: board.id, t: titleOf(def), b: step.body }).data.addProjectV2DraftIssue.projectItem;
     card = { item: made.id, url: board.url(made.databaseId) };
@@ -245,12 +291,12 @@ function applyCard(step, { gh, board, repo, sync }) {
 }
 
 // Carries out one step with gh and the board, or only logs it in a dry run.
-export function apply(step, { gh, board = null, repo, sync, dryRun = false, log = console.log }) {
+export function apply(step, { gh, board = null, repo, sync, dryRun = false, log = console.log, files = once(() => cardFiles(gh, repo)) }) {
   const { def } = step.row;
   log(`${dryRun ? "[dry run] " : ""}${said(step)}`);
   if (dryRun || step.op === "log") return;
   if (step.op === "card") {
-    applyCard(step, { gh, board, repo, sync });
+    applyCard(step, { gh, board, repo, sync, files });
   } else if (step.op === "open") {
     gh(["--method", "POST", `repos/${repo}/issues`], { title: titleOf(def), body: step.body, labels: [labelFor(sync, def.tab)], type: "Task" });
   } else if (step.op === "update") {
@@ -294,7 +340,8 @@ export function sync(config, { gh = ghCli(), gq = null, dryRun = false, log = co
   const { project } = config.issue_sync;
   const board = project && gq ? readBoard(gq, config.repo.split("/")[0], project) : null;
   // A hand-written issue covers its metrics: the sync never touches them.
-  let planned = rows.filter((row) => !open.get(row.def.id)?.hand).map((row) => plan(row, open, config.issue_sync, page, board?.cards ?? null)).filter(Boolean);
+  const pictures = `https://github.com/${config.repo}/raw/${PICTURE_BRANCH}/`;
+  let planned = rows.filter((row) => !open.get(row.def.id)?.hand).map((row) => plan(row, open, config.issue_sync, page, board?.cards ?? null, pictures)).filter(Boolean);
   const scan = planned.find((s) => s.row.def.id === CODEQL_METRIC && s.op !== "log");
   if (scan && sha && codeqlStale(gh, config.repo, sha, scan.row.entry?.read_at)) {
     log(`${CODEQL_METRIC} may predate CodeQL on ${sha.slice(0, 7)}: it waits for the next run`);
@@ -303,7 +350,8 @@ export function sync(config, { gh = ghCli(), gq = null, dryRun = false, log = co
   const opens = planned.filter((s) => s.op === "open" || (s.op === "card" && !s.card));
   const steps = planned.filter((s) => !opens.includes(s) || opens.indexOf(s) < OPEN_CAP);
   if (opens.length > OPEN_CAP) log(`held back ${opens.length - OPEN_CAP} new issue(s) or card(s) past the cap of ${OPEN_CAP}; the next run opens them`);
-  for (const step of steps) apply(step, { gh, board, repo: config.repo, sync: config.issue_sync, dryRun, log });
+  const files = once(() => cardFiles(gh, config.repo));
+  for (const step of steps) apply(step, { gh, board, repo: config.repo, sync: config.issue_sync, dryRun, log, files });
   log(`${steps.length} step(s) for ${rows.filter((r) => r.status === "misses").length} missed metric(s)`);
   return steps;
 }
