@@ -30,7 +30,8 @@ test("verify.yml runs GitHub's dependency review on a pull request only", () => 
   const yml = read(".github/workflows/verify.yml");
   const job = yml.slice(yml.indexOf("\n  dependency-review:\n"));
   assert.ok(job.length > 1, "a dependency-review job");
-  assert.match(job, /^ {4}if: github\.event_name == 'pull_request'$/m);
+  assert.match(job, /^ {4}if: \$\{\{ !cancelled\(\) && github\.event_name == 'pull_request' \}\}$/m);
+  assert.match(job, /^ {4}needs: ci$/m, "after ci, so a superseded run's dependency review never starts and bills nothing");
   assert.match(job, /^ {6}- uses: actions\/dependency-review-action@[0-9a-f]{40} # v\d+\.\d+\.\d+$/m);
   // What fails a PR is stated (#61): a fail-on-severity input, or the job comment names the action's default.
   const comment = yml.slice(yml.lastIndexOf("\n\n", yml.indexOf("\n  dependency-review:\n")), yml.indexOf("\n  dependency-review:\n"));
