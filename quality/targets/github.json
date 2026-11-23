@@ -225,6 +225,22 @@
     "chart": "gauge"
   },
   {
+    "id": "issues.milestones_off_track",
+    "tab": "issues",
+    "kind": "quality",
+    "label": "Milestones off track",
+    "means": "Open milestones with no due date, past their date, or with every issue closed; fewer is better.",
+    "unit": "milestones",
+    "goal": 0,
+    "near": 1,
+    "direction": "lower",
+    "goal_source": "GitHub docs, About milestones (read 2026-11-23): a milestone tracks a group of issues and shows a due date and its progress; template goal (2026-11-23): an open milestone is dated, not late and not finished, as the Issues ideal says",
+    "source": "state: gh api repos/{repo}/milestones?state=open, those with no due_on, a due_on before the read, or open_issues 0 with closed_issues above 0; none open reads 0",
+    "needs": "none",
+    "chart": "number",
+    "group": "Milestones"
+  },
+  {
     "id": "pull_requests.green_at_head",
     "tab": "pull-requests",
     "kind": "quality",
