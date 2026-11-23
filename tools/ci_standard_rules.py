@@ -11,6 +11,7 @@ import os
 import re
 import subprocess
 
+from ci_standard_actions import LOCK_FILE, SHA_RE, local_action_findings, pin_findings
 from ci_standard_yaml import EXPR, ParseError, parse
 
 RULES = ("caller", "pin", "dependabot", "permissions", "concurrency", "timeout", "runner", "pinned", "cache", "no-share", "blacksmith")
@@ -27,11 +28,7 @@ REPO_NAMES = r"(?:git-crafter|code-os)"
 STANDARD = "<owner>/git-crafter/.github/workflows/ci-standard.yml"
 STANDARD_RE = re.compile(r"([A-Za-z0-9][\w.-]*)/(" + REPO_NAMES + r")/\.github/workflows/ci-standard\.yml@")
 LOCAL_STANDARD = "./.github/workflows/ci-standard.yml"
-SHA_RE = re.compile(r"[^@\s]+@[0-9a-f]{40}")
 FULL_SHA = re.compile(r"[0-9a-f]{40}")
-# This repo's own actions: ./ runs the checkout's copy, $/ the copy at the workflow's commit (gh actions-lock).
-OWN = ("./", "$/")
-LOCK_FILE = "actions.lock"
 PIN_LINE_RE = re.compile(r"uses:\s*[\"']?[A-Za-z0-9][\w.-]*/" + REPO_NAMES + r"/\.github/workflows/ci-standard\.yml@([^\s\"'#]+)[\"']?\s*(#\s*(\S+))?")
 NPM_RE = re.compile(r"\b(npm (ci|install)|pnpm install|yarn install)\b")
 PIP_RE = re.compile(r"\bpip3? install\b")
@@ -153,18 +150,6 @@ def blacksmith_findings(where: str, job: dict) -> list:
         name = str(s.get("uses") or "").split("@", 1)[0].lower()
         if name in BLACKSMITH_CACHES:
             found.append(("blacksmith", where, f"{name} keeps storage Blacksmith bills, which no meter here stops"))
-    return found
-
-
-def pin_findings(where: str, steps: list, locked=frozenset()) -> list:
-    """Each step's uses: pinned to a full SHA or locked in actions.lock, a docker:// image to a digest."""
-    found = []
-    for s in steps:
-        uses = str(s.get("uses") or "")
-        if uses and not uses.startswith(OWN + ("docker://",)) and not SHA_RE.fullmatch(uses) and uses not in locked:
-            found.append(("pinned", where, f"{uses} is not pinned to a full commit SHA, and {LOCK_FILE} does not lock it"))
-        if uses.startswith("docker://") and "@sha256:" not in uses:
-            found.append(("pinned", where, f"{uses} is not pinned to a digest"))
     return found
 
 
@@ -399,6 +384,8 @@ def check_repo(repo: str, ask_behind: bool = False) -> dict:
     docs, texts, unread = read_workflows(folder, [f for f in files if f not in config["skip"]])
     house, excepted = house_findings(docs, config["exceptions"], unread, read_lock(folder))
     caller_found, caller = check_caller(repo, docs, texts)
-    findings = caller_found + house + share_findings(repo)
+    local_found, local_unread = local_action_findings(repo, [s for doc in docs.values() for job in doc["jobs"].values() for s in steps_of(job)])
+    findings = caller_found + house + local_found + share_findings(repo)
+    unread += local_unread
     return {"follows": not findings and not unread, "workflows": len(files), "caller": caller, "behind": lag_of(caller, ask_behind),
             "findings": findings, "excepted": excepted, "could_not_check": unread}
