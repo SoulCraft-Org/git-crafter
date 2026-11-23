@@ -35,7 +35,7 @@ flowchart LR
 
 ## Review files
 
-`<tab>-YYYY-MM.yaml`, in config `reviews` (default `quality/reviews`).
+`<tab>-YYYY-MM.yaml`, in the folder config `reviews` names.
 
 | Field | Shape |
 | --- | --- |
