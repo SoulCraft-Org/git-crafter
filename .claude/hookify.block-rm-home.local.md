@@ -3,7 +3,7 @@ name: block-rm-home
 enabled: true
 event: bash
 action: block
-pattern: (?:^|[;&|(\n]|\$\(|`|-c\s+['"])\s*(?:(?:sudo|nohup|nice|command|time|timeout\s+\S+|xargs(?:\s+-\S+)*|env(?:\s+-\S+|\s+\w+=\S*)*)\s+)*(?:[./][^\s;&|]*?/)?(?:rm(?=\s)[^;&|\n]*?(?:\s|['"])(?:~|\$HOME|\$\{HOME\}|/)/*(?:\./+)*(?:\.?\*|\.\[!\.\]\*)?(?=$|[\s;&|)`'">])|find\s+(?:-\S+\s+)*['"]?(?:~|\$HOME|\$\{HOME\}|/)/?['"]?\s[^;&|\n]*?(?:-delete|-exec\s+(?:[./][^\s;&|]*?/)?rm\b))
+pattern: (?:^|[;&|(\n]|\$\(|`|-c\s+['"])\s*(?:(?:sudo|nohup|nice|command|time|timeout\s+\S+|xargs(?:\s+-\S+)*|env(?:\s+-\S+|\s+\w+=\S*)*)\s+)*(?:[./][^\s;&|]*?/)?(?:rm(?=\s)[^;&|\n]*?(?:\s|['"])(?:~|\$HOME|\$\{HOME\}|/)/*(?:\./+)*(?:(?:\.?\*|\.\[[!^]\.\]\*)/*)?(?=$|[\s;&|)`'">])|find\s+(?:-\S+\s+)*['"]?(?:~|\$HOME|\$\{HOME\}|/)/?['"]?\s[^;&|\n]*?(?:-delete|-exec\s+(?:[./][^\s;&|]*?/)?rm\b))
 ---
 
 **Recursive delete of the home folder or the root.** On 2026-11-04 a local harness deleted this account's home folder, and nothing on this Mac backs it up.

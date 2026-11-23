@@ -32,7 +32,7 @@ EXAMPLES = {
                   "find " + HOME_T + " -delete", "find -L " + HOME_T + " -type f -exec /bin/" + RM + " {} ;", "find / -exec " + RM + " -rf {} +",
                   "x=$(" + RM + " -rf " + HOME_T + ")", RM + " -rf " + HOME_T + "/ --no-preserve-root", RM + " -rf -- " + HOME_T + "/*",
                   RM + " -rf " + HOME_T + "/.*", RM + " -rf " + HOME_T + "/.[!.]*", RM + " -rf " + HOME_T + "//", RM + " -rf " + HOME_T + "/./",
-                  RM + " -rf $HOME/.*"],
+                  RM + " -rf $HOME/.*", RM + " -rf " + HOME_T + "/.[^.]*", RM + " -rf " + HOME_T + "/*/", RM + " -rf $HOME/*/"],
         "allow": [RM + " -rf " + HOME_T + "/tmp/x", RM + " -rf dist", RM + " -f " + HOME_T + "/.cache/x.tmp", RM + " -rf /tmp/scratch-123",
                   "find . -name '*.pyc' -delete", "find " + HOME_T + "/tmp/x -delete", "find " + HOME_T + " -name x -print",
                   "git commit -m 'never " + RM + " -rf " + HOME_T + "'", "echo " + RM + " -rf " + HOME_T, "grep -rn " + RM + " rules/",
