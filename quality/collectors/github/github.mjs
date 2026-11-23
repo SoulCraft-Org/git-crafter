@@ -147,7 +147,7 @@ const SECURITY_FEATURE_METRICS = {
     },
   },
   "security.code_quality_on": {
-    source: "gh api repos/{repo}/code-quality/setup (state)",
+    source: "gh api repos/{repo}/code-quality/setup (state); where a read-only token is refused it, the findings call answering (code-quality/findings)",
     async run(L) {
       return feature(L, await L.codeQualityOn(), "code_quality");
     },

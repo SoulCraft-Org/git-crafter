@@ -140,15 +140,23 @@ function securityLoaders(L, { gh, repo }) {
       const sa = await securityAndAnalysis(L);
       return { secret: on(sa.secret_scanning?.status), push: on(sa.secret_scanning_push_protection?.status) };
     }),
-    codeQualityOn: once(async () => (await offWhenDisabled(() => gh.rest(`repos/${repo}/code-quality/setup`)))?.state === "configured"),
+    // Setup needs Administration write, so an App's read-only token is refused it with a 403; that token still reads
+    // the findings, and the findings call answering is then the proof code quality is on.
+    codeQualityOn: once(async () => {
+      try {
+        return (await offWhenDisabled(() => gh.rest(`repos/${repo}/code-quality/setup`)))?.state === "configured";
+      } catch (err) {
+        if (err instanceof GhError && err.status === 403) return (await L.codeQualityOpen()) !== null;
+        throw err;
+      }
+    }),
     // Each feature's alerts or findings, read only while the feature is on.
     codeScanningAlerts: once(() => gh.restAll(`repos/${repo}/code-scanning/alerts?per_page=100`)),
     // hide_secret=true: GitHub sends each alert's secret value unless told not
     // to; none may reach this process. Any secret field is dropped as well.
     secretScanningAlerts: once(async () => (await gh.restAll(`repos/${repo}/secret-scanning/alerts?per_page=100&hide_secret=true`)).map(({ secret, ...alert }) => alert)),
     codeQualityFindings: once(async () => (await L.codeQualityOpen()) ?? []),
-    // The open findings, or null while code quality is off: the findings read says so itself, so an
-    // App's read-only token, which code-quality/setup refuses (it needs Administration write), still reads them.
+    // The open findings, or null while code quality is off: the findings read says so itself.
     codeQualityOpen: once(() => offWhenDisabled(() => gh.restAll(`repos/${repo}/code-quality/findings?state=open&per_page=100`))),
   };
 }
