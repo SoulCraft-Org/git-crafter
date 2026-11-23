@@ -231,20 +231,14 @@ def test_lock_link(wrong: list):
 
 def test_action_link(wrong: list):
     """A local action folder or action.yml that is a link is never read (#200): could not check, never a pass."""
-    for link in (".github/actions/x", X):
-        with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as outside:
-            for rel, text in {**GOOD, **LOCAL}.items():
+    for link, target in ((".github/actions/x", "real"), (X, "real/action.yml")):
+        with tempfile.TemporaryDirectory() as tmp:
+            for rel, text in {**GOOD, **LOCAL, "real/action.yml": ACTION.format(ref="o/a@v1")}.items():
                 os.makedirs(os.path.dirname(os.path.join(tmp, rel)), exist_ok=True)
                 with open(os.path.join(tmp, rel), "w", encoding="utf-8") as fh:
                     fh.write(text)
-            with open(os.path.join(outside, "action.yml"), "w", encoding="utf-8") as fh:
-                fh.write(ACTION.format(ref="o/a@" + "c" * 40))
-            os.makedirs(os.path.join(tmp, ".github", "actions", "x"), exist_ok=True)
-            if link == X:
-                os.symlink(os.path.join(outside, "action.yml"), os.path.join(tmp, X))
-            else:
-                os.rmdir(os.path.join(tmp, link))
-                os.symlink(outside, os.path.join(tmp, link))
+            os.makedirs(os.path.dirname(os.path.join(tmp, link)), exist_ok=True)
+            os.symlink(os.path.join(tmp, target), os.path.join(tmp, link))
             r = check_repo(tmp)
         if r["findings"] or [w for w, _ in r["could_not_check"]] != [".github/actions/x"]:
             wrong.append(f"a local action through a link at {link}: {r['findings']} {r['could_not_check']}")

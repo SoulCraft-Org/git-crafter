@@ -3,7 +3,7 @@
 | What | Holds |
 | --- | --- |
 | A repo's CI | runs through one reusable workflow, [ci-standard.yml](../../.github/workflows/ci-standard.yml), on free and included minutes only (the owner, 2026-11-02) |
-| The workflow's checks | [ci_standard.py](../../tools/ci_standard.py), with exit codes and exceptions, and the modules it imports. All are embedded verbatim. |
+| The workflow's checks | [ci_standard.py](../../tools/ci_standard.py), with exit codes and exceptions, and the modules it imports, all embedded. |
 | Where this page and `rules/compute-detail.md` disagree | the rule wins |
 | Each dated decision, with how to reverse it | [DECISIONS.md](DECISIONS.md) |
 
