@@ -40,6 +40,10 @@
      "why": "agent definitions Claude loads"
     },
     {
+     "glob": "AGENTS.md",
+     "why": "the root file every coding agent reads, under 300 tokens, not a doc read in this repo"
+    },
+    {
      "glob": "templates/agents/AGENTS.md",
      "why": "the AGENTS.md an adopter copies, read by agents, not a doc read in this repo"
     },
@@ -229,6 +233,15 @@
       "templates/ci/wiki.yml",
       "templates/open/README.md"
      ]
+    },
+    {
+     "doc": "AGENTS.md",
+     "area": [
+      "CONTRIBUTING.md",
+      "skills/merging/outside.md",
+      "rules/keys.md"
+     ],
+     "why": "the file names the CONTRIBUTING table, the outside-PR skill and the keys rule; a changed check or a new file elsewhere does not change a row"
     },
     {
      "doc": "templates/agents/AGENTS.md",
