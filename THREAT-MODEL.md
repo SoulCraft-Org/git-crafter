@@ -39,5 +39,6 @@ flowchart LR
 | `branch-cleanup.yml` | `pull_request_target`, closed unmerged | `contents`: deletes the PR's branch; no checkout |
 | `wiki.yml` | Push to main touching `wiki/`, or a manual run | `contents`: the wiki's git repo |
 | `scorecard.yml` analysis | Weekly and by hand, main only | An OIDC token that signs the published score |
+| `codeql.yml` analyze | PRs to main, pushes to main, weekly | `security-events`: the SARIF upload; read-only elsewhere, no build |
 
 Report findings: [SECURITY.md](SECURITY.md).

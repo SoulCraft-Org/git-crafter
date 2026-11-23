@@ -114,3 +114,19 @@ test("a tag pin fails, even one actions.lock records", () => {
   const unkeyed = read(file).replace(/actions\/setup-python@[0-9a-f]{40}/, `actions/setup-python@${"0".repeat(40)}`);
   assert.ok(pinFaults(file, unkeyed, lock).some((f) => f.endsWith("not keyed in actions.lock")));
 });
+
+test("codeql.yml scans the three languages on a pull request, a push to main and weekly, and skips the fixtures", () => {
+  const yml = read(".github/workflows/codeql.yml");
+  const on = yml.slice(yml.indexOf("\non:\n"), yml.indexOf("\npermissions:"));
+  assert.match(on, /^ {2}push:\n {4}branches: \[main\]$/m);
+  assert.match(on, /^ {2}pull_request:\n {4}branches: \[main\]$/m);
+  assert.match(on, /^ {2}schedule:\n {4}- cron: "\d+ \d+ \* \* [0-6]"$/m, "once a week");
+  assert.match(yml, /^ {8}language: \[actions, javascript-typescript, python\]$/m);
+  assert.match(yml, /^permissions:\n {2}contents: read$/m, "read at the top");
+  assert.equal([...yml.matchAll(/^\s+security-events: write$/gm)].length, 1, "the one write sits on the job");
+  assert.match(yml, /^ {10}config-file: \.\/\.github\/codeql\/codeql-config\.yml$/m);
+  assert.doesNotMatch(yml, /^\s+queries:/m, "the default query suite");
+  const config = read(".github/codeql/codeql-config.yml");
+  for (const dir of ["quality/fixtures", "tests/fixtures", "tools/merge_policy_fixtures", "data"]) assert.match(config, new RegExp(`^ {2}- ${dir}/\\*\\*$`, "m"), dir);
+  assert.doesNotMatch(config, /^queries:/m);
+});

@@ -1,0 +1,10 @@
+# CodeQL's configuration for .github/workflows/codeql.yml (docs.github.com, Customizing your advanced setup for code
+# scanning, read 2026-11-23). No `queries:` key: the default query suite, as default setup ran it.
+# paths-ignore keeps test fixtures and generated data out of the analysis: they hold sample code that is never run.
+# data/ is not tracked here (it holds an org's own reads); it is listed so a copy that has it does not scan it.
+name: Git Crafter CodeQL
+paths-ignore:
+  - quality/fixtures/**
+  - tests/fixtures/**
+  - tools/merge_policy_fixtures/**
+  - data/**

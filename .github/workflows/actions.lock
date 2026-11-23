@@ -16,6 +16,10 @@ workflows:
     '.github/workflows/cloud-test.yml':
         - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
         - 'actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1'
+    '.github/workflows/codeql.yml':
+        - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
+        - 'github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066'
+        - 'github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066'
     '.github/workflows/pages.yml':
         - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
         - 'actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510'
@@ -97,6 +101,16 @@ dependencies:
         repo_id: 986421638
         uses:
             - 'oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6'
+    'github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066':
+        ref: 'v4.39.3'
+        commit: 'sha1-33d7b85da1a04171e211befe2c739303b9a4c066'
+        owner_id: 9919
+        repo_id: 259445878
+    'github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066':
+        ref: 'v4.39.3'
+        commit: 'sha1-33d7b85da1a04171e211befe2c739303b9a4c066'
+        owner_id: 9919
+        repo_id: 259445878
     'ossf/scorecard-action@fa7117db83c52d787ae5a89f350999701505d78e':
         ref: 'v2.5.0'
         commit: 'sha1-fa7117db83c52d787ae5a89f350999701505d78e'

@@ -1,0 +1,54 @@
+name: CodeQL
+
+# CodeQL code scanning, advanced setup (docs.github.com, Customizing your advanced setup for code scanning, read
+# 2026-11-23), replacing default setup so .github/codeql/codeql-config.yml can leave out test fixtures and generated
+# data. The same three languages and the default query suite. On every pull request to main, on every push to main,
+# and weekly, so an alert for code no change touched still shows. No build: all three are interpreted languages.
+# Not on a pull request that only changes a Markdown file, which no language here reads.
+# Default setup stays on until the orchestrator switches it off right after this merges (code-scanning/default-setup
+# state not-configured); two setups on one repo upload the same alerts twice.
+# The analysis job holds security-events: write on that job alone, the grant the SARIF upload needs. A forked pull
+# request's token is read-only, so its run skips the upload step's write and fails: advisory, never a required check.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+  schedule:
+    - cron: "41 6 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [actions, javascript-typescript, python]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          category: "/language:${{ matrix.language }}"
