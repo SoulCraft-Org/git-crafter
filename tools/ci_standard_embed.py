@@ -17,7 +17,7 @@ WORKFLOWS = os.path.join(HERE, "..", ".github", "workflows")
 WORKFLOW = os.path.join(WORKFLOWS, "ci-standard.yml")
 # (file beside this one, its heredoc marker): every file the workflow's changes and check commands import.
 EMBEDS = (("ci_standard.py", "CI_STANDARD_PY"), ("ci_standard_yaml.py", "CI_STANDARD_YAML_PY"),
-          ("ci_standard_rules.py", "CI_STANDARD_RULES_PY"))
+          ("ci_standard_actions.py", "CI_STANDARD_ACTIONS_PY"), ("ci_standard_rules.py", "CI_STANDARD_RULES_PY"))
 # ci-overflow.yml's copies: the meter and the lanes it reads (paths beside this file).
 OVERFLOW = (os.path.join(WORKFLOWS, "ci-overflow.yml"),
             (("ci_overflow.py", "CI_OVERFLOW_PY"), (os.path.join("..", ".github", "ci-overflow.json"), "CI_OVERFLOW_JSON")))

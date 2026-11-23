@@ -3,7 +3,7 @@
 | What | Holds |
 | --- | --- |
 | A repo's CI | runs through one reusable workflow, [ci-standard.yml](../../.github/workflows/ci-standard.yml), on free and included minutes only (the owner, 2026-11-02) |
-| The workflow's checks | [ci_standard.py](../../tools/ci_standard.py), with exit codes and exceptions, and the parser and rules it imports. All three are embedded verbatim. |
+| The workflow's checks | [ci_standard.py](../../tools/ci_standard.py), with exit codes and exceptions, and the modules it imports. All are embedded verbatim. |
 | Where this page and `rules/compute-detail.md` disagree | the rule wins |
 | Each dated decision, with how to reverse it | [DECISIONS.md](DECISIONS.md) |
 
@@ -51,7 +51,7 @@ flowchart LR
 | `concurrency` | a group that cancels superseded runs, never a deploy |
 | `timeout` | every job has `timeout-minutes` |
 | `runner` | `ubuntu-slim` or a standard hosted label. Another runner needs an exception with a reason in `<repo>/.github/ci-standard.json` |
-| `pinned` | every remote `uses:` at a full SHA, or a step's reference locked in `.github/workflows/actions.lock` |
+| `pinned` | every remote `uses:`, local actions' steps included, at a full SHA, or a step's reference locked in `.github/workflows/actions.lock` |
 | `cache` | `npm ci` or `pip install` with a setup cache |
 | `no-share` | no per-repo minute guard |
 

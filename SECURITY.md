@@ -36,9 +36,9 @@ flowchart LR
 |---|---|
 | No session reads, prints or stores a key value | [rules/keys.md](rules/keys.md); the deny list's credential, Keychain, clipboard and env rules |
 | Every deny and hookify rule ships block and allow examples, run as a self-test in CI | [tools/claude_deny.json](tools/claude_deny.json), [tools/hookify_check.py](tools/hookify_check.py), [tools/verify.sh](tools/verify.sh) |
-| gitleaks scans each PR's own commits, and on a push to main every ancestor of the pushed commit, pinned by version and SHA-256. A ruleset requires the check to merge | [secret-scan.yml](.github/workflows/secret-scan.yml), [secret_scan.sh](tools/secret_scan.sh) |
-| Workflows default to `contents: read`. Only three jobs write: Pages deploy, the hand-run ruleset probe (throwaway branches) and the Claude review (PR comments). Actions pin by commit SHA; checkouts use `persist-credentials: false`, probe excepted | [.github/workflows/](.github/workflows/) |
-| The repo's Actions policy runs only GitHub-owned actions, and only at a full commit SHA | The repo's Settings, Actions, General (set 2026-11-10) |
+| gitleaks scans each PR's own commits, and on a push to main every ancestor of the pushed commit, pinned by version and SHA-256. Config and ignore list come from the base commit. A ruleset requires the check to merge | [secret-scan.yml](.github/workflows/secret-scan.yml), [secret_scan.sh](tools/secret_scan.sh) |
+| Workflows default to `contents: read`. Six jobs write, each on that job alone. Actions pin by commit SHA; checkouts use `persist-credentials: false`, probe excepted | [.github/workflows/](.github/workflows/); [THREAT-MODEL.md](THREAT-MODEL.md#jobs-that-write) |
+| The repo's Actions policy runs only GitHub-owned and verified creators' actions, only at a full commit SHA | The repo's Settings, Actions, General (set 2026-11-10) |
 | Secret scanning with push protection, CodeQL default setup, Dependabot alerts and security updates, and immutable releases are on. Version updates come weekly, one grouped pull request per ecosystem, after a 14-day cooldown | [dependabot.yml](.github/dependabot.yml); the repo's security settings |
 | The sync tool writes only the paths the manifest and an overlay list, and only on `apply --yes` | [manifest.json](manifest.json), [tools/claude_os_sync.py](tools/claude_os_sync.py) |
 | An org's names live in its own private overlay, never in this repo. The overlay scans this repo's `main` daily for them (goal 0) | [tools/public_scan.py](tools/public_scan.py) |
