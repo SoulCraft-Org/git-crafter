@@ -7,8 +7,9 @@ import { REST, GRAPHQL, PARAMS, REPO, fakeGh, run } from "./github-test-lib.mjs"
 const ID = "actions.cache_storage_pct";
 const ROUTE = `repos/${REPO}/actions/cache/usage`;
 const GIB = 1024 ** 3;
-const read = async ({ usage, params } = {}) => {
-  const rest = usage ? { ...REST, [ROUTE]: usage } : REST;
+const LIMIT_ROUTE = `repos/${REPO}/actions/cache/storage-limit`;
+const read = async ({ usage, params, limit } = {}) => {
+  const rest = { ...REST, ...(usage ? { [ROUTE]: usage } : {}), ...(limit ? { [LIMIT_ROUTE]: limit } : {}) };
   return (await run({ gh: fakeGh({ rest, graphql: GRAPHQL }), ...(params ? { params: { ...PARAMS, ...params } } : {}) }))[ID];
 };
 
@@ -21,6 +22,13 @@ describe("actions.cache_storage_pct", () => {
 
   it("follows params.cache_limit_gb, as a repo that raised its limit sets it", async () => {
     assert.equal((await read({ params: { cache_limit_gb: 30 } })).value, 10);
+  });
+
+  it("takes the limit the repo set in Actions settings over params.cache_limit_gb, and falls back when it cannot read it", async () => {
+    const out = await read({ limit: { max_cache_size_gb: 30 } });
+    assert.equal(out.value, 10);
+    assert.deepEqual(out.detail[1], { label: "limit", value: 30, unit: "GB" });
+    assert.equal((await read({ limit: { __error: { message: "Forbidden", status: 403 } } })).value, 30, "10 GB from params");
   });
 
   it("reads 0, not could_not_check, with no cache stored", async () => {
