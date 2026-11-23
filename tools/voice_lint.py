@@ -44,7 +44,8 @@ they block. The rest are heuristics, so they warn. A project that wants a
 different grade sets it in its rules file, for example
 "severity": {"unattributed-figure": "FAIL"}.
 
-Skipped: fenced code blocks, by every check. Inline code spans and URLs
+Skipped: fenced code blocks, by every check. A fence closes only on the same
+marker character, at least as long as the opening, with nothing after it. Inline code spans and URLs
 are skipped by every check except the two dash checks, which read the raw
 line, so a dash inside backticks or a link still blocks. A file that has
 to show the character belongs on the project's exempt list instead.
@@ -63,7 +64,8 @@ Rules file (JSON, all keys optional):
   }
 
 Project patterns add to the built-ins, they never replace them. Severity
-accepts FAIL, WARN, or off. Requires Python 3.9, standard library only.
+accepts FAIL, WARN, or off, for a pattern as for a built-in check; anything else,
+and any other malformed rules file, is exit 2. Requires Python 3.9, standard library only.
 
 Usage:
   python3 voice_lint.py FILE [FILE ...]
@@ -100,16 +102,12 @@ HEDGE_WORDS = ["arguably", "probably", "perhaps", "maybe", "somewhat", "fairly",
 
 # Phrasing that reads as machine-written. Ported from an earlier voice
 # hook, where it is advisory. Advisory here too: WARN, not FAIL.
-AI_TELLS = [(r"\bdelve\b", "write plainly: look at, dig into"),
-            (r"\btapestry\b", "cut the spatial metaphor"),
-            (r"\bplethora\b", "use many or a lot of"),
-            (r"\bseamless(ly)?\b", "say what actually happens"),
-            (r"\bgame[- ]changer\b", "name the specific change"),
-            (r"\ba testament to\b", "state the fact directly"),
+AI_TELLS = [(r"\bdelve\b", "write plainly: look at, dig into"), (r"\btapestry\b", "cut the spatial metaphor"),
+            (r"\bplethora\b", "use many or a lot of"), (r"\bseamless(ly)?\b", "say what actually happens"),
+            (r"\bgame[- ]changer\b", "name the specific change"), (r"\ba testament to\b", "state the fact directly"),
             (r"it(?:'|’)?s important to note|it is important to note", "just say the thing"),
             (r"in (today(?:'|’)?s|an?) (fast-paced|ever-evolving|rapidly evolving)", "cut the opener"),
-            (r"navigat(e|ing) the complexit", "say what you do"),
-            (r"look no further", "chatbot filler"),
+            (r"navigat(e|ing) the complexit", "say what you do"), (r"look no further", "chatbot filler"),
             (r"^\s*(Certainly|Absolutely|Of course)[,!]", "start with the answer"),
             (r"(^|\s)(in conclusion|in summary|in essence)[,:]", "stop when you are done"),
             (r"it(?:'|’)?s not (just|only) .{1,60}, it(?:'|’)?s", "write the affirmative")]
@@ -134,7 +132,6 @@ SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
 DEFAULT_SEVERITY = {"em-dash": "FAIL", "spaced-en-dash": "FAIL", "double-hyphen-dash": "WARN", "sentence-length": "WARN",
                     "hedge-word": "WARN", "ai-tell": "WARN", "unattributed-figure": "WARN"}
 BUILTIN_CHECKS = tuple(DEFAULT_SEVERITY)
-VALID_SEVERITIES = ("FAIL", "WARN", "off")
 
 
 def build_figure_re(extra_nouns=()):
@@ -162,12 +159,12 @@ def compile_hedges(words):
             for w in words]
 
 
-def _grade(value, default):
-    """FAIL or WARN for a severity value, None for off, and default for any other value."""
+def _grade(value):
+    """FAIL or WARN for a severity value, None for off. ValueError for any other value."""
     upper = str(value).upper()
-    if upper == "OFF":
-        return None
-    return upper if upper in ("FAIL", "WARN") else default
+    if upper not in ("FAIL", "WARN", "OFF"):
+        raise ValueError("severity must be FAIL, WARN, or off, not %r" % (value,))
+    return None if upper == "OFF" else upper
 
 
 class Rules(object):
@@ -181,19 +178,20 @@ class Rules(object):
         self.cues = ATTRIBUTION_CUES + [c.lower() for c in data.get("attribution_cues", [])]
         self.ai_tells = [(re.compile(p, re.IGNORECASE | re.MULTILINE), p, advice) for p, advice in AI_TELLS]
         self.severity = dict(data.get("severity", {}))
+        self.graded = {check: _grade(self.severity.get(check, DEFAULT_SEVERITY[check])) for check in BUILTIN_CHECKS}
         # A double hyphen typed as a dash, spaced between words or joining them; a flag (--help) has no space after.
         # It rides the patterns list, so it reads the line without code spans or URLs.
         self.patterns = [("double-hyphen-dash", sev, re.compile(r"\w\s+--\s+\w|[A-Za-z]--[A-Za-z]"), "use a comma or colon")] if (
-            sev := self.sev("double-hyphen-dash")) else []
+            sev := self.graded["double-hyphen-dash"]) else []
         for i, spec in enumerate(data.get("patterns", [])):
-            sev = _grade(spec.get("severity", "WARN"), "WARN")
+            sev = _grade(spec.get("severity", "WARN"))
             if sev:
                 self.patterns.append((spec.get("id") or "project-rule-%d" % (i + 1), sev,
                                       re.compile(spec["regex"], re.IGNORECASE), spec.get("message", "project rule")))
 
     def sev(self, check):
         """Severity for a built-in check, after project override."""
-        return _grade(self.severity.get(check, DEFAULT_SEVERITY[check]), DEFAULT_SEVERITY[check])
+        return self.graded[check]
 
 
 def load_rules(path, max_words=None):
@@ -204,20 +202,28 @@ def load_rules(path, max_words=None):
         return load_rules_from_obj(json.load(fh), max_words)
 
 
+def _check_shape(data):
+    """ValueError unless severity is an object, patterns a list of objects with a regex string, max_words a positive int."""
+    words, pats = data.get("max_words", DEFAULT_MAX_WORDS), data.get("patterns", [])
+    if not isinstance(data.get("severity", {}), dict) or not isinstance(pats, list) or not all(
+            isinstance(p, dict) and isinstance(p.get("regex"), str) for p in pats):
+        raise ValueError("severity must be an object, and patterns a list of objects each with a regex string")
+    if isinstance(words, bool) or not isinstance(words, (int, float)) or words < 1 or words % 1:
+        raise ValueError("max_words must be a positive integer")
+
+
 def load_rules_from_obj(data, max_words=None):
     """Rules from a parsed rules object, checked as load_rules checks a file. A repo's own lint calls it."""
     if not isinstance(data, dict):
         raise ValueError("rules file must contain a JSON object")
-    for check, value in data.get("severity", {}).items():
-        if check not in BUILTIN_CHECKS:
-            raise ValueError("severity names unknown check %r; known: %s" % (check, ", ".join(BUILTIN_CHECKS)))
-        if str(value).upper() not in [s.upper() for s in VALID_SEVERITIES]:
-            raise ValueError("severity for %r must be FAIL, WARN, or off" % check)
-    for i, spec in enumerate(data.get("patterns", [])):
-        if "regex" not in spec:
-            raise ValueError("patterns[%d] has no regex" % i)
-        re.compile(spec["regex"])
-    return Rules(data, max_words)
+    _check_shape(data)
+    unknown = [check for check in data.get("severity", {}) if check not in BUILTIN_CHECKS]
+    if unknown:
+        raise ValueError("severity names unknown check %r; known: %s" % (unknown[0], ", ".join(BUILTIN_CHECKS)))
+    try:
+        return Rules(data, max_words)
+    except (re.error, TypeError, AttributeError) as exc:  # a bad regex, or a word list holding a non-string
+        raise ValueError("malformed rules file: %s" % exc)
 
 
 def strip_noise(line):
@@ -307,6 +313,19 @@ def _front_matter_end(lines):
     return 0
 
 
+def _fence_state(raw, fence):
+    """(fence after this line, whether the line is fenced) for a line and the open fence, its opening marker such as ~~~ or None.
+
+    A fence opens on three or more backticks or tildes. It closes only on a line of the same character, at least
+    as long, with nothing after it, so a backtick fence inside a ~~~ block stays code.
+    """
+    text = raw.strip()
+    if fence:
+        return (None if text.startswith(fence) and not text.strip(fence[0]) else fence), True
+    m = re.match(r"`{3,}|~{3,}", text)
+    return (m.group(), True) if m else (None, False)
+
+
 def _blocks(text):
     """Yield the lines that are read together, each block a list of (line_no, raw line).
 
@@ -315,12 +334,10 @@ def _blocks(text):
     """
     lines = text.splitlines()
     skip_to = _front_matter_end(lines)
-    in_fence, para = False, []
-    # The closing fence added after the last line ends the last paragraph and yields nothing itself.
-    for line_no, raw in enumerate(lines + ["```"], start=1):
-        fence = raw.strip().startswith(("```", "~~~"))
-        in_fence = in_fence != fence
-        fenced = fence or in_fence
+    fence, para = None, []
+    # The blank line added after the last line ends the last paragraph.
+    for line_no, raw in enumerate(lines + [""], start=1):
+        fence, fenced = _fence_state(raw, fence)
         if raw.strip() and not fenced and not STANDALONE_RE.match(raw) and line_no > skip_to:
             para.append((line_no, raw))
             continue
@@ -359,25 +376,20 @@ def report(path, findings):
 SELF_TEST_BAD = (
     "The corridor is booming " + EM_DASH + " photonics is the future.\n"
     "Light moves data " + EN_DASH + " and it moves it fast. Fiber is cheap -- and getting cheaper.\n"
-    "Colorado has 250 photonics companies and 8,000 workers.\n"
+    "Colorado has 250 photonics companies and 8,000 workers. Let us delve into the tapestry of a seamless future.\n"
     "It is arguably the best place in America to build with light, and this sentence keeps going and going, "
-    "adding clause after clause, idea after idea, well past the point where a reader can hold it in one breath.\n"
-    "Let us delve into the tapestry of a seamless future.\n")
+    "adding clause after clause, idea after idea, well past the point where a reader can hold it in one breath.\n")
 
 # One 31-word sentence hard-wrapped across three lines; no single line is long.
-SELF_TEST_WRAPPED_BAD = ("The corridor keeps growing because every new lab brings\n"
-                         "more suppliers, more students, more founders, more customers, more partners and more\n"
-                         "investors than anyone planned for in the first year of work.\n")
+SELF_TEST_WRAPPED_BAD = ("The corridor keeps growing because every new lab brings more suppliers, more students, more\n"
+                         "founders, more customers, more partners and more investors than anyone planned for in the first year of work.\n")
 
 # The same paragraph shape with short sentences; wrapping alone must not warn.
-SELF_TEST_WRAPPED_GOOD = ("The corridor keeps growing. Every new lab brings\n"
-                          "more suppliers and more students. Founders follow\n"
-                          "the customers.\n")
+SELF_TEST_WRAPPED_GOOD = "The corridor keeps growing. Each new lab brings\nmore suppliers and students. Founders follow the customers.\n"
 
-SELF_TEST_CLEAN = ("The corridor builds computing on light.\n"
-                   "The industry association has cited on the order of 250 photonics "
-                   "companies statewide; confirm the current figure before publishing.\n"
-                   "Reaching 10,000 photonics workers is a goal, not a count.\n"
+SELF_TEST_CLEAN = ("The corridor builds computing on light. Reaching 10,000 photonics workers is a goal, not a count.\n"
+                   "The industry association has cited on the order of 250 photonics companies statewide; "
+                   "confirm the current figure before publishing.\n"
                    # A bare flag and a flag in code must not read as a dash.
                    "Count signed letters rather than estimates. Pass --help, or `git push --force-with-lease`.\n"
                    # An unspaced en dash in a range must not match. spaced-en-dash blocks,
@@ -398,7 +410,6 @@ DOC_TABLE_RE = re.compile(r"^  ([a-z][a-z-]+)\s+(FAIL|WARN)\s", re.MULTILINE)
 SELF_TEST_RULES = {"max_words": 30, "severity": {"hedge-word": "off"}, "patterns": [
     {"id": "banned-term", "severity": "FAIL", "regex": r"\bsynergy\b", "message": "say what actually happens"}]}
 
-SELF_TEST_PROJECT = "We unlocked real synergy this quarter.\n"
 
 
 def _graded(findings, check_id):
@@ -406,16 +417,12 @@ def _graded(findings, check_id):
     return set(f[1] for f in findings if f[2] == check_id)
 
 
-def _rejected(data):
-    """Whether load_rules refuses data, written out as a rules file."""
-    with tempfile.TemporaryDirectory() as tmp:
-        path = pathlib.Path(tmp, "rules.json")
-        path.write_text(json.dumps(data), encoding="utf-8")
-        try:
-            load_rules(str(path))
-        except ValueError:
-            return True
-    return False
+def _exit(text=b"ok.\n", rules=None):
+    """The exit code main gives a Markdown file holding these bytes, with a rules file of this JSON when given."""
+    with tempfile.TemporaryDirectory() as tmp, contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
+        md, cfg = pathlib.Path(tmp, "a.md"), pathlib.Path(tmp, "rules.json")
+        md.write_bytes(text), cfg.write_text(json.dumps(rules), encoding="utf-8")
+        return main([str(md)] + ([] if rules is None else ["--rules", str(cfg)]))
 
 
 def _summary():
@@ -452,10 +459,13 @@ def sample_checks():
         ('a bare "rather" still flags as a hedge', bool(_graded(lint_text("The plan is rather ambitious.\n"), "hedge-word"))),
         ("a dash in inline code or a link still flags",
          _graded(raw, "em-dash") == {"FAIL"} and _graded(raw, "spaced-en-dash") == {"FAIL"}),
+        # A ~~~ block that shows a backtick fence stays open; a fence closes only on its own character, at its length or more.
+        ("a fence closes only on its own character and length", all(
+            _graded(lint_text(t + "Run a " + EM_DASH + " b.\n"), "em-dash") == want for t, want in (
+                ("~~~\n```\n", set()), ("````\n```\n", set()), ("~~~\n```\n~~~\n", {"FAIL"}), ("```\ncode\n````\n", {"FAIL"})))),
         ("a fenced block skips every check", not lint_text("```\nRun a " + EM_DASH + " b " + EN_DASH + " c.\n```\n")),
         ("docstring table matches the default grades",
-         dict(DOC_TABLE_RE.findall(__doc__)) == SELF_TEST_EXPECTED if __doc__ else None),
-    ]
+         dict(DOC_TABLE_RE.findall(__doc__)) == SELF_TEST_EXPECTED if __doc__ else None)]
 
 
 def rules_checks():
@@ -467,16 +477,20 @@ def rules_checks():
         ("a rules file regrades a built-in default in either direction",
          _graded(regraded, "spaced-en-dash") == {"WARN"} and _graded(regraded, "unattributed-figure") == {"FAIL"}),
         ("project pattern flagged at its declared severity",
-         "FAIL" in _graded(lint_text(SELF_TEST_PROJECT, Rules(SELF_TEST_RULES)), "banned-term")),
+         "FAIL" in _graded(lint_text("We unlocked real synergy this quarter.\n", Rules(SELF_TEST_RULES)), "banned-term")),
         ("severity off suppresses a built-in check", not _graded(off, "hedge-word")),
         ("project rules do not replace the built-ins", bool(_graded(off, "em-dash"))),
-        ("unknown check name rejected", _rejected({"severity": {"no-such-check": "off"}})),
+        # Each of these is a rules error, exit 2, not a traceback and exit 1: a pattern severity outside FAIL, WARN and off.
+        ("a malformed rules file is rejected, an unknown check name too", all(_exit(rules=d) == 2 for d in (
+            {"severity": {"no-such-check": "off"}}, {"patterns": [{"regex": "x", "severity": "FAILL"}]}, {"patterns": [{"regex": "("}]},
+            {"severity": []}, {"max_words": "30"}, {"patterns": ["x"]}, {"hedge_words": [1]}, {"attribution_cues": [1]}, {"figure_nouns": 5}))),
+        ("an integral float max_words loads as before", _exit(rules={"max_words": 30.0}) == 0),
+        ("a file that is not UTF-8 is a read error, exit 2", _exit(b"caf\xe9 ok.\n") == 2),
         ("an in-memory rules object loads like a file",
-         _graded(lint_text(SELF_TEST_PROJECT, load_rules_from_obj(SELF_TEST_RULES)), "banned-term") == {"FAIL"}),
+         _graded(lint_text("We unlocked real synergy this quarter.\n", load_rules_from_obj(SELF_TEST_RULES)), "banned-term") == {"FAIL"}),
         # The run's last line is the summary docs.lint_warn reads: every file,
         # and the findings of all of them.
-        ("summary line closes the run", code == 1 and last == want),
-    ]
+        ("summary line closes the run", code == 1 and last == want)]
 
 
 def self_test():
@@ -511,7 +525,7 @@ def main(argv=None):
 
     try:
         rules = load_rules(args.rules, args.max_words)
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError) as exc:  # UnicodeDecodeError and json.JSONDecodeError are ValueErrors
         print("rules error: %s" % exc, file=sys.stderr)
         return 2
 
@@ -520,7 +534,7 @@ def main(argv=None):
         try:
             with open(path, encoding="utf-8") as fh:
                 text = fh.read()
-        except OSError as exc:
+        except (OSError, UnicodeDecodeError) as exc:
             print("%s: cannot read (%s)" % (path, exc), file=sys.stderr)
             return 2
         findings = lint_text(text, rules)
