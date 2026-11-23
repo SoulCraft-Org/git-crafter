@@ -162,6 +162,24 @@
    "gaps": "A GET of pulls/N/merge is blocked too."
   },
   {
+   "id": "merge-tools-literal-sha",
+   "replaces": [],
+   "why": "tools/merge_pr.mjs and tools/merge_pr_stack.mjs pin the head the review passed; a $ or backtick reads the 3f2a9c1d8e7b6a5f4e3d2c1b0a9f8e7d6c5b4a39 at merge time and drops the pin.",
+   "deny": ["Bash(*merge_pr*$*)", "Bash(*merge_pr*`*)"],
+   "blocks": [
+    "node tools/merge_pr.mjs --repo o/r --pr 12 --sha \"$(gh api repos/o/r/pulls/12 --jq .head.sha)\" --followups none",
+    "node tools/merge_pr.mjs --repo o/r --pr 12 --sha $3f2a9c1d8e7b6a5f4e3d2c1b0a9f8e7d6c5b4a39 --followups none",
+    "node tools/merge_pr.mjs --repo o/r --pr 12 --sha `git rev-parse HEAD` --followups none",
+    "node tools/merge_pr_stack.mjs --repo o/r --prs 1:$A,2:$B --followups none",
+    "node tools/merge_pr_stack.mjs --repo o/r --prs \"1:$(git rev-parse a),2:$(git rev-parse b)\" --followups none"
+   ],
+   "allows": [
+    "node tools/merge_pr.mjs --repo o/r --pr 12 --sha 3f2a9c1d8e7b6a5f4e3d2c1b0a9f8e7d6c5b4a39 --followups none",
+    "node tools/merge_pr_stack.mjs --repo o/r --prs 1:3f2a9c1d8e7b6a5f4e3d2c1b0a9f8e7d6c5b4a39,2:3f2a9c1d8e7b6a5f4e3d2c1b0a9f8e7d6c5b4a39 --followups none --check"
+   ],
+   "gaps": "Any command naming merge_pr with a $ or backtick is blocked, a grep of the script included. A short or wrong literal 3f2a9c1d8e7b6a5f4e3d2c1b0a9f8e7d6c5b4a39 passes here; the tool itself requires 40 hex."
+  },
+  {
    "id": "gh-api-doors",
    "replaces": ["gh-api-write-door", "gh-api-graphql-write-door"],
    "why": "These API writes move or delete a ref, merge or commit without a push, delete a protection rule, or set a secret.",
