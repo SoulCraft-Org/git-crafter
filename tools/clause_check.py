@@ -4,7 +4,8 @@
 tools/protected_clauses.json lists each clause and the file that must hold
 it. Matching ignores case, line wraps and repeated spaces, so rewrapping a
 paragraph passes and dropping the words fails. Exit 0 when every clause is
-present, 1 when one is missing, 3 when a listed file cannot be read.
+present, 1 when one is missing, 3 when a listed file cannot be read (including
+one that is not UTF-8).
 
   python3 -I tools/clause_check.py            check this checkout
   python3 -I tools/clause_check.py --self-test
@@ -31,7 +32,7 @@ def missing(clauses, read):
         if f not in cache:
             try:
                 cache[f] = norm(read(f))
-            except OSError:
+            except (OSError, UnicodeDecodeError):
                 cache[f] = None
                 unread.append(f)
         if cache[f] is not None and norm(c["text"]) not in cache[f]:
@@ -82,6 +83,11 @@ def self_test():
         raise OSError("no file")
     if missing(clauses[:1], boom)[1] != [clauses[0]["file"]]:
         print("self-test: an unreadable file was not reported")
+        ok = False
+    def not_utf8(path):
+        raise UnicodeDecodeError("utf-8", b"\xe9", 0, 1, "invalid continuation byte")
+    if missing(clauses[:1], not_utf8)[1] != [clauses[0]["file"]]:
+        print("self-test: a file that is not UTF-8 was not reported")
         ok = False
     print("clause_check self-test: %s (%d clauses)" % ("ok" if ok else "FAIL", len(clauses)))
     return 0 if ok else 1

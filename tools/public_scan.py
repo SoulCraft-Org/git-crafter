@@ -20,6 +20,8 @@ Exit 0 nothing found, 1 a finding, 2 usage error, 3 could not read TREE or TERMS
 
 from __future__ import annotations
 
+import contextlib
+import io
 import os
 import re
 import sys
@@ -146,6 +148,12 @@ def self_test() -> int:
         want = [("rules/bad.md", 1, 1), ("rules/bad.md", 2, 2), ("rules/bad.md", 4, 2)]
         if got != want:
             wrong.append(f"terms: {got}, want {want}")
+        with open(os.path.join(tree, "latin.txt"), "wb") as fh:
+            fh.write(b"Alice\n\xe9\n")
+        with contextlib.redirect_stderr(io.StringIO()):
+            got = main(["terms", tree, os.path.join(tree, "latin.txt")])
+        if got != 3:
+            wrong.append(f"terms file that is not UTF-8: exit {got}, want 3")
     for w in wrong:
         print(f"public-scan self-test: {w}")
     print(f"public-scan self-test: {'FAIL' if wrong else 'PASS'}")
@@ -166,6 +174,9 @@ def main(argv: list) -> int:
         hits = generic(argv[1]) if argv[0] == "generic" else term_scan(argv[1], argv[2])
     except OSError as exc:
         print(f"public-scan: could not read: {exc.strerror}", file=sys.stderr)
+        return 3
+    except UnicodeDecodeError as exc:
+        print(f"public-scan: could not read {argv[2]}: {exc.reason}", file=sys.stderr)
         return 3
     return report(hits, argv[0])
 
