@@ -21,5 +21,10 @@
   "goal": 1,
   "near": 24,
   "goal_source": "Git Crafter goal: pages.yml publishes on every push to main (its build job's timeout is 15 minutes), so the latest deploy is live within an hour of its merge; near: DORA's elite lead time, one day (2024 Accelerate State of DevOps Report, p. 13)"
+ },
+ {
+  "id": "deploy.latest_restore_hours",
+  "drop": true,
+  "goal_source": "Git Crafter: dropped because it reads only after a failed deploy, hours from the failure to the next good deploy, and has no reading otherwise; deploy.latest_failed already counts a failure (2026-11-23)"
  }
 ]

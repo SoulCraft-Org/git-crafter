@@ -9,7 +9,8 @@ Usage:
         label, minutes, reason and artifact to GITHUB_OUTPUT (stdout when unset). With CI_OVERFLOW_SAVE, writes the
         meter's state to FILE for upload-artifact. With CI_POOL, the org's reading from tools/ci_pool.py, no token
         is used: the lane's label only while that reading is fresh, whole, has Blacksmith's own cost and is under its
-        stop.
+        stop. CI_POOL_STOP, the org variable the meter sets to 1 at its stop and 0 below it, wins over any CI_POOL: a
+        repo's own CI_POOL shadows the org's in vars, but not this.
     ci_overflow.py --self-test
         Runs tools/tests/test_ci_overflow.py: under, at and over the stop, an unreadable API, off, a backlog, a repo
         off the lane, a workflow list, and ci-standard.yml's lane labels against the config.
@@ -287,6 +288,8 @@ def decide(env: dict, cfg: dict, api, now: datetime) -> tuple:
     if isinstance(admitted, str):
         return {**off, "reason": admitted}, None
     name, lane, label, cfg = admitted
+    if env.get("CI_POOL_STOP", "").strip() == "1":  # the org's own flag: a repo's CI_POOL shadows vars.CI_POOL, not this
+        return {**off, "reason": f"the org's pool reading says stop (CI_POOL_STOP); {fallback}"}, None
     if env.get("CI_POOL", "").strip():
         return pooled(env["CI_POOL"], label, fallback, now), None
     start = period_start(now, lane["cycle_day"])

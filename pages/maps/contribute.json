@@ -2,7 +2,7 @@
  "id": "contribute",
  "name": "Contribute",
  "why": "An outside contribution, from idea to production, with AI agents reviewing, merging and deploying it",
- "ideal": "An outside idea becomes a merged change within a day, no fork code runs with a secret, and no person waits in the loop.",
+ "ideal": "An outside idea becomes a merged change within a day. No fork code runs with a secret. No person waits in the loop.",
  "sources": [
   {
    "title": "GitHub Docs: About discussions",
@@ -36,11 +36,12 @@
   {
    "id": "idea",
    "name": "Idea",
+   "icon": "mail",
    "tools": [
     "GitHub Discussions",
     "Issue forms"
    ],
-   "rule": "An idea starts in Discussions; an accepted one becomes a typed issue through a form.",
+   "rule": "An idea starts in Discussions. An accepted one becomes a typed issue through a form.",
    "rule_ref": "https://docs.github.com/en/discussions/collaborating-with-your-community-using-discussions/about-discussions",
    "metric": "issues.intake_ready",
    "at": [
@@ -51,6 +52,7 @@
   {
    "id": "approve",
    "name": "Approve run",
+   "icon": "shield",
    "tools": [
     "Fork run approval",
     "gh pr diff"
@@ -66,11 +68,12 @@
   {
    "id": "review",
    "name": "Review",
+   "icon": "review",
    "tools": [
     "Pull request reviews",
     "gh pr view and gh pr diff only"
    ],
-   "rule": "Two reviews read the diff as data; fork code runs only in CI, within its runner budget.",
+   "rule": "Two reviews read the diff as data. Fork code runs only in CI, within its runner budget.",
    "rule_ref": "https://github.com/SoulCraft-Org/git-crafter/blob/main/skills/merging/outside.md#safety",
    "metric": "ci.latest_pr_dollars",
    "at": [
@@ -81,11 +84,12 @@
   {
    "id": "merge",
    "name": "Merge",
+   "icon": "merge",
    "tools": [
     "merge_policy.py --pr N --sha",
     "gh pr merge --match-head-commit"
    ],
-   "rule": "Content paths merge at the checked head SHA; agents never approve a pull request.",
+   "rule": "Content paths merge at the checked head SHA. Agents never approve a pull request.",
    "rule_ref": "https://github.com/SoulCraft-Org/git-crafter/blob/main/skills/merging/outside.md#merge",
    "metric": "pull_requests.green_to_merge_minutes",
    "at": [
@@ -96,6 +100,7 @@
   {
    "id": "rebuild",
    "name": "Rebuild",
+   "icon": "build",
    "tools": [
     "The orchestrator's own branch",
     "Co-authored-by trailer"
@@ -111,11 +116,12 @@
   {
    "id": "deploy",
    "name": "Deploy",
+   "icon": "deploy",
    "tools": [
     "deploy-gate.yml",
     "Rollback"
    ],
-   "rule": "An outside commit soaks on staging, then deploys; a failed live check rolls back.",
+   "rule": "An outside commit soaks on staging, then deploys. A failed live check rolls back.",
    "rule_ref": "https://github.com/SoulCraft-Org/git-crafter/blob/main/templates/ci/deploy-gate.yml",
    "metric": "deploy.failure_rate_last10",
    "at": [

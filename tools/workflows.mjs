@@ -290,7 +290,7 @@ export function repoFlow(files, stats) {
     const wf = readWorkflow(f.text);
     for (const e of flowEvents(wf)) (STAGE_OF[e] ? detail : apart).push(flowNode(f, wf, e, stats));
   }
-  detail.push({ label: "Pinned review and merge", value: null, unit: "minutes", stage: "review", kind: "manual", runs: "The orchestrator reviews the head SHA, pins a review to it, and merges with gh pr merge --match-head-commit and that literal SHA", file: "code-os rules/delegation.md", pass_rate: null });
+  detail.push({ label: "Pinned review and merge", value: null, unit: "minutes", stage: "review", kind: "manual", runs: "The orchestrator reviews the head SHA, pins a review to it, and merges with gh pr merge --match-head-commit and that literal SHA", file: "Git Crafter rules/delegation.md", pass_rate: null });
   return { detail, apart };
 }
 

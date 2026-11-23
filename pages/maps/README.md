@@ -1,6 +1,6 @@
 # Process maps
 
-The template's process maps, one `<id>.json` each. Every step names a tool, a rule and one metric on the repo's Quality page. Rest of the format: [quality/README.md](../../quality/README.md).
+The template's process maps, one `<id>.json` each. Every step names a tool, a rule and one metric on the repo's Quality page. Rest of the format: `comment_format` in [maps.json](../../maps.json), checked by [checks.mjs](../checks.mjs).
 
 ```mermaid
 flowchart LR
@@ -12,7 +12,7 @@ flowchart LR
 
 | Map | Steps, each scored by one template metric |
 | --- | --- |
-| [delivery.json](delivery.json) | plan, build, check, review, merge |
+| [delivery.json](delivery.json) | plan, build, ci, review, merge |
 | [board.json](board.json) | card, split, start, finish, done, watch |
 | [deploy.json](deploy.json) | build, ship, verify, restore |
 | [adopt.json](adopt.json) | copy, require, update, check, current |
@@ -29,7 +29,7 @@ flowchart LR
 | at most 6 steps | `MAX_STEPS` |
 | a rule of 20 words at most | `MAX_RULE_WORDS`, `checkLibrary` only |
 | `rule_ref` an https link | `checkLibrary` |
-| a step of each kind: quality, speed and consumption | `checkLibrary`; `tests/pages-build.test.mjs` for a repo's own maps |
+| a step of each kind: quality, speed and consumption | `checkLibrary`; `tests/pages-docs.test.mjs` for a repo's own maps |
 | `at: [col, row]` on every step draws a fork; no two steps share a cell | `checkMaps` |
 | `time_bar`, optional: one metric whose detail rows are step hours, drawn under the trail as one labelled stacked bar. A step it could not read is listed, never a zero | `checkMaps`, `tests/pages-build.test.mjs` |
 | a step's value comes from the repo's own Quality run when the page builds (`withOwnRun`), never an older copy in `data/org.json`: no step to re-run | `tests/pages-build.test.mjs` |
