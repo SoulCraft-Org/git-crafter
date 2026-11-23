@@ -44,7 +44,8 @@ they block. The rest are heuristics, so they warn. A project that wants a
 different grade sets it in its rules file, for example
 "severity": {"unattributed-figure": "FAIL"}.
 
-Skipped: fenced code blocks, by every check. Inline code spans and URLs
+Skipped: fenced code blocks, by every check. A fence closes only on the same
+marker character, at least as long as the opening, with nothing after it. Inline code spans and URLs
 are skipped by every check except the two dash checks, which read the raw
 line, so a dash inside backticks or a link still blocks. A file that has
 to show the character belongs on the project's exempt list instead.
@@ -63,7 +64,8 @@ Rules file (JSON, all keys optional):
   }
 
 Project patterns add to the built-ins, they never replace them. Severity
-accepts FAIL, WARN, or off. Requires Python 3.9, standard library only.
+accepts FAIL, WARN, or off, for a pattern as for a built-in check; anything else,
+and any other malformed rules file, is exit 2. Requires Python 3.9, standard library only.
 
 Usage:
   python3 voice_lint.py FILE [FILE ...]
