@@ -47,6 +47,8 @@ name: pages
 # and hands the label to action, action-collect, action-render and build until the lane's stop, then ubuntu-latest.
 # Anything it cannot read is ubuntu-latest too. deploy stays on GitHub: it holds pages: write and an OIDC token.
 # gh-replay (#38): action-collect and build replay main's public reads; no collector changed shows main's scored run.
+# A main run also reuses its last save's reads that cannot change (finished runs' jobs, commits, annotations), so it spends
+# about a third fewer requests; the "GitHub requests by read" notice names the families that still read live.
 on:
   push:
     branches: [main]

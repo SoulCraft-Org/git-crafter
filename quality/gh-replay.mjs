@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 import { appendFileSync, copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-const [MAX_AGE_H, ISO] = [24, /\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?Z?)?/g];
+const [MAX_AGE_H, SETTLE_MS, ISO] = [24, 30 * 60_000, /\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?Z?)?/g];
 // The method flag in each spelling gh's flag parser takes: -X GET, -XGET, -X=GET, -iXGET, --method GET, --method=GET.
 const METHOD = /^(?:--method(?:=|$)|-[a-zA-Z]*X=?)(.*)$/s;
 const methodOf = (args) => args.reduce((m, a, i) => { const x = METHOD.exec(a); return x ? x[1] || (args[i + 1] ?? "") : m; }, "GET");
@@ -25,6 +25,22 @@ export function keyOf(args, now = Date.now()) {
   const rel = args.map((a) => a.replace(ISO, (m) => (m.includes("T") ? `@${Math.round((Date.parse(m) - now) / 3_600_000)}h` : `@${(Date.parse(m) - day) / 86_400_000}d`)));
   return createHash("sha256").update(JSON.stringify(rel)).digest("hex");
 }
+// Reads that cannot change once taken: a commit's content, a finished job's annotations, and the jobs or attempt of a run that
+// ended SETTLE_MS ago. Main's next run reuses them from its last save, at most MAX_AGE_H old, so a rerun shows within a day.
+const [JOBS, ATTEMPT, ANNOTATIONS, COMMIT] = [/\/actions\/runs\/\d+\/jobs\?per_page=100$/, /\/actions\/runs\/\d+\/attempts\/1$/, /\/check-runs\/\d+\/annotations$/, /\/git\/commits\/[0-9a-f]{40}$/];
+/** Whether the read `args` that printed `out` is final: a plain `gh api` route of those four kinds whose answer holds a finished run, job or commit. */
+export function immutable(args, out, now = Date.now()) {
+  const route = args.length === 2 && args[0] === "api" && /^repos\/[^/?]+\/[^/?]+\//.test(args[1]) ? args[1] : "";
+  let body = null;
+  try { body = route && JSON.parse(out); } catch { body = null; }
+  const ended = (x) => x?.status === "completed" && now - Date.parse(x.completed_at ?? x.updated_at) > SETTLE_MS;
+  if (COMMIT.test(route)) return typeof body?.sha === "string";
+  if (ANNOTATIONS.test(route)) return Array.isArray(body);
+  if (JOBS.test(route)) return Array.isArray(body?.jobs) && body.jobs.length > 0 && body.total_count === body.jobs.length && body.jobs.every(ended);
+  return ATTEMPT.test(route) && ended(body);
+}
+/** The read's name for the by-read tally: its route past the repo, each number or commit as {}, no query. */
+export const familyOf = (args) => (args[1] ?? "").replace(/^\/?repos\/[^/]+\/[^/]+\/?/, "").replace(/\?.*$/, "").split("/").map((s) => (/^(\d+|[0-9a-f]{40})$/.test(s) ? "{}" : s)).join("/") || "repo";
 /** The shim gh, written into `dir`. */
 export const writeShim = (dir) => writeFileSync(path.join(dir, "gh"), `#!/bin/sh\nexec node "${fileURLToPath(import.meta.url)}" shim "$@"\n`, { mode: 0o755 });
 // A `.` or `..` segment, or an encoded dot, could climb out of an admitted family (#42), so PUBLIC refuses each.
@@ -48,12 +64,15 @@ function live(args, env) {
   return { stdout: r.stdout, stderr: err.replace(TRACE, ""), status: r.status, pages: err.match(/^\* Request to https:\/\/api\.github\.com\//gm)?.length || pagesOf(args, r.stdout) };
 }
 const ran = (saved, args, env) => (saved ? { stdout: Buffer.from(saved.out, "base64"), stderr: saved.err, status: saved.status } : live(args, env));
+// A pull request replays any read of main's save; a main run replays only the immutable ones its last save carries, under MAX_AGE_H old.
 // A save that cannot be read is read live and logged, so the PR run passes and report warns (#42).
 function loadSave(file, env) {
-  if (!file || env.GH_REPLAY_MODE !== "replay" || !existsSync(file)) return null;
+  const record = env.GH_REPLAY_MODE === "record" && env.GH_REPLAY_PREV;
+  const from = file && (record ? path.join(env.GH_REPLAY_PREV, "r", path.basename(file)) : env.GH_REPLAY_MODE === "replay" && file);
+  if (!from || !existsSync(from)) return null;
   let saved = null;
-  try { saved = JSON.parse(readFileSync(file, "utf8")); } catch { saved = null; }
-  if (typeof saved?.out === "string" && typeof saved.err === "string" && Number.isInteger(saved.status)) return saved;
+  try { saved = JSON.parse(readFileSync(from, "utf8")); } catch { saved = null; }
+  if (typeof saved?.out === "string" && typeof saved.err === "string" && Number.isInteger(saved.status)) return record && !(saved.immutable === true && Date.now() - saved.at < MAX_AGE_H * 3_600_000) ? null : saved;
   log(env, "unreadable", 1);
   return null;
 }
@@ -65,7 +84,10 @@ function shim(args, env) {
   if (r.error) return process.stderr.write(`gh-replay: ${r.error.message}\n`), 127;
   process.stdout.write(r.stdout), process.stderr.write(r.stderr);
   if (kindOf(args)) log(env, saved ? "replayed" : kindOf(args), saved ? 1 : r.pages);
-  if (keep(file, env, r)) writeFileSync(`${file}.${process.pid}`, JSON.stringify({ args, out: r.stdout.toString("base64"), err: r.stderr.toString(), status: r.status })), renameSync(`${file}.${process.pid}`, file);
+  if (kindOf(args) === "rest" && !saved) appendFileSync(`${env.GH_REPLAY_DIR}.reads`, `${familyOf(args)} ${r.pages}\n`);
+  // A carried read keeps its first `at`, so it is read live again once a day.
+  const final = saved?.immutable ? { immutable: true, at: saved.at } : r.status === 0 && immutable(args, r.stdout.toString()) ? { immutable: true, at: Date.now() } : {};
+  if (keep(file, env, r)) writeFileSync(`${file}.${process.pid}`, JSON.stringify({ args, out: r.stdout.toString("base64"), err: r.stderr.toString(), status: r.status, ...final })), renameSync(`${file}.${process.pid}`, file);
   return r.status ?? 1;
 }
 /** The GitHub requests notice: live REST and GraphQL calls, and reads replayed from main, summed from the log `rows`. */
@@ -77,6 +99,12 @@ export function summary(rows, mode) {
 export function saveRuns(artifacts, now = Date.now(), limit = 2) {
   const fresh = artifacts.filter((a) => !a.expired && a.workflow_run?.head_branch === "main" && now - Date.parse(a.created_at) < MAX_AGE_H * 3_600_000);
   return fresh.sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).slice(0, limit).map((a) => String(a.workflow_run.id));
+}
+/** The `n` most-read families from the `.reads` log's `rows` ([family, requests]), as "family requests, …". */
+export function topReads(rows, n = 6) {
+  const sum = new Map();
+  for (const [family, k] of rows) sum.set(family, (sum.get(family) ?? 0) + Number(k));
+  return [...sum].sort((a, b) => b[1] - a[1]).slice(0, n).map(([family, k]) => `${family} ${k}`).join(", ");
 }
 /** Download main's newest save into `dir`; a failed run's save has reads but no scored run, so the next one tops it up. Return the run ids and the REST requests spent. */
 function fetchSave(real, dir, env) {
@@ -104,10 +132,12 @@ function setup(env) {
   const pr = JSON.parse(readFileSync(env.GITHUB_EVENT_PATH, "utf8")).pull_request;
   const mode = pr ? "replay" : env.GITHUB_EVENT_NAME === "push" && env.GITHUB_REF === "refs/heads/main" ? "record" : "count";
   mkdirSync(path.join(dir, "r"), { recursive: true }), mkdirSync(`${dir}-bin`), writeShim(`${dir}-bin`);
-  const [id, n] = pr ? fetchSave(real, dir, env) : ["", 0];
-  if (pr) log({ GH_REPLAY_DIR: dir }, "rest", n);
+  // A main run keeps the last save apart, to carry its immutable reads forward; a pull request replays it whole.
+  const prev = mode === "record" ? `${dir}-prev` : "";
+  const [id, n] = pr || prev ? fetchSave(real, prev || dir, env) : ["", 0];
+  if (pr || prev) log({ GH_REPLAY_DIR: dir }, "rest", n);
   const live = [env.GITHUB_SHA, env.GITHUB_RUN_ID, pr?.head.sha, ...(pr ? ["pulls/", "issues/", "pull/"].map((p) => p + pr.number) : [])];
-  appendFileSync(env.GITHUB_ENV, `GH_REPLAY_REAL=${real}\nGH_REPLAY_DIR=${dir}\nGH_REPLAY_MODE=${mode}\nGH_REPLAY_LIVE=${live.filter(Boolean).join(",")}\n`);
+  appendFileSync(env.GITHUB_ENV, `GH_REPLAY_REAL=${real}\nGH_REPLAY_DIR=${dir}\nGH_REPLAY_MODE=${mode}\nGH_REPLAY_LIVE=${live.filter(Boolean).join(",")}\n${prev && id ? `GH_REPLAY_PREV=${prev}\n` : ""}`);
   appendFileSync(env.GITHUB_PATH, `${dir}-bin\n`);
   appendFileSync(env.GITHUB_OUTPUT, `latest=${existsSync(path.join(dir, "latest.json"))}\n`);
   console.log(`gh-replay: ${mode}; main save under ${MAX_AGE_H} h old: ${id ? `run ${id}` : "none"}`);
@@ -118,6 +148,8 @@ function report(env) {
   // A failed run still saves its reads, never its scored run: a gate miss or a read cut short would show as main's scores.
   if (env.GH_REPLAY_MODE === "record" && env.GH_REPLAY_JOB_STATUS === "success" && existsSync("data/quality/latest.json")) copyFileSync("data/quality/latest.json", path.join(env.GH_REPLAY_DIR, "latest.json"));
   console.log(`::notice title=GitHub requests::${summary(rows, env.GH_REPLAY_MODE)}`);
+  const reads = `${env.GH_REPLAY_DIR}.reads`;
+  if (existsSync(reads)) console.log(`::notice title=GitHub requests by read::${topReads(readFileSync(reads, "utf8").trim().split("\n").map((l) => l.split(" ")))}`);
   const bad = rows.filter((r) => r[0] === "unreadable").length;
   if (bad) console.log(`::warning title=GitHub requests::${bad} saved reads from main were unreadable, so each ran live`);
 }
