@@ -23,7 +23,7 @@ that disagrees.
 | GitHub repos | create, publish or archive one. |
 | One-way deletes | a repo, Cloudflare resource, ruleset, branch protection or unread repo secret. Read the target and check nothing uses it (the owner, 2026-11-10). |
 | IT and settings | GitHub org, repo and App settings and permissions, rulesets and branch protection; any service's settings within the spending rule. Claude analyses, reviews and applies them (the owner, 2026-11-09). |
-| Tracking | A bug found is an issue (label `bug`) in the repo at fault, filed when found, closed by its fixing PR. Other work is a card on the owner's project board, moved to Done when it lands. Every PR names its issue (`Closes #N` or `Part of #N`). |
+| Tracking | Before work starts, each planned step is an issue and each feature or improvement a card on the owner's board. A bug is an issue in the repo at fault, filed when found and closed by its fix. A PR names its issue. Each review finding is fixed or linked to an issue or card before merge. |
 
 Never push to `main`, force-push, hard-reset, take one side of a conflict
 wholesale, or turn on GitHub auto-merge.
