@@ -95,12 +95,15 @@ export function main(argv = process.argv.slice(2), { run = ghRunner(), setup = S
   const loaded = opts.problem ? opts : loadValues(opts.values, root);
   const rows = JSON.parse(readFileSync(setup, "utf8")).rows;
   const only = opts.only ? new Set(opts.only.split(",")) : null;
-  const unknown = [...(only ?? [])].filter((id) => !rows.some((r) => r.id === id));
-  const problem = loaded.problem ?? (unknown.length ? `--only names no such row: ${unknown.join(", ")}` : null);
+  const missing = (ids) => [...(ids ?? [])].filter((id) => !rows.some((r) => r.id === id));
+  const problem = loaded.problem
+    ?? (missing(only).length ? `--only names no such row: ${missing(only).join(", ")}` : null)
+    ?? (missing(loaded.optionalOn).length ? `optional_on names no such row: ${missing(loaded.optionalOn).join(", ")}` : null);
   if (problem) {
     error(`${problem}\n${USAGE}`);
     return 2;
   }
+  if (only && !opts.apply) log("note: --only names rows for --apply; without --apply nothing is set");
   const [owner, repo] = opts.repo.split("/");
   const ctx = context(run, owner, repo, loaded);
   const results = [];

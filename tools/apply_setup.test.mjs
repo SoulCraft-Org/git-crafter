@@ -170,6 +170,17 @@ test("values: no values file reads no value with a warning, and never fails; opt
   assert.deepEqual(tool(standard(), ["--apply"], { ...VALUES, topics: ["a", "c"] }).writes(), [{ call: `PUT ${P("/topics")}`, body: { names: ["a", "c"] } }]);
 });
 
+test("optional_on naming no row exits 2, so a typo never leaves a row off and --check passing", () => {
+  const got = tool(standard(), ["--check"], { ...VALUES, optional_on: ["repo.templte"] });
+  assert.equal(got.code, 2);
+  assert.deepEqual(got.calls, []);
+});
+
+test("--only without --apply says it sets nothing", () => {
+  const got = tool(standard(), ["--only", "repo.wiki"]);
+  assert.match(got.lines[0], /^note: --only names rows for --apply/);
+});
+
 test("--only: --apply sets just the rows named; the others stay would change", () => {
   const state = standard();
   state[P()].has_wiki = false;
