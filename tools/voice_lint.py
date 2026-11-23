@@ -208,15 +208,30 @@ def load_rules_from_obj(data, max_words=None):
     """Rules from a parsed rules object, checked as load_rules checks a file. A repo's own lint calls it."""
     if not isinstance(data, dict):
         raise ValueError("rules file must contain a JSON object")
+    if not isinstance(data.get("severity", {}), dict):
+        raise ValueError("severity must be an object")
+    words = data.get("max_words", DEFAULT_MAX_WORDS)
+    if isinstance(words, bool) or not isinstance(words, int) or words < 1:
+        raise ValueError("max_words must be a positive integer")
     for check, value in data.get("severity", {}).items():
         if check not in BUILTIN_CHECKS:
             raise ValueError("severity names unknown check %r; known: %s" % (check, ", ".join(BUILTIN_CHECKS)))
         if str(value).upper() not in [s.upper() for s in VALID_SEVERITIES]:
             raise ValueError("severity for %r must be FAIL, WARN, or off" % check)
-    for i, spec in enumerate(data.get("patterns", [])):
-        if "regex" not in spec:
-            raise ValueError("patterns[%d] has no regex" % i)
-        re.compile(spec["regex"])
+    patterns = data.get("patterns", [])
+    if not isinstance(patterns, list):
+        raise ValueError("patterns must be a list of objects")
+    for i, spec in enumerate(patterns):
+        if not isinstance(spec, dict):
+            raise ValueError("patterns[%d] must be an object" % i)
+        if not isinstance(spec.get("regex"), str):
+            raise ValueError("patterns[%d] needs a regex string" % i)
+        try:
+            re.compile(spec["regex"])
+        except re.error as exc:
+            raise ValueError("patterns[%d] has a bad regex: %s" % (i, exc))
+        if str(spec.get("severity", "WARN")).upper() not in [s.upper() for s in VALID_SEVERITIES]:
+            raise ValueError("patterns[%d] severity must be FAIL, WARN, or off" % i)
     return Rules(data, max_words)
 
 
@@ -307,6 +322,23 @@ def _front_matter_end(lines):
     return 0
 
 
+FENCE_OPEN_RE = re.compile(r"(`{3,}|~{3,})")
+
+
+def _fence_state(raw, fence):
+    """(fence after this line, whether the line is fenced) for a line and the open fence, (char, length) or None.
+
+    A fence opens on three or more backticks or tildes. It closes only on a line of the same character, at least
+    as long, with nothing after it, so a backtick fence inside a ~~~ block stays code.
+    """
+    text = raw.strip()
+    if fence:
+        char, length = fence
+        return (None if text and set(text) == {char} and len(text) >= length else fence), True
+    m = FENCE_OPEN_RE.match(text)
+    return ((m.group(1)[0], len(m.group(1))), True) if m else (None, False)
+
+
 def _blocks(text):
     """Yield the lines that are read together, each block a list of (line_no, raw line).
 
@@ -315,12 +347,9 @@ def _blocks(text):
     """
     lines = text.splitlines()
     skip_to = _front_matter_end(lines)
-    in_fence, para = False, []
-    # The closing fence added after the last line ends the last paragraph and yields nothing itself.
-    for line_no, raw in enumerate(lines + ["```"], start=1):
-        fence = raw.strip().startswith(("```", "~~~"))
-        in_fence = in_fence != fence
-        fenced = fence or in_fence
+    fence, para = None, []
+    for line_no, raw in enumerate(lines, start=1):
+        fence, fenced = _fence_state(raw, fence)
         if raw.strip() and not fenced and not STANDALONE_RE.match(raw) and line_no > skip_to:
             para.append((line_no, raw))
             continue
@@ -329,6 +358,8 @@ def _blocks(text):
             para = []
         if not fenced:
             yield [(line_no, raw)]
+    if para:
+        yield para
 
 
 def lint_text(text, rules=None, max_words=None):
@@ -418,6 +449,14 @@ def _rejected(data):
     return False
 
 
+def _non_utf8_exit():
+    """The exit code main gives a Markdown file holding a byte that is not UTF-8."""
+    with tempfile.TemporaryDirectory() as tmp, contextlib.redirect_stderr(io.StringIO()):
+        sample = pathlib.Path(tmp, "bad.md")
+        sample.write_bytes(b"caf\xe9 ok.\n")
+        return main([str(sample)])
+
+
 def _summary():
     """(exit code, last line printed, the line expected) for a run over the bad sample twice."""
     bad = lint_text(SELF_TEST_BAD)
@@ -452,6 +491,13 @@ def sample_checks():
         ('a bare "rather" still flags as a hedge', bool(_graded(lint_text("The plan is rather ambitious.\n"), "hedge-word"))),
         ("a dash in inline code or a link still flags",
          _graded(raw, "em-dash") == {"FAIL"} and _graded(raw, "spaced-en-dash") == {"FAIL"}),
+        # A ~~~ block that shows a backtick fence stays open; the dash after its real close is read.
+        ("a backtick fence inside a ~~~ block does not close it",
+         not lint_text("~~~\n```\nRun a " + EM_DASH + " b.\n~~~\n") and
+         _graded(lint_text("~~~\n```\n~~~\nRun a " + EM_DASH + " b.\n"), "em-dash") == {"FAIL"}),
+        ("a fence closes only at its own length or longer",
+         not lint_text("````\n```\nRun a " + EM_DASH + " b.\n````\n") and
+         _graded(lint_text("```\ncode\n````\nRun a " + EM_DASH + " b.\n"), "em-dash") == {"FAIL"}),
         ("a fenced block skips every check", not lint_text("```\nRun a " + EM_DASH + " b " + EN_DASH + " c.\n```\n")),
         ("docstring table matches the default grades",
          dict(DOC_TABLE_RE.findall(__doc__)) == SELF_TEST_EXPECTED if __doc__ else None),
@@ -471,6 +517,12 @@ def rules_checks():
         ("severity off suppresses a built-in check", not _graded(off, "hedge-word")),
         ("project rules do not replace the built-ins", bool(_graded(off, "em-dash"))),
         ("unknown check name rejected", _rejected({"severity": {"no-such-check": "off"}})),
+        ("a pattern severity outside FAIL, WARN and off is rejected",
+         _rejected({"patterns": [{"id": "x", "severity": "FAILL", "regex": "x"}]})),
+        ("a malformed rules file is rejected, not a traceback",
+         all(_rejected(d) for d in ({"patterns": [{"regex": "("}]}, {"severity": []}, {"max_words": "30"},
+                                    {"max_words": 0}, {"patterns": {}}, {"patterns": ["x"]}, {"patterns": [{"regex": 1}]}))),
+        ("a file that is not UTF-8 is a read error, exit 2", _non_utf8_exit() == 2),
         ("an in-memory rules object loads like a file",
          _graded(lint_text(SELF_TEST_PROJECT, load_rules_from_obj(SELF_TEST_RULES)), "banned-term") == {"FAIL"}),
         # The run's last line is the summary docs.lint_warn reads: every file,
@@ -511,7 +563,7 @@ def main(argv=None):
 
     try:
         rules = load_rules(args.rules, args.max_words)
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError) as exc:  # UnicodeDecodeError and json.JSONDecodeError are ValueErrors
         print("rules error: %s" % exc, file=sys.stderr)
         return 2
 
@@ -520,7 +572,7 @@ def main(argv=None):
         try:
             with open(path, encoding="utf-8") as fh:
                 text = fh.read()
-        except OSError as exc:
+        except (OSError, UnicodeDecodeError) as exc:
             print("%s: cannot read (%s)" % (path, exc), file=sys.stderr)
             return 2
         findings = lint_text(text, rules)
