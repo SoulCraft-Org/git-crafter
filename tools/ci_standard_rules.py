@@ -35,6 +35,8 @@ PIP_RE = re.compile(r"\bpip3? install\b")
 SHARE_FILES = ("build_minutes_guard.py",)
 CONFIG = os.path.join(".github", "ci-standard.json")
 PUSH_TRIGGERS = {"pull_request", "push", "pull_request_target", "merge_group"}
+# The one cancel-in-progress expression a deploy may hold, the templates' own: true on pull requests only (#201).
+PR_ONLY_CANCEL = EXPR + " github.event_name == 'pull_request' }}"
 
 
 class UsageError(Exception):
@@ -106,8 +108,14 @@ def permission_findings(name: str, doc: dict) -> list:
 
 
 def cancel_of(conc) -> str:
-    """The concurrency group's cancel-in-progress, as text; empty when unset."""
+    """The concurrency group's cancel-in-progress, as text; empty when unset, or when concurrency is a bare group name."""
     return str(conc.get("cancel-in-progress", "")).strip() if isinstance(conc, dict) else ""
+
+
+def never_cancels_deploy(cancel: str) -> bool:
+    """Whether a deploy's cancel-in-progress is unset, false, or exactly the pull-request-only expression, spaces aside.
+    Any other expression may be true on a push, as github.event_name != 'pull_request' is (#201)."""
+    return cancel in ("", "false") or "".join(cancel.split()) == "".join(PR_ONLY_CANCEL.split())
 
 
 def concurrency_findings(name: str, doc: dict) -> list:
@@ -119,10 +127,11 @@ def concurrency_findings(name: str, doc: dict) -> list:
     if not conc:
         return [("concurrency", name, "no concurrency group; a newer push should cancel the older run")]
     if deploys(doc):
-        if cancel not in ("", "false") and not ("pull_request" in cancel and EXPR in cancel):
+        if not never_cancels_deploy(cancel):
             return [("concurrency", name, f"deploys, but cancel-in-progress is {cancel!r}; a deploy is never cancelled")]
         return []
-    if isinstance(conc, dict) and not cancel:
+    # A bare group name (concurrency: ci-<ref>) queues superseded runs and never cancels them.
+    if not cancel:
         return [("concurrency", name, "cancel-in-progress is not set; superseded runs keep spending minutes")]
     return []
 
@@ -205,21 +214,26 @@ def check_workflow(name: str, doc: dict, locked=frozenset()) -> list:
 # ---- the repo ------------------------------------------------------------------------------------------------------
 
 
-def dependabot_ecosystems(repo: str) -> list:
-    """The package-ecosystem of each entry in .github/dependabot.yml (or .yaml, which wins); [] when unreadable."""
+def dependabot_ecosystems(repo: str, unread: list):
+    """The package-ecosystem of each entry in .github/dependabot.yml (or .yaml, which wins); [] when it does not parse.
+    None, with the file added to unread, when it cannot be read (#203): could not check, never a finding."""
     text = ""
     for fname in ("dependabot.yml", "dependabot.yaml"):
         path = os.path.join(repo, ".github", fname)
         if os.path.isfile(path) and not os.path.islink(path):
-            with open(path, encoding="utf-8") as fh:
-                text = fh.read()
+            try:
+                with open(path, encoding="utf-8") as fh:
+                    text = fh.read()
+            except (OSError, UnicodeDecodeError) as exc:
+                unread.append((os.path.join(".github", fname), f"{type(exc).__name__}: {exc}"))
+                return None
     try:
         return [str(u.get("package-ecosystem")) for u in (parse(text).get("updates") or []) if isinstance(u, dict)] if text else []
     except ParseError:
         return []
 
 
-def remote_caller(repo: str, caller: dict, uses: str, text: str) -> list:
+def remote_caller(repo: str, caller: dict, uses: str, text: str, unread: list) -> list:
     """Fills in the pin, owner and version of a caller at <owner>/git-crafter (or code-os), and finds the pin and dependabot rules."""
     pin = uses.split("@", 1)[1]
     caller["pin"] = pin
@@ -231,12 +245,13 @@ def remote_caller(repo: str, caller: dict, uses: str, text: str) -> list:
         found.append(("pin", where, f"pinned to {pin!r}; pin a full commit SHA of Git Crafter main, with a # v1 comment"))
     elif not caller["version"] or not re.fullmatch(r"v\d+(\.\d+)*", caller["version"]):
         found.append(("pin", where, "no version comment; add # v1 after the SHA so a reader and Dependabot see the version"))
-    if "github-actions" not in dependabot_ecosystems(repo):
+    ecosystems = dependabot_ecosystems(repo, unread)
+    if ecosystems is not None and "github-actions" not in ecosystems:
         found.append(("dependabot", ".github/dependabot.yml", "no github-actions entry; Dependabot must bump the standard's pin"))
     return found
 
 
-def check_caller(repo: str, docs: dict, texts: dict) -> tuple:
+def check_caller(repo: str, docs: dict, texts: dict, unread: list) -> tuple:
     """([(rule, where, why)], caller) where caller is {"file", "job", "pin", "version", "local"} or None."""
     callers = [(name, jid, uses) for name, doc in docs.items() if "pull_request" in triggers(doc) for jid, uses in standard_jobs(doc).items()]
     if not callers:
@@ -245,7 +260,7 @@ def check_caller(repo: str, docs: dict, texts: dict) -> tuple:
     caller = {"file": name, "job": jid, "pin": None, "version": None, "local": uses == LOCAL_STANDARD}
     if caller["local"]:
         return [], caller
-    return remote_caller(repo, caller, uses, texts[name]), caller
+    return remote_caller(repo, caller, uses, texts[name], unread), caller
 
 
 def behind(pin: str, owner: str, repo: str = "git-crafter") -> dict:
@@ -280,9 +295,14 @@ def read_config(path: str) -> dict:
     return doc
 
 
+def known_rules(rules) -> bool:
+    """Whether rules is a list of rule ids, each a string (a list in it raised TypeError, #203) that RULES holds."""
+    return isinstance(rules, list) and all(isinstance(r, str) and r in RULES for r in rules)
+
+
 def check_exception(key: str, e) -> None:
     """UsageError unless the exception names known rules, none of caller, pin or dependabot, and gives a why."""
-    if not isinstance(e, dict) or not str(e.get("why") or "").strip() or not isinstance(e.get("rules"), list) or not set(e["rules"]) <= set(RULES):
+    if not isinstance(e, dict) or not str(e.get("why") or "").strip() or not known_rules(e.get("rules")):
         raise UsageError(f"{CONFIG}: exception {key!r} needs known rules and a why")
     if set(e["rules"]) & {"caller", "pin", "dependabot"}:
         raise UsageError(f"{CONFIG}: exception {key!r}: caller, pin and dependabot take no exception")
@@ -383,7 +403,7 @@ def check_repo(repo: str, ask_behind: bool = False) -> dict:
     files = sorted(f for f in os.listdir(folder) if f.endswith((".yml", ".yaml"))) if os.path.isdir(folder) else []
     docs, texts, unread = read_workflows(folder, [f for f in files if f not in config["skip"]])
     house, excepted = house_findings(docs, config["exceptions"], unread, read_lock(folder))
-    caller_found, caller = check_caller(repo, docs, texts)
+    caller_found, caller = check_caller(repo, docs, texts, unread)
     local_found, local_unread = local_action_findings(repo, [s for doc in docs.values() for job in doc["jobs"].values() for s in steps_of(job)])
     findings = caller_found + house + local_found + share_findings(repo)
     unread += local_unread

@@ -36,8 +36,9 @@ Rules, one id each; templates/ci/README.md explains each one:
     pin          that uses: is at a full 40-character commit SHA, with a version comment such as # v1
     dependabot   .github/dependabot.yml has a github-actions entry, which bumps the pin
     permissions  every workflow has a top-level permissions mapping of read or none; no job has write-all
-    concurrency  a pull_request or push workflow has a concurrency group; it cancels superseded runs, and never a
-                 deploy (cancel-in-progress false, or an expression that is true only on pull requests)
+    concurrency  a pull_request or push workflow has a concurrency group; it cancels superseded runs (a bare group
+                 name never does), and never a deploy (cancel-in-progress unset, false, or exactly the templates'
+                 expression that is true only on pull requests)
     timeout      every job that runs steps has timeout-minutes
     runner       every job runs on ubuntu-slim or a standard GitHub-hosted label. vars.CI_RUNNER, macOS, Windows, a
                  larger, self-hosted or computed runner needs an exception
