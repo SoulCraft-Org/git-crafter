@@ -252,7 +252,7 @@ def backstop_checks(tool):
         try:
             tool.backstop(api, "org", reading, tool.HARD_STOP, resume, previous, lambda: posted.append(json.dumps(reading)))
         except tool.Unreadable:
-            pass
+            pass  # the failing pass is the case under test; its published reading is what we return
         return posted[-1] if posted else None
     first = stop(None)
     yield "the access is published before the failed PATCH", first is not None and json.loads(first)["blacksmith"]["access"] == saved and api.failed
