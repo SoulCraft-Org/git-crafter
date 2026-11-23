@@ -71,3 +71,12 @@ def items_of(doc, key: str, path: str) -> list:
     if not isinstance(items, list):
         raise Unreadable(f"GET {path}: no {key or 'item'} list")
     return items
+
+
+def write_variable(api, org: str, value: str, name: str = "CI_POOL") -> None:
+    """Stores value in the org variable, creating it the first time: the reading in CI_POOL by default."""
+    body = {"name": name, "value": value, "visibility": "all"}
+    try:
+        api.request("PATCH", f"/orgs/{org}/actions/variables/{name}", body=body)
+    except FileNotFoundError:
+        api.request("POST", f"/orgs/{org}/actions/variables", body=body)
