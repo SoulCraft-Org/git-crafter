@@ -23,7 +23,7 @@ Both pages are public.
 | 1 | `<repo>/.github/dependabot.yml`, which bumps the Git Crafter pin | [templates/ci/dependabot.yml](templates/ci/dependabot.yml) |
 | 2 | A ruleset on `main` requiring `ci / ci-ok` | [templates/ci](templates/ci/README.md) |
 | 3 | Settings, Pages: source "GitHub Actions" | [templates/ci](templates/ci/README.md) |
-| Optional | Community files, switches, agent files, CI pool | [open](templates/open/README.md), [setup.json](templates/setup.json), [agents](templates/agents/README.md), [CI-POOL.md](templates/ci/CI-POOL.md) |
+| Optional | Community files, switches, agent files, CI pool | [open](templates/open/README.md), [setup.json](templates/setup.json) with `tools/apply_setup.mjs`, [agents](templates/agents/README.md), [CI-POOL.md](templates/ci/CI-POOL.md) |
 
 ## The 13 tabs
 
