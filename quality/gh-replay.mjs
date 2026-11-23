@@ -64,7 +64,6 @@ function live(args, env) {
   return { stdout: r.stdout, stderr: err.replace(TRACE, ""), status: r.status, pages: err.match(/^\* Request to https:\/\/api\.github\.com\//gm)?.length || pagesOf(args, r.stdout) };
 }
 const ran = (saved, args, env) => (saved ? { stdout: Buffer.from(saved.out, "base64"), stderr: saved.err, status: saved.status } : live(args, env));
-// A pull request replays any read of main's save; a main run replays only the immutable ones its last save carries, under MAX_AGE_H old.
 // A save that cannot be read is read live and logged, so the PR run passes and report warns (#42).
 function loadSave(file, env) {
   const record = env.GH_REPLAY_MODE === "record" && env.GH_REPLAY_PREV;
@@ -85,7 +84,6 @@ function shim(args, env) {
   process.stdout.write(r.stdout), process.stderr.write(r.stderr);
   if (kindOf(args)) log(env, saved ? "replayed" : kindOf(args), saved ? 1 : r.pages);
   if (kindOf(args) === "rest" && !saved) appendFileSync(`${env.GH_REPLAY_DIR}.reads`, `${familyOf(args)} ${r.pages}\n`);
-  // A carried read keeps its first `at`, so it is read live again once a day.
   const final = saved?.immutable ? { immutable: true, at: saved.at } : r.status === 0 && immutable(args, r.stdout.toString()) ? { immutable: true, at: Date.now() } : {};
   if (keep(file, env, r)) writeFileSync(`${file}.${process.pid}`, JSON.stringify({ args, out: r.stdout.toString("base64"), err: r.stderr.toString(), status: r.status, ...final })), renameSync(`${file}.${process.pid}`, file);
   return r.status ?? 1;
@@ -108,7 +106,6 @@ export function topReads(rows, n = 6) {
 }
 /** Download main's newest save into `dir`; a failed run's save has reads but no scored run, so the next one tops it up. Return the run ids and the REST requests spent. */
 function fetchSave(real, dir, env) {
-  // One request lists the saves, so a failed main run's reads count too, and a run that saved nothing costs no download.
   let artifacts = [];
   try { artifacts = JSON.parse(spawnSync(real, ["api", `repos/${env.GITHUB_REPOSITORY}/actions/artifacts?name=main-reads&per_page=10`]).stdout.toString()).artifacts ?? []; } catch { artifacts = []; }
   // A download lists the run's artifacts, then fetches one: 2 requests, or 1 when the run saved nothing (#61).
@@ -119,7 +116,6 @@ function fetchSave(real, dir, env) {
     const ok = spawnSync(real, ["run", "download", run, "-n", "main-reads", "-D", into, "-R", env.GITHUB_REPOSITORY]).status === 0;
     n += ok ? 2 : 1;
     if (!ok) continue;
-    // The newer save wins: the older one adds only what it lacks, never a read the newer one made.
     if (got.length) cpSync(into, dir, { recursive: true, force: false });
     got.push(run);
     if (existsSync(path.join(dir, "latest.json"))) break;
@@ -132,7 +128,6 @@ function setup(env) {
   const pr = JSON.parse(readFileSync(env.GITHUB_EVENT_PATH, "utf8")).pull_request;
   const mode = pr ? "replay" : env.GITHUB_EVENT_NAME === "push" && env.GITHUB_REF === "refs/heads/main" ? "record" : "count";
   mkdirSync(path.join(dir, "r"), { recursive: true }), mkdirSync(`${dir}-bin`), writeShim(`${dir}-bin`);
-  // A main run keeps the last save apart, to carry its immutable reads forward; a pull request replays it whole.
   const prev = mode === "record" ? `${dir}-prev` : "";
   const [id, n] = pr || prev ? fetchSave(real, prev || dir, env) : ["", 0];
   if (pr || prev) log({ GH_REPLAY_DIR: dir }, "rest", n);
@@ -145,7 +140,6 @@ function setup(env) {
 function report(env) {
   const file = `${env.GH_REPLAY_DIR}.log`;
   const rows = existsSync(file) ? readFileSync(file, "utf8").trim().split("\n").filter(Boolean).map((l) => l.split(" ")) : [];
-  // A failed run still saves its reads, never its scored run: a gate miss or a read cut short would show as main's scores.
   if (env.GH_REPLAY_MODE === "record" && env.GH_REPLAY_JOB_STATUS === "success" && existsSync("data/quality/latest.json")) copyFileSync("data/quality/latest.json", path.join(env.GH_REPLAY_DIR, "latest.json"));
   console.log(`::notice title=GitHub requests::${summary(rows, env.GH_REPLAY_MODE)}`);
   const reads = `${env.GH_REPLAY_DIR}.reads`;
