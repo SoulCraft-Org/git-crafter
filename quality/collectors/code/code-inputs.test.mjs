@@ -5,10 +5,10 @@ import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { before, describe, it } from "node:test";
+import { describe, it } from "node:test";
 import { collect, PARAMS } from "./code.mjs";
 import { CODE_EXTENSIONS } from "./complexity.mjs";
-import { TARGETS, FIXTURE, SITE_BUNDLE, BOT_BUNDLE, pastNear, kb, seconds, COVERAGE, writeCoverage, MAIN_LOG, lines, stubRun, makeRepo, value } from "./code-fixtures.mjs";
+import { TARGETS, FIXTURE, SITE_BUNDLE, BOT_BUNDLE, pastNear, kb, seconds, COVERAGE, writeCoverage, MAIN_LOG, stubRun, makeRepo, value } from "./code-fixtures.mjs";
 describe("missing inputs", () => {
   it("make every metric could_not_check, never 0, and nothing throws", async () => {
     const root = mkdtempSync(join(tmpdir(), "code-collector-empty-"));
