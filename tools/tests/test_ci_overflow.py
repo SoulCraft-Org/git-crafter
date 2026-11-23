@@ -241,6 +241,13 @@ def pool_checks(tool, cfg):
         api = FakeApi(fail=True)
         out = tool.decide({**ON, "CI_POOL": raw}, nobody, api, NOW)[0]
         yield f"pool, {name}: {want}, no call", out["label"] == want and api.calls == 0 and tool.safe(out) == out
+    # A repo's own CI_POOL shadows the org's reading in vars; the org's CI_POOL_STOP flag still stops the lane (#210).
+    for name, flag, want in (("1", "1", "ubuntu-latest"), ("1 with spaces", " 1 ", "ubuntu-latest"), ("0", "0", LANE), ("unset", "", LANE)):
+        api = FakeApi(fail=True)
+        out = tool.decide({**ON, "CI_POOL": reading(), "CI_POOL_STOP": flag}, nobody, api, NOW)[0]
+        yield f"CI_POOL_STOP {name} over a repo's own fresh reading: {want}", out["label"] == want and api.calls == 0 and tool.safe(out) == out
+    out = tool.decide({**ON, "CI_POOL_STOP": "1"}, cfg, FakeApi(fail=True), NOW)[0]
+    yield "CI_POOL_STOP 1 with no CI_POOL: GitHub's runner", out["label"] == "ubuntu-latest" and "CI_POOL_STOP" in out["reason"]
     out = tool.decide({"CI_OVERFLOW_RUNNER": "self-hosted", "CI_POOL": reading()}, nobody, FakeApi(), NOW)[0]
     yield "pool, an unknown label: GitHub's runner", out["label"] == "ubuntu-latest"
     spec = importlib.util.spec_from_file_location("ci_pool", os.path.join(ROOT, "tools", "ci_pool.py"))

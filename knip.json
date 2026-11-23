@@ -6,6 +6,7 @@
   "quality/cards/picture.mjs",
   "quality/collect.mjs",
   "quality/selftest.mjs",
+  "tools/apply_setup.mjs",
   "tools/collect_org.mjs",
   "**/*.test.mjs",
   "pages/client.js",

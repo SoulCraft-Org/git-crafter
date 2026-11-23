@@ -60,7 +60,7 @@ const tabIdsOf = (config) => new Set([...TABS.map(([id]) => id), ...packsOf(conf
 // The page's metric definitions (score.mjs loadDefs) with each pack's targets beside the template's.
 export function configDefs(config, templateDir) {
   checkedOut(packsOf(config));
-  return loadDefs({ templateDir, packDirs: packsOf(config).map((p) => p.targets), repoDir: config.targets, tabs: config.tabs, tabIds: tabIdsOf(config) });
+  return loadDefs({ templateDir, packDirs: packsOf(config).map((p) => p.targets), repoDir: config.targets, tabs: config.tabs, tabIds: tabIdsOf(config), dropNeeds: config.drop_needs });
 }
 
 // The page's ideals (score.mjs loadIdeals): the template's, each pack's, then the repo's.
