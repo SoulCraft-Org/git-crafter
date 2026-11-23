@@ -16,7 +16,7 @@ A repo's Quality page settings (`config.mjs`), and how its targets lie over the 
 | `packs` | `[]` | other repos' tabs and maps ([below](#packs)) |
 | `reviews`, `data`, `history`, `out` | `<repo>/quality/<key>`; `out` is `<repo>/quality/dist` | folders |
 | `tokens_css` | `render/tokens.css` | page colors |
-| `budget` | 1,000,000 | page bytes; one over is exit 1 |
+| `budget` | 1,000,000, per `config.mjs` | page bytes; one over is exit 1 |
 | `drop_needs` | `[]` | metrics whose `needs` is listed are off, as `drop` does; an unused value is a usage error |
 | `issue_sync` | `null`, off | `{ "label", "labels", "project", "quick", "waiting" }` turns on [`sync-issues.mjs`](sync-issues.mjs): one draft card per missed metric on org project `project`, Todo, or Waiting on data for ids in `waiting`. Ids in `quick` open a Task issue instead, labeled `labels[tab]` or `label`; with no `project`, every id does. Cards need env `BOARD_TOKEN` |
 | `comment` | | allowed |
@@ -56,7 +56,7 @@ flowchart LR
 | --- | --- |
 | `{ "id": "ci.pass_rate", "goal": 98, "near": 90, "goal_source": "…" }` | the repo's goal for a template metric |
 | `{ "id": "…", "params": { … } }` | merged key by key over the template's params |
-| `{ "id": "ci.latest_flow", "params": { "always_run": { "<workflow>": "<why>" } } }` | CI shares leave that workflow out and show its reason |
+| `{ "id": "ci.latest_flow", "params": { "always_run": { "<workflow>": "<why>" } } }` | CI shares leave it out and say why |
 | `{ "id": "…", "drop": true }` | off: not shown, not scored; collected only with `gate` |
 | `{ "id": "…", "gate": true }` | a miss fails the repo's pull request ([SCORING.md](SCORING.md)), even with `drop: true` |
 | `{ "id": "…", "gate": "warn" }` | a miss prints a warning; the pull request passes |
