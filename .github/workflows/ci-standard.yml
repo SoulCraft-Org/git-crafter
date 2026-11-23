@@ -128,8 +128,9 @@ jobs:
               pin          that uses: is at a full 40-character commit SHA, with a version comment such as # v1
               dependabot   .github/dependabot.yml has a github-actions entry, which bumps the pin
               permissions  every workflow has a top-level permissions mapping of read or none; no job has write-all
-              concurrency  a pull_request or push workflow has a concurrency group; it cancels superseded runs, and never a
-                           deploy (cancel-in-progress false, or an expression that is true only on pull requests)
+              concurrency  a pull_request or push workflow has a concurrency group; it cancels superseded runs (a bare group
+                           name never does), and never a deploy (cancel-in-progress unset, false, or exactly the templates'
+                           expression that is true only on pull requests)
               timeout      every job that runs steps has timeout-minutes
               runner       every job runs on ubuntu-slim or a standard GitHub-hosted label. vars.CI_RUNNER, macOS, Windows, a
                            larger, self-hosted or computed runner needs an exception
@@ -737,6 +738,8 @@ jobs:
           SHARE_FILES = ("build_minutes_guard.py",)
           CONFIG = os.path.join(".github", "ci-standard.json")
           PUSH_TRIGGERS = {"pull_request", "push", "pull_request_target", "merge_group"}
+          # The one cancel-in-progress expression a deploy may hold, the templates' own: true on pull requests only (#201).
+          PR_ONLY_CANCEL = EXPR + " github.event_name == 'pull_request' }}"
 
 
           class UsageError(Exception):
@@ -808,8 +811,14 @@ jobs:
 
 
           def cancel_of(conc) -> str:
-              """The concurrency group's cancel-in-progress, as text; empty when unset."""
+              """The concurrency group's cancel-in-progress, as text; empty when unset, or when concurrency is a bare group name."""
               return str(conc.get("cancel-in-progress", "")).strip() if isinstance(conc, dict) else ""
+
+
+          def never_cancels_deploy(cancel: str) -> bool:
+              """Whether a deploy's cancel-in-progress is unset, false, or exactly the pull-request-only expression, spaces aside.
+              Any other expression may be true on a push, as github.event_name != 'pull_request' is (#201)."""
+              return cancel in ("", "false") or "".join(cancel.split()) == "".join(PR_ONLY_CANCEL.split())
 
 
           def concurrency_findings(name: str, doc: dict) -> list:
@@ -821,10 +830,11 @@ jobs:
               if not conc:
                   return [("concurrency", name, "no concurrency group; a newer push should cancel the older run")]
               if deploys(doc):
-                  if cancel not in ("", "false") and not ("pull_request" in cancel and EXPR in cancel):
+                  if not never_cancels_deploy(cancel):
                       return [("concurrency", name, f"deploys, but cancel-in-progress is {cancel!r}; a deploy is never cancelled")]
                   return []
-              if isinstance(conc, dict) and not cancel:
+              # A bare group name (concurrency: ci-<ref>) queues superseded runs and never cancels them.
+              if not cancel:
                   return [("concurrency", name, "cancel-in-progress is not set; superseded runs keep spending minutes")]
               return []
 

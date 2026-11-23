@@ -188,6 +188,13 @@ CASES = [
     ("a local Docker action by tag", {**LOCAL, X: "runs:\n  using: docker\n  image: docker://ghcr.io/o/a:v1\n"}, {"pinned"}),
     ("a local action with no action.yml", LOCAL, {"unread"}),
     ("a local action outside the repo", calling("./../x"), {"unread"}),
+    # #201: a deploy cancels only on pull requests; a bare group name never cancels.
+    ("a deploy that cancels on every push", edit(".github/workflows/deploy.yml", "  cancel-in-progress: false\n",
+                                                  f"  cancel-in-progress: {EXPR} github.event_name != 'pull_request' }}}}\n"), {"concurrency"}),
+    ("a deploy that cancels on pull requests only passes", edit(".github/workflows/deploy.yml", "  cancel-in-progress: false\n",
+                                                                 f"  cancel-in-progress: {EXPR}github.event_name  ==  'pull_request'}}}}\n"), set()),
+    ("a bare concurrency group never cancels", edit(".github/workflows/ci.yml", f"concurrency:\n  group: ci-{EXPR} github.ref }}}}\n{CANCEL}",
+                                                     f"concurrency: ci-{EXPR} github.ref }}}}\n"), {"concurrency"}),
 ]
 
 

@@ -35,6 +35,8 @@ PIP_RE = re.compile(r"\bpip3? install\b")
 SHARE_FILES = ("build_minutes_guard.py",)
 CONFIG = os.path.join(".github", "ci-standard.json")
 PUSH_TRIGGERS = {"pull_request", "push", "pull_request_target", "merge_group"}
+# The one cancel-in-progress expression a deploy may hold, the templates' own: true on pull requests only (#201).
+PR_ONLY_CANCEL = EXPR + " github.event_name == 'pull_request' }}"
 
 
 class UsageError(Exception):
@@ -106,8 +108,14 @@ def permission_findings(name: str, doc: dict) -> list:
 
 
 def cancel_of(conc) -> str:
-    """The concurrency group's cancel-in-progress, as text; empty when unset."""
+    """The concurrency group's cancel-in-progress, as text; empty when unset, or when concurrency is a bare group name."""
     return str(conc.get("cancel-in-progress", "")).strip() if isinstance(conc, dict) else ""
+
+
+def never_cancels_deploy(cancel: str) -> bool:
+    """Whether a deploy's cancel-in-progress is unset, false, or exactly the pull-request-only expression, spaces aside.
+    Any other expression may be true on a push, as github.event_name != 'pull_request' is (#201)."""
+    return cancel in ("", "false") or "".join(cancel.split()) == "".join(PR_ONLY_CANCEL.split())
 
 
 def concurrency_findings(name: str, doc: dict) -> list:
@@ -119,10 +127,11 @@ def concurrency_findings(name: str, doc: dict) -> list:
     if not conc:
         return [("concurrency", name, "no concurrency group; a newer push should cancel the older run")]
     if deploys(doc):
-        if cancel not in ("", "false") and not ("pull_request" in cancel and EXPR in cancel):
+        if not never_cancels_deploy(cancel):
             return [("concurrency", name, f"deploys, but cancel-in-progress is {cancel!r}; a deploy is never cancelled")]
         return []
-    if isinstance(conc, dict) and not cancel:
+    # A bare group name (concurrency: ci-<ref>) queues superseded runs and never cancels them.
+    if not cancel:
         return [("concurrency", name, "cancel-in-progress is not set; superseded runs keep spending minutes")]
     return []
 
