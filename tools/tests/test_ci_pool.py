@@ -220,9 +220,12 @@ def manifest_checks(tool):
     yield "the action's hard stop default is the meter's", f'default: "{tool.HARD_STOP}"' in action
     # The usage step runs Blacksmith's CLI beside BLACKSMITH_ORG_TOKEN (#184): it is pinned by hash, never piped to a shell.
     yield "the CLI is not piped to a shell", re.search(r"\|\s*(?:sudo\s+)?(?:ba|z|da)?sh\b", action) is None and "get.blacksmith.sh" not in action
+    code = "\n".join(line for line in action.splitlines() if not line.lstrip().startswith("#"))
+    check = re.search(r'^\s*printf \'%s  %s\\n\' "\$BLACKSMITH_CLI_SHA256" "\$bin/blacksmith" \| sha256sum -c - >&2 &&$', code, re.M)
     yield "the CLI's SHA-256 is pinned and checked before it runs", (
-        re.search(r"^\s+BLACKSMITH_CLI_SHA256: [0-9a-f]{64}$", action, re.M) is not None
-        and 0 < action.find("sha256sum -c") < action.find('"$bin/blacksmith" auth login'))
+        re.search(r"^\s+BLACKSMITH_CLI_SHA256: [0-9a-f]{64}$", code, re.M) is not None
+        and check is not None and 0 < check.start() < code.find('"$bin/blacksmith" auth login'))
+    yield "the CLI download has a time limit and a retry", "curl -fsSL --max-time 120 --retry 2" in code
 
 
 def raises(tool, fn) -> bool:

@@ -67,7 +67,7 @@ runs:
         [ -n "$BLACKSMITH_ORG_TOKEN" ] || exit 0
         bin="$RUNNER_TEMP/blacksmith-cli"
         out="$( (mkdir -p "$bin" && [ "$(uname -s)-$(uname -m)" = Linux-x86_64 ] &&
-          curl -fsSL "$BLACKSMITH_CLI_URL" -o "$bin/blacksmith" &&
+          curl -fsSL --max-time 120 --retry 2 "$BLACKSMITH_CLI_URL" -o "$bin/blacksmith" &&
           printf '%s  %s\n' "$BLACKSMITH_CLI_SHA256" "$bin/blacksmith" | sha256sum -c - >&2 &&
           chmod +x "$bin/blacksmith" &&
           printf '%s' "$BLACKSMITH_ORG_TOKEN" | "$bin/blacksmith" auth login --api-token - --non-interactive --organization "$GITHUB_REPOSITORY_OWNER" >&2 &&
