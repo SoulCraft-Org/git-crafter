@@ -37,6 +37,7 @@ Each tab scores Quality, Speed and Consumption, a third each, against goals that
 ```mermaid
 flowchart LR
   AD[Adopt] --> DL[Delivery] --> DP[Deploy] --> ME[Measure]
+  DL --> RE[Release] -->|Dependabot bump| AD
   GU[Guard] --> DL
   CO[Code] --> DL
   ME -->|each miss a fix| DL

@@ -22,6 +22,7 @@ flowchart LR
 | [secure.json](secure.json) | keys, scan, model, report, alerts |
 | [document.json](document.json) | write, lint, map, publish, read, load |
 | [contribute.json](contribute.json) | idea, approve, review, merge, rebuild, deploy (a fork: merge or rebuild) |
+| [release.json](release.json) | merge, tag, notes, bump, check, current |
 
 | Rule | Checked by |
 | --- | --- |
