@@ -82,6 +82,8 @@ export function projectSettings(params, repo) {
     recordMinutes: number(params, "record_minutes", 5),
     // Days an answerable discussion may wait for its answer before it counts as unanswered.
     discussionDays: number(params, "discussion_days", 7),
+    // The Actions cache storage the repo may hold, in GB: 10 by default, more when a repo raises it in Actions settings.
+    cacheLimitGb: number(params, "cache_limit_gb", 10),
   };
 }
 

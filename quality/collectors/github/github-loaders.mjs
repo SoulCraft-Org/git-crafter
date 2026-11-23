@@ -116,6 +116,8 @@ function issueLoaders(L, { gh, repo, root, git = gitDiff }) {
     openAgain: () => connection(gh, OPEN_PULLS, { owner, name }, (d) => d.repository.pullRequests),
     // Open discussions, oldest first.
     discussions: once(() => connection(gh, OPEN_DISCUSSIONS, { owner, name }, (d) => d.repository.discussions)),
+    // Every open milestone, as REST lists it.
+    milestones: once(() => gh.restAll(`repos/${repo}/milestones?state=open&per_page=100`)),
     branchCommits: once(async () => (await gh.graphql(BRANCH_COMMITS, { owner, name })).repository.defaultBranchRef.target.history.nodes),
   };
 }
@@ -186,6 +188,8 @@ function repoLoaders(L, { gh, repo, root, cfg, fetchImpl }) {
     }),
     protection: once(() => readProtection(L, gh, repo)),
     pages: once(() => gh.rest(`repos/${repo}/pages`)),
+    // Active Actions caches: their count and bytes, as GitHub last refreshed them.
+    cacheUsage: once(() => gh.rest(`repos/${repo}/actions/cache/usage`)),
     workflowPermissions: once(() => gh.rest(`repos/${repo}/actions/permissions/workflow`)),
     actionsPermissions: once(() => gh.rest(`repos/${repo}/actions/permissions`)),
     securityReviews: once(() => securityReviews(L, gh, owner, name)),
