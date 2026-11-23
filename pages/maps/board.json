@@ -2,7 +2,7 @@
  "id": "board",
  "name": "Board",
  "why": "A feature, from a card on the project board to Done with its merged pull request",
- "ideal": "One fresh session takes one visual card to one merged pull request; open pull requests carry the limit, and nothing sits in progress unbuilt.",
+ "ideal": "One fresh session takes one visual card to one merged pull request. Open pull requests carry the limit. Nothing sits in progress unbuilt.",
  "sources": [
   {
    "title": "GitHub Docs: Best practices for Projects",
@@ -46,7 +46,7 @@
     "A draft card on the project board",
     "quality/cards/picture.mjs"
    ],
-   "rule": "A feature is one card: a picture of its metric and steps, a table, and a pass-or-fail check.",
+   "rule": "A feature is one card. It holds a picture of its metric and steps, a table and a pass-or-fail check.",
    "rule_ref": "https://code.claude.com/docs/en/best-practices",
    "metric": "projects.cards_at_a_glance"
   },
@@ -70,7 +70,7 @@
     "One app session per card, in its own worktree",
     "Workflow: Pull request linked to issue"
    ],
-   "rule": "A fresh session takes one card; the card is in progress only while its pull request is open.",
+   "rule": "A fresh session takes one card. The card is in progress only while its pull request is open.",
    "rule_ref": "https://code.claude.com/docs/en/costs",
    "metric": "projects.cards_by_column"
   },
@@ -94,7 +94,7 @@
     "Workflows: Pull request merged, Item closed",
     "Auto-archive the session on merge"
    ],
-   "rule": "The merge moves the card to Done with its pull request linked, within the CI minutes goal; the session ends.",
+   "rule": "The merge moves the card to Done with its pull request linked, within the CI minutes goal. The session ends.",
    "rule_ref": "https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project/using-the-built-in-automations",
    "metric": "projects.latest_card_ci_minutes"
   },
@@ -106,7 +106,7 @@
     "The Stuck view",
     "Insights charts"
    ],
-   "rule": "No card sits in progress past a week; a waiting card returns to Todo and names what it waits on.",
+   "rule": "No card sits in progress past a week. A waiting card returns to Todo and names what it waits on.",
    "rule_ref": "https://dora.dev/capabilities/working-in-small-batches/",
    "metric": "projects.oldest_doing_days"
   }
