@@ -1,7 +1,8 @@
 name: claude-review
 
-# OPTIONAL, for adopters: copy to .github/workflows/claude-review.yml. Git Crafter runs a narrower copy there, on its
-# sensitive paths only, since a review spends subscription tokens on every pull request it reads (#838).
+# OPTIONAL, for adopters: copy to .github/workflows/claude-review.yml. Git Crafter ran a narrower copy on its sensitive
+# paths (#838) and dropped it (2026-11-23): it needs CLAUDE_CODE_OAUTH_TOKEN, set nowhere, so every run skipped; its
+# reviews run as pr-review-toolkit subagents (skills/merging/reviewing.md). To bring it back, copy this file and set the token.
 #
 # ADVISORY: no ruleset requires this check. Claude security-reviews each pull
 # request that changes code or workflows, and posts one comment as claude[bot]

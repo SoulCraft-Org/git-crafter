@@ -6,7 +6,8 @@ name: verify
 # ubuntu-latest that ci-standard.yml embeds tools/ci_standard.py and its modules verbatim, only when the standard
 # itself changes (standard-paths, plus any workflow file, which always runs), so that change exercises both job kinds.
 # verify.sh already runs the self-test and the embed check, so on any other change the standard job only spent 2-core
-# minutes (#189). No workflow-level path filter: ci / ci-ok is a required check, and a skipped workflow blocks every PR.
+# minutes (#189). standard runs on a pull request only: the push to main that merges it repeats a change that
+# job already passed there, and verify.sh runs the same embed check on every push (2026-11-23). No workflow-level path filter: ci / ci-ok is a required check, and a skipped workflow blocks every PR.
 # runner is the overflow switch's opt-in (ci-overflow.yml): skipped while CI_OVERFLOW_RUNNER is unset, and ci runs
 # anyway (!cancelled()), so the required check never waits on it. It meters pages.yml too, which takes the same lane.
 on:
@@ -37,7 +38,7 @@ jobs:
     with:
       runner: ${{ needs.runner.outputs.label }}
       short: bash tools/verify.sh
-      standard: python3 -I tools/ci_standard.py embed
+      standard: ${{ github.event_name == 'pull_request' && 'python3 -I tools/ci_standard.py embed' || '' }}
       standard-paths: |
         tools/ci_standard*.py
         tools/ci_overflow.py
@@ -48,8 +49,11 @@ jobs:
   # its README at the pinned v5.0.0: fail-on-severity low (any severity) and fail-on-scopes runtime (a development-only
   # dependency never fails it). Not a required check; the merging skill
   # merges only when every check passed. A JavaScript action on the 1-core runner, with no checkout.
+  # It waits for ci, and runs whether ci passed or failed, but not when the run was cancelled: a push that
+  # supersedes a run used to leave this job billed (1 minute for 7 seconds) in the cancelled run (2026-11-23).
   dependency-review:
-    if: github.event_name == 'pull_request'
+    needs: ci
+    if: ${{ !cancelled() && github.event_name == 'pull_request' }}
     runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
