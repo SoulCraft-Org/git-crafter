@@ -26,7 +26,8 @@ name: claude-review
 #
 # Before the token is set, the repo's Actions policy must also allow
 # anthropics/claude-code-action and oven-sh/setup-bun (its one nested action).
-# Today it allows GitHub-owned actions only. A skipped job downloads nothing.
+# Today it allows GitHub-owned and verified creators' actions (verified_allowed, scorecard.yml); check that
+# both are allowed. A skipped job downloads nothing.
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
