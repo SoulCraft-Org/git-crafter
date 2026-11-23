@@ -61,7 +61,7 @@ import { readFileSync } from "node:fs";
 import { ConfigError, GhError, ghClient, projectSettings, readProject, refusingGh, repoOf } from "../github/github.mjs";
 import { adminGh, gated } from "../github/github-core.mjs";
 import { once } from "../github/github-loaders.mjs";
-import { runsOnPush } from "./ci-workflows.mjs";
+import { pagesWorkflows, runsOnPush } from "./ci-workflows.mjs";
 import { TARGETS_FILE, RUNS_PER_WORKFLOW, LAST_RUNS, LAST_PRS, QUEUE_SAMPLE, LOG_SAMPLE, LAST, CODE_QUALITY, round1, pct, skip, measured, ms, completed, newest, groupBy, mapLimit } from "./ci-core.mjs";
 import { alwaysRunWhy, describeRun, pushToGreen, cacheVerdict, weightedLightShare, commonStart } from "./ci-describe.mjs";
 import { skipTriggers, standardCalls } from "./ci-stages.mjs";
@@ -349,11 +349,13 @@ const METRICS = {
     },
   },
   "ci.pr_run_requests": {
-    source: `latest: gh api actions/workflows/pages.yml/runs, the newest green pull_request run from {repo} whose jobs printed a notice, of the newest ${PR_RUNS_READ}; its jobs' check-run annotations, each job's GitHub requests notice (quality/gh-replay.mjs report), live REST plus GraphQL, summed`,
-    async run(L, { gh, repo }) {
-      const runs = (await gh.rest(`repos/${repo}/actions/workflows/pages.yml/runs?event=pull_request&status=success&per_page=10`)).workflow_runs ?? [];
-      const ours = runs.filter((r) => r.head_repository?.full_name === repo).slice(0, PR_RUNS_READ);
-      if (!ours.length) return skip("no green pull request run of pages.yml from this repo");
+    source: `latest: gh api actions/workflows/{file}/runs for each workflow file that runs on pull requests and calls actions/pages, the newest green pull_request run from {repo} whose jobs printed a notice, of the newest ${PR_RUNS_READ}; its jobs' check-run annotations, each job's GitHub requests notice (quality/gh-replay.mjs report), live REST plus GraphQL, summed`,
+    async run(L, { gh, repo, root }) {
+      const files = pagesWorkflows(root);
+      if (!files.length) return skip("no workflow in .github/workflows that runs on pull requests calls actions/pages");
+      const lists = await Promise.all(files.map(async (f) => (await gh.rest(`repos/${repo}/actions/workflows/${f}/runs?event=pull_request&status=success&per_page=10`)).workflow_runs ?? []));
+      const ours = lists.flat().filter((r) => r.head_repository?.full_name === repo).sort((a, b) => (ms(b.created_at) || 0) - (ms(a.created_at) || 0)).slice(0, PR_RUNS_READ);
+      if (!ours.length) return skip(`no green pull request run of ${files.join(", ")} from this repo`);
       for (const r of ours) {
         const jobs = ((await gh.rest(`repos/${repo}/actions/runs/${r.id}/jobs?per_page=100`)).jobs ?? []).filter((j) => j.conclusion && j.conclusion !== "skipped");
         const got = prRunRequests(jobs, await mapLimit(jobs, 4, (j) => gh.rest(`repos/${repo}/check-runs/${j.id}/annotations`)));
