@@ -107,6 +107,14 @@ describe('pr-gate', () => {
     assert.deepEqual(misses(`${CLEAN}\n\n\`\`\`\n| Left | Why |\n|---|---|\n| a | b |\n\`\`\``, 'someone'), [], 'a table inside a fence is not read');
   });
 
+  it('passes a none row, ignores File | Left | Right and Time left headers, and checks Follow-ups and Not-fixed', () => {
+    const t = (head, ...rows) => `${CLEAN}\n\n| ${head} |\n|---|---|\n${rows.join('\n')}`;
+    assert.deepEqual(misses(t('Left | Why', '| none | n/a |', '| nothing | - |', '| \u2014 | none |'), 'someone'), []);
+    assert.deepEqual(misses(t('File | Left | Right', '| a | b | c |'), 'someone'), [], 'Left is a column of a diff table');
+    assert.deepEqual(misses(t('Time left | Why', '| a | b |'), 'someone'), [], 'Time left is not Left');
+    for (const head of ['Follow-ups', 'Not-fixed']) assert.equal(misses(t(`${head} | Why`, '| a | b |'), 'someone').length, 1, head);
+  });
+
   it('exempts Dependabot, which writes its own description', () => {
     assert.deepEqual(misses('Bumps a package.', 'dependabot[bot]', TEMPLATE), []);
     assert.deepEqual(misses('Bumps a package.', 'app/dependabot', TEMPLATE), []);
