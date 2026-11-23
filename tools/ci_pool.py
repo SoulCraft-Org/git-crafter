@@ -286,6 +286,33 @@ def group_access(api, org: str, group: dict):
     return {"visibility": visibility, "repos": repos}
 
 
+def save_access(api, org: str, groups: list, previous) -> dict:
+    """Each group's repo access to put back on resume: the last stopped reading's, plus any group's now. Every read
+    comes before any write, so a group that cannot be read leaves the rest open."""
+    saved = last_access(previous)
+    for g in groups:
+        access = None if str(g["id"]) in saved else group_access(api, org, g)
+        saved.update({str(g["id"]): access} if access else {})
+    return {str(g["id"]): saved[str(g["id"])] for g in groups if str(g["id"]) in saved}
+
+
+def set_groups(api, org: str, groups: list, stopped: bool, resume: bool, saved: dict) -> None:
+    """Closes each group to all repos while stopped; on resume puts its saved access back, or opens it to all."""
+    try:
+        for g in groups:
+            path = f"/orgs/{org}/actions/runner-groups/{g['id']}"
+            before = saved.get(str(g["id"]), {"visibility": "all", "repos": []})
+            if stopped:
+                api.request("PATCH", path, body={"visibility": "selected"})
+                api.request("PUT", path + "/repositories", body={"selected_repository_ids": []})
+            elif resume:
+                api.request("PATCH", path, body={"visibility": before["visibility"]})
+                if before["visibility"] == "selected":
+                    api.request("PUT", path + "/repositories", body={"selected_repository_ids": before["repos"]})
+    except FileNotFoundError as err:
+        raise Unreadable(f"runner group gone mid-pass: {err}") from None
+
+
 def backstop(api, org: str, reading: dict, hard_stop: float, resume: bool, previous) -> dict:
     """At the hard stop, saves each Blacksmith runner group's repo access once, closes the group to all repos, and closes
     it again each pass until resume. Resume puts each group's saved access back, and opens a group with none saved to
@@ -296,25 +323,10 @@ def backstop(api, org: str, reading: dict, hard_stop: float, resume: bool, previ
     groups = blacksmith_groups(api, org)
     if b["stopped"] and not groups:
         raise Unreadable(f"{org} is at its hard stop and has no runner group whose name starts with Blacksmith")
-    saved = last_access(previous)
+    saved = save_access(api, org, groups, previous) if b["stopped"] else last_access(previous)
     if b["stopped"]:
-        for g in groups:  # every read before any write, so an unreadable group leaves the rest open
-            access = None if str(g["id"]) in saved else group_access(api, org, g)
-            saved.update({str(g["id"]): access} if access else {})
-        b["access"] = {k: v for k, v in saved.items() if k in {str(g["id"]) for g in groups}}
-    try:
-        for g in groups:
-            path = f"/orgs/{org}/actions/runner-groups/{g['id']}"
-            before = saved.get(str(g["id"]), {"visibility": "all", "repos": []})
-            if b["stopped"]:
-                api.request("PATCH", path, body={"visibility": "selected"})
-                api.request("PUT", path + "/repositories", body={"selected_repository_ids": []})
-            elif resume:
-                api.request("PATCH", path, body={"visibility": before["visibility"]})
-                if before["visibility"] == "selected":
-                    api.request("PUT", path + "/repositories", body={"selected_repository_ids": before["repos"]})
-    except FileNotFoundError as err:
-        raise Unreadable(f"runner group gone mid-pass: {err}") from None
+        b["access"] = saved
+    set_groups(api, org, groups, b["stopped"], resume, saved)
     b["groups"] = [g.get("name") for g in groups]
     return reading
 
