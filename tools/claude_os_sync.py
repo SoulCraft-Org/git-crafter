@@ -112,6 +112,7 @@ Requires Python 3.9, standard library only.
 import argparse
 import contextlib
 import datetime
+import importlib
 import json
 import os
 import shutil
@@ -127,12 +128,12 @@ def load_lib():
     python3 -I leaves this folder off sys.path, so it is added here."""
     if HERE not in sys.path:
         sys.path.append(HERE)
-    import claude_os_sync_lib
-    where = os.path.dirname(os.path.realpath(claude_os_sync_lib.__file__))
+    mod = importlib.import_module("claude_os_sync_lib")
+    where = os.path.dirname(os.path.realpath(mod.__file__))
     if where != HERE:
         raise ImportError("claude_os_sync_lib came from %s, not %s"
                           % (where, HERE))
-    return claude_os_sync_lib
+    return mod
 
 
 lib = load_lib()
@@ -299,6 +300,7 @@ def land_files(root, staged):
                 try:
                     os.unlink(entry[2])
                 except OSError:
+                    # a staged temp file that is already gone needs no cleanup
                     pass
             print("REFUSE  apply  (%s; landed: %s; left unwritten: %s; the "
                   "record is not written)"

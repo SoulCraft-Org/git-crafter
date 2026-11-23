@@ -118,6 +118,7 @@ def ask_guard(guard, wait):
         try:
             os.killpg(proc.pid, signal.SIGKILL)
         except OSError:
+            # the process group already exited, so there is nothing left to kill
             pass
         proc.wait()
         return False, "usage-guard check comfy-cloud gave no answer in %g s" % wait
