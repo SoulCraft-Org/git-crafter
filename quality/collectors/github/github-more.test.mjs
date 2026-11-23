@@ -8,7 +8,7 @@ import path from "node:path";
 import { after, describe, it } from "node:test";
 
 import { cardOf } from "./github-reads.mjs";
-import { collect, GhError, ghClient, hasPicture, hasTable, hasVisual, isNotReviewed, linksIssue, METRIC_IDS, percentile, proseWords, repoOf, reverts } from "./github.mjs";
+import { GhError, ghClient, hasPicture, hasTable, hasVisual, isNotReviewed, linksIssue, METRIC_IDS, percentile, proseWords, repoOf, reverts } from "./github.mjs";
 import { HERE, FIXTURES, TARGETS, TEMPLATE_PARAMS, REST, GRAPHQL, PARAMS, NOW, REPO, HOUR_MS, FOOTER, fakeGh, run } from "./github-test-lib.mjs";
 
 describe("collect() fails open", () => {

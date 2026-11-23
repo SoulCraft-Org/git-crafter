@@ -9,8 +9,8 @@
 // could_not_check, never a throw and never a 0. All of it runs offline.
 // The Security and quality cases are in github-security.test.mjs.
 import assert from "node:assert/strict";
-import { after, describe, it } from "node:test";
-import { collect, METRIC_IDS, reverts } from "./github.mjs";
+import { describe, it } from "node:test";
+import { METRIC_IDS } from "./github.mjs";
 import { isGreen } from "./github-reviews.mjs";
 import { GH_AT_ONCE, gated } from "./github-core.mjs";
 import { TARGETS, REST, GRAPHQL, REPO, HOUR_MS, ISO, fakeGh, run } from "./github-test-lib.mjs";

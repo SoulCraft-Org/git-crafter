@@ -29,7 +29,6 @@
 // collect() never throws: a read that fails becomes could_not_check with its
 // reason, never a 0, and a metric that needs two reads needs both whole.
 
-import { execFile } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
