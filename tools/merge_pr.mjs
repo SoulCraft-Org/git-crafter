@@ -2,13 +2,12 @@
 //
 //   node tools/merge_pr.mjs --repo owner/name --pr N --sha <40-hex head the review passed> --followups <#n,PVTI_...|none> [--base main] [--wait 60] [--check]
 //
-// Run it after the review at that head passed. It refuses a base other than --base (a stacked pull request was
-// merged into its parent on 2026-11-23), a moved head, a draft, a conflict, no checks and any check whose latest run
-// failed: an older cancelled run beside a newer one is no failure. Pending checks exit 3 (`gh pr checks N --watch
-// --interval 60`, then again); mergeable UNKNOWN is re-read for up to --wait seconds, then exits 3. --followups
-// lands on line 2 of the verdict, below the `Review: MERGE at <sha>` line the reviews collector reads. --check
-// posts and merges nothing. Merges with --squash --match-head-commit <sha>, never --auto or --admin. Exit 0 merged
-// (or ready under --check), 1 refused, 2 usage, 3 not yet.
+// Run it after the review at that head passed. It refuses a base other than --base (a stacked pull request was merged
+// into its parent on 2026-11-23), a moved head, a draft, a conflict, no checks and any check whose latest run failed
+// (an older cancelled run beside a newer one is no failure). Pending checks exit 3 (`gh pr checks N --watch`, then
+// again); mergeable UNKNOWN is re-read for up to --wait seconds, then exits 3. --followups lands on line 2 of the
+// verdict, below the `Review: MERGE at <sha>` line. --check posts and merges nothing. Merges with --squash
+// --match-head-commit <sha>, never --auto or --admin. Exit 0 merged (or ready), 1 refused, 2 usage, 3 not yet.
 
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -30,9 +29,8 @@ export function judge(runs, statuses) {
 /** What to do with the pull request: { act: "merge" | "refuse" | "wait", why }; a wait names what it waits on. */
 export function decide(pull, checks, { sha, base }) {
   const named = (state) => checks.filter((c) => c.state === state).map((c) => c.name).join(", ");
-  if (pull.draft || pull.state !== "open") return { act: "refuse", why: pull.draft ? "is a draft" : `is ${pull.merged ? "merged" : pull.state}` };
-  if (pull.base.ref !== base) return { act: "refuse", why: `base is ${pull.base.ref}, not ${base}: a stacked pull request merges through the stack` };
-  if (pull.head.sha !== sha) return { act: "refuse", why: `head moved to ${pull.head.sha.slice(0, 7)}; the review passed ${sha.slice(0, 7)}` };
+  const bad = pullProblem(pull, { sha, base });
+  if (bad) return { act: "refuse", why: bad };
   if (!checks.length) return { act: "refuse", why: "no checks read" };
   if (named("fail")) return { act: "refuse", why: `latest run failed: ${named("fail")}` };
   if (named("pending")) return { act: "wait", on: "checks", why: `pending: ${named("pending")}` };
@@ -40,22 +38,41 @@ export function decide(pull, checks, { sha, base }) {
   return pull.mergeable === null ? { act: "wait", on: "mergeable", why: "mergeable is UNKNOWN" } : { act: "merge", why: `${checks.length} checks pass at ${sha.slice(0, 7)}` };
 }
 
-// The command line as options, or { problem }.
-function parseArgs(argv) {
+// Why the pull request itself (not its checks) bars a merge, or undefined.
+function pullProblem(pull, { sha, base }) {
+  if (pull.draft || pull.state !== "open") return pull.draft ? "is a draft" : `is ${pull.merged ? "merged" : pull.state}`;
+  if (pull.base.ref !== base) return `base is ${pull.base.ref}, not ${base}: a stacked pull request merges through the stack`;
+  if (pull.head.sha !== sha) return `head moved to ${pull.head.sha.slice(0, 7)}; the review passed ${sha.slice(0, 7)}`;
+}
+
+// The flags as options, or { problem }.
+function readFlags(argv) {
   const o = { base: "main", wait: 60, check: false };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--check") o.check = true;
     else if (["--repo", "--pr", "--sha", "--followups", "--base", "--wait"].includes(argv[i]) && argv[i + 1]) o[argv[i].slice(2)] = argv[++i];
     else return { problem: `unknown or incomplete argument ${argv[i]}` };
   }
+  return o;
+}
+
+// The --followups value as { followups: "a, b" }, or { problem }.
+function readFollowups(value) {
+  const items = (value ?? "").split(",").map((i) => i.trim());
+  if (value === undefined) return { problem: "--followups is required: the issues and cards the review left, or none" };
+  return value === "none" || items.every((i) => /^(#\d+|PVTI_[\w-]+)$/.test(i)) ? { followups: items.join(", ") } : { problem: "--followups takes #<digits> or PVTI_... items, comma separated, or none" };
+}
+
+// The command line as options, or { problem }.
+function parseArgs(argv) {
+  const o = readFlags(argv);
+  if (o.problem) return o;
   if (!/^[\w.-]+\/[\w.-]+$/.test(o.repo ?? "")) return { problem: "--repo must be owner/name" };
   if (!/^[1-9]\d*$/.test(o.pr ?? "")) return { problem: "--pr must be a pull request number" };
   if (!/^[0-9a-f]{40}$/.test(o.sha ?? "")) return { problem: "--sha must be the full 40-hex head the review passed" };
-  const items = String(o.followups ?? "").split(",").map((i) => i.trim());
-  if (o.followups === undefined) return { problem: "--followups is required: the issues and cards the review left, or none" };
-  if (o.followups !== "none" && !items.every((i) => /^(#\d+|PVTI_[\w-]+)$/.test(i))) return { problem: "--followups takes #<digits> or PVTI_... items, comma separated, or none" };
-  o.followups = items.join(", ");
-  return /^\d+$/.test(String(o.wait)) ? { ...o, wait: Number(o.wait) } : { problem: "--wait must be seconds" };
+  const f = readFollowups(o.followups);
+  if (f.problem) return f;
+  return /^\d+$/.test(String(o.wait)) ? { ...o, ...f, wait: Number(o.wait) } : { problem: "--wait must be seconds" };
 }
 
 // Reads the pull request and its checks at `sha` and returns decide's answer with the pull request, re-reading mergeable UNKNOWN for up to `wait` seconds.
