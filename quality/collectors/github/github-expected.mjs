@@ -14,6 +14,8 @@ export const EXPECTED = {
   // Issues #7 3, #6 0, #5 80, #4 2; #3 and #2 (footer only) are empty. Draft cards are not read
   "issues.latest_card_words": 0, // #6, the newest card: a Mermaid diagram, no prose
   "issues.card_visual_share": 50, // #7 table, #6 diagram, #4 image: 3 of the 6 issues; draft cards are not read
+  "discussions.unanswered_old": 1, // #1, 13 days old; #3 is exactly a day, #2 is answered, #4 is an announcement
+  "discussions.oldest_unanswered_hours": 312, // #1, 13 days before the read
   "pull_requests.green_at_head": 66.7, // #17 has no checks and is left out
   "pull_requests.reviewed": 25, // #20 only; see the review test below
   "pull_requests.fixed_after_review": 50, // #18's first review read 8a8a…, then a fix moved its head; #20 merged as first reviewed

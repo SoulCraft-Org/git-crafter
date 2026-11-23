@@ -1,7 +1,6 @@
 // Lab and PageSpeed vitals for the site collectors (site-lib.mjs).
 
-import { join } from "node:path";
-import { couldNotCheck, firstLine, measured, now, once } from "./site-base.mjs";
+import { couldNotCheck, firstLine, measured, once } from "./site-base.mjs";
 import { psiPages } from "./site-scan.mjs";
 import { browserPass, okPages } from "./site-browser.mjs";
 

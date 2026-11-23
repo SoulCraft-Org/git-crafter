@@ -6,8 +6,8 @@ repo calls it in about ten lines, pinned to a full Git Crafter commit SHA with a
 GitHub's pool only for now: ubuntu-slim for short jobs, ubuntu-latest for standard ones, and the org's $0 Actions
 budget with prevent_further_usage as the hard stop. Free tiers and included minutes only (owner, 2026-11-02).
 
-This file, ci_standard_yaml.py (the parser) and ci_standard_rules.py (the rules) are the one definition. `embed`
-writes the three, verbatim, into the workflow's run block, so a caller's run uses the copies at the caller's pin: a
+This file, ci_standard_yaml.py (the parser), ci_standard_rules.py (the rules) and ci_standard_actions.py (the pinned
+rule) are the one definition. `embed` writes the four, verbatim, into the workflow's run block, so a caller's run uses the copies at the caller's pin: a
 called workflow cannot read private Git Crafter files with the caller's token, and a pull request in the caller cannot
 edit them. tools/verify.sh runs `embed` to prove the copies are current. Actions evaluates an expression anywhere in a
 workflow, so these sources never spell one (EXPR). The embed command (ci_standard_embed.py) and the self-test
@@ -18,9 +18,11 @@ workflow, so these sources never spell one (EXPR). The embed command (ci_standar
         Git Crafter main
     ci_standard.py changes --paths=LINES [--base=SHA] [--output=NAME]
         NAME=true (default run) when the change since BASE touched a path glob or .github/workflows/; unknown means
-        run. NAME is the step output, so one step can ask twice: the standard job's own paths, a docs-only change
+        run. NAME is the step output, so one step can ask twice: the standard job's own paths, a docs-only change.
+        A glob that starts with /, ./ or ! can never match a git path: exit 2, so ci-ok fails (#199). A glob that
+        matches no file git tracks at HEAD prints a ::warning::
     ci_standard.py embed [--write]
-        whether ci-standard.yml holds the three files verbatim; --write puts them there
+        whether ci-standard.yml holds the four files verbatim; --write puts them there
     ci_standard.py --self-test
         seeded known-good and known-bad repos, changes in a scratch git repo, the parser and the embed
 
@@ -34,12 +36,14 @@ Rules, one id each; templates/ci/README.md explains each one:
     pin          that uses: is at a full 40-character commit SHA, with a version comment such as # v1
     dependabot   .github/dependabot.yml has a github-actions entry, which bumps the pin
     permissions  every workflow has a top-level permissions mapping of read or none; no job has write-all
-    concurrency  a pull_request or push workflow has a concurrency group; it cancels superseded runs, and never a
-                 deploy (cancel-in-progress false, or an expression that is true only on pull requests)
+    concurrency  a pull_request or push workflow has a concurrency group; it cancels superseded runs (a bare group
+                 name never does), and never a deploy (cancel-in-progress unset, false, or exactly the templates'
+                 expression that is true only on pull requests)
     timeout      every job that runs steps has timeout-minutes
     runner       every job runs on ubuntu-slim or a standard GitHub-hosted label. vars.CI_RUNNER, macOS, Windows, a
                  larger, self-hosted or computed runner needs an exception
-    pinned       every remote uses:, on a step or a job, is pinned to a full commit SHA, or a step's is locked in actions.lock
+    pinned       every remote uses:, on a step or a job, is pinned to a full commit SHA, or a step's is locked in actions.lock;
+                 a local action's (uses: ./PATH) own steps too, read from PATH/action.yml
     cache        a job that runs npm ci or pip install uses setup-node or setup-python with cache
     no-share     no per-repo minute guard (build_minutes_guard.py): the org pool replaces per-repo shares
     blacksmith   no Blacksmith label outside ci-standard.yml's chooser, and no Blacksmith sticky disk or Docker layer
@@ -108,6 +112,21 @@ def changed_files(base: str, cwd: str):
 def patterns_of(paths: str) -> list:
     """The path globs in paths, one per line; blank lines and # comments dropped."""
     return [p.strip() for p in (paths or "").splitlines() if p.strip() and not p.strip().startswith("#")]
+
+
+# A glob that starts with one of these can never match a path git lists: git paths are relative, and this filter has
+# no negation, though GitHub's on.<event>.paths reads ! as one (#199).
+NEVER_MATCH = ("/", "./", "!")
+
+
+def unmatched(patterns: list, cwd: str = ".") -> list:
+    """The patterns that match no file git tracks at HEAD, a likely typo; [] when git cannot list the files."""
+    try:
+        r = subprocess.run(["git", "ls-files", "-z"], cwd=cwd, capture_output=True, timeout=60)
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    files = [f for f in r.stdout.decode("utf-8", "replace").split("\0") if f] if r.returncode == 0 else []
+    return [p for p in patterns if files and not any(glob_re(p).fullmatch(f) for f in files)]
 
 
 def changes(paths: str, base: str, cwd: str = ".") -> tuple:
@@ -193,6 +212,13 @@ def run_changes(args) -> int:
     if not re.fullmatch(r"[a-z][a-z0-9_]*", args.output):
         print(f"ci-standard: usage: --output {args.output!r} is not a step output name (a-z, 0-9, _)")
         return 2
+    never = [p for p in patterns_of(args.paths) if p.startswith(NEVER_MATCH)]
+    if never:
+        print(f"ci-standard: usage: --paths {', '.join(map(repr, never))} can never match a changed file; "
+              "write each glob from the repo root, with no leading / or ./, and no ! pattern (this filter has no negation)")
+        return 2
+    for p in unmatched(patterns_of(args.paths)):
+        print(f"::warning::ci-standard: paths glob {p!r} matches no file in the repo; check it for a typo")
     run, reason = changes(args.paths, args.base)
     line = f"{args.output}={'true' if run else 'false'}"
     print(f"{line}\nreason={reason}")

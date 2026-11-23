@@ -9,8 +9,8 @@
 // could_not_check, never a throw and never a 0. All of it runs offline.
 // The Security and quality cases are in github-security.test.mjs.
 import assert from "node:assert/strict";
-import { after, describe, it } from "node:test";
-import { collect, METRIC_IDS, reverts } from "./github.mjs";
+import { describe, it } from "node:test";
+import { METRIC_IDS } from "./github.mjs";
 import { isGreen } from "./github-reviews.mjs";
 import { GH_AT_ONCE, gated } from "./github-core.mjs";
 import { TARGETS, REST, GRAPHQL, REPO, HOUR_MS, ISO, fakeGh, run } from "./github-test-lib.mjs";
@@ -20,8 +20,8 @@ describe("targets/github.json", () => {
   // Issues (id issues) holds the issue metrics, Projects the board's, Settings
   // the repo settings this collector reads. Ids keep their prefixes when a
   // metric moves tab (v7.0.0), so history and overrides stand.
-  const TABS = ["code", "issues", "pull-requests", "actions", "projects", "security", "dependabot", "scanning", "settings", "pages"];
-  const PREFIX = { code: ["security"], issues: ["issues"], projects: ["projects"], "pull-requests": ["pull_requests"], actions: ["actions", "security"], security: ["security"], dependabot: ["security", "settings", "pull_requests"], scanning: ["security"], settings: ["settings"], pages: ["security", "settings"] };
+  const TABS = ["code", "issues", "discussions", "pull-requests", "actions", "projects", "security", "dependabot", "scanning", "settings", "pages"];
+  const PREFIX = { code: ["security"], issues: ["issues"], discussions: ["discussions"], projects: ["projects"], "pull-requests": ["pull_requests"], actions: ["actions", "security"], security: ["security"], dependabot: ["security", "settings", "pull_requests"], scanning: ["security"], settings: ["settings"], pages: ["security", "settings"] };
 
   it("defines exactly the metrics the collector reads", () => {
     assert.deepEqual(TARGETS.map((t) => t.id).sort(), [...METRIC_IDS].sort());
@@ -56,6 +56,7 @@ describe("targets/github.json", () => {
       issue_types: ["Bug", "Task"],
       park_hours: 24,
       record_minutes: 5,
+      discussion_days: 7,
       project_title: "",
       project_columns: ["Todo", "In Progress", "Done"],
       project_workflows: ["Item added to project", "Pull request linked to issue", "Item closed", "Pull request merged", "Auto-add to project"],
@@ -84,7 +85,7 @@ describe("targets/github.json", () => {
 
   it("gives each tab at least one quality and one speed metric", () => {
     // The tabs this file leads; the others take a few metrics from it.
-    for (const tab of ["issues", "projects", "pull-requests", "security"]) {
+    for (const tab of ["issues", "discussions", "projects", "pull-requests", "security"]) {
       const kinds = new Set(TARGETS.filter((t) => t.tab === tab).map((t) => t.kind));
       assert.ok(kinds.has("quality") && kinds.has("speed"), tab);
     }
@@ -325,7 +326,7 @@ describe("last-N bases, no calendar windows (metrics-now spec, 2026-11-03)", () 
     const gh = fakeGh();
     await run({ gh });
     assert.ok(!gh.calls.some((c) => /search|actions\/(runs|jobs|workflows)/.test(c)), gh.calls.join(", "));
-    assert.equal(gh.calls.length, 30, gh.calls.join(", ")); // one of them actions/permissions, a settings read; one the board's workflows; one code quality's findings
+    assert.equal(gh.calls.length, 31, gh.calls.join(", ")); // one of them actions/permissions, a settings read; one the board's workflows; one code quality's findings; one the open discussions
   });
 
   it("keeps the 20 latest merges, including one opened early but merged last", async () => {

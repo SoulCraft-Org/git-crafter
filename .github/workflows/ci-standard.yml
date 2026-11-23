@@ -22,8 +22,8 @@ name: ci-standard
 # Jobs: changes (ubuntu-slim) applies the path filter and runs the conformance check; short and standard run the
 # caller's commands; ci-ok is the one verdict, the check a ruleset requires (the caller's job id, then ci-ok).
 #
-# The checks are tools/ci_standard.py and the two modules it imports, ci_standard_yaml.py and ci_standard_rules.py,
-# embedded below verbatim by `ci_standard.py embed --write`, because a called workflow cannot read private Git Crafter
+# The checks are tools/ci_standard.py and the three modules it imports, ci_standard_yaml.py, ci_standard_actions.py
+# and ci_standard_rules.py, embedded below verbatim by `ci_standard.py embed --write`, because a called workflow cannot read private Git Crafter
 # files with the caller's token, and a ./ path here means the caller's repo. So every line that runs is at the
 # caller's pin, and no pull request in the caller can edit it. tools/verify.sh fails when any copy differs from its
 # file. The embed command and the self-test stay out of the workflow; there they exit 2.
@@ -98,8 +98,8 @@ jobs:
           GitHub's pool only for now: ubuntu-slim for short jobs, ubuntu-latest for standard ones, and the org's $0 Actions
           budget with prevent_further_usage as the hard stop. Free tiers and included minutes only (owner, 2026-11-02).
 
-          This file, ci_standard_yaml.py (the parser) and ci_standard_rules.py (the rules) are the one definition. `embed`
-          writes the three, verbatim, into the workflow's run block, so a caller's run uses the copies at the caller's pin: a
+          This file, ci_standard_yaml.py (the parser), ci_standard_rules.py (the rules) and ci_standard_actions.py (the pinned
+          rule) are the one definition. `embed` writes the four, verbatim, into the workflow's run block, so a caller's run uses the copies at the caller's pin: a
           called workflow cannot read private Git Crafter files with the caller's token, and a pull request in the caller cannot
           edit them. tools/verify.sh runs `embed` to prove the copies are current. Actions evaluates an expression anywhere in a
           workflow, so these sources never spell one (EXPR). The embed command (ci_standard_embed.py) and the self-test
@@ -110,9 +110,11 @@ jobs:
                   Git Crafter main
               ci_standard.py changes --paths=LINES [--base=SHA] [--output=NAME]
                   NAME=true (default run) when the change since BASE touched a path glob or .github/workflows/; unknown means
-                  run. NAME is the step output, so one step can ask twice: the standard job's own paths, a docs-only change
+                  run. NAME is the step output, so one step can ask twice: the standard job's own paths, a docs-only change.
+                  A glob that starts with /, ./ or ! can never match a git path: exit 2, so ci-ok fails (#199). A glob that
+                  matches no file git tracks at HEAD prints a ::warning::
               ci_standard.py embed [--write]
-                  whether ci-standard.yml holds the three files verbatim; --write puts them there
+                  whether ci-standard.yml holds the four files verbatim; --write puts them there
               ci_standard.py --self-test
                   seeded known-good and known-bad repos, changes in a scratch git repo, the parser and the embed
 
@@ -126,12 +128,14 @@ jobs:
               pin          that uses: is at a full 40-character commit SHA, with a version comment such as # v1
               dependabot   .github/dependabot.yml has a github-actions entry, which bumps the pin
               permissions  every workflow has a top-level permissions mapping of read or none; no job has write-all
-              concurrency  a pull_request or push workflow has a concurrency group; it cancels superseded runs, and never a
-                           deploy (cancel-in-progress false, or an expression that is true only on pull requests)
+              concurrency  a pull_request or push workflow has a concurrency group; it cancels superseded runs (a bare group
+                           name never does), and never a deploy (cancel-in-progress unset, false, or exactly the templates'
+                           expression that is true only on pull requests)
               timeout      every job that runs steps has timeout-minutes
               runner       every job runs on ubuntu-slim or a standard GitHub-hosted label. vars.CI_RUNNER, macOS, Windows, a
                            larger, self-hosted or computed runner needs an exception
-              pinned       every remote uses:, on a step or a job, is pinned to a full commit SHA, or a step's is locked in actions.lock
+              pinned       every remote uses:, on a step or a job, is pinned to a full commit SHA, or a step's is locked in actions.lock;
+                           a local action's (uses: ./PATH) own steps too, read from PATH/action.yml
               cache        a job that runs npm ci or pip install uses setup-node or setup-python with cache
               no-share     no per-repo minute guard (build_minutes_guard.py): the org pool replaces per-repo shares
               blacksmith   no Blacksmith label outside ci-standard.yml's chooser, and no Blacksmith sticky disk or Docker layer
@@ -200,6 +204,21 @@ jobs:
           def patterns_of(paths: str) -> list:
               """The path globs in paths, one per line; blank lines and # comments dropped."""
               return [p.strip() for p in (paths or "").splitlines() if p.strip() and not p.strip().startswith("#")]
+
+
+          # A glob that starts with one of these can never match a path git lists: git paths are relative, and this filter has
+          # no negation, though GitHub's on.<event>.paths reads ! as one (#199).
+          NEVER_MATCH = ("/", "./", "!")
+
+
+          def unmatched(patterns: list, cwd: str = ".") -> list:
+              """The patterns that match no file git tracks at HEAD, a likely typo; [] when git cannot list the files."""
+              try:
+                  r = subprocess.run(["git", "ls-files", "-z"], cwd=cwd, capture_output=True, timeout=60)
+              except (OSError, subprocess.TimeoutExpired):
+                  return []
+              files = [f for f in r.stdout.decode("utf-8", "replace").split("\0") if f] if r.returncode == 0 else []
+              return [p for p in patterns if files and not any(glob_re(p).fullmatch(f) for f in files)]
 
 
           def changes(paths: str, base: str, cwd: str = ".") -> tuple:
@@ -285,6 +304,13 @@ jobs:
               if not re.fullmatch(r"[a-z][a-z0-9_]*", args.output):
                   print(f"ci-standard: usage: --output {args.output!r} is not a step output name (a-z, 0-9, _)")
                   return 2
+              never = [p for p in patterns_of(args.paths) if p.startswith(NEVER_MATCH)]
+              if never:
+                  print(f"ci-standard: usage: --paths {', '.join(map(repr, never))} can never match a changed file; "
+                        "write each glob from the repo root, with no leading / or ./, and no ! pattern (this filter has no negation)")
+                  return 2
+              for p in unmatched(patterns_of(args.paths)):
+                  print(f"::warning::ci-standard: paths glob {p!r} matches no file in the repo; check it for a typo")
               run, reason = changes(args.paths, args.base)
               line = f"{args.output}={'true' if run else 'false'}"
               print(f"{line}\nreason={reason}")
@@ -595,6 +621,82 @@ jobs:
                   raise ParseError("a workflow is a mapping at the top")
               return doc
           CI_STANDARD_YAML_PY
+          cat > "$RUNNER_TEMP/ci_standard_actions.py" <<'CI_STANDARD_ACTIONS_PY'
+          """ci_standard_actions.py: the pinned rule, on a job's steps and the local actions they call (#200). Embedded with
+          ci_standard.py. A step's uses: ./PATH or $/PATH runs PATH/action.yml in the caller's job, so its steps are read too; a
+          link or a path out of the repo is never read (could not check). Standard library only."""
+
+          from __future__ import annotations
+
+          import os
+          import re
+
+          from ci_standard_yaml import ParseError, parse
+
+          SHA_RE = re.compile(r"[^@\s]+@[0-9a-f]{40}")
+          # This repo's own actions: ./ runs the checkout's copy, $/ the copy at the workflow's commit (gh actions-lock).
+          OWN = ("./", "$/")
+          LOCK_FILE = "actions.lock"
+          ACTION_FILES = ("action.yml", "action.yaml")
+
+
+          def pin_findings(where: str, steps: list, locked=frozenset()) -> list:
+              """Each step's uses: pinned to a full SHA or locked in actions.lock, a docker:// image to a digest."""
+              found = []
+              for s in steps:
+                  uses = str(s.get("uses") or "")
+                  if uses and not uses.startswith(OWN + ("docker://",)) and not SHA_RE.fullmatch(uses) and uses not in locked:
+                      found.append(("pinned", where, f"{uses} is not pinned to a full commit SHA, and {LOCK_FILE} does not lock it"))
+                  if uses.startswith("docker://") and "@sha256:" not in uses:
+                      found.append(("pinned", where, f"{uses} is not pinned to a digest"))
+              return found
+
+
+          def read_action(repo: str, rel: str) -> tuple:
+              """(the parsed action, None), or (None, why it could not be read): a link and a path out of the repo never are."""
+              root = os.path.realpath(repo)
+              for name in ACTION_FILES:
+                  path = os.path.normpath(os.path.join(root, rel, name))
+                  if os.path.commonpath([root, path]) != root:
+                      return None, "a path that leaves the repo; never read"
+                  if not os.path.lexists(path):
+                      continue
+                  if os.path.realpath(path) != path:
+                      return None, "a link, or a file inside one; never read"
+                  try:
+                      with open(path, encoding="utf-8") as fh:
+                          doc = parse(fh.read())
+                  except (OSError, UnicodeDecodeError, ParseError) as exc:
+                      return None, str(exc)
+                  return (doc, None) if isinstance(doc, dict) else (None, "not a mapping")
+              return None, f"no {' or '.join(ACTION_FILES)} in the checkout"
+
+
+          def action_steps(doc: dict) -> list:
+              """A composite action's steps, and a Docker action's docker:// image as one more step."""
+              runs = doc.get("runs") if isinstance(doc.get("runs"), dict) else {}
+              image = str(runs.get("image") or "")
+              return [s for s in runs.get("steps") or [] if isinstance(s, dict)] + ([{"uses": image}] if image.startswith("docker://") else [])
+
+
+          def local_action_findings(repo: str, steps: list) -> tuple:
+              """(findings, unread) for each local action the steps call, and each local action those call, read once each."""
+              found, unread, seen, todo = [], [], set(), list(steps)
+              while todo:
+                  uses = str(todo.pop(0).get("uses") or "")
+                  rel = os.path.normpath(uses[2:] or ".") if uses.startswith(OWN) else None
+                  if rel is None or rel in seen:
+                      continue
+                  seen.add(rel)
+                  doc, why = read_action(repo, rel)
+                  if why:
+                      unread.append((rel, f"local action: {why}"))
+                      continue
+                  inner = action_steps(doc)
+                  found += pin_findings(rel, inner)
+                  todo += inner
+              return found, unread
+          CI_STANDARD_ACTIONS_PY
           cat > "$RUNNER_TEMP/ci_standard_rules.py" <<'CI_STANDARD_RULES_PY'
           """ci_standard_rules.py: the CI standard's rules, and check_repo, which applies them to one checkout.
 
@@ -609,6 +711,7 @@ jobs:
           import re
           import subprocess
 
+          from ci_standard_actions import LOCK_FILE, SHA_RE, local_action_findings, pin_findings
           from ci_standard_yaml import EXPR, ParseError, parse
 
           RULES = ("caller", "pin", "dependabot", "permissions", "concurrency", "timeout", "runner", "pinned", "cache", "no-share", "blacksmith")
@@ -625,17 +728,15 @@ jobs:
           STANDARD = "<owner>/git-crafter/.github/workflows/ci-standard.yml"
           STANDARD_RE = re.compile(r"([A-Za-z0-9][\w.-]*)/(" + REPO_NAMES + r")/\.github/workflows/ci-standard\.yml@")
           LOCAL_STANDARD = "./.github/workflows/ci-standard.yml"
-          SHA_RE = re.compile(r"[^@\s]+@[0-9a-f]{40}")
           FULL_SHA = re.compile(r"[0-9a-f]{40}")
-          # This repo's own actions: ./ runs the checkout's copy, $/ the copy at the workflow's commit (gh actions-lock).
-          OWN = ("./", "$/")
-          LOCK_FILE = "actions.lock"
           PIN_LINE_RE = re.compile(r"uses:\s*[\"']?[A-Za-z0-9][\w.-]*/" + REPO_NAMES + r"/\.github/workflows/ci-standard\.yml@([^\s\"'#]+)[\"']?\s*(#\s*(\S+))?")
           NPM_RE = re.compile(r"\b(npm (ci|install)|pnpm install|yarn install)\b")
           PIP_RE = re.compile(r"\bpip3? install\b")
           SHARE_FILES = ("build_minutes_guard.py",)
           CONFIG = os.path.join(".github", "ci-standard.json")
           PUSH_TRIGGERS = {"pull_request", "push", "pull_request_target", "merge_group"}
+          # The one cancel-in-progress expression a deploy may hold, the templates' own: true on pull requests only (#201).
+          PR_ONLY_CANCEL = EXPR + " github.event_name == 'pull_request' }}"
 
 
           class UsageError(Exception):
@@ -707,8 +808,14 @@ jobs:
 
 
           def cancel_of(conc) -> str:
-              """The concurrency group's cancel-in-progress, as text; empty when unset."""
+              """The concurrency group's cancel-in-progress, as text; empty when unset, or when concurrency is a bare group name."""
               return str(conc.get("cancel-in-progress", "")).strip() if isinstance(conc, dict) else ""
+
+
+          def never_cancels_deploy(cancel: str) -> bool:
+              """Whether a deploy's cancel-in-progress is unset, false, or exactly the pull-request-only expression, spaces aside.
+              Any other expression may be true on a push, as github.event_name != 'pull_request' is (#201)."""
+              return cancel in ("", "false") or "".join(cancel.split()) == "".join(PR_ONLY_CANCEL.split())
 
 
           def concurrency_findings(name: str, doc: dict) -> list:
@@ -720,10 +827,11 @@ jobs:
               if not conc:
                   return [("concurrency", name, "no concurrency group; a newer push should cancel the older run")]
               if deploys(doc):
-                  if cancel not in ("", "false") and not ("pull_request" in cancel and EXPR in cancel):
+                  if not never_cancels_deploy(cancel):
                       return [("concurrency", name, f"deploys, but cancel-in-progress is {cancel!r}; a deploy is never cancelled")]
                   return []
-              if isinstance(conc, dict) and not cancel:
+              # A bare group name (concurrency: ci-<ref>) queues superseded runs and never cancels them.
+              if not cancel:
                   return [("concurrency", name, "cancel-in-progress is not set; superseded runs keep spending minutes")]
               return []
 
@@ -751,18 +859,6 @@ jobs:
                   name = str(s.get("uses") or "").split("@", 1)[0].lower()
                   if name in BLACKSMITH_CACHES:
                       found.append(("blacksmith", where, f"{name} keeps storage Blacksmith bills, which no meter here stops"))
-              return found
-
-
-          def pin_findings(where: str, steps: list, locked=frozenset()) -> list:
-              """Each step's uses: pinned to a full SHA or locked in actions.lock, a docker:// image to a digest."""
-              found = []
-              for s in steps:
-                  uses = str(s.get("uses") or "")
-                  if uses and not uses.startswith(OWN + ("docker://",)) and not SHA_RE.fullmatch(uses) and uses not in locked:
-                      found.append(("pinned", where, f"{uses} is not pinned to a full commit SHA, and {LOCK_FILE} does not lock it"))
-                  if uses.startswith("docker://") and "@sha256:" not in uses:
-                      found.append(("pinned", where, f"{uses} is not pinned to a digest"))
               return found
 
 
@@ -818,21 +914,26 @@ jobs:
           # ---- the repo ------------------------------------------------------------------------------------------------------
 
 
-          def dependabot_ecosystems(repo: str) -> list:
-              """The package-ecosystem of each entry in .github/dependabot.yml (or .yaml, which wins); [] when unreadable."""
+          def dependabot_ecosystems(repo: str, unread: list):
+              """The package-ecosystem of each entry in .github/dependabot.yml (or .yaml, which wins); [] when it does not parse.
+              None, with the file added to unread, when it cannot be read (#203): could not check, never a finding."""
               text = ""
               for fname in ("dependabot.yml", "dependabot.yaml"):
                   path = os.path.join(repo, ".github", fname)
                   if os.path.isfile(path) and not os.path.islink(path):
-                      with open(path, encoding="utf-8") as fh:
-                          text = fh.read()
+                      try:
+                          with open(path, encoding="utf-8") as fh:
+                              text = fh.read()
+                      except (OSError, UnicodeDecodeError) as exc:
+                          unread.append((os.path.join(".github", fname), f"{type(exc).__name__}: {exc}"))
+                          return None
               try:
                   return [str(u.get("package-ecosystem")) for u in (parse(text).get("updates") or []) if isinstance(u, dict)] if text else []
               except ParseError:
                   return []
 
 
-          def remote_caller(repo: str, caller: dict, uses: str, text: str) -> list:
+          def remote_caller(repo: str, caller: dict, uses: str, text: str, unread: list) -> list:
               """Fills in the pin, owner and version of a caller at <owner>/git-crafter (or code-os), and finds the pin and dependabot rules."""
               pin = uses.split("@", 1)[1]
               caller["pin"] = pin
@@ -844,12 +945,13 @@ jobs:
                   found.append(("pin", where, f"pinned to {pin!r}; pin a full commit SHA of Git Crafter main, with a # v1 comment"))
               elif not caller["version"] or not re.fullmatch(r"v\d+(\.\d+)*", caller["version"]):
                   found.append(("pin", where, "no version comment; add # v1 after the SHA so a reader and Dependabot see the version"))
-              if "github-actions" not in dependabot_ecosystems(repo):
+              ecosystems = dependabot_ecosystems(repo, unread)
+              if ecosystems is not None and "github-actions" not in ecosystems:
                   found.append(("dependabot", ".github/dependabot.yml", "no github-actions entry; Dependabot must bump the standard's pin"))
               return found
 
 
-          def check_caller(repo: str, docs: dict, texts: dict) -> tuple:
+          def check_caller(repo: str, docs: dict, texts: dict, unread: list) -> tuple:
               """([(rule, where, why)], caller) where caller is {"file", "job", "pin", "version", "local"} or None."""
               callers = [(name, jid, uses) for name, doc in docs.items() if "pull_request" in triggers(doc) for jid, uses in standard_jobs(doc).items()]
               if not callers:
@@ -858,7 +960,7 @@ jobs:
               caller = {"file": name, "job": jid, "pin": None, "version": None, "local": uses == LOCAL_STANDARD}
               if caller["local"]:
                   return [], caller
-              return remote_caller(repo, caller, uses, texts[name]), caller
+              return remote_caller(repo, caller, uses, texts[name], unread), caller
 
 
           def behind(pin: str, owner: str, repo: str = "git-crafter") -> dict:
@@ -893,9 +995,14 @@ jobs:
               return doc
 
 
+          def known_rules(rules) -> bool:
+              """Whether rules is a list of rule ids, each a string (a list in it raised TypeError, #203) that RULES holds."""
+              return isinstance(rules, list) and all(isinstance(r, str) and r in RULES for r in rules)
+
+
           def check_exception(key: str, e) -> None:
               """UsageError unless the exception names known rules, none of caller, pin or dependabot, and gives a why."""
-              if not isinstance(e, dict) or not str(e.get("why") or "").strip() or not isinstance(e.get("rules"), list) or not set(e["rules"]) <= set(RULES):
+              if not isinstance(e, dict) or not str(e.get("why") or "").strip() or not known_rules(e.get("rules")):
                   raise UsageError(f"{CONFIG}: exception {key!r} needs known rules and a why")
               if set(e["rules"]) & {"caller", "pin", "dependabot"}:
                   raise UsageError(f"{CONFIG}: exception {key!r}: caller, pin and dependabot take no exception")
@@ -996,8 +1103,10 @@ jobs:
               files = sorted(f for f in os.listdir(folder) if f.endswith((".yml", ".yaml"))) if os.path.isdir(folder) else []
               docs, texts, unread = read_workflows(folder, [f for f in files if f not in config["skip"]])
               house, excepted = house_findings(docs, config["exceptions"], unread, read_lock(folder))
-              caller_found, caller = check_caller(repo, docs, texts)
-              findings = caller_found + house + share_findings(repo)
+              caller_found, caller = check_caller(repo, docs, texts, unread)
+              local_found, local_unread = local_action_findings(repo, [s for doc in docs.values() for job in doc["jobs"].values() for s in steps_of(job)])
+              findings = caller_found + house + local_found + share_findings(repo)
+              unread += local_unread
               return {"follows": not findings and not unread, "workflows": len(files), "caller": caller, "behind": lag_of(caller, ask_behind),
                       "findings": findings, "excepted": excepted, "could_not_check": unread}
           CI_STANDARD_RULES_PY

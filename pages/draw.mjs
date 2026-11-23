@@ -48,6 +48,8 @@ export const cicon = (id, cls = "ic") => `<svg class="${cls}" aria-hidden="true"
 // first step. Steps spread over the width, never closer than GAP.
 export const TRAIL = { width: 1240, height: 260, y: 110, x0: 70, r: 26 };
 export const GAP = 104;
+// A step's click width: its box, narrowed so neighbours never overlap; a lone step (gap 0) keeps the full box.
+export const hitWidth = (gap) => (gap > 4 ? Math.min(132, gap - 4) : 132);
 // Each step's x and y on the trail: the critical path on one line, the
 // steps off it below.
 export function places(steps, critical) {
@@ -90,10 +92,11 @@ export function trail(map, readouts, critical, selected) {
   const x0 = T.x[P.first];
   const mainEnd = T.x[P.end];
   const xn = T.x[P.last];
-  const main = `<path class="t-main" d="M${x0} ${y}H${mainEnd}"/><path class="t-off" d="M${mainEnd} ${y}H${xn}"/>`;
+  // A line of zero length is not drawn: a one-step map has none.
+  const main = `${mainEnd > x0 ? `<path class="t-main" d="M${x0} ${y}H${mainEnd}"/>` : ""}${xn > mainEnd ? `<path class="t-off" d="M${mainEnd} ${y}H${xn}"/>` : ""}`;
   const names = (id) => steps.find((s) => s.id === id)?.name ?? id;
   const back = `<path class="t-back" d="M${xn} ${y + T.r + 8}V${T.height - 22}H22V${y}H${x0 - T.r - 8}"/><path class="t-arrow" d="M${x0 - T.r - 14} ${y - 5} ${x0 - T.r - 6} ${y} ${x0 - T.r - 14} ${y + 5}"/><text class="t-note" x="${(x0 + xn) / 2}" y="${T.height - 6}">what ${esc(names(P.last))} finds feeds the next ${esc(names(P.first))}</text>`;
-  const hitW = Math.min(132, P.gap - 4 || 132);
+  const hitW = hitWidth(P.gap);
   const nodes = steps.map((s, i) => stepNode({ key: key(s), s, i, ro: readouts[s.id], x: T.x[s.id], y, hitW, crit: critical.has(s.id), selected })).join("");
   return `<svg class="trail" viewBox="0 0 ${T.width} ${T.height}" role="group" aria-label="${esc(map.name)}: ${steps.length} steps; the critical path is the thick line">${main}${back}${nodes}</svg>`;
 }

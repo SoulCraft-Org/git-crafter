@@ -5,7 +5,6 @@ import { mkdtempSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { loadTargets } from "./score.mjs";
 import { stripAll } from "./collectors/lib/strip.mjs";
 
 export const up = { id: "t.up", tab: "code", kind: "quality", label: "Pass rate", unit: "%", goal: 90, near: 70, direction: "higher", goal_source: "fixture" };

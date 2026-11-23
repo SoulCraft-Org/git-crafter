@@ -3,7 +3,6 @@
 
 import { readFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
-import ts from "typescript";
 import { analyzeFile } from "./complexity.mjs";
 import { pythonFunctions } from "./code-python.mjs";
 import { DUPLICATE, duplicates } from "./shape.mjs";

@@ -8,6 +8,7 @@ raise Unreadable, never a quiet undercount.
 import datetime as dt
 import json
 import os
+import re
 import tempfile
 from types import SimpleNamespace
 
@@ -252,7 +253,7 @@ def backstop_checks(tool):
         try:
             tool.backstop(api, "org", reading, tool.HARD_STOP, resume, previous, lambda: posted.append(json.dumps(reading)))
         except tool.Unreadable:
-            pass
+            pass  # the failing pass is the case under test; its published reading is what we return
         return posted[-1] if posted else None
     first = stop(None)
     yield "the access is published before the failed PATCH", first is not None and json.loads(first)["blacksmith"]["access"] == saved and api.failed
@@ -282,6 +283,14 @@ def manifest_checks(tool):
     yield "the flag is written first, to its own org variable, then the reading", sent == [
         ("PATCH", "CI_POOL_STOP", "1"), ("PATCH", "CI_POOL", '{"blacksmith":{"cost":11.5,"stop":10.8,"stopped":true}}')]
     yield "the action's hard stop default is the meter's", f'default: "{tool.HARD_STOP}"' in action
+    # The usage step runs Blacksmith's CLI beside BLACKSMITH_ORG_TOKEN (#184): it is pinned by hash, never piped to a shell.
+    yield "the CLI is not piped to a shell", re.search(r"\|\s*(?:sudo\s+)?(?:ba|z|da)?sh\b", action) is None and "get.blacksmith.sh" not in action
+    code = "\n".join(line for line in action.splitlines() if not line.lstrip().startswith("#"))
+    check = re.search(r'^\s*printf \'%s  %s\\n\' "\$BLACKSMITH_CLI_SHA256" "\$bin/blacksmith" \| sha256sum -c - >&2 &&$', code, re.M)
+    yield "the CLI's SHA-256 is pinned and checked before it runs", (
+        re.search(r"^\s+BLACKSMITH_CLI_SHA256: [0-9a-f]{64}$", code, re.M) is not None
+        and check is not None and 0 < check.start() < code.find('"$bin/blacksmith" auth login'))
+    yield "the CLI download has a time limit and a retry", "curl -fsSL --max-time 120 --retry 2" in code
 
 
 def raises(tool, fn) -> bool:
