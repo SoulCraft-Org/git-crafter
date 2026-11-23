@@ -124,7 +124,7 @@ function checkRaw(raw, c) {
   if (unknown.length) throw new Error(`unknown config key${unknown.length > 1 ? "s" : ""} ${unknown.join(", ")}; known: ${Object.keys(CONFIG_DEFAULTS).join(", ")}`);
   if (c.repo !== null && !REPO_RE.test(c.repo)) throw new Error(`repo must be "owner/name", not "${c.repo}"`);
   if (!Number.isInteger(c.budget) || c.budget <= 0) throw new Error("budget must be a whole number of bytes");
-  if (!Array.isArray(c.drop_needs) || !c.drop_needs.every((n) => typeof n === "string" && n.trim() !== "")) throw new Error('drop_needs must be a list of `needs` values, such as ["local-files"]');
+  if (!isIds(c.drop_needs)) throw new Error('drop_needs must be a list of `needs` values, such as ["local-files"]');
   if (c.issue_sync !== null && !isSync(c.issue_sync)) throw new Error('issue_sync must be null or { "label": "area", "labels": { "tab": "area" }, "project": 3, "quick": ["metric.id"], "waiting": ["metric.id"] }');
 }
 

@@ -151,15 +151,18 @@ const offPage = (def) => def.drop === true && !def.gate && typeof def.tab === "s
 export function loadDefs({ templateDir, packDirs = [], repoDir = null, tabs = DEFAULT_TABS, tabIds = new Set([...TAB_IDS, ...tabs.map(([id]) => id)]), dropNeeds = [] }) {
   const repoFiles = repoDir && repoDir !== templateDir ? readTargetFiles(repoDir) : [];
   const { entries, params } = overlayTargets(baseFiles(templateDir, packDirs), repoFiles);
-  for (const need of dropNeeds) {
-    if (!entries.some((d) => d.needs === need)) throw new Error(`drop_needs: no metric needs "${need}"`);
-  }
-  for (const def of entries) if (dropNeeds.includes(def.needs)) def.drop = true;
+  dropByNeeds(entries, dropNeeds);
   for (const def of entries) checkDef(def, `${def.overridden_in ? `${def.overridden_in} over the template's ${def.file}` : def.file}: ${def.id ?? "(no id)"}`, offPage(def) ? new Set([...tabIds, def.tab]) : tabIds);
   const on = new Set(tabs.map(([id]) => id));
   const defs = entries.filter((d) => d.drop !== true && on.has(d.tab));
   const gated = entries.filter((d) => (d.gate === true || d.gate === "warn") && on.has(d.tab));
   return { defs, params, all: entries, gated };
+}
+
+// Turns off each entry whose `needs` is listed, as drop: true does; a listed value no entry needs is a usage error.
+function dropByNeeds(entries, dropNeeds) {
+  for (const need of dropNeeds) if (!entries.some((d) => d.needs === need)) throw new Error(`drop_needs: no metric needs "${need}"`);
+  for (const def of entries) if (dropNeeds.includes(def.needs)) def.drop = true;
 }
 
 // The template's targets files, then each pack's (packs.mjs), which add
