@@ -11,8 +11,10 @@ import { fileURLToPath } from "node:url";
 
 import { configScope, namedIds, ownQuality, ownSteps, finishCollect, readDocs as readDocsFrom, readSiteFromDisk, SCOPE } from "../tools/collect_org.mjs";
 import { loadLibrary, resolveMaps } from "../pages/library.mjs";
+import { buildPage } from "../quality/build.mjs";
+import { loadConfig } from "../quality/config.mjs";
 import { TABS as TEMPLATE_TABS } from "../quality/score.mjs";
-import { BUDGET, build, checkDocs, checkMaps, CODE_OS_QUALITY_CONFIG, MAX_STEPS, qualityDefs } from "../pages/build.mjs";
+import { BUDGET, build, checkDocs, checkMaps, CODE_OS_QUALITY_CONFIG, MAX_STEPS, PAGE_DEFAULTS, qualityDefs } from "../pages/build.mjs";
 import { PROCESS_TABS, renderMetrics, renderProcess } from "../pages/render.mjs";
 import { GAP, places, trail, TRAIL } from "../pages/draw.mjs";
 import { GRID, grid } from "../pages/draw-grid.mjs";
@@ -87,6 +89,46 @@ test("the starters: the Quality config turns every tab on, and the Process confi
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("the Quality starter builds a page with all 13 tabs, and its web example names the site the Pages tab reads", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cos-quality-starter-"));
+  try {
+    mkdirSync(join(dir, "quality", "data"), { recursive: true });
+    cpSync(join(ROOT, "templates/quality/config.json"), join(dir, "quality", "config.json"));
+    cpSync(join(ROOT, "templates/quality/targets"), join(dir, "quality", "targets"), { recursive: true });
+    writeFileSync(join(dir, "quality", "data", "latest.json"), JSON.stringify({ generated_at: ago(1), commit: "abc1234", mode: "ci", metrics: {} }));
+    const config = loadConfig({ root: dir, file: "quality/config.json", env: {} });
+    assert.equal(config.tabs.length, 13, "all 13 tabs are on");
+    const page = buildPage(config, { now: NOW });
+    assert.equal(page.code, 0, "the starter builds with no data of its own");
+    for (const [id] of TEMPLATE_TABS) assert.ok(page.html.includes(`<section id="${id}" class="view tab"`), `${id} has a panel on the page`);
+    const { defs } = qualityDefs(dir, "quality/config.json");
+    for (const id of ["design.raw_hex", "usability.reading_grade"]) assert.match(defs[id].params.origin, /^https:\/\/OWNER\.github\.io\/my-repo\/$/, `${id} reads the example site`);
+    assert.equal(defs["deploy.waiting_merges"].params.platform, "pages", "the Deploy metrics read GitHub Pages");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("the Process starter's README names every library map, marks the ones the config uses, and lists the token each needs", () => {
+  const library = loadLibrary();
+  const { defs } = qualityDefs(ROOT, "templates/quality/config.json");
+  const used = new Set(readJson("templates/process/config.json").maps.map((m) => m.use));
+  const rows = new Map();
+  for (const m of readFileSync(join(ROOT, "templates/process/README.md"), "utf8").matchAll(/^\| `([a-z-]+)` \| (✓|✗) \| (.+) \|$/gm)) rows.set(m[1], { used: m[2] === "✓", needs: m[3] });
+  assert.deepEqual([...rows.keys()].sort(), Object.keys(library).sort(), "one row for each library map, no more");
+  for (const [id, map] of Object.entries(library)) {
+    assert.equal(rows.get(id).used, used.has(id), `${id}: the table marks what the config uses`);
+    const tokens = [...new Set(map.steps.map((s) => defs[s.metric]?.needs).filter((n) => n && n !== "none"))];
+    for (const t of tokens) assert.ok(rows.get(id).needs.includes(`\`${t}\``), `${id}: the table names ${t}`);
+    if (!tokens.length) assert.equal(rows.get(id).needs, "none", `${id} needs no token`);
+    else assert.equal([...rows.get(id).needs.matchAll(/`([a-z-]+)`/g)].length, tokens.length, `${id}: the table names no other token`);
+  }
+  const readme = readFileSync(join(ROOT, "templates/process/README.md"), "utf8");
+  for (const key of [...Object.keys(PAGE_DEFAULTS), "repos", "repo_url", "docs", "maps", "data", "history"]) assert.ok(readme.includes(`| \`${key}\` |`), `the key table names ${key}`);
+  for (const key of Object.keys(readJson("templates/process/config.json")).filter((k) => k !== "comment")) assert.ok(readme.includes(`| \`${key}\` |`), `${key} is in the starter, so the key table names it`);
+  assert.doesNotMatch(readme, /\b(seven|ten)\b/i, "no hard-coded map count");
 });
 
 test("the CI templates pin the engine at one full SHA with one release tag comment", () => {
