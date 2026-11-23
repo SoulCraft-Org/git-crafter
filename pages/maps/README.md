@@ -23,7 +23,7 @@ flowchart LR
 | [document.json](document.json) | write, lint, map, publish, read, load |
 | [contribute.json](contribute.json) | idea, approve, review, merge, rebuild, deploy (a fork: merge or rebuild) |
 | [release.json](release.json) | merge, tag, notes, bump, check, current |
-| [score.json](score.json) | collect, rate, roll, queue, issue, card (a fork: issue or card) |
+| [score.json](score.json) | collect, rate, queue, issue, card (a fork: issue or card) |
 | [discuss.json](discuss.json) | ask, reply, mark, issue, card, close (a fork: issue or card) |
 
 | Rule | Checked by |
