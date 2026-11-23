@@ -85,27 +85,16 @@ function context(run, owner, repo, { values, optionalOn }) {
   return { run, read, graphql, vars, optionalOn };
 }
 
-/**
- * The command line. `run` is gh (injectable for tests), `setup` the setup
- * list's path, `root` where --values resolves, `log` and `error` where
- * lines go. Returns the exit code.
- */
-export function main(argv = process.argv.slice(2), { run = ghRunner(), setup = SETUP, root = process.cwd(), log = console.log, error = console.error } = {}) {
-  const opts = parseArgs(argv);
-  const loaded = opts.problem ? opts : loadValues(opts.values, root);
-  const rows = JSON.parse(readFileSync(setup, "utf8")).rows;
-  const only = opts.only ? new Set(opts.only.split(",")) : null;
+// The first usage problem: from the options, the values file, --only or optional_on; null when none.
+function problemOf(opts, loaded, rows, only) {
   const missing = (ids) => [...(ids ?? [])].filter((id) => !rows.some((r) => r.id === id));
-  const problem = loaded.problem
-    ?? (missing(only).length ? `--only names no such row: ${missing(only).join(", ")}` : null)
-    ?? (missing(loaded.optionalOn).length ? `optional_on names no such row: ${missing(loaded.optionalOn).join(", ")}` : null);
-  if (problem) {
-    error(`${problem}\n${USAGE}`);
-    return 2;
-  }
-  if (only && !opts.apply) log("note: --only names rows for --apply; without --apply nothing is set");
-  const [owner, repo] = opts.repo.split("/");
-  const ctx = context(run, owner, repo, loaded);
+  if (loaded.problem) return loaded.problem;
+  if (missing(only).length) return `--only names no such row: ${missing(only).join(", ")}`;
+  return missing(loaded.optionalOn).length ? `optional_on names no such row: ${missing(loaded.optionalOn).join(", ")}` : null;
+}
+
+// Each row's result in order; under --apply a would-change row is set (only those named by --only), and after the first failed write the rest read skipped.
+function resultsOf(rows, ctx, opts, only) {
   const results = [];
   let stopped = false;
   for (const row of rows) {
@@ -118,7 +107,28 @@ export function main(argv = process.argv.slice(2), { run = ghRunner(), setup = S
       results.push({ row, ...done });
     }
   }
-  return report(results, opts, log);
+  return results;
+}
+
+/**
+ * The command line. `run` is gh (injectable for tests), `setup` the setup
+ * list's path, `root` where --values resolves, `log` and `error` where
+ * lines go. Returns the exit code.
+ */
+export function main(argv = process.argv.slice(2), { run = ghRunner(), setup = SETUP, root = process.cwd(), log = console.log, error = console.error } = {}) {
+  const opts = parseArgs(argv);
+  const loaded = opts.problem ? opts : loadValues(opts.values, root);
+  const rows = JSON.parse(readFileSync(setup, "utf8")).rows;
+  const only = opts.only ? new Set(opts.only.split(",")) : null;
+  const problem = problemOf(opts, loaded, rows, only);
+  if (problem) {
+    error(`${problem}
+${USAGE}`);
+    return 2;
+  }
+  if (only && !opts.apply) log("note: --only names rows for --apply; without --apply nothing is set");
+  const [owner, repo] = opts.repo.split("/");
+  return report(resultsOf(rows, context(run, owner, repo, loaded), opts, only), opts, log);
 }
 
 // Prints one line per row and a tally; the exit code: 1 for a failed write, or a failed row under --check.
