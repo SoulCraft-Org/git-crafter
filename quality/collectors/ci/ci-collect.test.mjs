@@ -333,6 +333,20 @@ describe("repo settings", () => {
     assert.equal(describeRun(RUNS[6], ran, both.get("ci")).light, false, "short ran, so the run did work whatever standard did");
   });
 
+  it("counts a short or standard job as work only for a caller the run's workflow file names", () => {
+    const wf = (name, jobs) => `name: ${name}\non:\n  pull_request:\njobs:\n${jobs}`;
+    const call = `  ci:\n    uses: acme/kit/.github/workflows/ci-standard.yml@${"a".repeat(40)} # v1\n    with:\n      short: npm test\n`;
+    const other = "  x:\n    uses: acme/kit/.github/workflows/other.yml@main\n";
+    const calls = standardCalls(repoWith({ ".github/workflows/ci.yml": wf("ci", call), ".github/workflows/lint.yml": wf("lint", other) }));
+    assert.deepEqual(calls.get("lint"), { calls: [], unset: [] }, "a workflow read with no call is known to have none");
+    const changes = (caller) => job(601, `${caller} / changes`, "13:00:00", "13:00:00", "13:00:07", "success", GATES);
+    const idle = (caller, tier) => [changes(caller), job(602, `${caller} / ${tier}`, "13:00:08", "13:00:09", "13:00:43", "success", [...GATES, skipped("Run actions/setup-python@abc")])];
+    assert.equal(describeRun(RUNS[6], idle("ci", "short"), calls.get("ci")).light, false, "the caller the workflow names: its short job is work");
+    assert.equal(describeRun(RUNS[6], idle("x", "short"), calls.get("lint")).light, true, "another workflow's x / short is not work");
+    assert.equal(describeRun(RUNS[6], idle("x", "standard"), calls.get("ci")).light, true, "nor is a caller this workflow does not name");
+    assert.equal(describeRun(RUNS[6], idle("x", "short")).light, false, "with no file read for the workflow, the name decides");
+  });
+
   it("does not read the steps a CI standard caller's jobs skip by input or lockfile as light, with standard set too", () => {
     const caller = `name: ci\non:\n  pull_request:\njobs:\n  ci:\n    uses: acme/kit/.github/workflows/ci-standard.yml@${"a".repeat(40)} # v1\n    with:\n      short: npm test\n      standard: npm run e2e\n`;
     const calls = standardCalls(repoWith({ ".github/workflows/ci.yml": caller })).get("ci");

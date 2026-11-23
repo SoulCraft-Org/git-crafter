@@ -135,8 +135,9 @@ const CALLS_STANDARD = /(^|\/)ci-standard\.ya?ml(@|$)/;
  * workflow's name and its file path, for describeRun: `calls`, the caller jobs'
  * names, and `unset`, each "caller / short" or "caller / standard" job the
  * caller passed no commands for, so the standard skips it whatever changed.
- * Only workflows with a call are listed. A file that does not parse reads as
- * no call, so the run metrics fall back to counting every skip.
+ * Every workflow read is listed, one with no call with empty lists. A file that
+ * does not parse lists nothing, so the run metrics fall back to counting every
+ * skip and any job named "x / short" as work.
  */
 export function standardCalls(root) {
   const out = new Map();
@@ -148,7 +149,11 @@ export function standardCalls(root) {
   }
   for (const { file, doc, name } of docs) {
     const calls = Object.entries(doc.jobs ?? {}).filter(([, job]) => CALLS_STANDARD.test(String(job?.uses ?? "")));
-    if (!calls.length) continue;
+    if (!calls.length) {
+      // A workflow read with no call has no tier jobs: another workflow's "x / short" is not the standard's.
+      out.set(name, { calls: [], unset: [] }).set(`.github/workflows/${file}`, { calls: [], unset: [] });
+      continue;
+    }
     const names = calls.map(([id, job]) => ({ name: jobNames(id, job)[0], job }));
     const byDesign = {
       calls: names.map((c) => c.name),
