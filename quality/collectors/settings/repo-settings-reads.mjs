@@ -1,8 +1,8 @@
 // The Settings collector's reads, each run at most once per collect(), and the checks its metrics share.
 import { GhError } from "../github/github-core.mjs";
 import { once, readWorkflows } from "../github/github-loaders.mjs";
-import { globRegex } from "../github/github-lock.mjs";
 import { classicProtection } from "../github/github-reads.mjs";
+import { reaches } from "./repo-settings-refs.mjs";
 
 // A workflow that hands every secret on, or reads one by a computed name: its files cannot show which secrets it uses.
 const OPAQUE = /secrets:\s*inherit|secrets\s*\[|toJSON\(\s*secrets\s*\)/i;
@@ -46,13 +46,6 @@ async function secretNames(R, gh, repo) {
   const own = (await gh.rest(`repos/${repo}/actions/secrets?per_page=100`)).secrets ?? [];
   const perEnv = await Promise.all((await R.environments()).map((e) => gh.rest(`repos/${repo}/environments/${encodeURIComponent(e.name)}/secrets?per_page=100`)));
   return [...own, ...perEnv.flatMap((p) => p.secrets ?? [])].map((s) => s.name);
-}
-
-/** Whether a ruleset's ref conditions reach `ref`; `defaultRef` is the default branch's full ref. */
-export function reaches(ruleset, ref, defaultRef) {
-  const { include = [], exclude = [] } = ruleset.conditions?.ref_name ?? {};
-  const hit = (p) => p === "~ALL" || (p === "~DEFAULT_BRANCH" ? ref === defaultRef : globRegex(p).test(ref));
-  return include.some(hit) && !exclude.some(hit);
 }
 
 /** The active branch rulesets that reach the default branch. */

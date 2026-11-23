@@ -10,7 +10,8 @@ import { fileURLToPath } from "node:url";
 import { GhError, NEEDS } from "../github/github-core.mjs";
 import { loadTargets } from "../lib/score.mjs";
 import { area, collect, METRIC_IDS } from "./repo-settings.mjs";
-import { reaches, secretsRead } from "./repo-settings-reads.mjs";
+import { reaches } from "./repo-settings-refs.mjs";
+import { secretsRead } from "./repo-settings-reads.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(HERE, "..", "..", "fixtures", "settings");

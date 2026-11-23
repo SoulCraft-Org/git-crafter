@@ -4,7 +4,8 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { adminGh, clientFor, ConfigError, count, flag, ghClient, HOUR, measured, NEEDS, refusingGh, repoOf, round1, skip } from "../github/github-core.mjs";
 import { reasonFor } from "../github/github-helpers.mjs";
-import { branchSets, reaches, reads, rulesOf, secretsRead } from "./repo-settings-reads.mjs";
+import { reaches } from "./repo-settings-refs.mjs";
+import { branchSets, reads, rulesOf, secretsRead } from "./repo-settings-reads.mjs";
 
 export const area = "settings";
 // Reads the GitHub API: collect.mjs skips it under the API reserve (ci.json params.api_reserve).
