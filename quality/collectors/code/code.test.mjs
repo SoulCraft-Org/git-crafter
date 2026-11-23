@@ -11,7 +11,7 @@ import { gzipSync } from "node:zlib";
 import { collect, latestDeploy, PARAMS, runCommand } from "./code.mjs";
 import { analyzeFile, looksLikeCode } from "./complexity.mjs";
 import { CASES, duplicates, namingRule } from "./shape.mjs";
-import { here, FIXTURES, TARGETS, AREAS, FIXTURE, SITE_BUNDLE, BOT_BUNDLE, meets, kb, SITE_COMMIT, BASE_SHA, lines, stubRun, makeRepo, value } from "./code-fixtures.mjs";
+import { here, FIXTURES, TARGETS, AREAS, FIXTURE, SITE_BUNDLE, BOT_BUNDLE, meets, kb, SITE_COMMIT, BASE_SHA, stubRun, makeRepo, value } from "./code-fixtures.mjs";
 describe("collect on the known-good fixture", () => {
   let root;
   let result;

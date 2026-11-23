@@ -5,7 +5,6 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSy
 import { tmpdir } from "node:os";
 import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import ts from "typescript";
 import { firstLine, measured, readJson, top, unknownAll, walkAll } from "./code-util.mjs";
 import { COVERAGE_PACKAGE } from "./code-test.mjs";
 

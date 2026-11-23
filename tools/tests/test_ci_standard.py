@@ -116,7 +116,6 @@ def expect(wrong: list, label: str, change: dict, want: set):
 # gh actions-lock's file: the workflows it has onboarded and each one's locked uses: lines.
 LOCK = "version: 'v0.0.3'\nworkflows:\n    '.github/workflows/deploy.yml':\n        - '{ref}'\ndependencies: {{}}\n"
 TAGGED = edit(".github/workflows/deploy.yml", "actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1", "actions/setup-node@v7.1.0")
-# A local composite action and the deploy job's step that calls it (#200).
 ACTION = "name: x\nruns:\n  using: composite\n  steps:\n    - uses: {ref}\n"
 X = ".github/actions/x/action.yml"
 

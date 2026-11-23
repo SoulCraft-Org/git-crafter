@@ -1,6 +1,5 @@
 // The same-site crawl and reading level for the site collectors (site-lib.mjs).
 
-import { join, resolve } from "node:path";
 import { UA, firstLine, now, once } from "./site-base.mjs";
 import { stripAll } from "../lib/strip.mjs";
 
@@ -211,7 +210,6 @@ export function syllables(word) {
 
 const WORD = /[\p{L}\p{N}][\p{L}\p{N}'’.-]*/gu;
 // The words in text.
-const countWords = (s) => s.match(WORD)?.length ?? 0;
 
 // innerText puts each block on its own line. A line is prose when it ends in
 // sentence punctuation; headings, buttons and nav labels do not, and a
