@@ -4,4 +4,9 @@
 | Contribute | [CONTRIBUTING.md](https://github.com/<owner>/<repo>/blob/main/CONTRIBUTING.md) |
 | Ask a question | [Discussions](https://github.com/<owner>/<repo>/discussions) |
 
+```mermaid
+flowchart LR
+  E[Pull request edits wiki/] -->|merge| W[Workflow publishes] --> H[This wiki]
+```
+
 To change a page, open a pull request that edits [`wiki/`](https://github.com/<owner>/<repo>/tree/main/wiki) in the repo. A workflow publishes it here on merge; editing here is limited to maintainers.

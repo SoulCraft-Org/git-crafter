@@ -2,6 +2,13 @@
 
 <Owner> owns the project. AI agents run its day-to-day work under `AGENTS.md`; people hold the seats in [`MAINTAINERS.md`](MAINTAINERS.md).
 
+```mermaid
+flowchart LR
+  O[Owner<br/>product, spending, rules] -->|grants a seat| M[Maintainer<br/>reviews the other paths]
+  O -->|sets the merge policy| A[AI agents<br/>merge AI-mergeable PRs]
+  A -.->|never hold a seat| M
+```
+
 | Decision | Who decides |
 |---|---|
 | An idea becomes an issue | The orchestrator, or a maintainer, in Discussions |
