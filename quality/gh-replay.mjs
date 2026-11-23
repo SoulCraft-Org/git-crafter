@@ -93,9 +93,9 @@ export function summary(rows, mode) {
   const sum = (k) => rows.filter((r) => r[0] === k).reduce((n, r) => n + Number(r[1]), 0);
   return `live ${sum("rest")} REST, ${sum("graphql")} GraphQL; ${sum("replayed")} replayed from main (${mode})`;
 }
-/** The run ids of the `limit` newest main-reads artifacts under MAX_AGE_H old, from one artifacts listing: a push to main or the daily run (#55), passed or failed. */
+/** The run ids of the `limit` newest main-reads artifacts under MAX_AGE_H old, from one artifacts listing: this repo's own main, never a fork's branch named main; a push or the daily run (#55), passed or failed. */
 export function saveRuns(artifacts, now = Date.now(), limit = 2) {
-  const fresh = artifacts.filter((a) => !a.expired && a.workflow_run?.head_branch === "main" && now - Date.parse(a.created_at) < MAX_AGE_H * 3_600_000);
+  const fresh = artifacts.filter((a) => !a.expired && a.workflow_run?.head_branch === "main" && a.workflow_run.head_repository_id === a.workflow_run.repository_id && now - Date.parse(a.created_at) < MAX_AGE_H * 3_600_000);
   return fresh.sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).slice(0, limit).map((a) => String(a.workflow_run.id));
 }
 /** The `n` most-read families from the `.reads` log's `rows` ([family, requests]), as "family requests, …". */

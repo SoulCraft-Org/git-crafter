@@ -526,7 +526,8 @@ jobs:
           name: main-reads
           path: ${{ runner.temp }}/gh-replay/
           retention-days: 2
-          if-no-files-found: ignore
+          # An empty save is expected only from a failed run; a passed run with no reads means the recorder broke.
+          if-no-files-found: ${{ job.status == 'success' && 'error' || 'ignore' }}
 
       # The shots are for a reviewer of a pull request, which took them on its own run. A push to main repeated
       # them for no reader (44 of the build's 137 s, run 42969770326), so main skips them; its pages still build,
