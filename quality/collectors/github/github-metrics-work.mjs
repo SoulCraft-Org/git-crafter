@@ -168,7 +168,7 @@ export const ACTION_METRICS = {
     },
   },
   "actions.locked_share": {
-    source: ".github/workflows/actions.lock (workflows) against each .github/workflows/*.yml that calls an outside action in a step",
+    source: ".github/workflows/actions.lock (workflows) against each .github/workflows/*.yml that calls an outside action in a step; a workflow whose every outside action is pinned to a full 40-character commit SHA counts too, as the SHA is as fixed as a recorded commit",
     async run(L) {
       const files = await workflowsOr(L);
       if (files.could_not_check) return files;
@@ -176,7 +176,8 @@ export const ACTION_METRICS = {
       if (!lockable.length) return skip("no workflow in .github/workflows calls an outside action in a step");
       const locked = await L.lockedWorkflows();
       if (locked.could_not_check) return locked;
-      const detail = lockable.map((f) => flag(f.file, locked.has(f.file)));
+      const shaPinned = (f) => stepTargets(f.doc).every((t) => /@[0-9a-f]{40}$/.test(t));
+      const detail = lockable.map((f) => flag(f.file, locked.has(f.file) || shaPinned(f)));
       return measured(pct(detail.filter((d) => d.value).length, lockable.length), detail);
     },
   },
