@@ -28,11 +28,11 @@ export function keyOf(args, now = Date.now()) {
 // Reads that cannot change once taken: a commit's content, a finished job's annotations, and the jobs or attempt of a run that
 // ended SETTLE_MS ago. Main's next run reuses them from its last save, at most MAX_AGE_H old, so a rerun shows within a day.
 const [JOBS, ATTEMPT, ANNOTATIONS, COMMIT] = [/\/actions\/runs\/\d+\/jobs\?per_page=100$/, /\/actions\/runs\/\d+\/attempts\/1$/, /\/check-runs\/\d+\/annotations$/, /\/git\/commits\/[0-9a-f]{40}$/];
-/** Whether the read `args` that printed `out` is final: a plain `gh api` route of those four kinds whose answer holds a finished run, job or commit. */
 const ended = (x, now) => x?.status === "completed" && now - Date.parse(x.completed_at ?? x.updated_at) > SETTLE_MS;
 const jobsFinal = (body, now) => Array.isArray(body?.jobs) && body.jobs.length > 0 && body.total_count === body.jobs.length && body.jobs.every((j) => ended(j, now));
 const routeOf = (args) => (args.length === 2 && args[0] === "api" && /^repos\/[^/?]+\/[^/?]+\//.test(args[1]) ? args[1] : "");
 const parsed = (route, out) => { try { return route && JSON.parse(out); } catch { return null; } };
+/** Whether the read `args` that printed `out` is final: a plain `gh api` route of those four kinds whose answer holds a finished run, job or commit. */
 export function immutable(args, out, now = Date.now()) {
   const route = routeOf(args);
   const body = parsed(route, out);
