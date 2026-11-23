@@ -333,7 +333,7 @@
     "goal": 100,
     "near": 80,
     "direction": "higher",
-    "goal_source": "Git Crafter default goal: every community health file is there. Sources: GitHub Docs: About community profiles for public repositories (README, code of conduct, license, contributing); GitHub Docs: Adding support resources to your project; GitHub Docs: Creating a default community health file (pull request template). The issue template and the security policy are measured as issues.templates_present and security.policy_on",
+    "goal_source": "Git Crafter default goal: every community health file is there. Sources: GitHub Docs: About community profiles for public repositories (README, code of conduct, license, contributing); GitHub Docs: Adding support resources to your project; GitHub Docs: Creating a default community health file (pull request template). The issue template and the security policy are measured as issues.intake_ready and security.policy_on",
     "source": "state: quality/collectors/docs/docs.mjs: each entry of params.community_files (README, license, contributing guide, code of conduct, support file, pull request template) with a file at any of its globs",
     "needs": "none",
     "chart": "table"
