@@ -126,7 +126,7 @@ export const LOGS = {
 };
 
 // One fixture pull request record.
-export const pull = (number, sha, created, merged, merge_commit_sha) => ({
+const pull = (number, sha, created, merged, merge_commit_sha) => ({
   number,
   created_at: created,
   merged_at: merged,
