@@ -31,7 +31,7 @@ export function reads({ gh, repo, root }) {
     // Every active ruleset that reaches the repo, its own and its organization's, with its rules.
     rulesets: once(async () => {
       const list = await gh.restAll(`repos/${repo}/rulesets?includes_parents=true&targets=branch,tag,push&per_page=100`);
-      return Promise.all(list.filter((s) => s.enforcement === "active").map((s) => gh.rest(`repos/${repo}/rulesets/${s.id}`)));
+      return withBypass(gh, repo, await Promise.all(list.filter((s) => s.enforcement === "active").map((s) => gh.rest(`repos/${repo}/rulesets/${s.id}`))));
     }),
     classic: once(async () => classicProtection(gh, repo, await R.branch())),
     environments: once(async () => (await gh.rest(`repos/${repo}/environments?per_page=100`)).environments ?? []),
@@ -45,6 +45,21 @@ export function reads({ gh, repo, root }) {
     workflows: once(async () => readWorkflows(root) ?? []),
   };
   return R;
+}
+
+const BYPASS = "query($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { rulesets(first: 100, includeParents: true) { nodes { databaseId bypassActors(first: 1) { totalCount } } } } }";
+
+// Each ruleset with bypass_count: REST's bypass_actors, else GraphQL's count (REST hides the list from a token that cannot administer the repo; GraphQL does not). Undefined when neither answers.
+async function withBypass(gh, repo, sets) {
+  const counts = new Map(sets.filter((s) => s.bypass_actors).map((s) => [s.id, s.bypass_actors.length]));
+  if (counts.size < sets.length) {
+    const [owner, name] = repo.split("/");
+    const answer = await gh.graphql(BYPASS, { owner, name }).catch((err) => {
+      if (!(err instanceof GhError)) throw err;
+    });
+    for (const n of answer?.repository?.rulesets?.nodes ?? []) if (!counts.has(n.databaseId)) counts.set(n.databaseId, n.bypassActors.totalCount);
+  }
+  return sets.map((s) => ({ ...s, bypass_count: counts.get(s.id) }));
 }
 
 // The read's answer, or null when the repo has no such setting (HTTP 404).
