@@ -313,10 +313,11 @@ def set_groups(api, org: str, groups: list, stopped: bool, resume: bool, saved: 
         raise Unreadable(f"runner group gone mid-pass: {err}") from None
 
 
-def backstop(api, org: str, reading: dict, hard_stop: float, resume: bool, previous) -> dict:
+def backstop(api, org: str, reading: dict, hard_stop: float, resume: bool, previous, publish=lambda: None) -> dict:
     """At the hard stop, saves each Blacksmith runner group's repo access once, closes the group to all repos, and closes
     it again each pass until resume. Resume puts each group's saved access back, and opens a group with none saved to
-    all, unless the count is still at the hard stop. Never GitHub's org-wide self-hosted switch."""
+    all, unless the count is still at the hard stop. publish() writes the reading once the access is saved and before any
+    group closes, so a failed write to a later group never loses a saved limit. Never GitHub's org-wide self-hosted switch."""
     b = reading["blacksmith"]
     b["hard_stop"] = hard_stop
     b["stopped"] = b["cost"] >= hard_stop or (was_stopped(previous) and not resume)
@@ -326,6 +327,7 @@ def backstop(api, org: str, reading: dict, hard_stop: float, resume: bool, previ
     saved = save_access(api, org, groups, previous) if b["stopped"] else last_access(previous)
     if b["stopped"]:
         b["access"] = saved
+        publish()
     set_groups(api, org, groups, b["stopped"], resume, saved)
     b["groups"] = [g.get("name") for g in groups]
     return reading
@@ -399,7 +401,8 @@ def main(argv: list) -> int:
         api = Api(os.environ.get("GH_TOKEN", ""))
         reading = cross_check(run_meter(args, api, dt.datetime.now(dt.timezone.utc)), read_text(args.cli_usage))
         if args.write:
-            backstop(api, args.org, reading, args.hard_stop, args.resume, os.environ.get("CI_POOL_PREVIOUS"))
+            backstop(api, args.org, reading, args.hard_stop, args.resume, os.environ.get("CI_POOL_PREVIOUS"),
+                     lambda: write_variable(api, args.org, json.dumps(reading, separators=(",", ":"))))
         reading["api_calls"] = api.calls
         print(json.dumps(reading, indent=1))
         if args.write:
