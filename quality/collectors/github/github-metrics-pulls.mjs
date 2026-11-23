@@ -12,7 +12,7 @@ const MERGEABLE_RETRY_MS = 5000;
 const GREEN_TO_MERGE_N = 10;
 const MINUTE = 60_000;
 // Verdict comments whose every author reads as a non-member: a private org member seen by a token outside the org.
-const PRIVATE_AUTHORS = "every Review: MERGE|BLOCK comment reads as from a non-member, so the reviewer's org membership is private to this token; make it public (GitHub org People) or collect with a token in the org";
+const PRIVATE_AUTHORS = "a Review: MERGE|BLOCK comment reads as from a non-member, so the reviewer's org membership is private to this token and the verdict cannot be told from an outsider's; make it public (GitHub org People) or collect with a token in the org";
 
 // The note when a merge commit is not in the checkout: its moved lines count in full, as GitHub's totals do.
 const MOVES_UNREAD = "moved lines counted in full: the merge commit is not in this checkout (check out with fetch-depth: 0)";
@@ -55,6 +55,7 @@ export const PULL_METRICS = {
     async run(L) {
       const pulls = await L.merged();
       if (!pulls.length) return skip("no merged PRs yet");
+      if (privateMarkerAuthors(pulls)) return { could_not_check: PRIVATE_AUTHORS };
       // A PR counts when it had a review or a verdict before the merge (fixedAfterReview),
       // by its own author too: a review's author is checked only for being a Bot.
       const reviewed = pulls.filter((p) => fixedAfterReview(p) !== null);
