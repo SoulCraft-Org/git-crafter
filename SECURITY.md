@@ -26,7 +26,7 @@ flowchart LR
 | `.claude/hookify.*.local.md` | A command or write a hookify rule should block and does not |
 | `tools/comfy_guard.py` | A Comfy run the guard should deny or ask about and lets through |
 | `tools/claude_os_sync.py` | A write outside the paths `manifest.json` and an overlay list |
-| `tools/collect_org.mjs` | A read that writes, or a token in `data/` |
+| `tools/collect_org.mjs` | A read that writes, or a token in the `data/org.json` or `data/history/` it writes |
 | `.github/workflows/` | A step that runs untrusted input, or an unpinned action |
 | Any file | A key value, or a private name outside `config/` |
 
