@@ -25,7 +25,7 @@ const RUN = {
   generated_at: "2026-11-10T00:00:00Z",
   mode: "ci",
   metrics: {
-    "issues.open_bugs": { value: 5, source: "code-os quality/collectors/github/github.mjs" },
+    "issues.open_bugs": { value: 5, source: "git-crafter quality/collectors/github/github.mjs" },
     "issues.reopened": { value: 0 },
     "issues.oldest_open_days": { value: 4 },
     "issues.area_labeled": { value: 50 },
@@ -82,7 +82,7 @@ describe("sync", () => {
     assert.equal(post.body.type, "Task");
     assert.deepEqual(post.body.labels, ["pages"]);
     assert.ok(post.body.body.startsWith(marker("issues.open_bugs")));
-    assert.match(post.body.body, /\| issues\.open_bugs \| 5 bugs \| at most 0 bugs \| code-os quality\/collectors\/github\/github\.mjs \| opened \|/);
+    assert.match(post.body.body, /\| issues\.open_bugs \| 5 bugs \| at most 0 bugs \| git-crafter quality\/collectors\/github\/github\.mjs \| opened \|/);
   });
 
   it("never opens a second issue: an unchanged open issue is left alone", () => {

@@ -86,7 +86,7 @@ function context(run, owner, repo, { values, optionalOn }) {
 }
 
 // The first usage problem: from the options, the values file, --only or optional_on; null when none.
-function problemOf(opts, loaded, rows, only) {
+function problemOf(loaded, rows, only) {
   const missing = (ids) => [...(ids ?? [])].filter((id) => !rows.some((r) => r.id === id));
   if (loaded.problem) return loaded.problem;
   if (missing(only).length) return `--only names no such row: ${missing(only).join(", ")}`;
@@ -120,7 +120,7 @@ export function main(argv = process.argv.slice(2), { run = ghRunner(), setup = S
   const loaded = opts.problem ? opts : loadValues(opts.values, root);
   const rows = JSON.parse(readFileSync(setup, "utf8")).rows;
   const only = opts.only ? new Set(opts.only.split(",")) : null;
-  const problem = problemOf(opts, loaded, rows, only);
+  const problem = problemOf(loaded, rows, only);
   if (problem) {
     error(`${problem}
 ${USAGE}`);

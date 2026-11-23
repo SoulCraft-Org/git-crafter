@@ -284,7 +284,7 @@ async function main() {
     data: config.data,
     only: args.only,
     reserve: reserveShort(before, reserveFloor(loaded.params)),
-    label: (dir, file) => (`${dir}/`.startsWith(`${resolve(QUALITY, "collectors")}/`) ? `code-os quality/${relative(QUALITY, join(dir, file))}` : `${relative(root, dir)}/${file}`),
+    label: (dir, file) => (`${dir}/`.startsWith(`${resolve(QUALITY, "collectors")}/`) ? `git-crafter quality/${relative(QUALITY, join(dir, file))}` : `${relative(root, dir)}/${file}`),
   }));
   if (ran.length === 0) console.log("no collectors yet; writing an empty run so the page still builds");
   if (process.env.GITHUB_ACTIONS === "true" && ran.length) console.log(`::notice title=Collector seconds::${annotation(slowestLine(seconds, (Date.now() - started) / 1000))}`);
