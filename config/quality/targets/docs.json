@@ -231,6 +231,20 @@
      ]
     },
     {
+     "doc": "templates/agents/AGENTS.md",
+     "area": [
+      "skills/merging/outside.md"
+     ],
+     "why": "the file is the rows an adopter copies: it names skills/merging/outside.md for outside pull requests and ci-standard.yml for the suites, and a changed check in that workflow does not change a row; the README beside it explains the folder, not these rules"
+    },
+    {
+     "doc": "templates/agents/CLAUDE.md",
+     "area": [
+      "skills/merging/SKILL.md"
+     ],
+     "why": "the file is the Claude-only rows an adopter copies, and its one row names the merging skill; the README beside it explains the folder, not that rule"
+    },
+    {
      "doc": "**",
      "area": [
       "{dir}/"

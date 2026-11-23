@@ -17,6 +17,7 @@ flowchart LR
 |---|---|
 | An idea | Open a [Discussion in Ideas](https://github.com/<owner>/<repo>/discussions/categories/ideas) |
 | A bug | Open an issue with the bug form |
+| A question | [`SUPPORT.md`](SUPPORT.md) |
 | A security problem | [`SECURITY.md`](SECURITY.md); never a public issue |
 | Time now | Pick a [`good first issue`](https://github.com/<owner>/<repo>/labels/good%20first%20issue) |
 
