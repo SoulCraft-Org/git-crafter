@@ -53,5 +53,6 @@ A token a map needs is one the Quality page needs ([each token](../quality/READM
 | `document` | ✗ | none |
 | `contribute` | ✗ | `github-admin`, `wrangler-login` |
 | `release` | ✗ | `github-admin`, `gh` |
+| `score` | ✗ | none |
 
 A step whose metric sits on a tab your Quality config drops fails the build: drop it with `"steps": { "<id>": { "drop": true } }`. Every key: [actions/pages/action.yml](../../actions/pages/action.yml).
