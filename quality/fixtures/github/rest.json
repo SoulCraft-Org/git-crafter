@@ -1,6 +1,7 @@
 {
   "_comment": "Answers by REST route for quality/collectors/github/github.test.mjs, repo fixture-org/fixture-repo. An __error entry makes the fake gh throw that GhError. Security features as on a private repo of a plan without the paid ones: code scanning, secret scanning and code quality off, nobody billed. Alerts: 5 open vulnerabilities, 1 open malware alert, 2 fixed in 2 and 6 days.",
   "repos/fixture-org/fixture-repo": {
+    "has_discussions": true,
     "default_branch": "main",
     "private": true,
     "owner": { "type": "Organization" },

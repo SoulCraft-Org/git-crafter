@@ -4,7 +4,7 @@
  "repo_url": "https://github.com/SoulCraft-Org/git-crafter/blob/main",
  "ideals": {
   "build": {
-   "ideal": "A process is a map of at most six steps where quality, speed and consumption are decided, each scored by one Quality metric.",
+   "ideal": "A process is a map of six steps at most. It shows where quality, speed and consumption are decided, with one metric a step.",
    "sources": [
     {"title": "Claude Code: best practices", "url": "https://code.claude.com/docs/en/best-practices", "date": "2026-11-04"},
     {"title": "DORA's software delivery performance metrics", "url": "https://dora.dev/guides/dora-metrics/", "date": "2026-01-05"}

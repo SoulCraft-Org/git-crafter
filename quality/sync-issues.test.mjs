@@ -4,11 +4,14 @@
 // template's own Issues targets.
 
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, describe, it } from "node:test";
 
+import { cardSpec, picture } from "./cards/picture.mjs";
+import { hasPicture } from "./collectors/github/github-text.mjs";
 import { loadConfig } from "./config.mjs";
 import { ghCli, issueBody, marker, meter, OPEN_CAP, pageUrl, parseArgs, plan, sync } from "./sync-issues.mjs";
 
@@ -143,6 +146,77 @@ describe("sync", () => {
     sync(config, { gh, log: (l) => lines.push(l) });
     assert.deepEqual(writes(calls).filter((c) => c.args.at(-1).includes("/issues/12") || c.body.title?.includes("area label")), []);
     assert.ok(lines.includes("no board token: card for issues.area_labeled, not an issue; #12 stays open"));
+  });
+});
+
+describe("a card's picture", () => {
+  const ROW = { def: { id: "issues.area_labeled", tab: "issues", kind: "quality", label: "Issues with an area label", unit: "%", goal: 100, near: 90, direction: "higher" }, entry: { value: 50 } };
+  const SVG = picture(cardSpec(ROW, "pages"));
+  const URL = `https://github.com/${REPO}/raw/cards/metric-issues.area_labeled.svg`;
+  const puts = (calls) => writes(calls).filter((c) => c.args[1] === "PUT");
+  const blob = (text) => createHash("sha1").update(`blob ${Buffer.byteLength(text)}\0`).update(text).digest("hex");
+
+  it("is written to the cards branch and linked from a new card's body, so the card has a picture", () => {
+    const { gh, calls } = fakeGh();
+    const board = fakeBoard();
+    sync(config, { gh, gq: board.gq, log: quiet });
+    const [put] = puts(calls);
+    assert.deepEqual(put.args, ["--method", "PUT", `repos/${REPO}/contents/metric-issues.area_labeled.svg`]);
+    assert.equal(put.body.branch, "cards");
+    assert.equal(Buffer.from(put.body.content, "base64").toString(), SVG);
+    assert.equal(put.body.sha, undefined, "a new file has no sha");
+    const body = board.calls[1].variables.b;
+    assert.ok(body.includes(`](${URL})`), "the body links the raw file");
+    assert.ok(hasPicture(body, { diagrams: false }), "a draft card counts it as a picture");
+    assert.ok(body.startsWith(marker("issues.area_labeled")) && body.includes("\n| Metric id | Now |"), "the marker and table stay where the sync reads them");
+  });
+
+  it("is not written again when the file already holds it, and replaces an older one by its sha", () => {
+    for (const [sha, expect] of [[blob(SVG), 0], ["old-sha", 1]]) {
+      const { gh: base, calls } = fakeGh();
+      const gh = (args, body) => (args[0].includes("/contents/?ref=cards") ? [{ name: "metric-issues.area_labeled.svg", type: "file", sha }] : base(args, body));
+      sync(config, { gh, gq: fakeBoard().gq, log: quiet });
+      assert.equal(puts(calls).length, expect, sha);
+      if (expect) assert.equal(puts(calls)[0].body.sha, "old-sha");
+    }
+  });
+
+  it("goes to a card the sync made before pictures, when its body next changes", () => {
+    const board = fakeBoard([cardNode("issues.area_labeled", "Waiting on data")]);
+    const { gh, calls } = fakeGh();
+    const steps = sync(config, { gh, gq: board.gq, log: quiet });
+    const step = steps.find((s) => s.row.def.id === "issues.area_labeled");
+    assert.ok(step.body.includes(`](${URL})`) && step.picture);
+    assert.equal(puts(calls).length, 1);
+  });
+
+  it("leaves a card with no body change and no new picture alone", () => {
+    const first = sync(config, { gh: fakeGh().gh, gq: fakeBoard().gq, log: quiet }).find((s) => s.op === "card");
+    const board = fakeBoard([cardNode("issues.area_labeled", "Waiting on data", first.body)]);
+    const { gh: gh2, calls } = fakeGh();
+    assert.ok(!sync(config, { gh: gh2, gq: board.gq, log: quiet }).some((s) => s.op === "card"));
+    assert.equal(puts(calls).length, 0);
+  });
+
+  it("is dropped from the body, with a warning, when GitHub refuses the write; the card is still made", () => {
+    const { gh: base } = fakeGh();
+    const gh = (args, body) => {
+      if (args[1] === "PUT") throw new Error("HTTP 403");
+      return base(args, body);
+    };
+    const board = fakeBoard();
+    const warned = [];
+    const warn = console.warn;
+    console.warn = (m) => warned.push(m);
+    try {
+      sync(config, { gh, gq: board.gq, log: quiet });
+    } finally {
+      console.warn = warn;
+    }
+    const body = board.calls[1].variables.b;
+    assert.ok(!body.includes("!["), "no link to a file that is not there");
+    assert.ok(body.startsWith(marker("issues.area_labeled")) && body.includes("| Metric id |"));
+    assert.match(warned.join(), /no picture for issues\.area_labeled/);
   });
 });
 

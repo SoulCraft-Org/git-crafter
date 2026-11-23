@@ -108,5 +108,10 @@
   "goal": 50,
   "near": 150,
   "goal_source": "Git Crafter goal (the owner, 2026-11-10): everything in a pull request is as visual as possible, with as few words as possible. 50 prose words is about three short lines beside the tables and diagrams, which this count leaves out; near is the template's 150. The latest description read 136 words (the live page, 2026-11-10)"
+ },
+ {
+  "id": "settings.pages_private",
+  "drop": true,
+  "goal_source": "Git Crafter: dropped because this repo is public, so its Pages site is public; the reading is not measured for a public repo, and private Pages needs a private repo on GitHub Enterprise Cloud (2026-11-23)"
  }
 ]
