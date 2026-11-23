@@ -2,7 +2,7 @@
  "id": "delivery",
  "name": "Delivery",
  "why": "A change, from the approved plan to merged on the default branch",
- "ideal": "Changes are small, planned first, green on first push and reviewed at the head. Each merges within a day. Lead time and failure judge them.",
+ "ideal": "Small changes, planned first, green on first push, reviewed at the head. Each merges within a day. Lead time and failure judge them, not volume.",
  "sources": [
   {"title": "Claude Code: best practices", "url": "https://code.claude.com/docs/en/best-practices", "date": "2026-11-04"},
   {"title": "Google engineering practices: speed of code reviews", "url": "https://google.github.io/eng-practices/review/reviewer/speed.html", "date": "2026-11-04"},

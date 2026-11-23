@@ -2,7 +2,7 @@
  "id": "adopt",
  "name": "Adopt Git Crafter",
  "why": "A repo, from copying the starters to running Git Crafter's CI and pages and staying current",
- "ideal": "A repo copies the starters and CI files. It pins Git Crafter to a full SHA, requires its check and takes each release within days.",
+ "ideal": "A repo copies two starters and three CI files. It pins Git Crafter to a full SHA, requires its check, takes each release within days.",
  "sources": [
   {"title": "GitHub Actions: reuse workflows", "url": "https://docs.github.com/en/actions/sharing-automations/reusing-workflows", "date": "2026-11-05"},
   {"title": "GitHub Actions: secure use reference", "url": "https://docs.github.com/en/actions/reference/security/secure-use", "date": "2026-11-05"},
