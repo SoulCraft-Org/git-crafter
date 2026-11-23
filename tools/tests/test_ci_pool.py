@@ -276,9 +276,11 @@ def manifest_checks(tool):
         action = fh.read()
     yield "the stop flag is 1 at the stop or once stopped, else 0", [
         tool.stop_flag({"blacksmith": {"cost": c, "stop": 10.8, "stopped": s}}) for c, s in ((10.79, False), (10.8, False), (1.0, True))] == ["0", "1", "1"]
-    flag = GroupApi()
-    tool.write_variable(flag, "org", "1", "CI_POOL_STOP")
-    yield "the flag is written to its own org variable", flag.writes == [("PATCH", "CI_POOL_STOP", {"name": "CI_POOL_STOP", "value": "1", "visibility": "all"})]
+    sent = []
+    tool.publish(SimpleNamespace(request=lambda m, p, params=None, body=None: sent.append((m, p.rsplit("/", 1)[-1], body["value"]))),
+                 "org", {"blacksmith": {"cost": 11.5, "stop": 10.8, "stopped": True}})
+    yield "the flag is written first, to its own org variable, then the reading", sent == [
+        ("PATCH", "CI_POOL_STOP", "1"), ("PATCH", "CI_POOL", '{"blacksmith":{"cost":11.5,"stop":10.8,"stopped":true}}')]
     yield "the action's hard stop default is the meter's", f'default: "{tool.HARD_STOP}"' in action
 
 

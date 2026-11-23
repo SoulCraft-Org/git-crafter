@@ -333,6 +333,13 @@ def backstop(api, org: str, reading: dict, hard_stop: float, resume: bool, previ
     return reading
 
 
+def publish(api, org: str, reading: dict) -> None:
+    """Writes the org variables: the stop flag first, then the reading. A write that fails after the flag leaves the stop
+    set, and no chooser takes Blacksmith for want of a fresh reading."""
+    write_variable(api, org, stop_flag(reading), "CI_POOL_STOP")
+    write_variable(api, org, json.dumps(reading, separators=(",", ":")))
+
+
 def stop_flag(reading: dict) -> str:
     """The org variable CI_POOL_STOP: 1 when the reading says stop, 0 below it. A repo's own CI_POOL cannot shadow it."""
     b = reading["blacksmith"]
@@ -402,12 +409,11 @@ def main(argv: list) -> int:
         reading = cross_check(run_meter(args, api, dt.datetime.now(dt.timezone.utc)), read_text(args.cli_usage))
         if args.write:
             backstop(api, args.org, reading, args.hard_stop, args.resume, os.environ.get("CI_POOL_PREVIOUS"),
-                     lambda: write_variable(api, args.org, json.dumps(reading, separators=(",", ":"))))
+                     lambda: publish(api, args.org, reading))
         reading["api_calls"] = api.calls
         print(json.dumps(reading, indent=1))
         if args.write:
-            write_variable(api, args.org, json.dumps(reading, separators=(",", ":")))
-            write_variable(api, args.org, stop_flag(reading), "CI_POOL_STOP")
+            publish(api, args.org, reading)
     except Unreadable as err:
         print(f"::warning title=ci-pool could not check::{err}; CI_POOL is left as it was, and goes stale")
         return 3
