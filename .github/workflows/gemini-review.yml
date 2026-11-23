@@ -1,0 +1,19 @@
+# Advisory Gemini review of each pull request, paid from the organization's Google Cloud trial credit. The shared
+# workflow (SoulCraft-Org/.github, gemini-review.yml) holds everything; the organization variable GEMINI_REVIEW=on
+# turns it on or off for every repository at once. Its comments are review threads: resolve each before merging.
+name: gemini-review
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+
+permissions: {}
+
+jobs:
+  review:
+    uses: SoulCraft-Org/.github/.github/workflows/gemini-review.yml@main
+    permissions:
+      contents: read
+      id-token: write
+      issues: write
+      pull-requests: write
