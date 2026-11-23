@@ -41,23 +41,23 @@
     {
      "doc": "skills/merging/SKILL.md",
      "area": [
-      "rules/delegation.md",
-      "tools/claude_deny.json"
-     ]
+      "rules/delegation.md"
+     ],
+     "why": "the skill names the checks it runs (claude_deny.py --check and --merge, apply --overlay, the verdict line) and each reads as written on 2026-11-23; a rule added to the deny list does not change it"
     },
     {
      "doc": "rules/delegation.md",
      "area": [
-      "tools/claude_deny.json",
       "skills/merging/SKILL.md"
-     ]
+     ],
+     "why": "the rule says deny and hookify rules block one-way doors, not which entries the list holds; a rule added to it does not change what the doc says"
     },
     {
      "doc": "rules/keys.md",
      "area": [
-      "tools/claude_deny.json",
       "config/account.example.json"
-     ]
+     ],
+     "why": "the rule names the deny list as the control, not its entries; the keys fields it points to are in account.example.json"
     },
     {
      "doc": "rules/comfy.md",
@@ -68,8 +68,9 @@
     {
      "doc": "rules/compute.md",
      "area": [
-      ".github/workflows/ci-standard.yml"
-     ]
+      "config/account.example.json"
+     ],
+     "why": "the rule routes work and money by the account's facts, which account.example.json holds; ci-standard.yml's own checks are in rules/compute-detail.md, which keeps that area"
     },
     {
      "doc": "rules/compute-detail.md",
@@ -81,15 +82,16 @@
     {
      "doc": "rules/gates.md",
      "area": [
-      "tools/verify.sh",
       "rules/writing-and-gates.md"
-     ]
+     ],
+     "why": "the doc names no verify.sh entry, and verify.sh gains one with nearly every test"
     },
     {
      "doc": "rules/writing-and-gates.md",
      "area": [
-      "tools/voice_lint.py"
-     ]
+      "rules/gates.md"
+     ],
+     "why": "the doc says voice_lint.py lists the banned patterns, so a pattern added there is read from the tool, not restated here"
     },
     {
      "doc": "README.md",
@@ -146,10 +148,9 @@
     {
      "doc": "SUPPORT.md",
      "area": [
-      ".github/ISSUE_TEMPLATE/",
-      "SECURITY.md",
-      "CONTRIBUTING.md"
-     ]
+      ".github/ISSUE_TEMPLATE/"
+     ],
+     "why": "the page routes a need to a file; broken_links catches a moved target, and a reworded SECURITY.md or CONTRIBUTING.md leaves it true"
     },
     {
      "doc": "quality/README.md",
@@ -192,6 +193,14 @@
      "area": [
       "quality/score.mjs"
      ]
+    },
+    {
+     "doc": "rules/keys-detail.md",
+     "area": [
+      "rules/keys.md",
+      "config/account.example.json"
+     ],
+     "why": "the on-demand half of rules/keys.md, so it follows that rule and the account's keys fields, not every sibling rule"
     },
     {
      "doc": "wiki/*.md",
