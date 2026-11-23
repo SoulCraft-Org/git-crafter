@@ -98,7 +98,7 @@ HEDGE_WORDS = ["arguably", "probably", "perhaps", "maybe", "somewhat", "fairly",
                "potentially", "seemingly", "appears to", "seems to", "could be", "might be", "may be", "sort of", "kind of",
                "more or less", "virtually", "essentially", "basically", "generally", "in some sense", "to some extent"]
 
-# Phrasing that reads as machine-written. Ported from the colorado-ai voice
+# Phrasing that reads as machine-written. Ported from an earlier voice
 # hook, where it is advisory. Advisory here too: WARN, not FAIL.
 AI_TELLS = [(r"\bdelve\b", "write plainly: look at, dig into"),
             (r"\btapestry\b", "cut the spatial metaphor"),
