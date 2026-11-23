@@ -35,7 +35,7 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 # python3 -I leaves this folder off sys.path; the GitHub reads and writes sit beside this file, at the same pin.
 sys.path.append(HERE)
-from ci_pool_github import Api, Unreadable, items_of, iso, parse_time  # noqa: E402,F401
+from ci_pool_github import Api, Unreadable, items_of, iso, parse_time, write_variable  # noqa: E402,F401
 
 # Blacksmith's free minutes per organization a month (docs.blacksmith.sh/blacksmith-runners/overview, read 2026-11-20).
 FREE = 3000
@@ -329,15 +329,6 @@ def backstop(api, org: str, reading: dict, hard_stop: float, resume: bool, previ
     set_groups(api, org, groups, b["stopped"], resume, saved)
     b["groups"] = [g.get("name") for g in groups]
     return reading
-
-
-def write_variable(api, org: str, value: str, name: str = "CI_POOL") -> None:
-    """Stores value in the org variable, creating it the first time: the reading in CI_POOL by default."""
-    body = {"name": name, "value": value, "visibility": "all"}
-    try:
-        api.request("PATCH", f"/orgs/{org}/actions/variables/{name}", body=body)
-    except FileNotFoundError:
-        api.request("POST", f"/orgs/{org}/actions/variables", body=body)
 
 
 def stop_flag(reading: dict) -> str:
