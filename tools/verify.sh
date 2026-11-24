@@ -50,6 +50,6 @@ echo "== prose";        python3 -I tools/voice_lint.py README.md rules/*.md skil
 echo "== pages";        suite Pages pages.lcov tests/pages*.test.mjs
 echo "== quality";      node quality/selftest.mjs
                         suite Quality quality.lcov 'quality/**/*.test.mjs' 'config/**/*.test.mjs'
-echo "== setup list";   node --test tools/apply_setup*.test.mjs
+echo "== setup list";   node --test tools/apply_setup*.test.mjs tools/merge_pr*.test.mjs
 echo "== verify";       node --test tests/verify.test.mjs
 echo "verify: ok"
