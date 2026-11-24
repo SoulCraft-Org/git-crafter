@@ -24,7 +24,8 @@
   {"from":"security","to":"pages","status":"moved","ids":["security.headers"]},
   {"from":"settings","to":"pages","status":"moved","ids":["settings.pages_private"]},
   {"from":"usability","to":"pages","status":"moved","ids":["usability.axe_violations","usability.broken_links","usability.form_page_kib","usability.keyboard_task_share","usability.long_sentences","usability.reading_grade","usability.target_size_375","usability.task_clicks","usability.tbt_mobile","usability.unlabeled_fields","usability.words_before_action"]},
-  {"from":null,"to":"discussions","status":"new","reason":"the Discussions tab's first readers: a question left unanswered, and the oldest one's wait (2026-11-23)","ids":["discussions.oldest_unanswered_hours","discussions.unanswered_old"]}
+  {"from":null,"to":"discussions","status":"new","reason":"the Discussions tab's first readers: a question left unanswered, and the oldest one's wait (2026-11-23)","ids":["discussions.oldest_unanswered_hours","discussions.unanswered_old"]},
+  {"from":null,"to":"issues","status":"new","reason":"the Issues tab reads its open milestones (2026-11-23)","ids":["issues.milestones_off_track"]}
  ],
  "own": [
   {"from":"code","to":"code","status":"kept","ids":["engine.page_seconds"]},
@@ -36,6 +37,7 @@
   {"from":"deploy","to":"pages","status":"dropped","reason":"it reads only after a failed deploy, and deploy.latest_failed counts one (Git Crafter, 2026-11-23)","ids":["deploy.latest_restore_hours"]},
   {"from":"usability","to":"pages","status":"dropped","reason":"Git Crafter ships no form page (Git Crafter, 2026-11-23)","ids":["usability.form_page_kib"]},
   {"from":null,"to":"discussions","status":"new","reason":"the template's two Discussions readers score on the page from the day they land (2026-11-23)","ids":["discussions.oldest_unanswered_hours","discussions.unanswered_old"]},
-  {"from":"projects","to":"projects","status":"dropped","reason":"GitHub refuses the App installation token for a board's workflows, and only a user token reads them (Git Crafter, 2026-11-23)","ids":["projects.workflows_on"]}
+  {"from":"projects","to":"projects","status":"dropped","reason":"GitHub refuses the App installation token for a board's workflows, and only a user token reads them (Git Crafter, 2026-11-23)","ids":["projects.workflows_on"]},
+  {"from":null,"to":"issues","status":"new","reason":"the Issues tab reads its open milestones (2026-11-23)","ids":["issues.milestones_off_track"]}
  ]
 }
