@@ -15,26 +15,30 @@ function cells(steps) {
   return { xy, gap, width: Math.max(TRAIL.width, 2 * TRAIL.x0 + cols * gap), height: GRID.top + rows * GRID.row + GRID.foot };
 }
 
-// One map drawn as a grid of step cells, each with its readout; the critical path and the selected step are marked.
-export function grid(map, readouts, critical, selected) {
-  const steps = map.steps;
-  const G = cells(steps);
+// The elbow line from each step to every step in the next column; thick only where both ends are on the critical path, as on a trail. xy: each step's [x, y].
+export function edges(steps, xy, critical) {
   const cols = [...new Set(steps.map((s) => s.at[0]))].sort((a, b) => a - b);
   const gap = TRAIL.r + 8;
-  const edges = cols.slice(1).flatMap((c, k) => {
+  return cols.slice(1).flatMap((c, k) => {
     const from = steps.filter((s) => s.at[0] === cols[k]);
     const to = steps.filter((s) => s.at[0] === c);
     return from.flatMap((a) =>
       to.map((b) => {
-        const [ax, ay] = G.xy[a.id];
-        const [bx, by] = G.xy[b.id];
+        const [ax, ay] = xy[a.id];
+        const [bx, by] = xy[b.id];
         const mx = (ax + bx) / 2;
-        // Thick only where both ends are on the critical path, as on a trail.
         return `<path class="${critical.has(a.id) && critical.has(b.id) ? "t-main" : "t-off"}" d="M${ax + gap} ${ay}H${mx}V${by}H${bx - gap}"/>`;
       }),
     );
   });
+}
+
+// One map drawn as a grid of step cells, each with its readout; the critical path and the selected step are marked.
+export function grid(map, readouts, critical, selected) {
+  const steps = map.steps;
+  const G = cells(steps);
+  const cols = new Set(steps.map((s) => s.at[0]));
   const hitW = hitWidth(G.gap);
   const nodes = steps.map((s, i) => stepNode({ key: `${map.id}-${s.id}`, s, i, ro: readouts[s.id], x: G.xy[s.id][0], y: G.xy[s.id][1], hitW, crit: critical.has(s.id), selected })).join("");
-  return `<svg class="trail" viewBox="0 0 ${G.width} ${G.height}" role="group" aria-label="${esc(map.name)}: ${steps.length} steps in ${cols.length} columns; the critical path is the thick line">${edges.join("")}${nodes}</svg>`;
+  return `<svg class="trail" viewBox="0 0 ${G.width} ${G.height}" role="group" aria-label="${esc(map.name)}: ${steps.length} steps in ${cols.size} columns; the critical path is the thick line">${edges(steps, G.xy, critical).join("")}${nodes}</svg>`;
 }

@@ -34,6 +34,7 @@ flowchart LR
 | `rule_ref` an https link | `checkLibrary` |
 | a step of each kind: quality, speed and consumption | `checkLibrary`; `tests/pages-docs.test.mjs` for a repo's own maps |
 | `at: [col, row]` on every step draws a fork; no two steps share a cell | `checkMaps` |
+| `actor` on every step, one of `ACTORS` in `pages/draw.mjs`, draws lanes: a band per actor, in order of first appearance. A fork's pair stacks. Actors on some steps only is an error | `checkMaps`, `tests/pages-lanes.test.mjs` |
 | `time_bar`, optional: one metric whose detail rows are step hours, drawn under the trail as one labelled stacked bar. A step it could not read is listed, never a zero | `checkMaps`, `tests/pages-build.test.mjs` |
 | a step's value comes from the repo's own Quality run when the page builds (`withOwnRun`), never an older copy in `data/org.json`: no step to re-run | `tests/pages-build.test.mjs` |
 
@@ -42,7 +43,7 @@ flowchart LR
 | Entry | Effect |
 | --- | --- |
 | `{ "use": "delivery" }` | the library map as written |
-| `{ "use": "delivery", "steps": { "review": { "rule": "…" } } }` | changes `name`, `why`, `ideal`, `sources`, `critical_path`, `time_bar` (null drops it); a step's `name`, `short`, `tools`, `rule`, `rule_ref`, `metric`, `icon`, `gates`, `gates_from`, by step id |
+| `{ "use": "delivery", "steps": { "review": { "rule": "…" } } }` | changes `name`, `why`, `ideal`, `sources`, `critical_path`, `time_bar` (null drops it); a step's `name`, `short`, `actor`, `tools`, `rule`, `rule_ref`, `metric`, `icon`, `gates`, `gates_from`, by step id |
 | `{ "use": "delivery", "steps": { "plan": { "drop": true } } }` | the step is off, and leaves the critical path |
 | a map with its own `id` and `steps` | the repo's own map |
 | an unknown map, step or key | usage error (`pages/library.mjs`) |
