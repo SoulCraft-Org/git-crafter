@@ -23,6 +23,7 @@ export const EXPECTED = {
   "pull_requests.reverted": 1, // #19 reverts #17, 3.4 days after #17 merged
   "pull_requests.commits_via_pr": 75,
   "pull_requests.merged_off_default": 1, // #18 merged into feat/fixture-b; main is the default branch
+  "pull_requests.issue_before_pr_share": 50, // #20 closes #5, made before it opened; #18 closes #14, made after; #19 is Dependabot's and #17 closes none
   "pull_requests.latest_body_words": 3, // #20, the latest merge, its table left out
   "pull_requests.body_table_share": 25, // #20 alone of 4
   "pull_requests.linked_issue_share": 0, // none of the 4 links an issue; #17 has Closes #9 only inside a code fence
