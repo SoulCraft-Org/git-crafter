@@ -39,24 +39,24 @@ function pullProblem(pull, { sha, base }) {
 }
 
 // The flags as options, or { problem }.
-function readFlags(argv) {
+export function readFlags(argv, names) {
   const o = { base: "main", wait: 60, check: false };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--check") o.check = true;
-    else if (["--repo", "--pr", "--sha", "--followups", "--base", "--wait"].includes(argv[i]) && argv[i + 1]) o[argv[i].slice(2)] = argv[++i];
+    else if (names.includes(argv[i]) && argv[i + 1]) o[argv[i].slice(2)] = argv[++i];
     else return { problem: `unknown or incomplete argument ${argv[i]}` };
   }
   return o;
 }
 // The --followups value as { followups: "a, b" }, or { problem }.
-function readFollowups(value) {
+export function readFollowups(value) {
   const items = (value ?? "").split(",").map((i) => i.trim());
   if (value === undefined) return { problem: "--followups is required: the issues and cards the review left, or none" };
   return value === "none" || items.every((i) => /^(#\d+|PVTI_[\w-]+)$/.test(i)) ? { followups: items.join(", ") } : { problem: "--followups takes #<digits> or PVTI_... items, comma separated, or none" };
 }
 // The command line as options, or { problem }.
 function parseArgs(argv) {
-  const o = readFlags(argv);
+  const o = readFlags(argv, ["--repo", "--pr", "--sha", "--followups", "--base", "--wait"]);
   if (o.problem) return o;
   if (!/^[\w.-]+\/[\w.-]+$/.test(o.repo ?? "")) return { problem: "--repo must be owner/name" };
   if (!/^[1-9]\d*$/.test(o.pr ?? "")) return { problem: "--pr must be a pull request number" };
@@ -67,7 +67,7 @@ function parseArgs(argv) {
 }
 
 // Reads the pull request and its checks at `sha` and returns decide's answer with the pull request, re-reading mergeable UNKNOWN for up to `wait` seconds.
-async function assess({ read, repo, pr, sha, base, wait, sleep }) {
+export async function assess({ read, repo, pr, sha, base, wait, sleep }) {
   const runs = read(`repos/${repo}/commits/${sha}/check-runs?per_page=100`);
   const status = read(`repos/${repo}/commits/${sha}/status?per_page=100`);
   if (runs.total_count > runs.check_runs.length || status.total_count > status.statuses.length) throw new Error("more checks than one page holds, so some are unread");
@@ -80,7 +80,7 @@ async function assess({ read, repo, pr, sha, base, wait, sleep }) {
   }
 }
 // Posts `Review: MERGE at <sha>`, then a `Follow-ups:` line, unless a comment already opens with the first line; a verdict is never edited.
-function verdict(run, { repo, pr, sha, followups }) {
+export function verdict(run, { repo, pr, sha, followups }) {
   const route = `repos/${repo}/issues/${pr}/comments`;
   if (!run(["api", route, "--paginate", "-q", '.[].body | split("\\n")[0]']).split("\n").includes(`Review: MERGE at ${sha}`)) run(["api", route, "-f", `body=Review: MERGE at ${sha}\nFollow-ups: ${followups}`]);
 }
