@@ -274,8 +274,11 @@ ${rows.length ? chips(rows) : ""}<div class="kinds two three">${kinds.join("")}<
 
 // ---- Overview -------------------------------------------------------------------
 
-function masterBlock(m) {
-  return `<div class="total master"><p class="sb-l">Master score</p><p class="big">${glyph(scoreStatus(m.score))}${finite(m.score) ? m.score : "–"}<span class="small"> / 100</span></p>${meter(m.score, "Master score")}<p class="small">Quality, Speed and Consumption weigh a third each: each is the mean of the tabs scored in it, and the master is the mean of the ${m.categories} categories, over ${m.measured} measured tabs of ${m.total}. A tab is the mean of its categories. ${m.metricsMeasured} of ${m.metricsTotal} metrics measured; one not measured is shown, never scored as 0.</p></div>`;
+// "N of M metrics read", then what is left out of M: the ones that cannot apply, and the ones the repo dropped.
+const coverage = (m, dropped) => `${m.metricsMeasured} of ${m.metricsTotal} metrics read${m.metricsNotApplicable ? `, ${m.metricsNotApplicable} do not apply` : ""}${dropped ? `, ${dropped} dropped` : ""}`;
+
+function masterBlock(m, dropped = 0) {
+  return `<div class="total master"><p class="sb-l">Master score</p><p class="big">${glyph(scoreStatus(m.score))}${finite(m.score) ? m.score : "–"}<span class="small"> / 100</span></p>${meter(m.score, "Master score")}<p class="small">Quality, Speed and Consumption weigh a third each: each is the mean of the tabs scored in it, and the master is the mean of the ${m.categories} categories, over ${m.measured} measured tabs of ${m.total}. A tab is the mean of its categories. ${coverage(m, dropped)}; one not read is shown, never scored as 0.</p></div>`;
 }
 
 function totalBlock(label, part) {
@@ -306,24 +309,28 @@ function fixList(results) {
     .join("")}</ol>`;
 }
 
-// A fold of the metrics with no number, each with its reason: the ones not read, and the ones that cannot apply.
-function reasonList(rows, title, reasonOf) {
+// A fold of the metrics with no number, each with its reason: not read, cannot apply, or dropped by the repo. A
+// dropped metric has no row on the page, so its label is plain text, not a link.
+function reasonList(rows, title, reasonOf, linked = true) {
   if (!rows.length) return "";
+  const name = (row) => (linked ? `<a href="#m-${esc(row.def.id)}">${esc(row.def.label)}</a>` : `<span>${esc(row.def.label)}</span>`);
   return `<details class="nm"><summary><h3>${title}</h3><b>${rows.length}</b></summary><ul>${rows
-    .map((row) => `<li>${tabChip(row.tab)}<a href="#m-${esc(row.def.id)}">${esc(row.def.label)}</a><span class="reason">${esc(reasonOf(row.entry))}</span></li>`)
+    .map((row) => `<li>${tabChip(row.tab)}${name(row)}<span class="reason">${esc(reasonOf(row.entry))}</span></li>`)
     .join("")}</ul></details>`;
 }
 
 const notMeasuredList = (results) => reasonList(notMeasured(results), "Not measured", (e) => e?.could_not_check ?? "No collector reported this metric.");
+// The repo's dropped metrics, each with the reason its goal_source gives.
+const droppedList = (dropped) => reasonList(dropped.map((def) => ({ tab: def.tab, def, entry: def })), "Dropped", (d) => d.goal_source ?? "No reason given.", false);
 const notApplicableList = (results) => reasonList(notApplicable(results), "Does not apply", (e) => e.not_applicable);
 
-function overview(results, total) {
+function overview(results, total, dropped) {
   const allRows = results.flatMap((r) => r.rows);
   const tabs = results.map((r) => ({ id: r.tab, name: tabName(r.tab), short: shortName(r.tab, tabName(r.tab)), icon: iconId(r.tab), quality: r.quality, speed: r.speed }));
   const key = `<p class="range-key"><span><svg viewBox="0 0 20 14" aria-hidden="true"><path class="r-q" d="M1 13 10 1l9 12z"/></svg>Front peak: quality</span><span><svg viewBox="0 0 20 14" aria-hidden="true"><path class="r-s" d="M1 13 10 1l9 12z"/></svg>Back peak: speed</span><span><svg viewBox="0 0 20 14" aria-hidden="true"><path class="r-q" d="M1 13 10 1l9 12z"/><path class="r-snow" d="M6.5 6 10 1l3.5 5z"/></svg>Snow: above 80</span></p>`;
   return `<section id="overview" class="view" aria-labelledby="overview-h">
 <h2 id="overview-h" class="vh">Overview</h2>
-<div class="totals">${masterBlock(total.master)}${totalBlock("Quality", total.quality)}${totalBlock("Speed", total.speed)}${total.consumption.total ? totalBlock("Consumption", total.consumption) : ""}<div class="total mix"><p class="sb-l">${allRows.length} metrics</p>${statusStack(statusCounts(allRows))}</div></div>
+<div class="totals">${masterBlock(total.master, dropped.length)}${totalBlock("Quality", total.quality)}${totalBlock("Speed", total.speed)}${total.consumption.total ? totalBlock("Consumption", total.consumption) : ""}<div class="total mix"><p class="sb-l">${allRows.length} metrics</p>${statusStack(statusCounts(allRows))}</div></div>
 <h3>Work queue</h3>
 ${fixList(results)}
 <div class="hero"><div class="range-box">${range(tabs)}</div>${key}</div>
@@ -331,13 +338,14 @@ ${fixList(results)}
 ${scoreboard(results)}
 ${notMeasuredList(results)}
 ${notApplicableList(results)}
+${droppedList(dropped)}
 </section>`;
 }
 
 // ---- Page -----------------------------------------------------------------------
 
 // The whole page: overview, one section per tab, and the client script.
-export function render({ defs, metrics, reviews = {}, reviewHistory, history = [], tabs = DEFAULT_TABS, ideals = {}, meta = {}, css = "" }) {
+export function render({ defs, dropped = [], metrics, reviews = {}, reviewHistory, history = [], tabs = DEFAULT_TABS, ideals = {}, meta = {}, css = "" }) {
   NAMES = new Map(tabs);
   REPO = meta.repoUrl ?? null;
   REVIEWS = meta.reviews ?? "quality/reviews";
@@ -377,7 +385,7 @@ ${SPRITE}
 </header>
 ${nav(results, total)}
 <main>
-${overview(results, total)}
+${overview(results, total, dropped)}
 ${results.map((r) => panel(r, scoredHistory, history, ideals[r.tab])).join("\n")}
 </main>
 <div id="tip" role="tooltip" hidden></div>

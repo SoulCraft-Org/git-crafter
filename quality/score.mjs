@@ -147,8 +147,9 @@ const offPage = (def) => def.drop === true && !def.gate && typeof def.tab === "s
 // The definitions a page scores: the template's targets, the repo's laid over
 // them, every one checked, then those dropped or on a tab the repo turned off
 // left out. Returns the defs, each targets file's params (overlayTargets),
-// every id the files define, so a caller can tell off from unknown, and the
-// gated ones on a shown tab: a dropped metric may still gate, unscored.
+// every id the files define, so a caller can tell off from unknown, the
+// gated ones on a shown tab (a dropped metric may still gate, unscored), and
+// the dropped ones on a shown tab, which the page counts and lists.
 // dropNeeds (the config's drop_needs) drops every metric with one of those
 // `needs` values, as drop: true does; a value no metric needs is a usage error.
 export function loadDefs({ templateDir, packDirs = [], repoDir = null, tabs = DEFAULT_TABS, tabIds = new Set([...TAB_IDS, ...tabs.map(([id]) => id)]), dropNeeds = [] }) {
@@ -159,7 +160,7 @@ export function loadDefs({ templateDir, packDirs = [], repoDir = null, tabs = DE
   const on = new Set(tabs.map(([id]) => id));
   const defs = entries.filter((d) => d.drop !== true && on.has(d.tab));
   const gated = entries.filter((d) => (d.gate === true || d.gate === "warn") && on.has(d.tab));
-  return { defs, params, all: entries, gated };
+  return { defs, params, all: entries, gated, dropped: entries.filter((d) => d.drop === true && on.has(d.tab)) };
 }
 
 // Turns off each entry whose `needs` is listed, as drop: true does; a listed value no entry needs is a usage error.
