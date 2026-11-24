@@ -3,7 +3,7 @@
 // reads nothing from disk; build.mjs re-exports them, so callers import from there.
 
 import { checkIdeal } from "../quality/score.mjs";
-import { ICON_IDS } from "./draw.mjs";
+import { ACTORS, ICON_IDS } from "./draw.mjs";
 import { PROCESS_TABS } from "./render.mjs";
 
 const https = (u) => /^https:\/\//.test(u ?? "");
@@ -110,12 +110,13 @@ function stepShape(s, where) {
   return errs;
 }
 
-// A step's optional icon, gate source and cell.
+// A step's optional icon, gate source, cell and actor.
 function stepExtras(s, where) {
   const errs = [];
   if (s?.icon !== undefined && !ICON_IDS.includes(s.icon)) errs.push(`${where}: icon must be one of ${ICON_IDS.join(", ")}`);
   if (s?.gates_from !== undefined && !GATE_SOURCES.includes(s.gates_from)) errs.push(`${where}: gates_from must be one of ${GATE_SOURCES.join(", ")}`);
   if (s?.at !== undefined && !isCell(s.at)) errs.push(`${where}: at needs [column, row]`);
+  if (s?.actor !== undefined && !(s.actor in ACTORS)) errs.push(`${where}: actor must be one of ${Object.keys(ACTORS).join(", ")}`);
   return errs;
 }
 
@@ -135,6 +136,8 @@ function placementErrors(steps, at) {
   if (placed && placed < steps.length) errs.push(`${at}: ${placed} of ${steps.length} steps have at; a fork places every step`);
   const cells = steps.filter((s) => isCell(s?.at)).map((s) => s.at.join());
   if (new Set(cells).size < cells.length) errs.push(`${at}: two steps share one cell; each step has its own at`);
+  const acted = steps.filter((s) => s?.actor !== undefined).length;
+  if (acted && acted < steps.length) errs.push(`${at}: ${acted} of ${steps.length} steps have an actor; lanes need every step to have one`);
   return errs;
 }
 
@@ -186,6 +189,30 @@ const KINDS = ["quality", "speed", "consumption"];
 // The kinds a map's steps leave unscored; kindOf: each metric id's kind, from the Quality targets.
 export const missingKinds = (steps, kindOf) => KINDS.filter((k) => !(steps ?? []).some((s) => kindOf[s.metric] === k));
 
+const CLAUDE_DOCS = /\/\/code\.claude\.com\b/;
+
+function libraryStepErrors(m, s) {
+  const at = `pages/maps/${m.id}.json, step "${s.id}"`;
+  const errs = [];
+  if (CLAUDE_DOCS.test(s.rule_ref)) errs.push(`${at}: rule_ref must not link Claude Code docs`);
+  if (!https(s.rule_ref)) errs.push(`${at}: rule_ref must be an https link`);
+  if (s.actor === undefined) errs.push(`${at}: a library step needs an actor, who does it`);
+  const words = String(s.rule ?? "").trim().split(/\s+/).filter(Boolean).length;
+  if (words > MAX_RULE_WORDS) errs.push(`${at}: rule has ${words} words; a library rule keeps ${MAX_RULE_WORDS} at most`);
+  return errs;
+}
+
+function libraryMapErrors(m, kindOf) {
+  const errs = [];
+  if (m.ideal === undefined) errs.push(`pages/maps/${m.id}.json: a library map needs an ideal and its sources`);
+  for (const src of m.sources ?? []) if (CLAUDE_DOCS.test(src.url)) errs.push(`pages/maps/${m.id}.json: a library source must not link Claude Code docs (${src.url})`);
+  for (const s of m.steps ?? []) errs.push(...libraryStepErrors(m, s));
+  // The Process page's ideal: a map is where quality, speed and consumption are decided.
+  const missing = kindOf ? missingKinds(m.steps, kindOf) : [];
+  if (missing.length) errs.push(`pages/maps/${m.id}.json: no step scores ${missing.join(", ")}; a map scores quality, speed and consumption`);
+  return errs;
+}
+
 // The template's map library (pages/library.mjs): every map passes checkMaps
 // against the template's metric ids alone, opens with an ideal state and its
 // dated sources, and links each rule over https, since a repo_url would point
@@ -193,16 +220,6 @@ export const missingKinds = (steps, kindOf) => KINDS.filter((k) => !(steps ?? []
 export function checkLibrary(library, templateIds, kindOf = null) {
   const maps = Object.values(library);
   const errs = checkMaps({ repo_url: "https://example.org", maps }, templateIds, "pages/maps");
-  for (const m of maps) {
-    if (m.ideal === undefined) errs.push(`pages/maps/${m.id}.json: a library map needs an ideal and its sources`);
-    for (const s of m.steps ?? []) {
-      if (!https(s.rule_ref)) errs.push(`pages/maps/${m.id}.json, step "${s.id}": rule_ref must be an https link`);
-      const words = String(s.rule ?? "").trim().split(/\s+/).filter(Boolean).length;
-      if (words > MAX_RULE_WORDS) errs.push(`pages/maps/${m.id}.json, step "${s.id}": rule has ${words} words; a library rule keeps ${MAX_RULE_WORDS} at most`);
-    }
-    // The Process page's ideal: a map is where quality, speed and consumption are decided.
-    const missing = kindOf ? missingKinds(m.steps, kindOf) : [];
-    if (missing.length) errs.push(`pages/maps/${m.id}.json: no step scores ${missing.join(", ")}; a map scores quality, speed and consumption`);
-  }
+  for (const m of maps) errs.push(...libraryMapErrors(m, kindOf));
   return errs;
 }

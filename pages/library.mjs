@@ -16,7 +16,7 @@ const LIBRARY = fileURLToPath(new URL("maps", import.meta.url));
 // id and the order of the steps are the library's, so every repo's map of the
 // same name reads the same way; drop: true removes a step.
 const MAP_OVERRIDES = ["name", "why", "ideal", "sources", "critical_path", "time_bar", "steps"];
-const STEP_OVERRIDES = ["name", "short", "tools", "rule", "rule_ref", "metric", "icon", "gates", "gates_from", "drop"];
+const STEP_OVERRIDES = ["name", "short", "actor", "tools", "rule", "rule_ref", "metric", "icon", "gates", "gates_from", "drop"];
 
 // Every library map by id, the template's and then each pack's maps folder
 // (quality/packs.mjs). A file whose id is not its name, or a pack map with a

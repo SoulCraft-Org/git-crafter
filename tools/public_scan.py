@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """public_scan.py: what must never ship in a public tree, found by file and line.
 
-    public_scan.py generic TREE
+    public_scan.py generic TREE [ALLOW]
         emails other than noreply and example addresses, /Users/<name> paths other than placeholders, and
-        key-shaped strings (GitHub, Anthropic, OpenAI, AWS, Google, Slack tokens and private key blocks)
+        key-shaped strings (GitHub, Anthropic, OpenAI, AWS, Google, Slack tokens and private key blocks).
+        ALLOW holds one published contact address a line, such as a security contact; # starts a comment.
+        Only that exact address, in any case, is cleared: no wildcard, no domain.
     public_scan.py terms TREE TERMS
         each term in the TERMS file, case-insensitive, whole words, a space matching a space, hyphen, underscore
         or nothing. Prints path:line and the term's index in TERMS (#1 is its first term), never the term or the
@@ -13,7 +15,7 @@
 TERMS holds one term a line; # starts a comment. "term :: PATH PATH" lets the term appear only in those
 tree-relative paths (the publisher's name in README.md and LICENSE). "!LITERAL" allows that exact, case-sensitive
 text anywhere, such as the public repo's own slug, and counts as no term. The TERMS file is skipped when it sits
-inside TREE. Every scan skips .git and node_modules, and any file with a NUL byte.
+inside TREE, and so is ALLOW. Every scan skips .git and node_modules, and any file with a NUL byte.
 
 Exit 0 nothing found, 1 a finding, 2 usage error, 3 could not read TREE or TERMS. Standard library only.
 """
@@ -60,21 +62,32 @@ def walk(tree: str, skip: set):
                 yield rel, raw.decode("utf-8", "replace")
 
 
-def generic_hits(line: str) -> list:
-    """The kinds of generic finding in one line."""
+def read_allow(text: str) -> set:
+    """The lower-case addresses of an ALLOW file's text: one a line, # starts a comment."""
+    return {line.split("#", 1)[0].strip().lower() for line in text.split("\n")} - {""}
+
+
+def generic_hits(line: str, allowed: frozenset = frozenset()) -> list:
+    """The kinds of generic finding in one line; an address in allowed is no finding."""
     kinds = []
     for local, domain in EMAIL_RE.findall(line):
-        if local.lower() not in EMAIL_OK_LOCAL and not EMAIL_OK_DOMAIN.search(domain):
-            kinds.append("email")
+        if local.lower() in EMAIL_OK_LOCAL or EMAIL_OK_DOMAIN.search(domain) or f"{local}@{domain}".lower() in allowed:
+            continue
+        kinds.append("email")
     kinds += ["home path" for name in HOME_RE.findall(line) if name not in HOME_PLACEHOLDERS]
     kinds += [kind for kind, rx in KEY_RES.items() if rx.search(line)]
     return kinds
 
 
-def generic(tree: str) -> list:
-    """[(path, line number, kind)] over the tree."""
-    return [(rel, n, kind) for rel, text in walk(tree, set())
-            for n, line in enumerate(text.split("\n"), 1) for kind in generic_hits(line)]
+def generic(tree: str, allow_path: str = "") -> list:
+    """[(path, line number, kind)] over the tree; the ALLOW file's addresses, when given, are no finding."""
+    allowed, skip = frozenset(), set()
+    if allow_path:
+        with open(allow_path, encoding="utf-8") as fh:
+            allowed = frozenset(read_allow(fh.read()))
+        skip = {os.path.relpath(os.path.abspath(allow_path), os.path.abspath(tree)).replace(os.sep, "/")}
+    return [(rel, n, kind) for rel, text in walk(tree, skip)
+            for n, line in enumerate(text.split("\n"), 1) for kind in generic_hits(line, allowed)]
 
 
 def read_terms(text: str) -> tuple:
@@ -121,9 +134,8 @@ def report(hits: list, label: str) -> int:
     return 1 if hits else 0
 
 
-def self_test() -> int:
-    """Scan a seeded tree of known-bad and clean files; 0 when every scan matches."""
-    wrong = []
+def _seed(tree: str, at: str) -> None:
+    """Write the seeded known-bad and clean files under tree."""
     key = "gh" + "p_" + "a" * 36
     home = "/Users" + "/alice/x"
     files = {
@@ -132,28 +144,67 @@ def self_test() -> int:
         "rules/clean.md": "uses: Acme-Corp/tool/.github/workflows/x.yml@v1, repo_url Acme-Corp/tool\n"
                           "a@b, actions/checkout@v4.1.0, noreply@anthropic.com, 1+me@users.noreply.github.com,\n"
                           "x@example.com, f@x.invalid, 41898282+github-actions[bot]@users.noreply.github.com, https://u:pw@registry.npmjs.org/, /Users/someone/x, /Users/Shared, /Users/runner, acmecorporate, malice smithy\n",
+        "SECURITY.md": f"Report to Security{at}Acme.io or ops{at}acme.io, never security{at}acme.io.evil.io\n",
+        "allow.txt": f"# published contacts\nsecurity{at}acme.io  # the security contact\n",
         "terms.txt": "# private\nAlice Smith\n!Acme-Corp/tool\nAcme Corp :: README.md\n",
         "bin.dat": "Alice Smith\0",
     }
+    for rel, text in files.items():
+        os.makedirs(os.path.dirname(os.path.join(tree, rel)), exist_ok=True)
+        with open(os.path.join(tree, rel), "w", encoding="utf-8") as fh:
+            fh.write(text)
+
+
+def _check_scans(tree: str, wrong: list) -> None:
+    """Check the generic scan (with and without ALLOW) and the term scan on the seeded tree."""
+    got = generic(tree)
+    want = [("README.md", 2, "email"), ("SECURITY.md", 1, "email"), ("SECURITY.md", 1, "email"),
+            ("SECURITY.md", 1, "email"), ("allow.txt", 2, "email"), ("rules/bad.md", 2, "home path"),
+            ("rules/bad.md", 3, "github token")]
+    if got != want:
+        wrong.append(f"generic: {got}, want {want}")
+    got = generic(tree, os.path.join(tree, "allow.txt"))
+    want = [("README.md", 2, "email"), ("SECURITY.md", 1, "email"), ("SECURITY.md", 1, "email"),
+            ("rules/bad.md", 2, "home path"), ("rules/bad.md", 3, "github token")]
+    if got != want:
+        wrong.append(f"generic with ALLOW: {got}, want {want}")
+    got = term_scan(tree, os.path.join(tree, "terms.txt"))
+    want = [("rules/bad.md", 1, 1), ("rules/bad.md", 2, 2), ("rules/bad.md", 4, 2)]
+    if got != want:
+        wrong.append(f"terms: {got}, want {want}")
+
+
+def _check_exit_codes(tree: str, at: str, wrong: list) -> None:
+    """Check the generic exit codes without and with ALLOW on a one-file folder."""
+    only = os.path.join(tree, "only")
+    os.makedirs(only)
+    with open(os.path.join(only, "SECURITY.md"), "w", encoding="utf-8") as fh:
+        fh.write(f"Report to security{at}acme.io\n")
+    with contextlib.redirect_stdout(io.StringIO()):
+        got = [main(["generic", only]), main(["generic", only, os.path.join(tree, "allow.txt")])]
+    if got != [1, 0]:
+        wrong.append(f"generic exit codes without and with ALLOW: {got}, want [1, 0]")
+
+
+def _check_not_utf8(tree: str, wrong: list) -> None:
+    """Check that a terms file that is not UTF-8 exits 3."""
+    with open(os.path.join(tree, "latin.txt"), "wb") as fh:
+        fh.write(b"Alice\n\xe9\n")
+    with contextlib.redirect_stderr(io.StringIO()):
+        got = main(["terms", tree, os.path.join(tree, "latin.txt")])
+    if got != 3:
+        wrong.append(f"terms file that is not UTF-8: exit {got}, want 3")
+
+
+def self_test() -> int:
+    """Scan a seeded tree of known-bad and clean files; 0 when every scan matches."""
+    wrong = []
+    at = "@"
     with tempfile.TemporaryDirectory() as tree:
-        for rel, text in files.items():
-            os.makedirs(os.path.dirname(os.path.join(tree, rel)), exist_ok=True)
-            with open(os.path.join(tree, rel), "w", encoding="utf-8") as fh:
-                fh.write(text)
-        got = generic(tree)
-        want = [("README.md", 2, "email"), ("rules/bad.md", 2, "home path"), ("rules/bad.md", 3, "github token")]
-        if got != want:
-            wrong.append(f"generic: {got}, want {want}")
-        got = term_scan(tree, os.path.join(tree, "terms.txt"))
-        want = [("rules/bad.md", 1, 1), ("rules/bad.md", 2, 2), ("rules/bad.md", 4, 2)]
-        if got != want:
-            wrong.append(f"terms: {got}, want {want}")
-        with open(os.path.join(tree, "latin.txt"), "wb") as fh:
-            fh.write(b"Alice\n\xe9\n")
-        with contextlib.redirect_stderr(io.StringIO()):
-            got = main(["terms", tree, os.path.join(tree, "latin.txt")])
-        if got != 3:
-            wrong.append(f"terms file that is not UTF-8: exit {got}, want 3")
+        _seed(tree, at)
+        _check_scans(tree, wrong)
+        _check_exit_codes(tree, at, wrong)
+        _check_not_utf8(tree, wrong)
     for w in wrong:
         print(f"public-scan self-test: {w}")
     print(f"public-scan self-test: {'FAIL' if wrong else 'PASS'}")
@@ -164,14 +215,14 @@ def main(argv: list) -> int:
     """Run the generic or terms scan on a folder; exit 0 clean, 1 findings, 2 usage, 3 unreadable."""
     if argv == ["--self-test"]:
         return self_test()
-    if len(argv) not in (2, 3) or argv[0] not in ("generic", "terms") or len(argv) != (2 if argv[0] == "generic" else 3):
+    if not argv or argv[0] not in ("generic", "terms") or len(argv) not in ((2, 3) if argv[0] == "generic" else (3,)):
         print(__doc__.split("\n\n")[1], file=sys.stderr)
         return 2
     if not os.path.isdir(argv[1]):
         print(f"public-scan: could not read {argv[1]}: not a folder", file=sys.stderr)
         return 3
     try:
-        hits = generic(argv[1]) if argv[0] == "generic" else term_scan(argv[1], argv[2])
+        hits = generic(argv[1], *argv[2:]) if argv[0] == "generic" else term_scan(argv[1], argv[2])
     except OSError as exc:
         print(f"public-scan: could not read: {exc.strerror}", file=sys.stderr)
         return 3

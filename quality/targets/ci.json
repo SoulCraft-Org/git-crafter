@@ -160,7 +160,7 @@
     "near": 50,
     "direction": "lower",
     "goal_source": "template goal: at most one run in four starts a runner only to skip its work",
-    "source": "GraphQL check runs and steps (step conclusions) of the last 20 runs per workflow (N = 20, a template choice: enough for a median and a p90, few enough that new runs replace them); weighted by each workflow and event's runs since the start of the shortest full list of 100; workflows in params.always_run are left out and shown with their reason",
+    "source": "GraphQL check runs and steps (step conclusions) of the last 20 runs per workflow (N = 20, a template choice: enough for a median and a p90, few enough that new runs replace them); weighted by each workflow and event's runs since the start of the shortest full list of 100; a run whose workflow file calls ci-standard.yml is work when its caller / short or caller / standard job ran, by the caller that file names; workflows in params.always_run are left out and shown with their reason",
     "needs": "none",
     "chart": "bar"
   },
@@ -224,7 +224,7 @@
     "near": 70,
     "direction": "higher",
     "goal_source": "GitHub docs, Caching dependencies to speed up workflows; template goal: nine npm installs in ten restore the cache",
-    "source": "gh api repos/{repo}/actions/jobs/{id}/logs (setup-node's npm cache line, newest 12 jobs of the last 20 runs per workflow)",
+    "source": "gh api repos/{repo}/actions/jobs/{id}/logs (setup-node's npm cache line, newest 12 jobs of the last 20 runs per workflow); a finished job's log never changes, so its verdict (hit, miss or none) is kept in this entry's verdicts (60 jobs) and read back from the newest 3 files in data/quality/history, and a log is read only for a job no earlier run recorded",
     "needs": "none",
     "chart": "bar"
   },
@@ -320,7 +320,7 @@
     "near": 765,
     "direction": "lower",
     "goal_source": "goal from issue #38 (2026-11-12); near is the 765 a pull request run spent before replay (run 43307560596's quota lines). The workflow token reports limit 5000 an hour (gh api rate_limit in runs 43307560596 and 43355450949)",
-    "source": "latest: gh api actions/workflows/pages.yml/runs (green pull_request runs from this repo), of the newest 3 the first whose jobs printed a notice, its jobs and their check-run annotations: each job's GitHub requests notice from quality/gh-replay.mjs, live REST plus GraphQL, summed",
+    "source": "latest: gh api actions/workflows/{file}/runs (green pull_request runs from this repo) for each workflow file that runs on pull requests and has a step calling actions/pages, whatever its name, of the newest 3 the first whose jobs printed a notice, its jobs and their check-run annotations: each job's GitHub requests notice from quality/gh-replay.mjs, live REST plus GraphQL, summed",
     "needs": "none",
     "chart": "bar"
   }

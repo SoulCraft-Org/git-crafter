@@ -36,6 +36,7 @@
   {
    "id": "idea",
    "name": "Idea",
+   "actor": "contributor",
    "icon": "mail",
    "tools": [
     "GitHub Discussions",
@@ -52,6 +53,7 @@
   {
    "id": "approve",
    "name": "Approve run",
+   "actor": "orchestrator",
    "icon": "shield",
    "tools": [
     "Fork run approval",
@@ -68,6 +70,7 @@
   {
    "id": "review",
    "name": "Review",
+   "actor": "reviewer",
    "icon": "review",
    "tools": [
     "Pull request reviews",
@@ -84,6 +87,7 @@
   {
    "id": "merge",
    "name": "Merge",
+   "actor": "orchestrator",
    "icon": "merge",
    "tools": [
     "merge_policy.py --pr N --sha",
@@ -100,6 +104,7 @@
   {
    "id": "rebuild",
    "name": "Rebuild",
+   "actor": "orchestrator",
    "icon": "build",
    "tools": [
     "The orchestrator's own branch",
@@ -116,6 +121,7 @@
   {
    "id": "deploy",
    "name": "Deploy",
+   "actor": "ci",
    "icon": "deploy",
    "tools": [
     "deploy-gate.yml",

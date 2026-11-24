@@ -237,6 +237,22 @@ describe("Security and quality: Actions hardening, supply chain and Claude Code"
     assert.match(broken[ID].could_not_check, /actions\.lock/);
   });
 
+  it("locked workflows: a workflow that pins every outside action to a full SHA counts with no lockfile", async () => {
+    const ID = "actions.locked_share";
+    const sha = "1111111111111111111111111111111111111111";
+    const wf = (...uses) => ["name: w", "on: push", "jobs:", "  a:", "    runs-on: ubuntu-latest", "    steps:", ...uses.map((u) => `      - uses: ${u}`)].join("\n");
+    const files = {
+      ".github/workflows/sha.yml": wf(`actions/checkout@${sha}`, `acme/kit/sub@${sha}`),
+      ".github/workflows/mixed.yml": wf(`actions/checkout@${sha}`, "acme/kit@v1"),
+      ".github/workflows/tag.yml": wf("actions/checkout@v7.0.1"),
+    };
+    const got = await run({ root: repoWith(files) });
+    assert.equal(got[ID].value, 33.3);
+    assert.deepEqual(got[ID].detail.map((d) => [d.label, d.value]), [["mixed.yml", 0], ["sha.yml", 1], ["tag.yml", 0]]);
+    const allSha = await run({ root: repoWith({ ".github/workflows/sha.yml": files[".github/workflows/sha.yml"] }) });
+    assert.equal(allSha[ID].value, 100, "a repo that pins every action to a SHA meets the metric");
+  });
+
   it("a tag the lockfile records for its workflow counts as pinned; the same tag unlocked does not", async () => {
     const wf = ["name: w", "on: push", "jobs:", "  a:", "    runs-on: ubuntu-latest", "    steps:", "      - uses: actions/checkout@v7.0.1", "      - uses: $/actions/pages"].join("\n");
     const lock = (file) => ["version: 'v0.0.3'", "workflows:", `    '.github/workflows/${file}':`, "        - 'actions/checkout@v7.0.1'", "dependencies: {}"].join("\n");
@@ -537,9 +553,9 @@ describe("Security and quality: Actions hardening, supply chain and Claude Code"
     const file = path.join(root, ".claude", "settings.json");
     assert.ok(existsSync(file), "Git Crafter has a .claude/settings.json");
     const settings = JSON.parse(readFileSync(file, "utf8"));
-    // autoCompactWindow sizes a session's context (#693); enabledPlugins false and deniedMcpServers only switch things off (#754). None grants anything, so they may sit beside the deny list.
+    // autoCompactWindow sizes a session's context (#693); enabledPlugins only switches plugins on, all of them (owner, 2026-11-23: every plugin stays on), and deniedMcpServers only switches servers off (#754). Neither adds a permission rule, so they may sit beside the deny list.
     const granting = Object.keys(settings).filter((k) => !["permissions", "autoCompactWindow", "enabledPlugins", "deniedMcpServers"].includes(k));
-    assert.ok(Object.values(settings.enabledPlugins ?? {}).every((v) => v === false), "enabledPlugins only switches off");
+    assert.ok(Object.values(settings.enabledPlugins ?? {}).every((v) => v === true), "enabledPlugins only switches on, never off");
     assert.deepEqual(granting, [], "no hooks, env or other keys");
     assert.ok(Number.isInteger(settings.autoCompactWindow ?? 250000), "autoCompactWindow is a token count");
     assert.deepEqual(Object.keys(settings.permissions), ["deny"], "no allow or ask list");

@@ -69,7 +69,7 @@ function copyFixture({ withGit = true, stub = STUB } = {}) {
   if (withGit) {
     execFileSync('git', ['init', '-q'], { cwd: dir, env: gitEnv });
     commit(dir, 'A: everything (#1)', '2026-01-10T12:00:00Z');
-    fs.appendFileSync(path.join(dir, 'tools/lint.py'), '# touched\n');
+    fs.appendFileSync(path.join(dir, 'tools/lint.py'), 'TOUCHED = 1\n');
     commit(dir, 'D: the CONTRIBUTING area (#2)', '2026-01-13T12:00:00Z');
     fs.appendFileSync(path.join(dir, 'src/app.txt'), 'changed\n');
     commit(dir, 'Merge pull request #3 from fixture/b', '2026-01-20T12:00:00Z');
@@ -357,6 +357,27 @@ test('params.doc_set_left_out drops its globs; a malformed list could not check'
   const bad = await collect({ root: dir, mode: 'local' });
   for (const id of IDS.filter((i) => !OWN_INPUTS.includes(i))) cnc(bad, id);
   assert.match(bad['docs.text_only'].could_not_check, /doc_set_left_out/);
+});
+
+test('docs.oldest_lag_days passes over an area commit that changes only comments, and counts one that changes code', async () => {
+  const dir = copyFixture();
+  const lag = async () => (await collect({ root: dir, mode: 'local' }))['docs.oldest_lag_days'].detail.find((d) => d.label === 'guide/setup.md').value;
+  assert.equal(await lag(), 10, 'setup.md trails src/ by 10 days');
+  fs.writeFileSync(path.join(dir, 'src/util.py'), '#!/usr/bin/env python3\nx = 1\n');
+  commit(dir, 'E: code in src/ (#5)', '2026-01-26T12:00:00Z');
+  assert.equal(await lag(), 16, 'a new file with code moves the area to Jan 26');
+  fs.appendFileSync(path.join(dir, 'src/util.py'), '# a note\n');
+  commit(dir, 'F: a comment line (#6)', '2026-02-05T12:00:00Z');
+  assert.equal(await lag(), 16, 'a comment line adds no lag');
+  fs.writeFileSync(path.join(dir, 'src/util.py'), '#!/usr/bin/env python3\n# reworded\nx = 1  # one\n');
+  commit(dir, 'G: comments reworded and an inline comment (#7)', '2026-02-06T12:00:00Z');
+  assert.equal(await lag(), 16, 'a rewording and an inline comment add none');
+  fs.writeFileSync(path.join(dir, 'src/util.py'), '#!/usr/bin/env python3\n# reworded\nx = 2  # one\n');
+  commit(dir, 'H: the code changes (#8)', '2026-02-10T12:00:00Z');
+  assert.equal(await lag(), 31, 'a code change counts, even with comments around it');
+  fs.writeFileSync(path.join(dir, 'src/app.txt'), 'a file with no known comment syntax\n');
+  commit(dir, 'I: a text file (#9)', '2026-02-11T12:00:00Z');
+  assert.equal(await lag(), 32, 'a file whose comment syntax is unknown always counts');
 });
 
 test('no git history: lag, dated claims, ignore checks and folders could not check; the rest still measure', async () => {

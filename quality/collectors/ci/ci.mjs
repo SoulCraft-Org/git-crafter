@@ -61,13 +61,14 @@ import { readFileSync } from "node:fs";
 import { ConfigError, GhError, ghClient, projectSettings, readProject, refusingGh, repoOf } from "../github/github.mjs";
 import { adminGh, gated } from "../github/github-core.mjs";
 import { once } from "../github/github-loaders.mjs";
-import { runsOnPush } from "./ci-workflows.mjs";
+import { pagesWorkflows, runsOnPush } from "./ci-workflows.mjs";
 import { TARGETS_FILE, RUNS_PER_WORKFLOW, LAST_RUNS, LAST_PRS, QUEUE_SAMPLE, LOG_SAMPLE, LAST, CODE_QUALITY, round1, pct, skip, measured, ms, completed, newest, groupBy, mapLimit } from "./ci-core.mjs";
 import { alwaysRunWhy, describeRun, pushToGreen, cacheVerdict, weightedLightShare, commonStart } from "./ci-describe.mjs";
 import { skipTriggers, standardCalls } from "./ci-stages.mjs";
 import { pipelineDetail } from "./ci-detail.mjs";
 import { reasonFor, settings } from "./ci-settings.mjs";
 import { workflowRuns, runJobs, flakyChecks } from "./ci-runs.mjs";
+import { keptVerdicts, logVerdicts, savedVerdicts, VERDICTS_KEPT, HISTORY_READ } from "./ci-logs.mjs";
 import { INSIGHT_METRICS } from "./ci-insights.mjs";
 import { SPEND_METRICS } from "./ci-spend.mjs";
 import { headroom, QUOTA_SOURCE, readQuota } from "../github/github-quota.mjs";
@@ -249,18 +250,20 @@ const METRICS = {
     },
   },
   "ci.cache_hit_rate": {
-    source: `gh api repos/{repo}/actions/jobs/{id}/logs (setup-node's npm cache line, newest ${LOG_SAMPLE} jobs)`,
-    async run(L, { gh, repo }) {
+    source: `gh api repos/{repo}/actions/jobs/{id}/logs (setup-node's npm cache line, newest ${LOG_SAMPLE} jobs); a job's verdict is kept in this entry (verdicts, ${VERDICTS_KEPT} jobs) and read back from the newest ${HISTORY_READ} files in data/quality/history, so a finished job's log is read once`,
+    async run(L, { gh, repo, root }) {
       const jobs = (await L.described())
         .flatMap((r) => r.jobs.filter((j) => j.restoresCache).map((j) => ({ ...j, workflow: r.workflow })))
         .sort((a, b) => ms(b.completed_at) - ms(a.completed_at))
         .slice(0, LOG_SAMPLE);
       if (!jobs.length) return skip("no job read ran setup-node with a cache");
-      const verdicts = await mapLimit(jobs, 4, async (j) => cacheVerdict(await gh.text(`repos/${repo}/actions/jobs/${j.id}/logs`)));
-      const read = jobs.map((j, i) => ({ workflow: j.workflow, v: verdicts[i] })).filter((x) => x.v);
+      const saved = savedVerdicts(root, "ci.cache_hit_rate");
+      const { verdicts, live } = await logVerdicts(gh, repo, jobs, saved);
+      const read = jobs.map((j) => ({ workflow: j.workflow, v: verdicts.get(String(j.id)) })).filter((x) => x.v !== "none");
+      const kept = { verdicts: keptVerdicts(verdicts, saved), note: `${live} of ${jobs.length} job logs read now, the rest from earlier runs` };
       if (!read.length) return skip("no log read had setup-node's cache line");
       const detail = [...groupBy(read, (x) => x.workflow)].map(([label, g]) => ({ label, value: pct(g.filter((x) => x.v === "hit").length, g.length) }));
-      return measured(pct(read.filter((x) => x.v === "hit").length, read.length), detail);
+      return { ...measured(pct(read.filter((x) => x.v === "hit").length, read.length), detail), ...kept };
     },
   },
   // Point in time: the latest green head, each stage's latest run, never a median.
@@ -349,11 +352,13 @@ const METRICS = {
     },
   },
   "ci.pr_run_requests": {
-    source: `latest: gh api actions/workflows/pages.yml/runs, the newest green pull_request run from {repo} whose jobs printed a notice, of the newest ${PR_RUNS_READ}; its jobs' check-run annotations, each job's GitHub requests notice (quality/gh-replay.mjs report), live REST plus GraphQL, summed`,
-    async run(L, { gh, repo }) {
-      const runs = (await gh.rest(`repos/${repo}/actions/workflows/pages.yml/runs?event=pull_request&status=success&per_page=10`)).workflow_runs ?? [];
-      const ours = runs.filter((r) => r.head_repository?.full_name === repo).slice(0, PR_RUNS_READ);
-      if (!ours.length) return skip("no green pull request run of pages.yml from this repo");
+    source: `latest: gh api actions/workflows/{file}/runs for each workflow file that runs on pull requests and calls actions/pages, the newest green pull_request run from {repo} whose jobs printed a notice, of the newest ${PR_RUNS_READ}; its jobs' check-run annotations, each job's GitHub requests notice (quality/gh-replay.mjs report), live REST plus GraphQL, summed`,
+    async run(L, { gh, repo, root }) {
+      const files = pagesWorkflows(root);
+      if (!files.length) return skip("no workflow in .github/workflows that runs on pull requests calls actions/pages");
+      const lists = await Promise.all(files.map(async (f) => (await gh.rest(`repos/${repo}/actions/workflows/${f}/runs?event=pull_request&status=success&per_page=10`)).workflow_runs ?? []));
+      const ours = lists.flat().filter((r) => r.head_repository?.full_name === repo).sort((a, b) => (ms(b.created_at) || 0) - (ms(a.created_at) || 0)).slice(0, PR_RUNS_READ);
+      if (!ours.length) return skip(`no green pull request run of ${files.join(", ")} from this repo`);
       for (const r of ours) {
         const jobs = ((await gh.rest(`repos/${repo}/actions/runs/${r.id}/jobs?per_page=100`)).jobs ?? []).filter((j) => j.conclusion && j.conclusion !== "skipped");
         const got = prRunRequests(jobs, await mapLimit(jobs, 4, (j) => gh.rest(`repos/${repo}/check-runs/${j.id}/annotations`)));

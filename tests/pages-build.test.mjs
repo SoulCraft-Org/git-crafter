@@ -200,7 +200,7 @@ test("both pages build from a fixture, escape untrusted labels, and show every g
     assert.match(met, /<span data-r="" class="val">≥ 1,008 h<\/span>/, "the goal row's headline");
     assert.match(`${met}${proc}`, /aria-label="Hours since the 10th-latest merge: ≥ 1,008 h; goal ≤ 24 h"/, "the goal mark's tooltip");
     assert.doesNotMatch(`${met}${proc}`, /: 1,008 h; goal|class="val">1,008 h|class="mt-n">1,008 h/, "no headline or tooltip reads a bare 1,008 h");
-    assert.match(proc, /<svg class="trail"/);
+    assert.match(proc, /<svg class="trail(?: lanes)?"/, "a trail, or lanes once every step names its actor");
     const idx = proc.match(/<div class="map-index" role="navigation" aria-label="Maps">[^]*?<\/div>/)?.[0] ?? "";
     assert.deepEqual([...idx.matchAll(/<a href="(#map-[^"]+)" aria-label="[^"]+: \d+ of \d+ steps meet their goal"/g)].map((m) => m[1]), resolveMaps(readJson("maps.json")).maps.map((m) => `#map-${m.id}`), "the strip links every map, in order");
     for (const tab of ["build", "ci", "testing"]) assert.match(proc, new RegExp(`id="tab-${tab}"`));

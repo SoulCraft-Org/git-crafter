@@ -47,6 +47,11 @@ figcaption { margin-bottom: var(--s-1); font-size: 0.75rem; color: var(--c-text-
 .t-step[aria-current] .t-hit { fill: var(--c-ground); stroke: var(--c-night); stroke-width: 1.5; }
 .t-step:focus { outline: none; }
 .t-step:focus-visible .t-hit { stroke: var(--c-focus); stroke-width: 2.5; }
+/* A map drawn as lanes: a band for each actor, its name at the band's top left. */
+.t-lane { fill: var(--c-ground); }
+.t-lane.alt { fill: var(--c-surface); }
+.t-actor { font-size: 0.875rem; font-weight: 700; fill: var(--c-text); }
+.chip.actor { font-weight: 650; }
 .map-index { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: 0 0 var(--s-3); }
 .map-index a { flex: 1 1 9.375rem; min-width: 0; padding: var(--s-2) var(--s-3); border: var(--line-hair) solid var(--c-border); border-radius: var(--r-chisel); background: var(--c-surface); color: var(--c-text); text-decoration: none; font-size: 0.875rem; }
 .map-index a:hover, .map-index a:focus-visible { border-color: var(--c-night); }

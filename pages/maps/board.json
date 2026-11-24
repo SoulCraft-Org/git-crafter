@@ -7,12 +7,12 @@
   {
    "title": "GitHub Docs: Best practices for Projects",
    "url": "https://docs.github.com/en/issues/planning-and-tracking-with-projects/learning-about-projects/best-practices-for-projects",
-   "date": "2026-11-10"
+   "date": "2026-11-23"
   },
   {
-   "title": "Claude Code Docs: Manage costs effectively",
-   "url": "https://code.claude.com/docs/en/costs",
-   "date": "2026-11-10"
+   "title": "GitHub Docs: Using the built-in automations",
+   "url": "https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project/using-the-built-in-automations",
+   "date": "2026-11-23"
   },
   {
    "title": "Anthropic: How we built our multi-agent research system",
@@ -41,18 +41,20 @@
   {
    "id": "card",
    "name": "Card",
+   "actor": "orchestrator",
    "icon": "plan",
    "tools": [
     "A draft card on the project board",
     "quality/cards/picture.mjs"
    ],
    "rule": "A feature is one card. It holds a picture of its metric and steps, a table and a pass-or-fail check.",
-   "rule_ref": "https://code.claude.com/docs/en/best-practices",
+   "rule_ref": "https://docs.github.com/en/issues/planning-and-tracking-with-projects/learning-about-projects/best-practices-for-projects",
    "metric": "projects.cards_at_a_glance"
   },
   {
    "id": "split",
    "name": "Split",
+   "actor": "orchestrator",
    "icon": "sessions",
    "tools": [
     "The Area field",
@@ -65,18 +67,20 @@
   {
    "id": "start",
    "name": "Start",
+   "actor": "worker",
    "icon": "speed",
    "tools": [
     "One app session per card, in its own worktree",
     "Workflow: Pull request linked to issue"
    ],
    "rule": "A fresh session takes one card. The card is in progress only while its pull request is open.",
-   "rule_ref": "https://code.claude.com/docs/en/costs",
+   "rule_ref": "https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project/using-the-built-in-automations",
    "metric": "projects.cards_by_column"
   },
   {
    "id": "finish",
    "name": "Finish",
+   "actor": "orchestrator",
    "icon": "merge",
    "tools": [
     "The app's PR monitor with Auto-fix",
@@ -89,6 +93,7 @@
   {
    "id": "done",
    "name": "Done",
+   "actor": "github",
    "icon": "ci",
    "tools": [
     "Workflows: Pull request merged, Item closed",
@@ -101,6 +106,7 @@
   {
    "id": "watch",
    "name": "Watch",
+   "actor": "orchestrator",
    "icon": "clock",
    "tools": [
     "The Stuck view",

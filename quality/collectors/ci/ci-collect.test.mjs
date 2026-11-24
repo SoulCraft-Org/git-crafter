@@ -168,9 +168,9 @@ describe("collect", () => {
     assert.equal(count(/\/pulls\?/), 1);
     assert.equal(count(/\/check-runs/), 3, "one per merge commit of the last merged pull requests");
     assert.equal(count(/search\/issues|billing|commits\?/), 0);
-    // 1 repo + 1 list + 2 run lists + 11 jobs + 5 logs + 1 attempt + 1 pulls + 3 check runs + 1 rate_limit + 1 pages.yml pull_request list = 27 REST and text calls.
+    // 1 repo + 1 list + 2 run lists + 11 jobs + 5 logs + 1 attempt + 1 pulls + 3 check runs + 1 rate_limit = 26 REST and text calls; the fixture has no workflow calling actions/pages, so no pull request list.
     assert.equal(count(new RegExp(`^repos/${REPO}$`)), 1, "the default branch, read once");
-    assert.equal(calls.filter((c) => !c.startsWith("graphql")).length, 27);
+    assert.equal(calls.filter((c) => !c.startsWith("graphql")).length, 26);
   });
 
   it("reads jobs with their steps in GraphQL calls small enough to finish within GitHub's timeout", async () => {
@@ -216,7 +216,7 @@ describe("collect", () => {
     const calls = [];
     await collect({ root: ROOT, mode: "local", params: FULL_PARAMS, gh: fakeGh({}, calls), now: NOW, repo: REPO });
     assert.equal(calls.filter((c) => /billing/.test(c)).length, 0, "no billing read");
-    assert.equal(calls.filter((c) => !c.startsWith("graphql")).length, 27, "the same 27 as a ci run");
+    assert.equal(calls.filter((c) => !c.startsWith("graphql")).length, 26, "the same 26 as a ci run");
   });
 
   it("prices each workflow's billed minutes at its runners' list rate", async () => {
@@ -250,6 +250,62 @@ describe("api headroom", () => {
   it("cannot check when rate_limit lacks a bucket", async () => {
     const rest = { ...REST, rate_limit: { resources: { core: { limit: 5000, remaining: 1 } } } };
     assert.match((await collectWith({ gh: fakeGh({ rest }) }))["ci.api_headroom"].could_not_check, /no core or graphql/);
+  });
+});
+describe("ci.cache_hit_rate keeps each job's verdict", () => {
+  const roots = [];
+  after(() => roots.forEach((d) => rmSync(d, { recursive: true, force: true })));
+  const ID = "ci.cache_hit_rate";
+  const only = TARGETS.filter((t) => t.id === ID);
+  // A root whose history folder holds these files, by name.
+  const rootWith = (files) => {
+    const dir = mkdtempSync(path.join(tmpdir(), "ci-logs-"));
+    roots.push(dir);
+    mkdirSync(path.join(dir, "data", "quality", "history"), { recursive: true });
+    for (const [name, text] of Object.entries(files)) writeFileSync(path.join(dir, "data", "quality", "history", name), text);
+    return dir;
+  };
+  const day = (verdicts) => JSON.stringify({ mode: "ci", metrics: { [ID]: { value: 1, verdicts } } });
+  const read = async (root) => {
+    const calls = [];
+    const got = (await collect({ root, mode: "ci", params: FULL_PARAMS, targets: only, gh: fakeGh({}, calls), now: NOW, repo: REPO }))[ID];
+    return { got, logs: calls.filter((c) => /\/logs$/.test(c)).length };
+  };
+
+  it("reads each job's log once, then records the verdicts for the next run", async () => {
+    const first = await read(rootWith({}));
+    assert.equal(first.got.value, 75);
+    assert.equal(first.logs, 5, "no earlier run: all five logs are read");
+    assert.deepEqual(first.got.verdicts, { 109: "hit", 105: "hit", 101: "hit", 103: "miss", 112: "none" });
+    assert.match(first.got.source, /; 5 of 5 job logs read now, the rest from earlier runs$/);
+    // The next run finds that entry in a history file: the same reading, no log read.
+    const next = await read(rootWith({ "2026-11-22.json": JSON.stringify({ mode: "ci", metrics: { [ID]: first.got } }) }));
+    assert.equal(next.logs, 0);
+    assert.equal(next.got.value, 75);
+    assert.deepEqual(next.got.verdicts, first.got.verdicts);
+    assert.match(next.got.source, /; 0 of 5 job logs read now/);
+  });
+
+  it("reads only the jobs no earlier run recorded, and takes the newest of the last three files", async () => {
+    const some = await read(rootWith({ "2026-11-20.json": day({ 109: "miss", 103: "miss" }), "2026-11-21.json": day({ 109: "hit" }) }));
+    assert.equal(some.logs, 3, "109 and 103 are known; 105, 101 and 112 are read");
+    assert.equal(some.got.value, 75, "109 reads as the newer file's hit");
+    const old = await read(rootWith({ "2026-11-01.json": day({ 109: "miss", 105: "miss", 101: "miss", 103: "miss", 112: "none" }), "2026-11-02.json": day({ 2: "hit" }), "2026-11-03.json": day({ 3: "hit" }), "2026-11-04.json": day({ 4: "hit" }) }));
+    assert.equal(old.logs, 5, "a file beyond the newest three is not read");
+  });
+
+  it("ignores a history file that is not JSON or holds a verdict that is none of the three", async () => {
+    const got = await read(rootWith({ "2026-11-22.json": "{ not json", "2026-11-21.json": day({ 109: "maybe", 105: 5 }), "notes.txt": "x" }));
+    assert.equal(got.logs, 5);
+    assert.equal(got.got.value, 75);
+  });
+
+  it("keeps at most 60 verdicts, this run's first", async () => {
+    const old = Object.fromEntries(Array.from({ length: 80 }, (_, i) => [1000 + i, "hit"]));
+    const { got } = await read(rootWith({ "2026-11-22.json": day(old) }));
+    const ids = Object.keys(got.verdicts);
+    assert.equal(ids.length, 60);
+    assert.ok(["109", "105", "101", "103", "112"].every((id) => id in got.verdicts), "the sample's own five are kept");
   });
 });
 describe("repo settings", () => {
@@ -333,6 +389,20 @@ describe("repo settings", () => {
     assert.equal(describeRun(RUNS[6], ran, both.get("ci")).light, false, "short ran, so the run did work whatever standard did");
   });
 
+  it("counts a short or standard job as work only for a caller the run's workflow file names", () => {
+    const wf = (name, jobs) => `name: ${name}\non:\n  pull_request:\njobs:\n${jobs}`;
+    const call = `  ci:\n    uses: acme/kit/.github/workflows/ci-standard.yml@${"a".repeat(40)} # v1\n    with:\n      short: npm test\n`;
+    const other = "  x:\n    uses: acme/kit/.github/workflows/other.yml@main\n";
+    const calls = standardCalls(repoWith({ ".github/workflows/ci.yml": wf("ci", call), ".github/workflows/lint.yml": wf("lint", other) }));
+    assert.deepEqual(calls.get("lint"), { calls: [], unset: [] }, "a workflow read with no call is known to have none");
+    const changes = (caller) => job(601, `${caller} / changes`, "13:00:00", "13:00:00", "13:00:07", "success", GATES);
+    const idle = (caller, tier) => [changes(caller), job(602, `${caller} / ${tier}`, "13:00:08", "13:00:09", "13:00:43", "success", [...GATES, skipped("Run actions/setup-python@abc")])];
+    assert.equal(describeRun(RUNS[6], idle("ci", "short"), calls.get("ci")).light, false, "the caller the workflow names: its short job is work");
+    assert.equal(describeRun(RUNS[6], idle("x", "short"), calls.get("lint")).light, true, "another workflow's x / short is not work");
+    assert.equal(describeRun(RUNS[6], idle("x", "standard"), calls.get("ci")).light, true, "nor is a caller this workflow does not name");
+    assert.equal(describeRun(RUNS[6], idle("x", "short")).light, false, "with no file read for the workflow, the name decides");
+  });
+
   it("does not read the steps a CI standard caller's jobs skip by input or lockfile as light, with standard set too", () => {
     const caller = `name: ci\non:\n  pull_request:\njobs:\n  ci:\n    uses: acme/kit/.github/workflows/ci-standard.yml@${"a".repeat(40)} # v1\n    with:\n      short: npm test\n      standard: npm run e2e\n`;
     const calls = standardCalls(repoWith({ ".github/workflows/ci.yml": caller })).get("ci");
@@ -362,7 +432,8 @@ describe("repo settings", () => {
       const calls = [];
       const got = await collect({ root: ROOT, mode: "local", params: { ...FULL_PARAMS, default_branch: "main" }, gh: fakeGh({}, calls), now: NOW });
       assert.equal(calls.length, 0);
-      for (const id of METRIC_IDS.filter((x) => x !== "ci.skip_unchanged_share")) {
+      // These two read the workflow files only: the repo is no part of what they find.
+      for (const id of METRIC_IDS.filter((x) => !["ci.skip_unchanged_share", "ci.pr_run_requests"].includes(x))) {
         assert.match(got[id].could_not_check, /params\.repo .* is not owner\/name, and GITHUB_REPOSITORY is unset/, id);
       }
       assert.equal(got["ci.skip_unchanged_share"].value, 40, "the files need no repo once params name the branch");
