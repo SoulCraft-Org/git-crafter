@@ -32,6 +32,7 @@
 //   park_hours       hours an open issue of another type may wait before it
 //                    counts as parked (24)
 //   discussion_days  days an answerable discussion may wait for its answer (7)
+//   cache_limit_gb   the Actions cache storage the repo may hold, in GB (10)
 //   record_minutes   an issue closed by hand within this many minutes of
 //                    opening is a record of work already done, left out of
 //                    the closed-issue metrics (5); 0 counts every close
@@ -84,6 +85,7 @@ import { feature, whileOn, reasonFor } from "./github-helpers.mjs";
 import { ISSUE_METRICS, ACTION_METRICS, PROJECT_METRICS } from "./github-metrics-work.mjs";
 import { DISCUSSION_METRICS } from "./github-metrics-discussions.mjs";
 import { MILESTONE_METRICS } from "./github-metrics-milestones.mjs";
+import { CACHE_METRICS } from "./github-metrics-caches.mjs";
 import { PULL_METRICS } from "./github-metrics-pulls.mjs";
 import { SECURITY_HARDENING_METRICS, SECURITY_REVIEW_METRICS } from "./github-metrics-security.mjs";
 export { runsPullRequestCode } from "./github-helpers.mjs";
@@ -278,7 +280,7 @@ const SETTINGS_METRICS = {
   },
 };
 
-const METRICS = {...ISSUE_METRICS, ...MILESTONE_METRICS, ...DISCUSSION_METRICS, ...PULL_METRICS, ...ACTION_METRICS, ...PROJECT_METRICS, ...SECURITY_FEATURE_METRICS, ...SECURITY_HARDENING_METRICS, ...SECURITY_REVIEW_METRICS, ...SETTINGS_METRICS};
+const METRICS = {...ISSUE_METRICS, ...MILESTONE_METRICS, ...DISCUSSION_METRICS, ...PULL_METRICS, ...ACTION_METRICS, ...CACHE_METRICS, ...PROJECT_METRICS, ...SECURITY_FEATURE_METRICS, ...SECURITY_HARDENING_METRICS, ...SECURITY_REVIEW_METRICS, ...SETTINGS_METRICS};
 
 export const METRIC_IDS = Object.keys(METRICS);
 
