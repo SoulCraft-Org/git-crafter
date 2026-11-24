@@ -57,7 +57,7 @@ Each map's steps: [pages/maps](pages/maps/README.md).
 |---|---|---|
 | [delegation](rules/delegation.md) | Every turn | Who decides and merges |
 | [keys](rules/keys.md) | Every turn | No session handles a key |
-| [compute](rules/compute.md) | Every turn | Cloud first; free credits and approved flat subscriptions; never pay-per-use |
+| [compute](rules/compute.md) | Every turn | Cloud first, free credits, flat plans |
 | [writing-and-gates](rules/writing-and-gates.md) | Every turn | Visual docs, plain prose |
 | [compute-detail](rules/compute-detail.md), [comfy](rules/comfy.md), [gates](rules/gates.md), [keys-detail](rules/keys-detail.md) | Matching files | CI pool, GPU tiers, gates |
 | [merging](skills/merging/SKILL.md) | Reviewing and merging | Merge conditions |
