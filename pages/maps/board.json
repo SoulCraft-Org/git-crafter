@@ -41,6 +41,7 @@
   {
    "id": "card",
    "name": "Card",
+   "actor": "orchestrator",
    "icon": "plan",
    "tools": [
     "A draft card on the project board",
@@ -53,6 +54,7 @@
   {
    "id": "split",
    "name": "Split",
+   "actor": "orchestrator",
    "icon": "sessions",
    "tools": [
     "The Area field",
@@ -65,6 +67,7 @@
   {
    "id": "start",
    "name": "Start",
+   "actor": "worker",
    "icon": "speed",
    "tools": [
     "One app session per card, in its own worktree",
@@ -77,6 +80,7 @@
   {
    "id": "finish",
    "name": "Finish",
+   "actor": "orchestrator",
    "icon": "merge",
    "tools": [
     "The app's PR monitor with Auto-fix",
@@ -89,6 +93,7 @@
   {
    "id": "done",
    "name": "Done",
+   "actor": "github",
    "icon": "ci",
    "tools": [
     "Workflows: Pull request merged, Item closed",
@@ -101,6 +106,7 @@
   {
    "id": "watch",
    "name": "Watch",
+   "actor": "orchestrator",
    "icon": "clock",
    "tools": [
     "The Stuck view",
