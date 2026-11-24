@@ -95,3 +95,31 @@ const CARD_REF = String.raw`PVTI_[\w-]{8,}`;
 const ISSUE_LINK = new RegExp(String.raw`(?<![\w])(?:(?:(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?):?|part of)[ \t]+(?:${ISSUE_REF}|(?:card[ \t]+)?${CARD_REF})|card:[ \t]*${CARD_REF})`, "i");
 // True when a PR body links an issue as ISSUE_LINK reads it, outside fences and the ignored text.
 export const linksIssue = (body, ignore = []) => ISSUE_LINK.test(unfenced(body ?? "", ignore));
+
+// A table whose header names what was left undone, and the work a row of it may name: an issue or a card.
+const LEFT_HEADER = /^(?:left|not[- ]fixed|follow[- ]?ups?)$/i;
+// A row that says there is nothing left: every cell is none, n/a, nothing or a dash.
+const NOTHING = /^(?:none|n\/a|nothing|[-\u2013\u2014]+)$/i;
+const NAMES_WORK = new RegExp(`${ISSUE_REF}|${CARD_REF}`);
+const cellsOf = (line) => line.trim().replace(/^\||\|$/g, "").split(/(?<!\\)\|/).map((c) => c.trim());
+
+/**
+ * The rows, as their text, of each table whose header has a cell naming Left, Not fixed or Follow-up that
+ * name neither an issue (#N, owner/repo#N, an issue URL) nor a card (PVTI_...): work left with nowhere to find it.
+ * A blank row, or one whose cells all say none, is skipped; a header cell must be the whole phrase. Fences, comments and `ignore` are cut first, as for linksIssue.
+ */
+export function unlinkedLeftRows(body, ignore = []) {
+  const lines = unfenced(body ?? "", ignore).split("\n");
+  const out = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (!/^\s*\|/.test(lines[i]) || !/^\s*\|?\s*:?-{3,}/.test(lines[i + 1] ?? "")) continue;
+    const rows = [];
+    for (i += 2; i < lines.length && /^\s*\|/.test(lines[i]); i++) rows.push(lines[i]);
+    const head = cellsOf(lines[i - rows.length - 2]);
+    // Left beside Right names a side of a comparison, not work left undone.
+    if (head.some((c) => LEFT_HEADER.test(c)) && !head.some((c) => /^right$/i.test(c))) {
+      out.push(...rows.filter((r) => !NAMES_WORK.test(r) && !cellsOf(r).filter(Boolean).every((c) => NOTHING.test(c))).map((r) => cellsOf(r).filter(Boolean).join(" | ")).filter(Boolean));
+    }
+  }
+  return out;
+}
