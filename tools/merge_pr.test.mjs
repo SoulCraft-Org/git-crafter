@@ -1,5 +1,4 @@
-// node --test tools/merge_pr.test.mjs
-// Offline: a fake gh answers each call from an in-memory pull request and records every call.
+// node --test tools/merge_pr.test.mjs: offline, a fake gh answers each call from an in-memory pull request and records every call.
 
 import assert from "node:assert/strict";
 import { test } from "node:test";

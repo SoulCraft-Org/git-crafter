@@ -1,13 +1,7 @@
-// Merges one reviewed pull request: reads its base, head and each check's latest run, posts the verdict, merges.
-//
-//   node tools/merge_pr.mjs --repo owner/name --pr N --sha <40-hex head the review passed> --followups <#n,PVTI_...|none> [--base main] [--wait 60] [--check]
-//
-// Run it after the review at that head passed. It refuses a base other than --base (a stacked pull request was merged
-// into its parent on 2026-11-23), a moved head, a draft, a conflict, no checks and any check whose latest run failed
-// (an older cancelled run beside a newer one is no failure). Pending checks exit 3 (`gh pr checks N --watch`, then
-// again); mergeable UNKNOWN is re-read for up to --wait seconds, then exits 3. --followups lands on line 2 of the
-// verdict, below the `Review: MERGE at <sha>` line. --check posts and merges nothing. Merges with --squash
-// --match-head-commit <sha>, never --auto or --admin. Exit 0 merged (or ready), 1 refused, 2 usage, 3 not yet.
+// Merges one pull request whose review passed at --sha (USAGE below): reads base, head and each check's latest run, posts the verdict, merges.
+// Refuses another base (a stacked pull request merged into its parent, 2026-11-23), a moved head, a draft, a conflict, no checks, a failed latest run.
+// Pending checks, or mergeable UNKNOWN past --wait, exit 3; --check writes nothing; --followups is the verdict's line 2.
+// Merges --squash --match-head-commit, never --auto or --admin. Exit 0 merged (or ready), 1 refused, 2 usage, 3 not yet.
 
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -37,7 +31,6 @@ export function decide(pull, checks, { sha, base }) {
   if (pull.mergeable === false) return { act: "refuse", why: `conflicts with ${base}` };
   return pull.mergeable === null ? { act: "wait", on: "mergeable", why: "mergeable is UNKNOWN" } : { act: "merge", why: `${checks.length} checks pass at ${sha.slice(0, 7)}` };
 }
-
 // Why the pull request itself (not its checks) bars a merge, or undefined.
 function pullProblem(pull, { sha, base }) {
   if (pull.draft || pull.state !== "open") return pull.draft ? "is a draft" : `is ${pull.merged ? "merged" : pull.state}`;
@@ -55,14 +48,12 @@ function readFlags(argv) {
   }
   return o;
 }
-
 // The --followups value as { followups: "a, b" }, or { problem }.
 function readFollowups(value) {
   const items = (value ?? "").split(",").map((i) => i.trim());
   if (value === undefined) return { problem: "--followups is required: the issues and cards the review left, or none" };
   return value === "none" || items.every((i) => /^(#\d+|PVTI_[\w-]+)$/.test(i)) ? { followups: items.join(", ") } : { problem: "--followups takes #<digits> or PVTI_... items, comma separated, or none" };
 }
-
 // The command line as options, or { problem }.
 function parseArgs(argv) {
   const o = readFlags(argv);
@@ -88,20 +79,15 @@ async function assess({ read, repo, pr, sha, base, wait, sleep }) {
     await sleep(STEP * 1000);
   }
 }
-
 // Posts `Review: MERGE at <sha>`, then a `Follow-ups:` line, unless a comment already opens with the first line; a verdict is never edited.
 function verdict(run, { repo, pr, sha, followups }) {
   const route = `repos/${repo}/issues/${pr}/comments`;
   if (!run(["api", route, "--paginate", "-q", '.[].body | split("\\n")[0]']).split("\n").includes(`Review: MERGE at ${sha}`)) run(["api", route, "-f", `body=Review: MERGE at ${sha}\nFollow-ups: ${followups}`]);
 }
-
 /** The command line. `run` is gh, `sleep` the wait between reads (both injectable for tests). Returns the exit code. */
 export async function main(argv = process.argv.slice(2), { run = ghRunner(), sleep = (ms) => new Promise((done) => setTimeout(done, ms)), log = console.log, error = console.error } = {}) {
   const o = parseArgs(argv);
-  if (o.problem) {
-    error(`${o.problem}\n${USAGE}`);
-    return 2;
-  }
+  if (o.problem) return error(`${o.problem}\n${USAGE}`), 2;
   const read = (route) => JSON.parse(run(["api", route]));
   try {
     const d = await assess({ read, ...o, sleep });
@@ -110,11 +96,9 @@ export async function main(argv = process.argv.slice(2), { run = ghRunner(), sle
     if (o.check) return 0;
     verdict(run, o);
     run(["pr", "merge", o.pr, "--repo", o.repo, "--squash", "--match-head-commit", o.sha]);
-    log(`merged #${o.pr} at ${o.sha}`);
-    return 0;
+    return log(`merged #${o.pr} at ${o.sha}`), 0;
   } catch (err) {
-    error(`merge_pr: ${err.message}`);
-    return 1;
+    return error(`merge_pr: ${err.message}`), 1;
   }
 }
 
