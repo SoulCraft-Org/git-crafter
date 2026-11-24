@@ -189,9 +189,12 @@ const KINDS = ["quality", "speed", "consumption"];
 // The kinds a map's steps leave unscored; kindOf: each metric id's kind, from the Quality targets.
 export const missingKinds = (steps, kindOf) => KINDS.filter((k) => !(steps ?? []).some((s) => kindOf[s.metric] === k));
 
+const CLAUDE_DOCS = /\/\/code\.claude\.com\b/;
+
 function libraryStepErrors(m, s) {
   const at = `pages/maps/${m.id}.json, step "${s.id}"`;
   const errs = [];
+  if (CLAUDE_DOCS.test(s.rule_ref)) errs.push(`${at}: rule_ref must not link Claude Code docs`);
   if (!https(s.rule_ref)) errs.push(`${at}: rule_ref must be an https link`);
   if (s.actor === undefined) errs.push(`${at}: a library step needs an actor, who does it`);
   const words = String(s.rule ?? "").trim().split(/\s+/).filter(Boolean).length;
@@ -202,6 +205,7 @@ function libraryStepErrors(m, s) {
 function libraryMapErrors(m, kindOf) {
   const errs = [];
   if (m.ideal === undefined) errs.push(`pages/maps/${m.id}.json: a library map needs an ideal and its sources`);
+  for (const src of m.sources ?? []) if (CLAUDE_DOCS.test(src.url)) errs.push(`pages/maps/${m.id}.json: a library source must not link Claude Code docs (${src.url})`);
   for (const s of m.steps ?? []) errs.push(...libraryStepErrors(m, s));
   // The Process page's ideal: a map is where quality, speed and consumption are decided.
   const missing = kindOf ? missingKinds(m.steps, kindOf) : [];
