@@ -14,10 +14,11 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
 
+import { isMeasured, isNotApplicable, mergeMetrics } from "./entries.mjs";
 import { overlayTargets, readTargetFiles } from "./overlay.mjs";
 import { checkPlainFields, checkWordCounts, IDEAL_MAX_WORDS, isDay, isPlain, isPublicUrl, PLAIN_WORDS, wordCount } from "./text-rules.mjs";
 
-export { overlayTargets };
+export { isMeasured, isNotApplicable, mergeMetrics, overlayTargets };
 
 // The template's tabs, one per GitHub tab in GitHub's order (owner,
 // 2026-11-12). Security's own pages Dependabot and Scanning get a tab each;
@@ -280,54 +281,6 @@ export function loadData(path) {
   return existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : null;
 }
 
-// One metric's entry from the CI run and the local run together. A read value
-// beats a could_not_check; between two read values the newer read wins; a
-// collector's own reason beats a placeholder one (weak, from currentMetrics),
-// and of two such reasons the newer run's wins.
-export function mergeMetrics(...runs) {
-  const merged = {};
-  const at = {};
-  for (const run of runs.filter(Boolean)) {
-    for (const [id, entry] of Object.entries(run.metrics ?? {})) {
-      if (replaces(merged[id], entry, at[id], run.generated_at)) [merged[id], at[id]] = [entry, run.generated_at];
-    }
-  }
-  return merged;
-}
-
-// Whether `entry` should take the place of `prev` (undefined when none yet).
-// Of two collector reasons, the newer run's says why now: a reason a
-// maintainer's run wrote yesterday never hides CI's of today. `prevAt` and
-// `at` are the runs' generated_at.
-function replaces(prev, entry, prevAt = "", at = "") {
-  if (!prev) return true;
-  if (isNotApplicable(entry) || isNotApplicable(prev)) return settled(prev, entry, prevAt, at);
-  if (isMeasured(entry)) return readLater(prev, entry);
-  if (isMeasured(prev) || isWeak(entry)) return false;
-  return isWeak(prev) || (at ?? "") > (prevAt ?? "");
-}
-
-// A does-not-apply entry states a fact as a measurement does: it beats a blank one, and of it and a measurement
-// the newer run wins, so a feature turned off since the last local run does not keep its old count.
-function settled(prev, entry, prevAt, at) {
-  const blank = (e) => !isMeasured(e) && !isNotApplicable(e);
-  if (blank(entry)) return false;
-  return blank(prev) || (at ?? "") > (prevAt ?? "");
-}
-
-// A measured entry takes the place of a blank one, or of an older reading.
-function readLater(prev, entry) {
-  return !isMeasured(prev) || (entry.read_at ?? "") > (prev.read_at ?? "");
-}
-
-// True when the entry holds a finite number and no could_not_check.
-export function isMeasured(entry) {
-  return Boolean(entry) && entry.could_not_check === undefined && typeof entry.value === "number" && Number.isFinite(entry.value);
-}
-
-// True when a collector says the metric cannot apply here and gives the reason in words.
-export const isNotApplicable = (entry) => typeof entry?.not_applicable === "string" && entry.not_applicable.trim() !== "" && entry.value === undefined && entry.could_not_check === undefined;
-
 // The entries a run keeps: one per current definition, in definition order,
 // and none for an id the definitions no longer hold (a metric the template
 // cut or the repo dropped). An entry without a value always says why: the
@@ -367,10 +320,6 @@ export function currentMetrics(metrics, defs, { stamp = false } = {}) {
   }
   return out;
 }
-
-// Weak: a placeholder reason (currentMetrics; files from before it say
-// `unreported`).
-const isWeak = (entry) => Boolean(entry?.weak || entry?.unreported);
 
 // Compares one measured value with its goal and returns its points, 0 to 100,
 // and a status for the page: "meets", "near" or "misses".
