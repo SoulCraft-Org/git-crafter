@@ -6,16 +6,19 @@
 //
 // A metric a collector could not read ({ could_not_check }) is "not measured":
 // it is left out of the mean and counted in "n of m measured", never scored 0,
-// because could not verify is not the same as verified and red.
+// because could not verify is not the same as verified and red. One that cannot
+// exist here ({ not_applicable }, a finding count for a feature that is off) is
+// "does not apply": left out of the mean and out of m, and listed apart.
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
 
+import { isMeasured, isNotApplicable, mergeMetrics } from "./entries.mjs";
 import { overlayTargets, readTargetFiles } from "./overlay.mjs";
 import { checkPlainFields, checkWordCounts, IDEAL_MAX_WORDS, isDay, isPlain, isPublicUrl, PLAIN_WORDS, wordCount } from "./text-rules.mjs";
 
-export { overlayTargets };
+export { isMeasured, isNotApplicable, mergeMetrics, overlayTargets };
 
 // The template's tabs, one per GitHub tab in GitHub's order (owner,
 // 2026-11-12). Security's own pages Dependabot and Scanning get a tab each;
@@ -277,42 +280,6 @@ export function loadData(path) {
   return existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : null;
 }
 
-// One metric's entry from the CI run and the local run together. A read value
-// beats a could_not_check; between two read values the newer read wins; a
-// collector's own reason beats a placeholder one (weak, from currentMetrics),
-// and of two such reasons the newer run's wins.
-export function mergeMetrics(...runs) {
-  const merged = {};
-  const at = {};
-  for (const run of runs.filter(Boolean)) {
-    for (const [id, entry] of Object.entries(run.metrics ?? {})) {
-      if (replaces(merged[id], entry, at[id], run.generated_at)) [merged[id], at[id]] = [entry, run.generated_at];
-    }
-  }
-  return merged;
-}
-
-// Whether `entry` should take the place of `prev` (undefined when none yet).
-// Of two collector reasons, the newer run's says why now: a reason a
-// maintainer's run wrote yesterday never hides CI's of today. `prevAt` and
-// `at` are the runs' generated_at.
-function replaces(prev, entry, prevAt = "", at = "") {
-  if (!prev) return true;
-  if (isMeasured(entry)) return readLater(prev, entry);
-  if (isMeasured(prev) || isWeak(entry)) return false;
-  return isWeak(prev) || (at ?? "") > (prevAt ?? "");
-}
-
-// A measured entry takes the place of a blank one, or of an older reading.
-function readLater(prev, entry) {
-  return !isMeasured(prev) || (entry.read_at ?? "") > (prev.read_at ?? "");
-}
-
-// True when the entry holds a finite number and no could_not_check.
-export function isMeasured(entry) {
-  return Boolean(entry) && entry.could_not_check === undefined && typeof entry.value === "number" && Number.isFinite(entry.value);
-}
-
 // The entries a run keeps: one per current definition, in definition order,
 // and none for an id the definitions no longer hold (a metric the template
 // cut or the repo dropped). An entry without a value always says why: the
@@ -336,7 +303,7 @@ function weakEntry(entry, def) {
 }
 
 function keepEntry(entry, def) {
-  if (isMeasured(entry)) return entry;
+  if (isMeasured(entry) || isNotApplicable(entry)) return entry;
   if (!entry || typeof entry !== "object") return { could_not_check: NOT_REPORTED, source: def.source, weak: true };
   if (typeof entry.could_not_check === "string" && entry.could_not_check.trim()) return entry;
   return weakEntry(entry, def);
@@ -353,16 +320,14 @@ export function currentMetrics(metrics, defs, { stamp = false } = {}) {
   return out;
 }
 
-// Weak: a placeholder reason (currentMetrics; files from before it say
-// `unreported`).
-const isWeak = (entry) => Boolean(entry?.weak || entry?.unreported);
-
 // Compares one measured value with its goal and returns its points, 0 to 100,
 // and a status for the page: "meets", "near" or "misses".
 //   def.goal  the target; meeting it is worth 100
 //   def.near  the edge of the near band, between the goal and a clear miss
 //   def.direction  "higher" or "lower" is better
+// A metric that does not apply has status "not-applicable" and no points.
 export function scoreMetric(def, entry) {
+  if (isNotApplicable(entry)) return { status: "not-applicable", points: null };
   if (!isMeasured(entry)) return { status: "not-measured", points: null };
   // Banded, so a reader can tell a score's meaning at a glance.
   const atLeast = (edge) => (def.direction === "higher" ? entry.value >= edge : entry.value <= edge);
@@ -450,7 +415,7 @@ export function scoreTab(tab, defs, metrics, reviews = {}) {
     .filter((d) => d.tab === tab)
     .map((def) => ({ def, entry: metrics[def.id], ...scoreMetric(def, metrics[def.id]) }));
   const part = (kind) => {
-    const of = rows.filter((r) => r.def.kind === kind);
+    const of = rows.filter((r) => r.def.kind === kind && r.status !== "not-applicable");
     const measured = of.filter((r) => r.points !== null);
     return { score: mean(measured.map((r) => r.points)), measured: measured.length, total: of.length };
   };

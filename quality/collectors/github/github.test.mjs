@@ -97,14 +97,14 @@ describe("collect() on the known-good fixture", async () => {
   const out = await run();
 
   it("returns the hand-worked value for every metric", () => {
-    const got = Object.fromEntries(Object.entries(out).map(([id, m]) => [id, m.could_not_check ?? m.value]));
+    const got = Object.fromEntries(Object.entries(out).map(([id, m]) => [id, m.could_not_check ?? m.not_applicable ?? m.value]));
     assert.deepEqual(got, EXPECTED);
   });
 
   it("stamps every measurement with its source and read time", () => {
     for (const [id, m] of Object.entries(out)) {
       assert.ok(m.source && !m.source.includes("{repo}"), `${id}: source`);
-      if (m.could_not_check) continue; // a paid feature that is off has no findings to stamp
+      if (m.could_not_check || m.not_applicable) continue; // a feature that is off has no findings to stamp
       assert.match(m.read_at, ISO, `${id}: read_at`);
       for (const d of m.detail ?? []) {
         assert.ok(typeof d.label === "string" && typeof d.value === "number", `${id}: detail ${JSON.stringify(d)}`);

@@ -330,6 +330,7 @@ export async function collect({
       try {
         const { note, ...result } = await metric.run(client.gh, ctx);
         if (result.could_not_check) return [id, { could_not_check: result.could_not_check, source }];
+        if (result.not_applicable) return [id, { not_applicable: result.not_applicable, source }];
         return [id, { ...result, source: note ? `${source}; ${note}` : source, read_at: new Date().toISOString() }];
       } catch (err) {
         return [id, { could_not_check: reasonFor(err, needs, mode), source }];

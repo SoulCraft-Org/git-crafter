@@ -41,9 +41,9 @@ const r1 = (n) => String(Math.round(n * 10) / 10);
 
 // A metric's status comes from score.mjs. A 0 to 100 score reads the same way
 // as a metric: 80 or more meets, 50 to 79 is near, under 50 misses.
-const STATUS_ORDER = ["meets", "near", "misses", "not-measured"];
-export const STATUS_WORD = { meets: "meets goal", near: "near goal", misses: "misses goal", "not-measured": "not measured" };
-const COUNT_WORD = { meets: "meet", near: "near", misses: "miss", "not-measured": "not measured" };
+const STATUS_ORDER = ["meets", "near", "misses", "not-measured", "not-applicable"];
+export const STATUS_WORD = { meets: "meets goal", near: "near goal", misses: "misses goal", "not-measured": "not measured", "not-applicable": "does not apply" };
+const COUNT_WORD = { meets: "meet", near: "near", misses: "miss", "not-measured": "not measured", "not-applicable": "do not apply" };
 // The status a 0 to 100 score earns: meets at 80, near at 50.
 export const scoreStatus = (score) => (!finite(score) ? "not-measured" : score >= 80 ? "meets" : score >= 50 ? "near" : "misses");
 
@@ -112,7 +112,8 @@ export function statusStack(counts, { legend = true, cls = "" } = {}) {
     .join("");
   const bar = `<span class="sbar${cls ? ` ${cls}` : ""}" role="img" aria-label="${esc(words || "no metrics")}"${words ? ` data-tip="${esc(words)}"` : ""}>${segs}</span>`;
   if (!legend) return bar;
-  const keys = STATUS_ORDER.map((s) => `<span class="sk">${glyph(s, "")}<b>${counts[s] ?? 0}</b> ${COUNT_WORD[s]}</span>`).join("");
+  // A legend names "do not apply" only where something does not.
+  const keys = STATUS_ORDER.filter((s) => s !== "not-applicable" || counts[s]).map((s) => `<span class="sk">${glyph(s, "")}<b>${counts[s] ?? 0}</b> ${COUNT_WORD[s]}</span>`).join("");
   return `${bar}<span class="slegend">${keys}</span>`;
 }
 

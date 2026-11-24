@@ -38,7 +38,9 @@ const categoryScores = (results) =>
 export function master(results) {
   const cats = categoryScores(results);
   const scored = KINDS.filter((k) => cats[k].length).map((k) => mean(cats[k]));
-  const rows = results.flatMap((r) => r.rows ?? []);
+  const all = results.flatMap((r) => r.rows ?? []);
+  // A metric that does not apply is not part of what could be measured.
+  const rows = all.filter((row) => row.status !== "not-applicable");
   return {
     score: scored.length ? Math.round(mean(scored)) : null,
     measured: results.filter((r) => finite(tabScore(r))).length,
@@ -46,12 +48,13 @@ export function master(results) {
     categories: scored.length,
     metricsMeasured: rows.filter((row) => finite(row.points)).length,
     metricsTotal: rows.length,
+    metricsNotApplicable: all.length - rows.length,
   };
 }
 
 // Inside a kind and a group: misses, near, meets, not measured, then file
 // order (Array.prototype.sort is stable).
-const RANK = { misses: 0, near: 1, meets: 2, "not-measured": 3 };
+const RANK = { misses: 0, near: 1, meets: 2, "not-measured": 3, "not-applicable": 4 };
 // Rows worst status first, misses before near before meets.
 export const sortRows = (rows) => [...rows].sort((a, b) => RANK[a.status] - RANK[b.status]);
 
@@ -179,6 +182,10 @@ function mondayOf(at) {
 // Every row with no number yet, across all tabs.
 export const notMeasured = (results) =>
   results.flatMap((r) => r.rows.filter((row) => row.status === "not-measured").map((row) => ({ ...row, tab: r.tab })));
+
+// Every row whose metric cannot apply here, across all tabs.
+export const notApplicable = (results) =>
+  results.flatMap((r) => r.rows.filter((row) => row.status === "not-applicable").map((row) => ({ ...row, tab: r.tab })));
 
 // ---- Review heatmap -------------------------------------------------------
 

@@ -44,6 +44,7 @@ A targets entry's `chart`. Anything else is a usage error. An entry may add `by_
 | `latest.json`, `local.json` and each history file | hold one entry per current definition |
 | A metric the template cut or the repo dropped | is never written |
 | An entry without a value | carries its `could_not_check` reason |
+| An entry that cannot exist here | carries `not_applicable`, a reason in words, and no value; the page lists it under Does not apply, outside `n of m` |
 | `build.mjs` | reads older files through the same filter and never rewrites them |
 | A metric on a tab the repo hides | is not kept either, so its trend has a gap if the tab comes back |
 | Each entry written | records its definition's `unit` |

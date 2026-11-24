@@ -1,5 +1,5 @@
 // The GitHub collector's Discussions metrics: answerable discussions that no one has answered.
-import { measured, skip, count, round1, hours, DAY } from "./github-core.mjs";
+import { measured, notApplicable, count, round1, hours, DAY } from "./github-core.mjs";
 
 // The open discussions in a category that takes an answer and have none, oldest first; null while Discussions is off.
 async function unanswered(L) {
@@ -17,7 +17,7 @@ export const DISCUSSION_METRICS = {
     source: "state: gh api graphql: repository.discussions (open: createdAt, isAnswered, category.isAnswerable), against params.discussion_days",
     async run(L, { now, cfg }) {
       const waiting = await unanswered(L);
-      if (!waiting) return skip(OFF);
+      if (!waiting) return notApplicable(OFF);
       const old = waiting.filter((d) => now - Date.parse(d.createdAt) > cfg.discussionDays * DAY);
       return measured(old.length, [count("unanswered, over the limit", old.length), count("unanswered, all ages", waiting.length)]);
     },
@@ -27,7 +27,7 @@ export const DISCUSSION_METRICS = {
     source: "state: gh api graphql: repository.discussions (open: createdAt, isAnswered, category.isAnswerable), the oldest unanswered in an answerable category, age at read time; 0 when none",
     async run(L, { now }) {
       const waiting = await unanswered(L);
-      if (!waiting) return skip(OFF);
+      if (!waiting) return notApplicable(OFF);
       if (!waiting.length) return measured(0, [count("unanswered discussions", 0)]);
       const oldest = waiting.reduce((a, b) => (Date.parse(a.createdAt) <= Date.parse(b.createdAt) ? a : b));
       const h = round1(hours(oldest.createdAt, new Date(now).toISOString()));

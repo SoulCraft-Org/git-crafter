@@ -1,5 +1,5 @@
 // What the GitHub metrics share: the could_not_check reasons, the project and card reads, workflow trigger checks, feature costs and alert lists.
-import { skip, TARGETS_FILE, count, measured, ConfigError, RegistryError, GhError, NEEDS, LOCAL_REFRESH } from "./github-core.mjs";
+import { skip, notApplicable, TARGETS_FILE, count, measured, ConfigError, RegistryError, GhError, NEEDS, LOCAL_REFRESH } from "./github-core.mjs";
 import { LAST_CARDS } from "./github-queries.mjs";
 
 // What each paid security feature costs on a private repo, from GitHub's own
@@ -103,9 +103,9 @@ export async function feature(L, isOn, product, detail = []) {
   return measured(isOn ? 1 : 0, isOn || !product ? (detail.length ? detail : undefined) : [...detail, ...(await costNote(L, product))]);
 }
 
-/** Open alerts or findings while the feature is on; a skip naming the feature when it is off. */
+/** Open alerts or findings while the feature is on; does-not-apply naming the feature when it is off. */
 export async function whileOn(isOn, featureName, read) {
-  if (!isOn) return skip(`${featureName} is off, so it has no findings to count`);
+  if (!isOn) return notApplicable(`${featureName} is off, so it has no findings to count`);
   return read();
 }
 

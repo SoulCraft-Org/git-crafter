@@ -122,6 +122,7 @@ h3 { margin: 2.25rem 0 0.625rem; font-size: var(--t-step-0); font-weight: 650; }
 .b-near { background: var(--c-brass); }
 .b-misses { background: var(--c-danger); }
 .b-not-measured { background: var(--c-stone-edge); }
+.b-not-applicable { background: var(--c-rule); }
 .slegend { display: flex; flex-wrap: wrap; gap: var(--s-1) 1.125rem; font-size: 0.8125rem; color: var(--c-text-dim); }
 .sk { display: inline-flex; align-items: center; gap: 0.3125rem; }
 .sk b { color: var(--c-text); font-weight: 650; font-variant-numeric: tabular-nums; }
@@ -193,13 +194,15 @@ h3 { margin: 2.25rem 0 0.625rem; font-size: var(--t-step-0); font-weight: 650; }
 .tab[data-filter="misses"] .metric:not(.s-misses),
 .tab[data-filter="near"] .metric:not(.s-near),
 .tab[data-filter="meets"] .metric:not(.s-meets),
-.tab[data-filter="not-measured"] .metric:not(.s-not-measured) { display: none; }
+.tab[data-filter="not-measured"] .metric:not(.s-not-measured),
+.tab[data-filter="not-applicable"] .metric:not(.s-not-applicable) { display: none; }
 /* Headings with no row left. Its own rule, because a browser without :has()
    drops a whole rule, and the rows above must still filter there. */
 .tab[data-filter="misses"] :is(.kind, .group):not(:has(.metric.s-misses)),
 .tab[data-filter="near"] :is(.kind, .group):not(:has(.metric.s-near)),
 .tab[data-filter="meets"] :is(.kind, .group):not(:has(.metric.s-meets)),
-.tab[data-filter="not-measured"] :is(.kind, .group):not(:has(.metric.s-not-measured)) { display: none; }
+.tab[data-filter="not-measured"] :is(.kind, .group):not(:has(.metric.s-not-measured)),
+.tab[data-filter="not-applicable"] :is(.kind, .group):not(:has(.metric.s-not-applicable)) { display: none; }
 
 .kinds { display: grid; gap: var(--s-2) var(--s-7); }
 @media (min-width: 68.75em) { .kinds.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .kinds.three { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

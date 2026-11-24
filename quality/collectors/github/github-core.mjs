@@ -131,6 +131,9 @@ export const hours = (from, to) => Math.max(0, (Date.parse(to) - Date.parse(from
 // A could_not_check value with its reason.
 export const skip = (reason) => ({ could_not_check: reason });
 
+// A metric that cannot exist here, with the reason in words; the page lists it apart from the unread ones.
+export const notApplicable = (reason) => ({ not_applicable: reason });
+
 // A measured value, with detail rows when given.
 export const measured = (value, detail) => (detail ? { value, detail } : { value });
 

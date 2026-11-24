@@ -1,6 +1,6 @@
 # Collector contract
 
-What a collector here, or in a repo's own collectors folder, takes and returns. Back to [../README.md](../README.md); charts and run files: [../render/README.md](../render/README.md); folders: [FOLDERS.md](FOLDERS.md).
+What a collector here or in a repo's collectors folder takes and returns. Up: [../README.md](../README.md); charts and run files: [../render/README.md](../render/README.md); folders: [FOLDERS.md](FOLDERS.md).
 
 ```mermaid
 flowchart LR
@@ -13,7 +13,7 @@ flowchart LR
 | --- | --- |
 | Module | `export const area`; `export async function collect(args)`, args as below |
 | Repo values | read only from `params`: owner and repo, paths, URLs, project folders. The template's own `params` are the defaults, for tests and a bare call. A collector never reads the repo's targets folder itself |
-| Returns | `{ [id]: { value, detail?: [{ label, value, unit? }], source, read_at } }` or `{ [id]: { could_not_check, source } }` |
+| Returns | `{ [id]: { value, detail?: [{ label, value, unit? }], source, read_at } }`, or `{ [id]: { could_not_check or not_applicable, source } }` |
 | Never | throws for a missing tool, token or file, or scores a miss as 0. It holds no org name, person's name or home path: those go in `params` |
 | Private membership | `pull_requests.reviewed` counts `Review: MERGE\|BLOCK` comments from members only. A private org membership reads as non-member to a token outside the org. When any verdict reads so, the metric is `could_not_check`, never 0. So does `pull_requests.fixed_after_review`. Fix: a public membership, or a token in the org |
 | Basis | Each metric is a state read now, the latest event, or the last N events where new work replaces old within hours. Never a calendar window or a projection. Its `source` says which, and names N and why |
