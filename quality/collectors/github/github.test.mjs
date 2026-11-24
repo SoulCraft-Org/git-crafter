@@ -327,7 +327,7 @@ describe("last-N bases, no calendar windows (metrics-now spec, 2026-11-03)", () 
     const gh = fakeGh();
     await run({ gh });
     assert.ok(!gh.calls.some((c) => /search|actions\/(runs|jobs|workflows)/.test(c)), gh.calls.join(", "));
-    assert.equal(gh.calls.length, 33, gh.calls.join(", ")); // one of them actions/permissions, a settings read; one the board's workflows; one code quality's findings; one the open discussions; one the open milestones; one the cache usage
+    assert.equal(gh.calls.length, 34, gh.calls.join(", ")); // one of them actions/permissions, a settings read; one the board's workflows; one code quality's findings; one the open discussions; one the open milestones; one the cache usage; one the cache storage limit
   });
 
   it("keeps the 20 latest merges, including one opened early but merged last", async () => {
