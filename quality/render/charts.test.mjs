@@ -3,6 +3,7 @@
 //   node --test quality/render/
 
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import {
@@ -26,6 +27,7 @@ import {
   stack,
   statusCounts,
   statusStack,
+  usedOf,
 } from "./charts.mjs";
 import { cellItems, criterionLabel, fixFirst, gap, groupRows, historyFor, overall, workQueue, pageLabel, rampStep, reviewGrid, sortRows, weakestCell, weeklyHistory, widthMode, worstGaps } from "./model.mjs";
 
@@ -97,6 +99,25 @@ test("meter: a score gets meter semantics; null reads not measured", () => {
   const none = meter(null, "Quality");
   assert.match(none, /role="img" aria-label="Quality: not measured"/);
   assert.doesNotMatch(none, /--v/);
+});
+
+test("usedOf: a bar of used against included, capped at full, over marked", () => {
+  // score.mjs needs the yaml package, so this reads its CHARTS line as text.
+  assert.match(readFileSync(new URL("../score.mjs", import.meta.url), "utf8"), /CHARTS = new Set\(\[[^\]]*"meter"/, "meter is a chart kind");
+  const html = usedOf([{ label: "Actions minutes", used: 1500, included: 2000 }, { label: "Storage", used: 3, included: 2, unit: "GB" }], "minutes");
+  assert.match(html, /^<table class="bars used-of">/);
+  assert.match(html, /<tr><th scope="row">Actions minutes<\/th><td class="bar"><span style="width:75.0%"><\/span><\/td><td class="num">1,500 of 2,000 minutes, 75%<\/td><\/tr>/);
+  assert.match(html, /<tr class="over"><th scope="row">Storage<\/th><td class="bar"><span style="width:100.0%"><\/span><\/td><td class="num">3 of 2 GB, 150%<\/td>/, "capped at full, own unit");
+  assert.doesNotMatch(html, BAD);
+});
+
+test("usedOf: no finite used or no positive included draws no bar and reads a dash", () => {
+  for (const d of [{ used: null, included: 10 }, { used: 4, included: 0 }, { used: 4 }, { used: Infinity, included: 10 }]) {
+    const html = usedOf([{ label: "Quota", ...d }], "runs");
+    assert.match(html, /<td class="bar"><\/td><td class="num">–<\/td>/);
+    assert.doesNotMatch(html, BAD);
+  }
+  assert.match(usedOf(Array.from({ length: 13 }, (_, i) => ({ label: `r${i}`, used: i, included: 12 })), "runs"), /12 of 13 shown/);
 });
 
 test("status stack: counts in order, empty statuses skipped in the bar", () => {
