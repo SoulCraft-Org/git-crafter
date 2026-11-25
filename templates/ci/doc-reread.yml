@@ -1,0 +1,82 @@
+name: doc-reread
+
+# OPTIONAL, for adopters: copy to .github/workflows/doc-reread.yml. Once a week it re-reads each documentation page the
+# repo's markdown cites and asks Claude whether the repo's sentence about it still holds. It prints one table to the run
+# summary and, when a page changed, opens one issue typed Task, once.
+#
+# SWITCHED OFF until the repo variable DOC_REREAD is "on". Turn it on after the Console connection exists: a Workload
+# identity issuer for GitHub Actions, a service account and a federation rule (platform.claude.com, Workload Identity
+# Federation with GitHub Actions, read 2026-11-25), then these repo variables, which hold ids and no secret:
+# ANTHROPIC_FEDERATION_RULE_ID, ANTHROPIC_ORGANIZATION_ID, ANTHROPIC_SERVICE_ACCOUNT_ID, ANTHROPIC_WORKSPACE_ID.
+#
+# No key is stored. The job asks GitHub for an OIDC token (id-token: write) and tools/doc_reread.mjs exchanges it for a
+# short-lived Anthropic token. The script refuses to run when ANTHROPIC_API_KEY or ANTHROPIC_AUTH_TOKEN is set, because the
+# SDKs rank a key above federation. Anthropic models only (Haiku 5.5). Money: the plan's API credit, under a workspace
+# limit set in the Console below it. A refused call stops the run at that page, with no retry, so it never bills past
+# the limit (rules/compute.md, Money). The script checks out from Git Crafter at the pinned SHA below.
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doc-reread
+  cancel-in-progress: false
+
+jobs:
+  reread:
+    if: vars.DOC_REREAD == 'on'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+      issues: write
+    env:
+      ANTHROPIC_FEDERATION_RULE_ID: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
+      ANTHROPIC_ORGANIZATION_ID: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
+      ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+      ANTHROPIC_WORKSPACE_ID: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
+      ANTHROPIC_IDENTITY_TOKEN_FILE: ${{ runner.temp }}/gha-jwt
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: SoulCraft-Org/git-crafter
+          ref: <full sha of a Git Crafter release>
+          path: .git-crafter
+          persist-credentials: false
+
+      - name: Fetch GitHub OIDC token
+        run: |
+          set -euo pipefail
+          curl -sS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" \
+            | jq -r .value > "$ANTHROPIC_IDENTITY_TOKEN_FILE"
+
+      - name: Re-read the cited docs
+        run: |
+          set -uo pipefail
+          node .git-crafter/tools/doc_reread.mjs --root . --max-pages 20 | tee "$RUNNER_TEMP/reread.md" >> "$GITHUB_STEP_SUMMARY"
+          st="${PIPESTATUS[0]}"
+          echo "status=$st" >> "$GITHUB_OUTPUT"
+          case "$st" in 0|1) exit 0 ;; *) exit "$st" ;; esac
+        id: reread
+
+      # One issue at most, and none while one is open. Exit 1 means a page changed; any other code already failed the step.
+      - name: Open one issue when a page changed
+        if: steps.reread.outputs.status == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          title="Doc re-read: a cited page changed"
+          open="$(gh api -X GET "repos/$GITHUB_REPOSITORY/issues" -f state=open -f per_page=100 --jq "[.[] | select(.title == \"$title\")] | length")"
+          if [ "$open" != "0" ]; then echo "An issue is already open."; exit 0; fi
+          gh api "repos/$GITHUB_REPOSITORY/issues" -f title="$title" -f type=Task -f body="$(cat "$RUNNER_TEMP/reread.md")" > /dev/null

@@ -30,7 +30,7 @@ Optional, to `<repo>/.github/workflows/` unless noted:
 | --- | --- |
 | [wiki.yml](wiki.yml) | publishing `wiki/` ([setup](../open/README.md#settings)) |
 | [scorecard.yml](scorecard.yml) | an advisory Scorecard, public repos only |
-| [claude-review.yml](claude-review.yml) | an advisory Claude security review of each PR |
+| [claude-review.yml](claude-review.yml) | advisory, keyless Claude security review of each PR |
 | [deploy-gate.yml](deploy-gate.yml) | a deploy branch's soak, with `tools/deploy_gate.sh` |
 | [ci-pool.yml](ci-pool.yml), [ci-pool-app.json](ci-pool-app.json) | the org's pool meter, to `<org>/.github` once ([CI-POOL.md](CI-POOL.md)) |
 
