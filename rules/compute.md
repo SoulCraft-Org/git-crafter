@@ -19,6 +19,7 @@ disagrees.
 | Money | Rule |
 |---|---|
 | Yes | Free tiers and free credits, as many as help: each is a backup when another runs out |
+| Credits | Where an app gives credits, usage is on with the spend limit the owner set at $0: free credits work and nothing bills in dollars. The owner, 2026-11-25: "that's kind of the standard for what we do with apps that give us credits. Is yes, we can use the free usage, but no, it can't bill anything dollar-wise to our accounts." |
 | Yes | Flat monthly subscriptions that give a lot of usage or functionality for their price, after the owner's yes to each. `compute.spend_exceptions` lists each with what it includes, its monthly cap, the guard that stops any overage and the owner's dated words |
 | Never | Pay-per-token or pay-per-use consumption: metered API usage, on-demand GPU by the hour, credit top-ups, Actions overage, larger runners, or use past an included amount |
 | Each spend | Read a lane's balance before and after a spend and report both. Tear down a paid deployment the same day. Never use a flag or setting that skips a CLI's own spend check |
