@@ -20,7 +20,7 @@ flowchart LR
 | Fact | Detail |
 |---|---|
 | CI cost | Each merge adds a CI run, so a quiet repo gains nothing |
-| Required checks | The queue waits for each required check on its merge group commit, and removes the pull request at the status check timeout (GitHub Docs, read 2026-11-25) |
+| Required checks | The queue waits for each required check on its merge group commit. It removes the pull request at the status check timeout (GitHub Docs, read 2026-11-25) |
 | Price | Free on public org repos (GitHub Docs, read 2026-11-13) |
 
 ## Attestations
