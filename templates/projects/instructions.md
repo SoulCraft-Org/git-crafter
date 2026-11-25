@@ -19,6 +19,7 @@ Paste this file into the project's Instructions field. Fill each `<...>` cell, t
 | GitHub | `<the GitHub tool this environment allows, such as "gh api, not gh pr">` |
 | Ask first | Only billing, vision or a critical website decision reaches the owner, as one decision card with options and a recommendation, after research. Human steps wait per Git Crafter `rules/delegation.md`. Decide and execute the rest |
 | The owner's actions | Every yes, Allow, copy, paste or quick click goes in the main chat with a direct link to the exact place. Never send the owner into a thread or a browser tab |
+| Shared changes | Other projects work on the same repos and settings. Before a write to something more than one project uses, claim it with one `shared-change` issue in `<org>/<claims repo>`, and close it after the write. Add, never reset. Own branch, never a force-push. The rule: [coordination.md](coordination.md) |
 | Other owners | Read and pin another owner's template. Never write to it: no push, PR, issue or card |
 | Compute | `<where heavy work runs, such as "No GPU or renders in this VM: use <lane> after <owner>'s yes">` |
 | Model | The smallest model that passes the check. Re-run only what failed. Usage is the shared limit |

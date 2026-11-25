@@ -24,6 +24,7 @@ flowchart LR
 | Keys | Network secrets, never variables | The agent proxy adds a secret outside the VM. Anyone using the environment reads a variable |
 | First message | A setup check that starts no threads | A gap shows before work depends on it |
 | Mac folders | Only a local thread's **Allow once** card | The card names the folder and asks first |
+| Several projects | Claim a shared change with one issue before the write | [coordination.md](coordination.md): two projects writing one setting overwrite each other unseen |
 | Dot-named repo | Work on it in a local thread (Remote Control) | A cloud thread with a dot-named repo skips every repo's skills |
 
 ## Steps
