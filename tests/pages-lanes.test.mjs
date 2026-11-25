@@ -51,7 +51,8 @@ test("a fork's two steps in one lane and column take one row each, and every col
 test("a lane map keeps the trail's link markup and a long list widens the drawing, never crowds it", () => {
   const trailNode = trail({ ...LINE, steps: LINE.steps.map(({ actor, ...s }) => s) }, readouts(LINE), new Set(), "plan").match(/<a class="t-step[^>]*>/)[0];
   const laneNode = lanes(LINE, readouts(LINE), new Set(), "plan").match(/<a class="t-step[^>]*>/)[0];
-  assert.equal(laneNode.replace(/ data-tip="[^"]*"/, ""), trailNode.replace(/ data-tip="[^"]*"/, ""));
+  assert.equal(laneNode.replace(/ data-tip="[^"]*"/, "").replace(' data-actor="owner"', ""), trailNode.replace(/ data-tip="[^"]*"/, ""));
+  assert.match(laneNode, / data-actor="owner"/, "the lane filter finds a step by its actor");
   const twelve = Array.from({ length: 12 }, (_, i) => step(`s${i}`, "worker"));
   const p = place(twelve);
   assert.deepEqual([p.gap, p.width], [LANES.minGap, 2 * LANES.x0 + 11 * LANES.minGap]);
