@@ -5,9 +5,18 @@
 //
 //   repo        "owner/name" for the page's links (issues, commits, review
 //               files). Default: GITHUB_REPOSITORY, else no links
-//   name        the page title's name. Default: the repo's name
+//   level       what the page measures: "repo" (the default), "user", "org"
+//               or "enterprise". Any level but repo adds its built-in pack
+//               (packs.mjs levelPacks)
+//   owner       the account a level page measures: the org's or user's login,
+//               or the enterprise's slug. Default: at level org, the repo's
+//               owner; at level user, null, the signed-in user. Level
+//               enterprise needs it; level repo refuses it
+//   name        the page title's name. Default: the owner at a level page,
+//               else the repo's name
 //   tabs        the tab ids to show, in order. Default: the template's tabs
-//               (score.mjs TABS) less the web tabs. An entry [id, name] adds a
+//               (score.mjs TABS) less the web tabs, or at a level page only
+//               the packs' tabs. An entry [id, name] adds a
 //               tab of the repo's own. A removed tab id (score.mjs MOVED_TABS)
 //               stops with where its metrics went. A pack's tab id is known
 //               once the pack is checked out
@@ -36,7 +45,7 @@
 //               sync-issues.mjs makes a draft card on the owner's org
 //               project number `project` per missed metric, Status Waiting
 //               on data for ids in waiting, else Todo; ids in quick, or
-//               every id with no project, open an issue with label, or
+//               every id with no project, open a Task issue with label, or
 //               labels[tab] for its tab
 //
 // An unknown key is a usage error, so a typo never silently does nothing.
@@ -45,7 +54,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { basename, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { resolvePacks } from "./packs.mjs";
+import { levelPacks, resolvePacks } from "./packs.mjs";
 import { MOVED_TABS, TABS, unknownTab, WEB_TABS } from "./score.mjs";
 
 export const QUALITY = fileURLToPath(new URL(".", import.meta.url));
@@ -53,6 +62,8 @@ const DEFAULT_CONFIG = "quality/config.json";
 
 export const CONFIG_DEFAULTS = {
   repo: null,
+  level: "repo",
+  owner: null,
   name: null,
   tabs: null,
   web: false,
@@ -74,6 +85,8 @@ export const CONFIG_DEFAULTS = {
 const PATHS = ["targets", "collectors", "ideals", "reviews", "data", "history", "out", "tokens_css"];
 
 const TAB_ID = /^[a-z][a-z0-9-]*$/;
+const LEVELS = ["user", "repo", "org", "enterprise"];
+const OWNER_RE = /^[A-Za-z0-9][\w-]*$/;
 
 // Throws unless each pack tab id fits TAB_ID and is no template tab's id or another pack tab's.
 function checkPackTabs(packTabs) {
@@ -89,11 +102,12 @@ function checkPackTabs(packTabs) {
 const whyUnknown = (id, unread) => (unread.length ? `tab "${id}" is no template tab, and pack ${unread.join(", ")} is not checked out yet, so its tabs are unknown` : `${unknownTab(id)}; a tab of the repo's own is ["id", "Name"]`);
 
 // The tabs a page shows, as [id, name] pairs; packTabs, the packs' own, join
-// the default list and may be named by id. unread lists the packs not checked out.
-export function resolveTabs({ tabs = null, web = false } = {}, packTabs = [], unread = []) {
+// the default list and may be named by id. A level page's default list is the
+// packs' tabs alone. unread lists the packs not checked out.
+export function resolveTabs({ tabs = null, web = false, level = "repo" } = {}, packTabs = [], unread = []) {
   checkPackTabs(packTabs);
   const names = new Map([...TABS, ...packTabs]);
-  if (tabs === null) return [...TABS.filter(([id]) => web || !WEB_TABS.includes(id)), ...packTabs];
+  if (tabs === null) return [...(level === "repo" ? TABS.filter(([id]) => web || !WEB_TABS.includes(id)) : []), ...packTabs];
   if (!Array.isArray(tabs) || !tabs.length) throw new Error("tabs must be a list of tab ids");
   const out = tabs.map((t) => {
     if (typeof t === "string") {
@@ -122,11 +136,20 @@ function readRaw(path, named) {
   return raw;
 }
 
-// Throws on an unknown key or a bad repo or budget.
+// Throws on a bad level, or an owner that is malformed or wrong for the level.
+function checkLevel(c) {
+  if (!LEVELS.includes(c.level)) throw new Error(`level must be one of ${LEVELS.join(", ")}, not ${JSON.stringify(c.level)}`);
+  if (c.owner !== null && !(typeof c.owner === "string" && OWNER_RE.test(c.owner))) throw new Error(`owner must be a login or enterprise slug, not ${JSON.stringify(c.owner)}`);
+  if (c.level === "repo" && c.owner !== null) throw new Error('owner is for a level page; a repo page names its repo with "repo"');
+  if (c.level === "enterprise" && c.owner === null) throw new Error("level enterprise needs owner, the enterprise's slug");
+}
+
+// Throws on an unknown key or a bad repo, level, owner or budget.
 function checkRaw(raw, c) {
   const unknown = Object.keys(raw).filter((k) => k !== "comment" && !(k in CONFIG_DEFAULTS));
   if (unknown.length) throw new Error(`unknown config key${unknown.length > 1 ? "s" : ""} ${unknown.join(", ")}; known: ${Object.keys(CONFIG_DEFAULTS).join(", ")}`);
   if (c.repo !== null && !REPO_RE.test(c.repo)) throw new Error(`repo must be "owner/name", not "${c.repo}"`);
+  checkLevel(c);
   if (!Number.isInteger(c.budget) || c.budget <= 0) throw new Error("budget must be a whole number of bytes");
   if (!isIds(c.drop_needs)) throw new Error('drop_needs must be a list of `needs` values, such as ["local-files"]');
   if (c.issue_sync !== null && !isSync(c.issue_sync)) throw new Error('issue_sync must be null or { "label": "area", "labels": { "tab": "area" }, "project": 3, "quick": ["metric.id"], "waiting": ["metric.id"] }');
@@ -154,11 +177,19 @@ function readConfig(path, named) {
   return c;
 }
 
-// The config's packs alone (packs.mjs resolvePacks), for the checkout that
-// runs before they are there. Tabs are not checked: a pack's tab ids are
-// known only once it is checked out, and loadConfig checks them then.
+// The level's built-in pack, then the config's packs (packs.mjs).
+const packsFor = (c, { root, env, ci }) => [...levelPacks(c.level, env), ...resolvePacks(c.packs, { root: resolve(root), env, ci })];
+
+// The account a level page measures: the config's, else at level org the repo's owner.
+const ownerOf = (c, repo) => c.owner ?? (c.level === "org" && repo ? repo.split("/")[0] : null);
+// The page title's name: the config's, else a level page's owner, else the repo's or the folder's name.
+const nameOf = (c, { owner, repo, root }) => c.name ?? (c.level !== "repo" && owner ? owner : repo ? repo.split("/")[1] : basename(resolve(root)));
+
+// The config's packs alone, for the checkout that runs before they are
+// there. Tabs are not checked: a pack's tab ids are known only once it is
+// checked out, and loadConfig checks them then.
 export function loadPacks({ root = process.cwd(), file = null, env = process.env, ci = false } = {}) {
-  return resolvePacks(readConfig(configPath(root, file), Boolean(file)).packs, { root: resolve(root), env, ci });
+  return packsFor(readConfig(configPath(root, file), Boolean(file)), { root, env, ci });
 }
 
 // The settings for a run in `root`: the named config file, else
@@ -170,14 +201,16 @@ export function loadConfig({ root = process.cwd(), file = null, env = process.en
   const c = readConfig(path, Boolean(file));
   const repo = c.repo ?? (REPO_RE.test(env.GITHUB_REPOSITORY ?? "") ? env.GITHUB_REPOSITORY : null);
   const named = Boolean(file) || existsSync(path);
-  const packs = resolvePacks(c.packs, { root: resolve(root), env, ci });
+  const owner = ownerOf(c, repo);
+  const packs = packsFor(c, { root, env, ci });
   const unread = packs.filter((p) => !existsSync(p.dir)).map((p) => p.spec);
   const settings = {
     ...c,
     root: resolve(root),
     file: named ? path : null,
     repo,
-    name: c.name ?? (repo ? repo.split("/")[1] : basename(resolve(root))),
+    owner,
+    name: nameOf(c, { owner, repo, root }),
     repoUrl: repoUrl(repo, env),
     packs,
     tabs: resolveTabs(c, packs.flatMap((p) => p.tabs), unread),

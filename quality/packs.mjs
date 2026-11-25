@@ -4,17 +4,23 @@
 //
 //   owner/repo@<40-hex sha>  checked out by actions/pages at CODE_OS_PACKS/owner/repo
 //   a folder path            a --local run only
+//   level:<level>            built in: a page at level user, org or enterprise
+//                            reads quality/levels/<level> (CODE_OS_LEVELS overrides
+//                            the folder). It ships with the engine, so it needs
+//                            no pin and nothing checks it out
 //
 // A pack is code that runs in CI, so it is pinned the way an action is: by a
 // full commit SHA. A tag or a branch can move under the repo; it is refused.
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { loadDefs, loadIdeals, TABS } from "./score.mjs";
 
 const PINNED = /^(?!\.)([\w.-]+)\/(?!\.)([\w.-]+)@([0-9a-f]{40})$/;
 const REMOTE = /^[\w.-]+\/[\w.-]+@/;
 const DOT = /^(?:\.[\w.-]*\/[\w.-]+|[\w.-]+\/\.[\w.-]*)@/;
+const LEVELS = fileURLToPath(new URL("levels", import.meta.url));
 
 // The folder a pack is read from, or a usage error naming why the entry is refused.
 function packDir(spec, { root, env, ci }) {
@@ -35,14 +41,22 @@ function packTabs(dir) {
   return tabs;
 }
 
-// The config's packs, each { spec, dir, targets, collectors, ideals, maps, tabs }.
+// One pack, { spec, dir, targets, collectors, ideals, maps, tabs }.
+function packAt(spec, dir) {
+  const sub = (name) => join(dir, name);
+  return { spec, dir, targets: sub("targets"), collectors: sub("collectors"), ideals: sub("ideals"), maps: sub("maps"), tabs: packTabs(dir) };
+}
+
+// The config's packs, each as packAt gives it.
 export function resolvePacks(list, { root, env = process.env, ci = false }) {
   if (!Array.isArray(list) || !list.every((s) => typeof s === "string" && s.trim())) throw new Error('packs must list "owner/repo@<40-hex sha>" entries');
-  return list.map((spec) => {
-    const dir = packDir(spec, { root, env, ci });
-    const sub = (name) => join(dir, name);
-    return { spec, dir, targets: sub("targets"), collectors: sub("collectors"), ideals: sub("ideals"), maps: sub("maps"), tabs: packTabs(dir) };
-  });
+  return list.map((spec) => packAt(spec, packDir(spec, { root, env, ci })));
+}
+
+// The built-in pack of a level other than repo, marked builtin: none for repo.
+// config.mjs has checked the level's name, so it names no folder above LEVELS.
+export function levelPacks(level, env = process.env) {
+  return level === "repo" ? [] : [{ ...packAt(`level:${level}`, join(env.CODE_OS_LEVELS ?? LEVELS, level)), builtin: true }];
 }
 
 // A config's packs; a config object built by hand may have none.
@@ -51,6 +65,7 @@ const packsOf = (config) => config.packs ?? [];
 // Throws unless every pack's folder is there: a missing checkout is a usage error, never an empty tab.
 function checkedOut(packs) {
   const gone = packs.find((p) => !existsSync(p.dir));
+  if (gone?.builtin) throw new Error(`pack ${gone.spec} is not at ${gone.dir}: this Git Crafter has no built-in pack for that level yet`);
   if (gone) throw new Error(`pack ${gone.spec} is not at ${gone.dir}; actions/pages checks it out, and a --local run names a folder`);
 }
 

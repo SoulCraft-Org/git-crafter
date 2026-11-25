@@ -116,6 +116,44 @@ test("packs: a pack that is not checked out is a usage error, never an empty tab
   assert.throws(() => configDefs(config, join(QUALITY, "targets")), /pack octo\/pack@\w+ is not at/);
 });
 
+// A built-in levels folder holding the fixture pack as each named level's pack.
+function levelsWith(...levels) {
+  const dir = mkdtempSync(join(tmpdir(), "levels-"));
+  for (const level of levels) cpSync(FIXTURE, join(dir, level), { recursive: true });
+  return dir;
+}
+
+test("levels: a level page reads its built-in pack in CI, shows the packs' tabs only, and fetches only pinned packs", () => {
+  const env = { CODE_OS_LEVELS: levelsWith("org"), CODE_OS_PACKS: join(mkdtempSync(join(tmpdir(), "packs-out-")), "packs") };
+  const root = repoWith([`octo/pack@${SHA}`], { level: "org", repo: "octo/site" });
+  const config = loadConfig({ root, env, ci: true });
+  assert.deepEqual([config.packs[0].spec, config.packs[0].builtin, config.packs[0].dir], ["level:org", true, join(env.CODE_OS_LEVELS, "org")]);
+  assert.deepEqual(config.tabs, [["fixture-pack", "Fixture pack"]], "no repo tab; the pinned pack is not checked out yet");
+  assert.deepEqual([config.owner, config.name], ["octo", "octo"], "an org page measures the repo's owner");
+  const run = spawnSync(process.execPath, [join(QUALITY, "pack-checkouts.mjs")], { cwd: root, env: { ...process.env, ...env }, encoding: "utf8" });
+  assert.equal(run.status, 0, run.stderr);
+  assert.equal(run.stdout, ["octo/pack", SHA, join(env.CODE_OS_PACKS, "octo", "pack")].map((f) => `${f}\0`).join(""), "the built-in pack has nothing to fetch");
+  const user = loadConfig({ root: repoWith([], { level: "user" }), env: { CODE_OS_LEVELS: env.CODE_OS_LEVELS } });
+  assert.equal(user.owner, null, "a user page measures the signed-in user");
+  assert.throws(() => configDefs(user, join(QUALITY, "targets")), /pack level:user is not at .*no built-in pack for that level yet/);
+  const repo = loadConfig({ root: repoWith([]), env: { CODE_OS_LEVELS: env.CODE_OS_LEVELS } });
+  assert.deepEqual([repo.level, repo.packs, repo.tabs.some(([id]) => id === "code")], ["repo", [], true], "a repo page is as before");
+});
+
+test("levels: a level page scores its pack's metrics alone", () => {
+  const config = loadConfig({ root: repoWith([], { level: "enterprise", owner: "octo-ent" }), env: { CODE_OS_LEVELS: levelsWith("enterprise") }, ci: true });
+  assert.deepEqual([...new Set(configDefs(config, join(QUALITY, "targets")).defs.map((d) => d.tab))], ["fixture-pack"]);
+  assert.equal(config.name, "octo-ent");
+});
+
+test("levels: a bad level or owner is a usage error with the reason", () => {
+  const load = (extra) => () => loadConfig({ root: repoWith([], extra), env: { CODE_OS_LEVELS: levelsWith() } });
+  assert.throws(load({ level: "team" }), /level must be one of user, repo, org, enterprise, not "team"/);
+  assert.throws(load({ level: "enterprise" }), /level enterprise needs owner/);
+  assert.throws(load({ owner: "octo" }), /owner is for a level page/);
+  for (const owner of ["../x", ".x", "a/b", 7]) assert.throws(load({ level: "org", owner }), /owner must be a login or enterprise slug/, String(owner));
+});
+
 test("packs: the fixture pack's tab, collector and ideal draw on the Quality page", async () => {
   const root = repoWith([FIXTURE]);
   const config = loadConfig({ root, env: {} });

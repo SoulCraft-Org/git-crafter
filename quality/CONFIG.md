@@ -7,8 +7,10 @@ A repo's page settings (`config.mjs`) and target overrides (`overlay.mjs`). [Bac
 | Key | Default | Means |
 | --- | --- | --- |
 | `repo` | `GITHUB_REPOSITORY` | `owner/name`, for issue, commit and review links |
-| `name` | the repo's name | the page title |
-| `tabs` | every template tab but `pages` | tab ids in order; `["id", "Name"]` adds a tab of the repo's own; a removed id stops ([migration](../templates/quality/README.md#from-v6-to-v7)) |
+| `level` | `"repo"` | `"user"`, `"org"` or `"enterprise"` adds its [pack](#packs) |
+| `owner` | org: the repo's owner | the account measured; `enterprise` needs it |
+| `name` | a level's owner, else the repo's name | the page title |
+| `tabs` | a level's pack tabs, else every template tab but `pages` | tab ids in order; `["id", "Name"]` adds the repo's own tab; a removed id stops ([migration](../templates/quality/README.md#from-v6-to-v7)) |
 | `web` | `false` | `true` shows the Pages tab |
 | `targets` | `<repo>/quality/targets` | overrides and own metrics |
 | `collectors` | `<repo>/quality/collectors` | own collectors; a template collector's name is a usage error |
@@ -16,9 +18,9 @@ A repo's page settings (`config.mjs`) and target overrides (`overlay.mjs`). [Bac
 | `packs` | `[]` | other repos' tabs and maps ([below](#packs)) |
 | `reviews`, `data`, `history`, `out` | `<repo>/quality/<key>`; `out` is `<repo>/quality/dist` | folders |
 | `tokens_css` | `render/tokens.css` | page colors |
-| `budget` | 1,000,000, per `config.mjs` | page bytes; one over is exit 1 |
-| `drop_needs` | `[]` | a metric whose `needs` is listed is off, as `drop` does; an unused value is a usage error |
-| `issue_sync` | `null`, off | `{ "label", "labels", "project", "quick", "waiting" }` turns on [`sync-issues.mjs`](sync-issues.mjs): one draft card per missed metric on org project `project`, Todo, or Waiting on data for ids in `waiting`. Ids in `quick` open a Task issue instead, labeled `labels[tab]` or `label`; with no `project`, every id does. Cards need `BOARD_TOKEN` |
+| `budget` | 1,000,000 | page bytes; one over is exit 1 |
+| `drop_needs` | `[]` | a listed `needs` turns its metrics off, as `drop` does; an unused value is a usage error |
+| `issue_sync` | `null`, off | `{ "label", "labels", "project", "quick", "waiting" }` turns on [`sync-issues.mjs`](sync-issues.mjs): a card or issue per missed metric ([keys](config.mjs)). Cards need `BOARD_TOKEN` |
 | `comment` | | allowed |
 | an unknown key | | a usage error |
 
@@ -31,6 +33,7 @@ A pack adds another repo's Quality tabs and Process maps ([`packs.mjs`](packs.mj
 | `"owner/repo@<40-hex sha>"` | `actions/pages` fetches that commit ([`pack-checkouts.mjs`](pack-checkouts.mjs)) |
 | a tag, branch or short SHA | refused: each can move |
 | a folder path | `--local` runs only |
+| `level:<level>` | built in |
 
 | Pack file | Adds |
 | --- | --- |
