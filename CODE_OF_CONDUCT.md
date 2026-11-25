@@ -14,6 +14,6 @@ flowchart LR
 |---|---|
 | Report conduct | The repo's Security tab, **Report a vulnerability**: the private form [SECURITY.md](SECURITY.md) uses. Start the title with "Conduct" |
 | Report platform abuse | GitHub's own report ([GitHub Docs](https://docs.github.com/en/communities/maintaining-your-safety-on-github/reporting-abuse-or-spam), read 2026-11-10). Use **Report content** in the menu of a comment, issue or pull request, or **Block or Report** on a profile |
-| Triage | The maintainers read every report and answer in the same private thread |
+| Triage | The maintainers read every report. They answer in the same private thread |
 | Outcome | No action, or a step on the Covenant's ladder: warning, temporarily limited activities, temporary suspension, permanent ban |
 | Privacy | The reporter's identity stays private |
