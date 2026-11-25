@@ -1,6 +1,10 @@
 # Git Crafter
 
-Templates for AI agents to run an open-source or open-weight repo with Claude Code or OpenCode. Git Crafter is [Apache-2.0](LICENSE) licensed, published by SoulCraft, and began as Code-OS by Colorado Startups ([NOTICE](NOTICE)).
+Templates for AI agents to run an open-source or open-weight repo with Claude Code or OpenCode.
+
+| License | Publisher | Began as |
+|---|---|---|
+| [Apache-2.0](LICENSE) | SoulCraft | Code-OS by Colorado Startups ([NOTICE](NOTICE)) |
 
 ![The two pages: scores by tab with a work queue, and process maps of steps](.github/assets/pages.svg)
 
@@ -23,15 +27,23 @@ Both pages are public.
 | 1 | `<repo>/.github/dependabot.yml`, which bumps the Git Crafter pin | [templates/ci/dependabot.yml](templates/ci/dependabot.yml) |
 | 2 | A ruleset on `main` requiring `ci / ci-ok` | [templates/ci](templates/ci/README.md) |
 | 3 | Settings, Pages: source "GitHub Actions" | [templates/ci](templates/ci/README.md) |
-| Optional | Community files, switches, agent files, CI pool | [open](templates/open/README.md), [setup.json](templates/setup.json) with `tools/apply_setup.mjs`, [agents](templates/agents/README.md), [CI-POOL.md](templates/ci/CI-POOL.md) |
+| Optional | Community files | [open](templates/open/README.md) |
+| Optional | Switches | [setup.json](templates/setup.json) with `tools/apply_setup.mjs` |
+| Optional | Agent files | [agents](templates/agents/README.md) |
+| Optional | CI pool | [CI-POOL.md](templates/ci/CI-POOL.md) |
 
 ## The 13 tabs
 
-Each tab scores Quality, Speed and Consumption, a third each, against sourced goals ([quality/SCORING.md](quality/SCORING.md)). `pages` scores a site, so it is off until a repo's config turns it on.
+| Each tab scores | Weight | Against |
+|---|---|---|
+| Quality, Speed and Consumption | A third each | Sourced goals ([quality/SCORING.md](quality/SCORING.md)) |
 
-| Tab ids | What each measures, which to drop |
+| Tab ids | Default |
 |---|---|
-| `code` `documentation` `issues` `pull-requests` `discussions` `actions` `projects` `security` `dependabot` `scanning` `insights` `settings` `pages` | [templates/quality](templates/quality/README.md) |
+| `code` `documentation` `issues` `pull-requests` `discussions` `actions` `projects` `security` `dependabot` `scanning` `insights` `settings` | On |
+| `pages` | Off: it scores a site, so a repo's config turns it on |
+
+What each measures, and which to drop: [templates/quality](templates/quality/README.md).
 
 ## The maps
 
@@ -62,7 +74,11 @@ Each map's steps: [pages/maps](pages/maps/README.md).
 | [compute-detail](rules/compute-detail.md), [comfy](rules/comfy.md), [gates](rules/gates.md), [keys-detail](rules/keys-detail.md) | Matching files | CI pool, GPU tiers, gates |
 | [merging](skills/merging/SKILL.md) | Reviewing and merging | Merge conditions |
 
-What loads when: [memory](https://code.claude.com/docs/en/memory) and [skills](https://code.claude.com/docs/en/skills) docs, read 2026-11-03. `tools/claude_os_sync.py apply` copies rules and guards into `~/.claude` from [manifest.json](manifest.json); [CONTRIBUTING](CONTRIBUTING.md#releases) says when.
+| Item | Detail |
+|---|---|
+| What loads when | [memory](https://code.claude.com/docs/en/memory) and [skills](https://code.claude.com/docs/en/skills) docs, read 2026-11-03 |
+| Install | `tools/claude_os_sync.py apply` copies rules and guards into `~/.claude` from [manifest.json](manifest.json) |
+| When | [CONTRIBUTING](CONTRIBUTING.md#releases) |
 
 ## Folder map
 
