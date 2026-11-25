@@ -27,7 +27,8 @@
   {"from":null,"to":"discussions","status":"new","reason":"the Discussions tab's first readers: a question left unanswered, and the oldest one's wait (2026-11-23)","ids":["discussions.oldest_unanswered_hours","discussions.unanswered_old"]},
   {"from":null,"to":"issues","status":"new","reason":"the Issues tab reads its open milestones (2026-11-23)","ids":["issues.milestones_off_track"]},
   {"from":null,"to":"actions","status":"new","reason":"the Actions tab reads its cache storage, the Caches part of its ideal (2026-11-23)","ids":["actions.cache_storage_pct"]},
-  {"from":null,"to":"pull-requests","status":"new","reason":"the Pull requests tab reads whether the issue came before the pull request (2026-11-23)","ids":["pull_requests.issue_before_pr_share"]}
+  {"from":null,"to":"pull-requests","status":"new","reason":"the Pull requests tab reads whether the issue came before the pull request (2026-11-23)","ids":["pull_requests.issue_before_pr_share"]},
+  {"from":null,"to":"discussions","status":"new","reason":"the Discussions tab reads the comments an answer takes, its consumption metric (2026-11-25)","ids":["discussions.comments_to_answer"]}
  ],
  "own": [
   {"from":"code","to":"code","status":"kept","ids":["engine.page_seconds"]},
@@ -42,6 +43,7 @@
   {"from":"projects","to":"projects","status":"dropped","reason":"GitHub refuses the App installation token for a board's workflows, and only a user token reads them (Git Crafter, 2026-11-23)","ids":["projects.workflows_on"]},
   {"from":null,"to":"issues","status":"new","reason":"the Issues tab reads its open milestones (2026-11-23)","ids":["issues.milestones_off_track"]},
   {"from":null,"to":"actions","status":"new","reason":"the Actions tab reads its cache storage, the Caches part of its ideal (2026-11-23)","ids":["actions.cache_storage_pct"]},
-  {"from":null,"to":"pull-requests","status":"new","reason":"the Pull requests tab reads whether the issue came before the pull request (2026-11-23)","ids":["pull_requests.issue_before_pr_share"]}
+  {"from":null,"to":"pull-requests","status":"new","reason":"the Pull requests tab reads whether the issue came before the pull request (2026-11-23)","ids":["pull_requests.issue_before_pr_share"]},
+  {"from":null,"to":"discussions","status":"new","reason":"the Discussions tab reads the comments an answer takes, its consumption metric (2026-11-25)","ids":["discussions.comments_to_answer"]}
  ]
 }
