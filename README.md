@@ -36,16 +36,14 @@ Both pages are public.
 
 | Each tab scores | Weight | Against |
 |---|---|---|
-| Quality | A third | Sourced goals ([quality/SCORING.md](quality/SCORING.md)) |
-| Speed | A third | Sourced goals |
-| Consumption | A third | Sourced goals |
+| Quality, Speed and Consumption | A third each | Sourced goals ([quality/SCORING.md](quality/SCORING.md)) |
 
-| Tab ids | On by default |
+| Tab ids | Default |
 |---|---|
-| `code` `documentation` `issues` `pull-requests` `discussions` `actions` `projects` `security` `dependabot` `scanning` `insights` `settings` | Yes |
-| `pages` | No: it scores a site, so it is off until a repo's config turns it on |
+| `code` `documentation` `issues` `pull-requests` `discussions` `actions` `projects` `security` `dependabot` `scanning` `insights` `settings` | On |
+| `pages` | Off: it scores a site, so a repo's config turns it on |
 
-What each tab measures, and which to drop: [templates/quality](templates/quality/README.md).
+What each measures, and which to drop: [templates/quality](templates/quality/README.md).
 
 ## The maps
 
@@ -80,7 +78,7 @@ Each map's steps: [pages/maps](pages/maps/README.md).
 |---|---|
 | What loads when | [memory](https://code.claude.com/docs/en/memory) and [skills](https://code.claude.com/docs/en/skills) docs, read 2026-11-03 |
 | Install | `tools/claude_os_sync.py apply` copies rules and guards into `~/.claude` from [manifest.json](manifest.json) |
-| When to run it | [CONTRIBUTING](CONTRIBUTING.md#releases) |
+| When | [CONTRIBUTING](CONTRIBUTING.md#releases) |
 
 ## Folder map
 
