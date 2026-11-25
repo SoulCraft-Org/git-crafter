@@ -2,6 +2,8 @@
 
 Two free GitHub features this starter leaves off, each a row of [setup.json](../setup.json) marked `optional`.
 
+A private repo on a personal Pro account also skips 8 rows: see [PERSONAL-PRIVATE.md](PERSONAL-PRIVATE.md).
+
 ```mermaid
 flowchart LR
   Q[Merge queue] -->|merge_group in ci.yml| G[each queued merge tests first]
