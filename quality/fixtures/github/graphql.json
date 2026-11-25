@@ -270,7 +270,8 @@
         "pageInfo": { "hasNextPage": false, "endCursor": null },
         "nodes": [
           { "number": 4, "createdAt": "2026-10-01T00:00:00Z", "isAnswered": null, "category": { "isAnswerable": false } },
-          { "number": 2, "createdAt": "2026-10-01T12:00:00Z", "isAnswered": true, "category": { "isAnswerable": true } },
+          { "number": 2, "createdAt": "2026-10-01T12:00:00Z", "isAnswered": true, "category": { "isAnswerable": true }, "answer": { "createdAt": "2026-10-02T09:00:00Z" },
+            "comments": { "nodes": [{ "createdAt": "2026-10-01T13:00:00Z" }, { "createdAt": "2026-10-02T09:00:00Z" }, { "createdAt": "2026-10-03T00:00:00Z" }] } },
           { "number": 1, "createdAt": "2026-10-20T20:00:00Z", "isAnswered": false, "category": { "isAnswerable": true } },
           { "number": 3, "createdAt": "2026-11-01T20:00:00Z", "isAnswered": null, "category": { "isAnswerable": true } }
         ]

@@ -17,6 +17,7 @@ export const EXPECTED = {
   "issues.milestones_off_track": 3, // #2 is past its date, #3 has no date, #4 has every issue closed; #1 is on track
   "discussions.unanswered_old": 1, // #1, 13 days old; #3 is exactly a day, #2 is answered, #4 is an announcement
   "discussions.oldest_unanswered_hours": 312, // #1, 13 days before the read
+  "discussions.comments_to_answer": 2, // #2, one comment and then the answer; the comment after the answer is left out
   "pull_requests.green_at_head": 66.7, // #17 has no checks and is left out
   "pull_requests.reviewed": 25, // #20 only; see the review test below
   "pull_requests.fixed_after_review": 50, // #18's first review read 8a8a…, then a fix moved its head; #20 merged as first reviewed
