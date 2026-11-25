@@ -1,0 +1,38 @@
+name: private-terms
+
+# Copy of soulcraft-org/compute-crafter .github/workflows/private-terms.yml at 9ed8c0166ba9ec68a66ffaf039cb8ce2c3ad7a12 (issue 511). Change it there first, then here.
+# The private half of the private-term rule (tools/private_terms.py). The names this public repo must never contain
+# live in the org secret PRIVATE_TERMS, not in any tracked file. A fork's or Dependabot's pull request gets no
+# secret and only notes the skip; every push to main runs the full scan.
+# Differs from the Compute Crafter copy: where the secret is not set at all, the run notes the skip and passes, so a repo
+# that has no private names to guard needs no secret.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A newer push cancels a pull request's older run; a push to main always finishes.
+concurrency:
+  group: private-terms-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  scan:
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Scan every tracked file
+        env:
+          PRIVATE_TERMS: ${{ secrets.PRIVATE_TERMS }}
+        run: |
+          if [ -z "$PRIVATE_TERMS" ]; then
+            echo "::notice::PRIVATE_TERMS is not set for this repo, so the private-term scan is skipped. Set the secret to turn it on."
+            exit 0
+          fi
+          python3 -I tools/private_terms.py
