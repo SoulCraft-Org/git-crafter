@@ -37,7 +37,9 @@ export function readTargetFiles(dir) {
 // it does not matter which entry carries them; a dropped entry's params still
 // count. Unchecked: loadDefs checks, and the Process page reads labels and
 // goals from it as they are.
-export function overlayTargets(templateFiles, repoFiles = []) {
+// skipUnknown: a caller that loads no packs (the two PR gates) skips an override of an id it
+// lacks, which a pack defines, instead of a usage error; a full definition is still the repo's own.
+export function overlayTargets(templateFiles, repoFiles = [], { skipUnknown = false } = {}) {
   const entries = [];
   const byId = new Map();
   const params = {};
@@ -62,8 +64,9 @@ export function overlayTargets(templateFiles, repoFiles = []) {
       if (own.has(o.id)) throw new Error(`${where}: duplicate id`);
       own.add(o.id);
       const base = byId.get(o.id);
-      if (!base) add(ownMetric(o, file, where));
-      else applyOverride(base, o, file, where, addParams);
+      if (!base) {
+        if (!(skipUnknown && Object.keys(o).every((k) => k === "id" || OVERRIDES.includes(k)))) add(ownMetric(o, file, where));
+      } else applyOverride(base, o, file, where, addParams);
     }
   }
   return { entries, params };

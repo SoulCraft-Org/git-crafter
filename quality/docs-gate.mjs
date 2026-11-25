@@ -35,7 +35,7 @@ const QUALITY = fileURLToPath(new URL('.', import.meta.url));
 function docsParams(root, configFile) {
   const config = configFile ? JSON.parse(readFileSync(resolve(root, configFile), 'utf8')) : {};
   const repoDir = config.targets ? resolve(root, config.targets) : null;
-  const { params } = overlayTargets(readTargetFiles(join(QUALITY, 'targets')), readTargetFiles(repoDir));
+  const { params } = overlayTargets(readTargetFiles(join(QUALITY, 'targets')), readTargetFiles(repoDir), { skipUnknown: true });
   return params['docs.json'] ?? {};
 }
 
