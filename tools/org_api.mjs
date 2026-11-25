@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { attempt, CI_WEEKS, DAY, notMeasured, ORG, PR_WEEKS, reasonOf, ROOT } from "./org_base.mjs";
-import { fetchFiles, fetchHistory, fetchMerged, fetchOpen, fetchRuns, ghClient } from "./org_fetch.mjs";
+import { drive, fetchFiles, ghClient, readHistory, readMerged, readOpen, readRuns } from "./org_fetch.mjs";
 import { ciMetrics, prMetrics } from "./org_flow.mjs";
 import { readDocs, SCOPE } from "./org_scope.mjs";
 import { alertMetrics, deployMetrics, modelMetrics, ORG_CONFIG, PUBLIC_SRC, publicMetrics, readTracked } from "./org_signals.mjs";
@@ -25,32 +25,31 @@ export function listRepos(gh, scope, errors) {
 // JSON, so it crosses runners as an artifact (actions/pages, mode collect).
 
 // Each source per repo: its rows, or null with the reason when the read
-// failed, so a failed read never counts as zero.
+// failed, so a failed read never counts as zero. Every repo's four reads run in
+// lockstep (drive), so their calls go out side by side, and the errors are
+// listed in repo and source order whatever order the answers came in.
 function readRepos(gh, repos, t, errors) {
   const reads = { merged: {}, open: {}, runs: {}, history: {} };
   const fails = { merged: {}, open: {}, runs: {}, history: {} };
-  const took = { merged: 0, open: 0, runs: 0, history: 0 };
-  const read = (source, r, fn) => {
-    const started = Date.now();
-    try {
-      reads[source][r] = fn();
-    } catch (err) {
+  const jobs = repos.flatMap((r) => [
+    ["merged", r, readMerged(r, t - PR_WEEKS * 7 * DAY)],
+    ["open", r, readOpen(r)],
+    ["runs", r, readRuns(r, t - CI_WEEKS * 7 * DAY, t)],
+    ["history", r, readHistory(r, t - CI_WEEKS * 7 * DAY)],
+  ]);
+  const started = Date.now();
+  process.stderr.write(`reading ${repos.length} repos side by side\n`);
+  const answers = drive(gh, jobs.map((j) => j[2]));
+  jobs.forEach(([source, r], i) => {
+    const { value, error } = answers[i];
+    if (error) {
       reads[source][r] = null;
-      fails[source][r] = reasonOf(err);
+      fails[source][r] = reasonOf(error);
       errors.push(`${r} ${source}: ${fails[source][r]}`);
-    }
-    took[source] += (Date.now() - started) / 1000;
-  };
-  for (const r of repos) {
-    process.stderr.write(`reading ${r}\n`);
-    read("merged", r, () => fetchMerged(gh, r, t - PR_WEEKS * 7 * DAY));
-    read("open", r, () => fetchOpen(gh, r));
-    read("runs", r, () => fetchRuns(gh, r, t - CI_WEEKS * 7 * DAY, t));
-    read("history", r, () => fetchHistory(gh, r, t - CI_WEEKS * 7 * DAY));
-  }
-  // Where the read's time went, by source, over every repo. The job log is not always readable, but a run's
-  // annotations are (gh api repos/{repo}/check-runs/{job id}/annotations).
-  const line = `${repos.length} repos: ${Object.entries(took).map(([k, v]) => `${k} ${v.toFixed(1)}`).join(", ")}`;
+    } else reads[source][r] = value;
+  });
+  // The job log is not always readable, but a run's annotations are (gh api repos/{repo}/check-runs/{job id}/annotations).
+  const line = `${repos.length} repos: ${((Date.now() - started) / 1000).toFixed(1)}`;
   if (process.env.GITHUB_ACTIONS === "true") console.log(`::notice title=collect_org read seconds::${line}`);
   else process.stderr.write(`read seconds, ${line}\n`);
   return { reads, fails };
