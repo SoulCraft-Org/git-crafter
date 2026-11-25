@@ -7,8 +7,10 @@ A repo's page settings (`config.mjs`) and target overrides (`overlay.mjs`). [Bac
 | Key | Default | Means |
 | --- | --- | --- |
 | `repo` | `GITHUB_REPOSITORY` | `owner/name`, for issue, commit and review links |
-| `name` | the repo's name | the page title |
-| `tabs` | every template tab but `pages` | tab ids in order; `["id", "Name"]` adds a tab of the repo's own; a removed id stops ([migration](../templates/quality/README.md#from-v6-to-v7)) |
+| `level` | `"repo"` | `"user"`, `"repo"`, `"org"` or `"enterprise"`; any but `repo` adds the level's [built-in pack](#packs) |
+| `owner` | at level `org`, the repo's owner; at level `user`, the signed-in user | the login or enterprise slug a level page measures; level `enterprise` needs it, and level `repo` refuses it |
+| `name` | the owner at a level page, else the repo's name | the page title |
+| `tabs` | every template tab but `pages`; at a level page, the packs' tabs only | tab ids in order; `["id", "Name"]` adds a tab of the repo's own; a removed id stops ([migration](../templates/quality/README.md#from-v6-to-v7)) |
 | `web` | `false` | `true` shows the Pages tab |
 | `targets` | `<repo>/quality/targets` | overrides and own metrics |
 | `collectors` | `<repo>/quality/collectors` | own collectors; a template collector's name is a usage error |
@@ -31,6 +33,7 @@ A pack adds another repo's Quality tabs and Process maps ([`packs.mjs`](packs.mj
 | `"owner/repo@<40-hex sha>"` | `actions/pages` fetches that commit ([`pack-checkouts.mjs`](pack-checkouts.mjs)) |
 | a tag, branch or short SHA | refused: each can move |
 | a folder path | `--local` runs only |
+| `level:<level>` | built in: `quality/levels/<level>`, added by the `level` key; it ships with the engine, so nothing fetches it |
 
 | Pack file | Adds |
 | --- | --- |

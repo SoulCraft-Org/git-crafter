@@ -3,15 +3,16 @@
 // one byte a path cannot hold. A pack named by path is refused here as in any
 // CI run (packs.mjs). It reads the packs alone: a pack's tab named by bare id
 // in `tabs` is unknown until the pack is checked out, so the build checks tabs.
+// A level's built-in pack ships with the engine, so it has nothing to fetch.
 //
 //   node quality/pack-checkouts.mjs [--config FILE]
 import { pathToFileURL } from "node:url";
 
 import { loadPacks } from "./config.mjs";
 
-// The checkout fields for a loaded config's packs: [owner/repo, sha, folder] each.
+// The checkout fields for a loaded config's fetched packs: [owner/repo, sha, folder] each.
 export function checkoutFields(config) {
-  return config.packs.map((p) => [...p.spec.split("@"), p.dir]);
+  return config.packs.filter((p) => !p.builtin).map((p) => [...p.spec.split("@"), p.dir]);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
