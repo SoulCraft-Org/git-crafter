@@ -1,6 +1,6 @@
 Closes #
 
-<!-- First line, alone: Closes, Fixes or Resolves and the issue number. GitHub then links the two and closes the issue on merge. Write "Part of #n" when the change only serves the issue. For a draft card with no issue number yet, write "Card: PVTI_..." (its board id) instead. -->
+<!-- A line of its own, in any position: Closes, Fixes or Resolves and the issue number. GitHub then links the two and closes the issue on merge. Write "Part of #n" when the change only serves the issue. For a draft card with no issue number yet, write "Card: PVTI_..." (its board id) instead. -->
 
 <!--
 Facts go in the tables. Keep the prose outside them short.

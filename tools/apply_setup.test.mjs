@@ -26,7 +26,7 @@ function standard() {
     [P()]: {
       node_id: "R_1", default_branch: "main", has_wiki: true, has_discussions: true, has_projects: true, allow_update_branch: true,
       web_commit_signoff_required: true, allow_squash_merge: true, allow_merge_commit: false, allow_rebase_merge: false,
-      delete_branch_on_merge: true, allow_auto_merge: false, is_template: false, topics: ["a", "b"], homepage: "https://example.org", description: "A widget",
+      delete_branch_on_merge: true, allow_auto_merge: true, is_template: false, topics: ["a", "b"], homepage: "https://example.org", description: "A widget",
       security_and_analysis: { secret_scanning: { status: "enabled" }, secret_scanning_push_protection: { status: "enabled" } },
     },
     [P("/private-vulnerability-reporting")]: { enabled: true },
@@ -110,16 +110,16 @@ test("a repo at the standard reads same everywhere, passes --check and is never 
 test("drift reads would change with the value it read; only --check turns it into exit 1, naming each row", () => {
   const state = standard();
   state[P()].has_wiki = false;
-  state[P()].allow_auto_merge = true;
+  state[P()].allow_auto_merge = false;
   delete state[P("/vulnerability-alerts")];
   const plain = tool(state);
   assert.equal(plain.code, 0);
   assert.deepEqual(plain.writes(), []);
-  for (const id of ["repo.wiki", "repo.no_auto_merge", "security.dependabot_alerts"]) assert.equal(plain.byId[id], "would change", id);
+  for (const id of ["repo.wiki", "repo.auto_merge", "security.dependabot_alerts"]) assert.equal(plain.byId[id], "would change", id);
   assert.match(plain.lines.find((l) => l.includes("repo.wiki")), /has_wiki is false, want true/);
   const checked = tool(state, ["--check"]);
   assert.equal(checked.code, 1);
-  assert.equal(checked.lines.at(-1), "check failed: repo.wiki, repo.no_auto_merge, security.dependabot_alerts");
+  assert.equal(checked.lines.at(-1), "check failed: repo.wiki, repo.auto_merge, security.dependabot_alerts");
 });
 
 test("apply: each changed row is set once, then read back as changed; --check then passes", () => {
@@ -156,8 +156,8 @@ test("apply: after a failed write no row is written; the rest read skipped and t
   assert.equal(got.code, 1);
 });
 
-test("setup.json never turns on a merge switch the repo forbids", () => {
-  for (const r of LIST.rows) for (const k of ["allow_auto_merge", "allow_merge_commit", "allow_rebase_merge"]) assert.notEqual(r.body?.[k], true, `${r.id} sets ${k}`);
+test("setup.json never turns on a merge method the ruleset forbids", () => {
+  for (const r of LIST.rows) for (const k of ["allow_merge_commit", "allow_rebase_merge"]) assert.notEqual(r.body?.[k], true, `${r.id} sets ${k}`);
 });
 
 test("values: no values file reads no value with a warning, and never fails; optional_on turns a row on; topics apply as names", () => {
@@ -185,10 +185,10 @@ test("--only without --apply says it sets nothing", () => {
 test("--only: --apply sets just the rows named; the others stay would change", () => {
   const state = standard();
   state[P()].has_wiki = false;
-  state[P()].allow_auto_merge = true;
+  state[P()].allow_auto_merge = false;
   const got = tool(state, ["--apply", "--only", "repo.wiki,repo.projects"]);
   assert.deepEqual(got.writes(), [{ call: `PATCH ${P()}`, body: { has_wiki: true } }]);
-  assert.deepEqual([got.byId["repo.wiki"], got.byId["repo.no_auto_merge"]], ["changed", "would change"]);
+  assert.deepEqual([got.byId["repo.wiki"], got.byId["repo.auto_merge"]], ["changed", "would change"]);
 });
 
 test("Git Crafter's values file fills every values row and turns on only optional rows", () => {
