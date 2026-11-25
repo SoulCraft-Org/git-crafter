@@ -151,6 +151,19 @@ CASES = [
                                              "      - uses: useblacksmith/build-push-action@" + "1" * 40 + "\n      - run: |\n          npm ci\n"), {"blacksmith"}),
     ("the chooser's runs-on is only a runner finding", edit(".github/workflows/deploy.yml", "runs-on: ubuntu-slim",
                                                            f"runs-on: {EXPR} contains(fromJSON('[\"blacksmith-2vcpu-ubuntu-2404\"]'), inputs.runner) && inputs.runner || 'ubuntu-latest' }}}}"), {"runner"}),
+    ("a caller that sets pool needs an exception", edit(".github/workflows/ci.yml", "      short: npm run lint\n", "      pool: my-free-pool\n      short: npm run lint\n"), {"runner"}),
+    ("a pool label with an exception still fails the pool rule when it is a Blacksmith label", edit(".github/workflows/ci.yml", "      short: npm run lint\n", "      pool: blacksmith-2vcpu-ubuntu-2404\n      short: npm run lint\n"), {"runner", "pool"}),
+    ("a GitHub-hosted name as the pool fails the pool rule", edit(".github/workflows/ci.yml", "      short: npm run lint\n", "      pool: ubuntu-latest-64-cores\n      short: npm run lint\n"), {"runner", "pool"}),
+    ("a whitespace pool fails the pool rule", edit(".github/workflows/ci.yml", "      short: npm run lint\n", "      pool: ' '\n      short: npm run lint\n"), {"runner", "pool"}),
+    ("an expression as the pool fails the pool rule", edit(".github/workflows/ci.yml", "      short: npm run lint\n", f"      pool: {EXPR} vars.POOL }}}}\n      short: npm run lint\n"), {"runner", "pool"}),
+    ("a mixed-case call to the standard still sees the pool", {".github/workflows/other.yml": "on: workflow_dispatch\npermissions:\n  contents: read\njobs:\n  x:\n    uses: Example-Org/Code-OS/.github/workflows/ci-standard.yml@" + PIN + "\n    with:\n      pool: my-free-pool\n"}, {"runner"}),
+    ("a differently cased pool key still sees the pool", edit(".github/workflows/ci.yml", "      short: npm run lint\n", "      Pool: my-free-pool\n      short: npm run lint\n"), {"runner"}),
+    ("a differently cased pool key with a Blacksmith label fails the pool rule", edit(".github/workflows/ci.yml", "      short: npm run lint\n", "      POOL: blacksmith-2vcpu-ubuntu-2404\n      short: npm run lint\n"), {"runner", "pool"}),
+    ("a caller whose pool is empty passes", edit(".github/workflows/ci.yml", "      short: npm run lint\n", "      pool: ''\n      short: npm run lint\n"), set()),
+    ("the short job's pool runs-on is only a runner finding", edit(".github/workflows/deploy.yml", "runs-on: ubuntu-slim",
+                                                                 f"runs-on: {EXPR} inputs.pool != '' && inputs.pool || 'ubuntu-slim' }}}}"), {"runner"}),
+    ("a pool before a lane in the standard job's runs-on is only a runner finding", edit(".github/workflows/deploy.yml", "runs-on: ubuntu-slim",
+                                                                                        f"runs-on: {EXPR} inputs.pool != '' && inputs.pool || contains(fromJSON('[\"blacksmith-2vcpu-ubuntu-2404\"]'), inputs.runner) && inputs.runner || 'ubuntu-latest' }}}}"), {"runner"}),
     ("vars.CI_RUNNER read directly", edit(".github/workflows/deploy.yml", "runs-on: ubuntu-slim", f"runs-on: {EXPR} vars.CI_RUNNER || 'ubuntu-latest' }}}}"), {"runner"}),
     ("a fallback to a larger runner", edit(".github/workflows/deploy.yml", "runs-on: ubuntu-slim",
                                                  f"runs-on: {EXPR} needs.x.outputs.runner || 'ubuntu-latest-64-cores' }}}}"), {"runner"}),
@@ -210,7 +223,8 @@ def test_repos(wrong: list):
     with open(WORKFLOW, encoding="utf-8") as fh, open(os.path.join(os.path.dirname(WORKFLOW), "actions.lock"), encoding="utf-8") as lock:
         own, locks = fh.read(), lock.read()
     with open(os.path.join(TOOLS, "..", ".github", "ci-standard.json"), encoding="utf-8") as fh:
-        exc = {"version": 1, "exceptions": {"ci-standard.yml/standard": json.load(fh)["exceptions"]["ci-standard.yml/standard"]}}
+        own_exc = json.load(fh)["exceptions"]
+        exc = {"version": 1, "exceptions": {k: own_exc[k] for k in ("ci-standard.yml/short", "ci-standard.yml/standard")}}
     for label, files, want in (("ci-standard.yml keeps the house rules itself", {".github/ci-standard.json": json.dumps(exc)}, set()),
                                ("ci-standard.yml's runner input needs its exception", {}, {"runner"})):
         expect(wrong, label, {".github/workflows/ci-standard.yml": own, ".github/workflows/actions.lock": locks, **files}, want)
@@ -277,6 +291,10 @@ def test_exceptions(wrong: list):
                    ".github/ci-standard.json": json.dumps({"version": 1, "exceptions": {"deploy.yml": {"rules": ["blacksmith", "runner"], "why": "a test"}}})})
     if r.get("follows") or {f[0] for f in r.get("findings", [])} != {"blacksmith"}:
         wrong.append(f"an exception waived the blacksmith rule: {r}")
+    r = repo_with({**GOOD, **edit(".github/workflows/ci.yml", "      short: npm run lint\n", "      pool: my-free-pool\n      short: npm run lint\n"),
+                   ".github/ci-standard.json": json.dumps({"version": 1, "exceptions": {"ci.yml/ci": {"rules": ["runner"], "why": "a test"}}})})
+    if not r.get("follows") or len(r.get("excepted", [])) != 1:
+        wrong.append(f"an exception did not cover a caller's pool: {r}")
     for label, cfg in [("no why", {"deploy.yml": {"rules": ["runner"], "why": ""}}),
                        ("an unknown rule", {"deploy.yml": {"rules": ["speed"], "why": "x"}}),
                        ("an exception to the pin", {"ci.yml": {"rules": ["pin"], "why": "x"}})]:

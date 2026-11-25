@@ -6,6 +6,7 @@
     "pages.yml/action-collect": {"rules": ["runner"], "why": "The overflow switch, as pages.yml/action"},
     "pages.yml/action-render": {"rules": ["runner"], "why": "The overflow switch, as pages.yml/action"},
     "pages.yml/build": {"rules": ["runner"], "why": "The overflow switch, as pages.yml/action"},
+    "ci-standard.yml/short": {"rules": ["runner"], "why": "The pool input: a caller's self-hosted label, else ubuntu-slim (templates/ci/POOL.md)"},
     "ci-standard.yml/standard": {"rules": ["runner"], "why": "The overflow switch for every caller: the runner input, from ci-overflow.yml's label, when it is a lane label in .github/ci-overflow.json, else ubuntu-latest (templates/ci/DECISIONS.md, 2026-11-11)"}
   }
 }

@@ -32,7 +32,7 @@ a file these paths match.
 | Every repo calls one reusable workflow, Git Crafter `.github/workflows/ci-standard.yml`, pinned to a full SHA with a `# v1` comment Dependabot bumps | Git Crafter |
 | The pool is shared: no repo gets a share or a per-repo minute guard | Git Crafter |
 | `tools/ci_standard.py`, run in the workflow at the caller's pin, says whether a repo follows the standard | Git Crafter |
-| It runs on GitHub's pool only: `ubuntu-slim` for short jobs, since Linux 1-core bills at a third of 2-core; `ubuntu-latest` for standard ones | [runner pricing](https://docs.github.com/en/billing/reference/actions-runner-pricing) |
+| It runs on GitHub's pool, or on a free self-hosted `pool` label with an exception ([POOL](../templates/ci/POOL.md)): `ubuntu-slim` for short jobs, since Linux 1-core bills at a third of 2-core; `ubuntu-latest` for standard ones | [runner pricing](https://docs.github.com/en/billing/reference/actions-runner-pricing) |
 | Hard stop: the budget `ci.budget` names. No pool runs without one | `account.json` |
 | Overflow: only the lane `ci.overflow` names, and only once the stop it names exists | `account.json` |
 | One Blacksmith meter per org, `templates/ci/ci-pool.yml`, replaces per-repo shares. It reads Blacksmith's estimated cost against its $12 credit, writes the org variable `CI_POOL`, and closes every `Blacksmith*` runner group at its hard stop | Git Crafter `templates/ci/CI-POOL.md` |
