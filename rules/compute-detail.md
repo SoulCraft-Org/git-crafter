@@ -29,7 +29,8 @@ a file these paths match.
 
 | Fact | Source |
 |---|---|
-| Every repo calls one reusable workflow, Git Crafter `.github/workflows/ci-standard.yml`, pinned to a full SHA with a `# v1` comment Dependabot bumps. The pool is shared: no repo gets a share or a per-repo minute guard | Git Crafter |
+| Every repo calls one reusable workflow, Git Crafter `.github/workflows/ci-standard.yml`, pinned to a full SHA with a `# v1` comment Dependabot bumps | Git Crafter |
+| The pool is shared: no repo gets a share or a per-repo minute guard | Git Crafter |
 | `tools/ci_standard.py`, run in the workflow at the caller's pin, says whether a repo follows the standard | Git Crafter |
 | It runs on GitHub's pool only: `ubuntu-slim` for short jobs, since Linux 1-core bills at a third of 2-core; `ubuntu-latest` for standard ones | [runner pricing](https://docs.github.com/en/billing/reference/actions-runner-pricing) |
 | Hard stop: the budget `ci.budget` names. No pool runs without one | `account.json` |
@@ -58,8 +59,10 @@ a file these paths match.
 | The deny list's `local-compute` rule (`tools/claude_deny.json`) | the plain suite, build and e2e commands; a case it misses still applies |
 | [`rules/comfy.md`](comfy.md) | Comfy tiers, and Comfy's own gates. Each account's standing yes, stop and guard are `compute.comfy` fields in `~/.claude/code-os/account.json` |
 
-OpenCode and Goose follow these rules too. A managed policy
-(`/Library/Application Support/ClaudeCode/CLAUDE.md`) that allows more,
-such as unit tests, yields to the stricter `rules/compute.md`. The options
-live in the folder `compute.options` names in
-`~/.claude/code-os/account.json`.
+## Other agents and policies
+
+| Case | Rule |
+|---|---|
+| OpenCode and Goose | Follow these rules too |
+| A managed policy (`/Library/Application Support/ClaudeCode/CLAUDE.md`) that allows more, such as unit tests | Yields to the stricter `rules/compute.md` |
+| The options | Live in the folder `compute.options` names in `~/.claude/code-os/account.json` |
