@@ -24,3 +24,7 @@ flowchart LR
 ## Limits and cost
 
 Projects need a Pro, Max or Ultra plan, not Team or Enterprise. The thread limit, the cache, models, pull request watching, usage limits and each spend guard are kept in one place: Compute Crafter's [Claude Code Projects spend guards](https://github.com/SoulCraft-Org/compute-crafter/blob/main/docs/claude-code-projects-spend.md). Read the figures there, not a copy here.
+
+## Scoring
+
+Each tab has a Quality, Speed and Consumption page and a map: [pages.md](pages.md).
