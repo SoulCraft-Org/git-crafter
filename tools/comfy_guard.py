@@ -174,16 +174,25 @@ def spend_reasons(tool, tool_input):
     return why
 
 
+def run_name(tool):
+    """The run tool's short name (submit_workflow, ...) in any of the three server forms, else None."""
+    if not isinstance(tool, str):
+        return None
+    for prefix in SERVERS:
+        if tool.startswith(prefix) and tool[len(prefix):] in RUN_NAMES:
+            return tool[len(prefix):]
+    return None
+
+
 def decide(payload, guard, wait):
     """None for no output, else the decision to print."""
     if not isinstance(payload, dict):
         return decision("deny", "comfy_guard: the hook input is not a JSON object, "
                                 "so the Comfy spend stop could not be checked (%s)" % RULE)
     tool = payload.get("tool_name")
-    prefix = next((p for p in SERVERS if isinstance(tool, str) and tool.startswith(p)), None)
-    if prefix is None or tool[len(prefix):] not in RUN_NAMES:
+    short = run_name(tool)
+    if short is None:
         return None
-    short = tool[len(prefix):]
     tool_input = payload.get("tool_input", {})
     if not isinstance(tool_input, dict):
         return decision("deny", "comfy_guard: %s input is not an object, "
