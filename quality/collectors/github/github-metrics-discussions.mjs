@@ -9,6 +9,15 @@ async function unanswered(L) {
 
 const OFF = "Discussions is off on this repo";
 
+// The query reads each discussion's first 50 comments (github-queries.mjs).
+const COMMENT_PAGE = 50;
+
+// True when a full page of comments all predate the answer, so the count would stop at the page and read short.
+function pastPage(d) {
+  const nodes = d.comments?.nodes ?? [];
+  return nodes.length >= COMMENT_PAGE && Date.parse(nodes.at(-1).createdAt) < Date.parse(d.answer.createdAt);
+}
+
 /** Each metric reads through the loaders and returns measured(...) or skip(...). */
 export const DISCUSSION_METRICS = {
   // Discussions --------------------------------------------------------------
@@ -36,17 +45,21 @@ export const DISCUSSION_METRICS = {
   },
   // Consumption: the top-level comments each open answered question took, the answer included; comments after it are left out.
   "discussions.comments_to_answer": {
-    source: "state: gh api graphql: repository.discussions (open: isAnswered, category.isAnswerable, answer.createdAt, the first 50 comments' createdAt), median of the comments up to the answer",
+    source: "state: gh api graphql: repository.discussions (open: isAnswered, category.isAnswerable, answer.createdAt, the first 50 comments' createdAt), median of the comments up to the answer; an answer past comment 50 is left out",
     async run(L) {
       if ((await L.repo()).has_discussions !== true) return notApplicable(OFF);
       const answered = (await L.discussions()).filter((d) => d.category?.isAnswerable === true && d.isAnswered === true && d.answer?.createdAt);
       if (!answered.length) return skip("no open discussion has a marked answer yet");
-      const rows = answered.map((d) => {
+      const counted = answered.filter((d) => !pastPage(d));
+      if (!counted.length) return skip(`every answer comes after the first ${COMMENT_PAGE} comments, past what the query reads`);
+      const rows = counted.map((d) => {
         const by = Date.parse(d.answer.createdAt);
         const n = (d.comments?.nodes ?? []).filter((c) => Date.parse(c.createdAt) <= by).length;
         return { label: `#${d.number}`, value: n, unit: "comments" };
       });
-      return measured(round1(percentile(rows.map((r) => r.value), 0.5)), rows);
+      const dropped = answered.length - counted.length;
+      const note = dropped ? [count(`left out, answer past comment ${COMMENT_PAGE}`, dropped)] : [];
+      return measured(round1(percentile(rows.map((r) => r.value), 0.5)), [...rows, ...note]);
     },
   },
 };

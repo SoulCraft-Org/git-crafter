@@ -71,6 +71,17 @@ describe("Discussions metrics", () => {
     assert.equal(out[CTA].value, 4);
   });
 
+  it("leave out an answer past the 50 comments read, never count it as 50", async () => {
+    // The query reads 50 comments, so a 51-comment thread arrives with 50 and its answer, the 51st, after them.
+    const long = thread(1, { comments: 50, answerAt: 51 });
+    const out = await read({ gh: fakeGh({ rest: REST, graphql: withNodes([long, thread(2, { day: 9, comments: 50, answerAt: 50 })]) }) });
+    assert.deepEqual(out[CTA].detail, [{ label: "#2", value: 50, unit: "comments" }, { label: "left out, answer past comment 50", value: 1, unit: "" }]);
+    assert.equal(out[CTA].value, 50, "#2's answer is the 50th comment, inside the page");
+    const only = await read({ gh: fakeGh({ rest: REST, graphql: withNodes([long]) }) });
+    assert.ok(only[CTA].could_not_check && only[CTA].value === undefined);
+    assert.match(only[CTA].could_not_check, /after the first 50 comments/);
+  });
+
   it("cannot check comments to an answer with no answer marked, never 0", async () => {
     const out = await read({ gh: fakeGh({ rest: REST, graphql: withNodes([thread(1, { comments: 4 })]) }) });
     assert.ok(out[CTA].could_not_check && out[CTA].value === undefined);
