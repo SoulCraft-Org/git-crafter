@@ -895,7 +895,7 @@
     "near": 336,
     "direction": "lower",
     "goal_source": "template goal (2026-11-25): an analysis at least once a week, near two weeks",
-    "source": "latest: gh api repos/{repo}/code-scanning/analyses?per_page=1: the newest analysis on any ref, read time minus created_at; could_not_check while code scanning is off",
+    "source": "state: gh api repos/{repo}/code-scanning/analyses?per_page=1: the newest analysis on any ref, its age at read time; could_not_check while code scanning is off",
     "needs": "github-admin",
     "chart": "number"
   },
