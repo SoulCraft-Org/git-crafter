@@ -21,7 +21,7 @@
 
 import { readFileSync } from "node:fs";
 
-import { adminGh, clientFor, flag, ghClient, measured, repoOf, skip } from "../github/github-core.mjs";
+import { adminGh, clientFor, flag, GhError, ghClient, measured, repoOf, skip } from "../github/github-core.mjs";
 import { reasonFor } from "../github/github-helpers.mjs";
 import { ACCESS_METRICS } from "./insights-access.mjs";
 
@@ -52,10 +52,45 @@ export function communityHealth(profile) {
   return measured(profile.health_percentage, [flag("Description", Boolean(profile.description)), ...files]);
 }
 
+// Where GitHub looks for each health file: the root, docs/ and .github/ (About community profiles, read 2026-11-25).
+const HEALTH_DIRS = ["", "docs", ".github"];
+const HEALTH_NAMES = {
+  readme: /^readme([._-].+)?$/i,
+  license: /^(licen[sc]e|copying|unlicense)([._-].+)?$/i,
+  contributing: /^contributing([._-].+)?$/i,
+  code_of_conduct: /^code[_-]of[_-]conduct([._-].+)?$/i,
+  pull_request_template: /^pull_request_template([._-].+)?$/i,
+};
+
+/**
+ * GitHub answers 404 for a fork's community profile (seen 2026-11-25 on a public fork whose parent answers).
+ * The same six checks are then read from the fork's own tree, and the score is the share found: GitHub's own
+ * weights are not published, so this is the checklist's share, not GitHub's percentage.
+ */
+export async function forkHealth(gh, repo, info) {
+  const lists = await Promise.all(HEALTH_DIRS.map((dir) => gh.rest(`repos/${repo}/contents${dir ? `/${dir}` : ""}`).catch((err) => (err instanceof GhError && err.status === 404 ? [] : Promise.reject(err)))));
+  const entries = lists.map((list) => (Array.isArray(list) ? list : []));
+  // A license counts at the root only (the docs page does not say docs/ or .github/ hold one); a template may be a folder of them.
+  const has = (key, re) => (key === "license" ? entries.slice(0, 1) : entries).flat().some((e) => re.test(e.name) && (e.type === "file" || key === "pull_request_template"));
+  const files = Object.fromEntries(Object.entries(HEALTH_NAMES).map(([key, re]) => [key, has(key, re)]));
+  const found = [Boolean(info.description), ...Object.values(files)];
+  const own = `state: gh api repos/${repo}/contents of the root, docs and .github: the share of the six community checks found in the fork's own tree, as GitHub answers 404 for a fork's community profile and publishes no weights`;
+  return { ...communityHealth({ health_percentage: Math.round((100 * found.filter(Boolean).length) / found.length), description: info.description, files }), source: own };
+}
+
 const METRICS = {
   "insights.community_health_pct": {
-    source: "state: gh api repos/{repo}/community/profile, GitHub's health percentage and the files it found",
-    run: async ({ gh, repo }) => communityHealth(await gh.rest(`repos/${repo}/community/profile`)),
+    source: "state: gh api repos/{repo}/community/profile, GitHub's health percentage and the files it found; on a fork, where GitHub answers 404, the share of the same six checks found in the repo's own tree (repos/{repo}/contents of the root, docs and .github)",
+    run: async ({ gh, repo }) => {
+      try {
+        return communityHealth(await gh.rest(`repos/${repo}/community/profile`));
+      } catch (err) {
+        if (!(err instanceof GhError) || err.status !== 404) throw err;
+        const info = await gh.rest(`repos/${repo}`);
+        if (!info?.fork) throw err;
+        return forkHealth(gh, repo, info);
+      }
+    },
   },
   ...ACCESS_METRICS,
 };
@@ -71,7 +106,7 @@ async function readMetric(id, metric, ctx) {
   try {
     const result = await metric.run({ ...ctx, gh: client.gh });
     if (result.could_not_check) return [id, { could_not_check: result.could_not_check, source }];
-    return [id, { ...result, source, read_at: new Date().toISOString() }];
+    return [id, { source, ...result, read_at: new Date().toISOString() }];
   } catch (err) {
     return [id, { could_not_check: reasonFor(err, needs, ctx.mode), source }];
   }

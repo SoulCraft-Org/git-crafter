@@ -6,6 +6,13 @@ Part of the [Projects setup](README.md). Linked from [instructions.md](instructi
 
 A thread clones each attached repo. It does not read everything in `.claude/`.
 
+```mermaid
+flowchart LR
+  R[Attached repo] --> L[Loaded: CLAUDE.md, rules, skills, agents, commands]
+  R --> N[Not loaded: .mcp.json, hooks, permission rules, env]
+  N --> F[Use connectors, a local thread or the cloud environment]
+```
+
 | In the repo | Cloud thread | If you need it |
 |---|---|---|
 | `CLAUDE.md`, and the `.claude/` folder's own CLAUDE.md and rules | Loaded. Path-specific rules wait | |
