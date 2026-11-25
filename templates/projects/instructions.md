@@ -20,4 +20,5 @@ Paste this file into the project's Instructions field. Fill each `<...>` cell, t
 | Compute | `<where heavy work runs, such as "No GPU or renders in this VM: use <lane> after <owner>'s yes">` |
 | Keys | Never print, copy or commit a key value |
 | Write | Tables and diagrams first. One idea per sentence. No em dashes |
+| Track | A bug, quick fix or error gets an issue. A feature or improvement gets a card. Record done and to do, search first, link both in the PR ([tracking.md](tracking.md)) |
 | `<org>` | `<one rule for how a new repo in this org starts, such as "a new repo starts as a row in <org>/<repo>/repos.toml">` |
