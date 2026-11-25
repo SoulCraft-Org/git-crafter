@@ -32,6 +32,12 @@
   "goal_source": "Claude, 2026-11-10: Git Crafter has never had an alert fixed (gh api dependabot/alerts, 0 fixed or dismissed), so the metric has no reading; a metric with no reading stays off the page (the owner, 2026-11-10). security.oldest_open_alert_days measures speed here. Restore it once an alert has been fixed"
  },
  {
+  "id": "security.features_dollars_per_month",
+  "goal": 49,
+  "near": 68,
+  "goal_source": "the owner, 2026-11-24 and again 2026-11-25: Code Security and Secret Protection stay bought for the organization, as flat monthly subscriptions that help it (rules/compute.md, Money; recorded in compute.spend_exceptions). The goal is their list price for one active committer, $30 plus $19 a month (github.com/security/plans, read 2026-11-03); near adds one more committer's Secret Protection, as Compute Crafter's override does. Delete this entry to return to the template's goal of 0"
+ },
+ {
   "id": "security.threat_model_current",
   "goal_source": "Microsoft SDL practices and its threat modeling page (read 2026-11-10): threat modeling is part of the routine development lifecycle; Git Crafter (Claude, 2026-11-10): the model may trail its code by 7 days, the tab's fix-within-a-week goal. About 25 pull requests changed a covered path on 2026-11-10, and making each edit one 476-word file had them colliding on it",
   "params": {
