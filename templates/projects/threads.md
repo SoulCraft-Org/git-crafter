@@ -8,7 +8,7 @@ A thread clones each attached repo. It does not read everything in `.claude/`.
 
 | In the repo | Cloud thread | If you need it |
 |---|---|---|
-| `CLAUDE.md`, `.claude/CLAUDE.md`, `.claude/rules/` | Loaded. Path-specific rules wait | |
+| `CLAUDE.md`, and the `.claude/` folder's own CLAUDE.md and rules | Loaded. Path-specific rules wait | |
 | Skills, agents, commands | Loaded | A dot-named repo skips them: run the thread as a Remote Control session |
 | `.mcp.json` servers | Not loaded | Use your account's connectors |
 | Hooks and permission rules in `.claude/settings.json` | Not run | Use a local thread |

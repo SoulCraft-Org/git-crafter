@@ -41,8 +41,11 @@ export function immutable(args, out, now = Date.now()) {
   if (JOBS.test(route)) return jobsFinal(body, now);
   return ATTEMPT.test(route) && ended(body, now);
 }
+// The first argument after `api` that is not a flag or a flag's value (#391).
+const VALUE_FLAGS = new Set(["-X", "--method", "-H", "--header", "-f", "--raw-field", "-F", "--field", "-q", "--jq", "-t", "--template", "--hostname", "--input", "--cache", "-p", "--preview"]);
+const pathOf = (args) => { for (let i = 1; i < args.length; i++) { if (VALUE_FLAGS.has(args[i])) i++; else if (!args[i].startsWith("-")) return args[i]; } return ""; };
 /** The read's name for the by-read tally: its route past the repo, each number or commit as {}, no query. */
-export const familyOf = (args) => (args[1] ?? "").replace(/^\/?repos\/[^/]+\/[^/]+\/?/, "").replace(/\?.*$/, "").split("/").map((s) => (/^(\d+|[0-9a-f]{40})$/.test(s) ? "{}" : s)).join("/") || "repo";
+export const familyOf = (args) => (pathOf(args)).replace(/^\/?repos\/[^/]+\/[^/]+\/?/, "").replace(/\?.*$/, "").split("/").map((s) => (/^(\d+|[0-9a-f]{40})$/.test(s) ? "{}" : s)).join("/") || "repo";
 /** The shim gh, written into `dir`. */
 export const writeShim = (dir) => writeFileSync(path.join(dir, "gh"), `#!/bin/sh\nexec node "${fileURLToPath(import.meta.url)}" shim "$@"\n`, { mode: 0o755 });
 // A `.` or `..` segment, or an encoded dot, could climb out of an admitted family (#42), so PUBLIC refuses each.

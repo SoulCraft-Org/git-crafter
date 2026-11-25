@@ -10,12 +10,14 @@ Fires or waits. This hook fires only once ~/.claude/settings.json wires it
 as a PreToolUse hook. Git Crafter installs the file and does not wire it, so
 until someone adds the entry, nothing calls it. The entry reads:
 
-  {"matcher": "mcp__plugin_comfy-cloud_comfy-cloud__(submit_workflow|run_template|run_saved_workflow|submit_batch)",
+  {"matcher": "mcp__(plugin_comfy-cloud_comfy-cloud|claude_ai_Comfy_Cloud_MCP|Comfy_Cloud_MCP)__(submit_workflow|run_template|run_saved_workflow|submit_batch)",
    "hooks": [{"type": "command",
               "command": "python3 -I ~/.claude/code-os/comfy_guard.py",
               "timeout": 90, "onFailure": "block"}]}
 
-The parentheses make the matcher an unanchored regex. The 90 s timeout sits
+The matcher covers the three name forms of the same tools: the plugin form, the
+claude.ai connector form and the server form (#325). The parentheses make it an
+unanchored regex. The 90 s timeout sits
 above this hook's own 75 s wait, which sits above usage-guard's 60 s limit
 on one provider call (CALL_TIMEOUT_S in its shell.py). "onFailure": "block"
 needs Claude Code 2.1.295 or later. Without it, a hook that crashes or
@@ -78,6 +80,8 @@ import sys
 SERVER = "mcp__plugin_comfy-cloud_comfy-cloud__"
 RUN_TOOLS = tuple(SERVER + t for t in
                   ("submit_workflow", "run_template", "run_saved_workflow", "submit_batch"))
+SERVERS = ("mcp__plugin_comfy-cloud_comfy-cloud__", "mcp__claude_ai_Comfy_Cloud_MCP__", "mcp__Comfy_Cloud_MCP__")
+RUN_NAMES = ("submit_workflow", "run_template", "run_saved_workflow", "submit_batch")
 NO_PROMPT_MODES = ("bypassPermissions", "dontAsk")
 DEFAULT_WAIT_S = 75.0
 RULE = "rules/comfy.md"
@@ -176,9 +180,10 @@ def decide(payload, guard, wait):
         return decision("deny", "comfy_guard: the hook input is not a JSON object, "
                                 "so the Comfy spend stop could not be checked (%s)" % RULE)
     tool = payload.get("tool_name")
-    if tool not in RUN_TOOLS:
+    prefix = next((p for p in SERVERS if isinstance(tool, str) and tool.startswith(p)), None)
+    if prefix is None or tool[len(prefix):] not in RUN_NAMES:
         return None
-    short = tool[len(SERVER):]
+    short = tool[len(prefix):]
     tool_input = payload.get("tool_input", {})
     if not isinstance(tool_input, dict):
         return decision("deny", "comfy_guard: %s input is not an object, "

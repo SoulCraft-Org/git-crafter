@@ -18,7 +18,7 @@ A repo's page settings (`config.mjs`) and target overrides (`overlay.mjs`). [Bac
 | `packs` | `[]` | other repos' tabs and maps ([below](#packs)) |
 | `reviews`, `data`, `history`, `out` | `<repo>/quality/<key>`; `out` is `<repo>/quality/dist` | folders |
 | `tokens_css` | `render/tokens.css` | page colors |
-| `budget` | 1,000,000 | page bytes; one over is exit 1 |
+| `budget` | 1,000,000 | page bytes, the page budget the template sets as a goal; one over is exit 1 |
 | `drop_needs` | `[]` | a listed `needs` turns its metrics off, as `drop` does; an unused value is a usage error |
 | `issue_sync` | `null`, off | `{ "label", "labels", "project", "quick", "waiting" }` turns on [`sync-issues.mjs`](sync-issues.mjs): a card or issue per missed metric ([keys](config.mjs)). Cards need `BOARD_TOKEN` |
 | `comment` | | allowed |

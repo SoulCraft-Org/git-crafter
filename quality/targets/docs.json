@@ -27,7 +27,8 @@
         "coverage",
         ".venv",
         ".astro",
-        ".wrangler"
+        ".wrangler",
+        ".code-os-packs"
       ],
       "doc_set_left_out": [
         {
