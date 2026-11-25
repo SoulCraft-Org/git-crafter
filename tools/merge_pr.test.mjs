@@ -11,11 +11,12 @@ const run = (id, name, status, conclusion, app = 1) => ({ id, name, status, conc
 const PASSING = [run(1, "ci / ci-ok", "completed", "success"), run(2, "dco", "completed", "success", 2)];
 
 // Runs main against a fake repo: `pulls` is each read of the pull request in turn (the last repeats), `comments` the verdicts already posted.
-async function merge(argv, { pulls, runs = PASSING, statuses = [], comments = [] } = {}) {
+async function merge(argv, { pulls, runs = PASSING, statuses = [], comments = [], fail } = {}) {
   const calls = [], sleeps = [], lines = [];
   const read = [...pulls];
   const gh = (args) => {
     calls.push(args.join(" "));
+    if (fail && fail.test(args.join(" "))) throw new Error("HTTP 403");
     const route = args[1];
     if (route.includes("/pulls/")) return JSON.stringify(read.length > 1 ? read.shift() : read[0]);
     if (route.includes("/check-runs")) return JSON.stringify({ total_count: runs.length, check_runs: runs });
@@ -93,4 +94,12 @@ test("--followups is required, takes #n, PVTI_ ids or none, and lands on line 2 
   assert.equal(r.code, 0);
   const body = r.writes[0].split("-f body=")[1];
   assert.deepEqual(body.split("\n"), [`Review: MERGE at ${SHA}`, "Follow-ups: #12, PVTI_lADO-1"]);
+});
+
+test("an earlier review failure on the SHA does not gate the merge, and a failed status write sends no merge", async () => {
+  const blocked = [{ context: "review", state: "failure" }];
+  assert.equal((await merge(ARGV, { pulls: [pull()], statuses: blocked })).code, 0);
+  const r = await merge(ARGV, { pulls: [pull()], fail: /statuses\/.* -f state=success/ });
+  assert.equal(r.code, 1);
+  assert.ok(!r.calls.some((c) => c.startsWith("pr merge")));
 });

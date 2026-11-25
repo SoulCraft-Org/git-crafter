@@ -39,7 +39,7 @@ flowchart TD
 | Every changed path is AI-mergeable | `python3 -I tools/merge_policy.py --pr N --sha <head>` exits 0 and prints `checked head <sha>` |
 | The verdict comment names that SHA | `Review: MERGE at <sha>` ([Who merges](SKILL.md#who-merges)) |
 
-Then merge with `gh pr merge N --squash --match-head-commit <sha>`, typing the SHA the checker printed. Where GraphQL is blocked (a cloud session), use `gh api -X PUT repos/{owner}/{repo}/pulls/N/merge -f sha=<sha> -f merge_method=squash`.
+Then post the `review` status on that SHA (`gh api repos/{owner}/{repo}/statuses/<sha> -f state=success -f context=review`), which the ruleset requires. Merge with `gh pr merge N --squash --auto --match-head-commit <sha>`, typing the SHA the checker printed. Where GraphQL is blocked (a cloud session), post the same status, then use `gh api -X PUT repos/{owner}/{repo}/pulls/N/merge -f sha=<sha> -f merge_method=squash`.
 
 ## Rebuild with credit
 

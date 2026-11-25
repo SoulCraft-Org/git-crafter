@@ -72,7 +72,8 @@ export async function assess({ read, repo, pr, sha, base, wait, sleep }) {
   const runs = read(`repos/${repo}/commits/${sha}/check-runs?per_page=100`);
   const status = read(`repos/${repo}/commits/${sha}/status?per_page=100`);
   if (runs.total_count > runs.check_runs.length || status.total_count > status.statuses.length) throw new Error("more checks than one page holds, so some are unread");
-  const checks = judge(runs.check_runs, status.statuses);
+  // The `review` status is this tool's own output, so an earlier BLOCK on the SHA never gates the MERGE that follows it.
+  const checks = judge(runs.check_runs, status.statuses.filter((s) => s.context !== "review"));
   for (let waited = 0; ; waited += STEP) {
     const pull = read(`repos/${repo}/pulls/${pr}`);
     const d = decide(pull, checks, { sha, base });
