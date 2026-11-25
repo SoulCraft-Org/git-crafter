@@ -93,10 +93,14 @@ export function retryEmpty(gh, { tries = 3, waitMs = 1000 } = {}) {
   return { ...gh, rest };
 }
 
+// The Pages reader, its gh client reading an empty reply again.
+const pagesMetrics = async ({ root, exec, now, params, gh = ghClient(), retry }) =>
+  collectPages({ repo: await ownRepo(root, params, exec), gh: retryEmpty(gh, retry), now, params });
+
 // Every Deploy metric: from GitHub Pages when params.platform is "pages",
 // else from Wrangler (a --local collect only).
 export async function collect({ root = '.', mode, exec = defaultExec, now = new Date(), params = TEMPLATE, gh, retry } = {}) {
-  if (params.platform === 'pages') return collectPages({ repo: await ownRepo(root, params, exec), gh: retryEmpty(gh ?? ghClient(), retry), now, params });
+  if (params.platform === 'pages') return pagesMetrics({ root, exec, now, params, gh, retry });
   const all = (reason, source = WRANGLER) => Object.fromEntries(metricIds.map((id) => [id, cnc(reason, source)]));
   if (mode !== 'local') return all(CI_REASON);
   const dir = String(params.worker_dir || '.');
