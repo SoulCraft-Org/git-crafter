@@ -146,6 +146,10 @@ check("a repo's overrides take only goal, near, goal_source, params, drop and ga
   // An override with no template metric under it names the id.
   assert.throws(() => overlayTargets(template, [{ file: "a.json", list: [{ id: "t.gone", goal: 1, near: 2, goal_source: "x" }] }]), /no template metric "t\.gone" to override/);
   assert.throws(() => overlayTargets(template, [{ file: "a.json", list: [{ id: "t.gone", drop: true }] }]), /no template metric "t\.gone"/);
+  // A caller that loads no packs skips an override of an id a pack defines, and still takes a full definition as the repo's own.
+  const skip = { skipUnknown: true };
+  assert.equal(overlayTargets(template, [{ file: "a.json", list: [{ id: "t.gone", params: { x: 1 } }] }], skip).entries.length, template[0].list.length);
+  assert.equal(overlayTargets(template, [{ file: "a.json", list: [{ ...up, id: "t.own" }] }], skip).entries.at(-1).id, "t.own");
   const dir = mkdtempSync(join(tmpdir(), "quality-overlay-"));
   try {
     mkdirSync(join(dir, "t"));

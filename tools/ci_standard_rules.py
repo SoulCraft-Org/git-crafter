@@ -11,14 +11,17 @@ import os
 import re
 import subprocess
 
-from ci_standard_actions import LOCK_FILE, SHA_RE, local_action_findings, pin_findings
+from ci_standard_actions import LOCK_FILE, SHA_RE, local_action_findings, pin_findings, pool_findings
 from ci_standard_yaml import EXPR, ParseError, parse
 
-RULES = ("caller", "pin", "dependabot", "permissions", "concurrency", "timeout", "runner", "pinned", "cache", "no-share", "blacksmith")
+RULES = ("caller", "pin", "dependabot", "permissions", "concurrency", "timeout", "runner", "pinned", "cache", "no-share", "blacksmith", "pool")
 # Rules no .github/ci-standard.json can waive: each one is a bill that no meter stops.
-NEVER_EXCEPTED = ("blacksmith",)
+NEVER_EXCEPTED = ("blacksmith", "pool")
 # ci-standard.yml's standard job: a Blacksmith label only from its runner input, and only one of the listed lanes.
-CHOOSER_RE = re.compile(r"\$\{\{ contains\(fromJSON\('\[[^\]]*\]'\), inputs\.runner\) && inputs\.runner \|\| 'ubuntu-latest' \}\}")
+# A caller's pool input (a free self-hosted runner label) comes first in both jobs' runs-on; empty falls through to GitHub's pool.
+POOL_PREFIX = r"inputs\.pool != '' && inputs\.pool \|\| "
+CHOOSER_RE = re.compile(r"\$\{\{ (?:" + POOL_PREFIX + r")?contains\(fromJSON\('\[[^\]]*\]'\), inputs\.runner\) && inputs\.runner \|\| 'ubuntu-latest' \}\}")
+POOL_SLIM_RE = re.compile(r"\$\{\{ " + POOL_PREFIX + r"'ubuntu-slim' \}\}")
 # Blacksmith's sticky disk and Docker layer cache actions: they keep storage Blacksmith bills, which the pool meter does not count.
 BLACKSMITH_CACHES = ("useblacksmith/stickydisk", "useblacksmith/build-push-action", "useblacksmith/setup-docker-builder")
 STANDARD_LABELS = {"ubuntu-latest", "ubuntu-24.04", "ubuntu-22.04"}
@@ -141,6 +144,8 @@ def runner_finding(runs_on) -> str | None:
     text = runs_on if isinstance(runs_on, str) else json.dumps(runs_on)
     if text == SLIM or text in STANDARD_LABELS:
         return None
+    if POOL_SLIM_RE.fullmatch(text):
+        return "the short job's runs-on; a self-hosted label only from the caller's pool input"
     if "blacksmith" in text.lower():
         return "the chooser's runs-on; a lane label only from ci-overflow.yml" if CHOOSER_RE.fullmatch(text) else None
     if "vars.CI_RUNNER" in text:
@@ -187,7 +192,7 @@ def job_findings(where: str, job: dict, locked=frozenset()) -> list:
         uses = str(job["uses"])
         if not uses.startswith("./") and not SHA_RE.fullmatch(uses):
             found.append(("pinned", where, f"{uses} is not pinned to a full commit SHA"))
-        return found
+        return found + pool_findings(where, uses, job.get("with"))
     if not job.get("timeout-minutes"):
         found.append(("timeout", where, "no timeout-minutes; a hung job bills to GitHub's 6-hour limit"))
     why = runner_finding(job.get("runs-on"))

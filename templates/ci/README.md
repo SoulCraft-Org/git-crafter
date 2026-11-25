@@ -55,7 +55,7 @@ GitHub's runner pricing (read 2026-11-03): $0.002 a minute on 1 core, $0.006 on 
 | `permissions` | top-level `read` or `none`. No `write-all` |
 | `concurrency` | a group that cancels superseded runs, never a deploy |
 | `timeout` | every job has `timeout-minutes` |
-| `runner` | `ubuntu-slim` or a standard hosted label. Else an exception with a reason in `<repo>/.github/ci-standard.json`, five jobs at most |
+| `runner` | `ubuntu-slim` or a standard hosted label. Else an exception with a reason in `<repo>/.github/ci-standard.json`, five jobs at most ([pool](POOL.md)) |
 | `pinned` | every remote `uses:`, local actions' steps included, at a full SHA or locked in `.github/workflows/actions.lock` |
 | `cache` | `npm ci` or `pip install` with a setup cache |
 | `no-share` | no per-repo minute guard |
