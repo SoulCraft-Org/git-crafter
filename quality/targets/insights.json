@@ -11,7 +11,7 @@
     "near": 85,
     "direction": "higher",
     "goal_source": "GitHub docs, About community profiles for public repositories and REST community metrics (read 2026-11-10): the checklist names the recommended files and the API scores how many are present; goal: all of them",
-    "source": "state: gh api repos/{repo}/community/profile, GitHub's health percentage and the files it found",
+    "source": "state: gh api repos/{repo}/community/profile, GitHub's health percentage and the files it found; on a fork, where GitHub answers 404, the share of the same six checks found in the repo's own tree (repos/{repo}/contents of the root, docs and .github)",
     "needs": "none",
     "chart": "bar",
     "params": {
