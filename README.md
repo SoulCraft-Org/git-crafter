@@ -17,7 +17,7 @@ Templates for AI agents to run an open-source or open-weight repo with Claude Co
 
 Both pages are public.
 
-## Adopt in three steps
+## Adopt in four steps
 
 | Step | Copy or set | From |
 |---|---|---|
@@ -27,6 +27,8 @@ Both pages are public.
 | 1 | `<repo>/.github/dependabot.yml`, which bumps the Git Crafter pin | [templates/ci/dependabot.yml](templates/ci/dependabot.yml) |
 | 2 | A ruleset on `main` requiring `ci / ci-ok` | [templates/ci](templates/ci/README.md) |
 | 3 | Settings, Pages: source "GitHub Actions" | [templates/ci](templates/ci/README.md) |
+| 4 | After the first push to `main`, open `https://<owner>.github.io/<repo>/` (Process) and `.../quality/` (Quality) | [pages.yml](templates/ci/pages.yml) publishes both |
+| Check | In a Git Crafter checkout, `node quality/selftest.mjs`: 34 of 34 pass in about 1 second (run 2026-11-25) | [quality/README.md](quality/README.md) |
 | Optional | Community files | [open](templates/open/README.md) |
 | Optional | Switches | [setup.json](templates/setup.json) with `tools/apply_setup.mjs` |
 | Optional | Agent files | [agents](templates/agents/README.md) |
