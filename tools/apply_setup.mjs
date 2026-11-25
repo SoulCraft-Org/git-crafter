@@ -11,13 +11,17 @@
 // row reads the org's rulesets, counting one only when it reaches every repo, and
 // a branch row names ~DEFAULT_BRANCH. --user must be gh's own account, or exit 2.
 // A dry run by default: each row prints as same, would change, by hand,
-// optional, org's rules, no value or unreadable, and nothing changes.
+// optional, org's rules, no value or unreadable, and nothing changes. A paid
+// row (rules/compute.md, Money) reads refused when billed per use and is never
+// set; a flat one reads paid until paid_yes names it, then no budget until a
+// budget with a hard stop holds. A row's ui_url, its settings page, joins the note.
 // --apply sets each "would change" row, then reads it back: changed or failed;
 // after the first failure the rest read skipped and are not written.
 // --only names the rows --apply may set; the others read as a dry run does.
 // --check exits 1 when a row that is not optional differs (after --apply, as
-// read back) or cannot be read. --values holds the per-repo values (topics,
-// homepage, description) and optional_on, the optional rows to turn on.
+// read back), cannot be read, or has a yes and no budget. --values holds the
+// per-repo values (topics, homepage, description), optional_on, the optional
+// rows to turn on, and paid_yes, the flat paid rows the owner said yes to.
 // Exit 2: a usage error.
 
 import { spawnSync } from "node:child_process";
@@ -79,13 +83,14 @@ function loadRows(setup) {
   return readdirSync(setup).filter((f) => f.endsWith(".json")).sort().flatMap((f) => loadRows(join(setup, f)));
 }
 
-// The values file as { values, optionalOn }, or { problem }.
+// The values file as { values, optionalOn, paidYes }, or { problem }.
 function loadValues(file, root) {
-  if (!file) return { values: {}, optionalOn: new Set() };
+  if (!file) return { values: {}, optionalOn: new Set(), paidYes: new Set() };
   try {
-    const { comment: _, optional_on: on = [], ...values } = JSON.parse(readFileSync(resolve(root, file), "utf8"));
-    if (!Array.isArray(on)) return { problem: `optional_on in ${file} must be a list of row ids` };
-    return { values, optionalOn: new Set(on) };
+    const { comment: _, optional_on: on = [], paid_yes: yes = [], ...values } = JSON.parse(readFileSync(resolve(root, file), "utf8"));
+    const bad = Object.entries({ optional_on: on, paid_yes: yes }).find(([, ids]) => !Array.isArray(ids));
+    if (bad) return { problem: `${bad[0]} in ${file} must be a list of row ids` };
+    return { values, optionalOn: new Set(on), paidYes: new Set(yes) };
   } catch (err) {
     return { problem: `cannot read ${file}: ${err.message}` };
   }
@@ -105,21 +110,27 @@ function applyRow(row, ctx) {
   return back.status === "same" ? { status: "changed", note: "read back" } : { status: "failed", note: `read back ${back.status}: ${back.note}`, failed: true };
 }
 
-// The context every row reads through: cached GETs, GraphQL over the scope's names, the values, the optional rows turned on and the scope.
-function context(run, { scope, name }, { values, optionalOn }) {
+// The context every row reads through: cached GETs, GraphQL over the scope's names, the values, the optional rows turned on, the paid rows said yes to and the scope.
+function context(run, { scope, name }, { values, optionalOn, paidYes }) {
   const read = reader(run);
   const named = SCOPES[scope].vars(name);
   const graphql = (query) => JSON.parse(run(["api", "graphql", "-f", `query=${query}`, ...Object.entries(named).flatMap(([k, v]) => ["-f", `${k}=${v}`])]));
   const node = SCOPES[scope].node && { node_id: () => read(fill(SCOPES[scope].node, named))?.node_id };
-  return { run, read, graphql, vars: { ...values, ...named, ...node }, optionalOn, scope };
+  return { run, read, graphql, vars: { ...values, ...named, ...node }, optionalOn, paidYes, scope };
 }
 
-// The first usage problem: from the options, the values file, --only or optional_on; null when none.
+// The first usage problem: from the options, the values file, --only, optional_on or paid_yes; null when none.
 function problemOf(loaded, rows, only) {
-  const missing = (ids) => [...(ids ?? [])].filter((id) => !rows.some((r) => r.id === id));
   if (loaded.problem) return loaded.problem;
-  if (missing(only).length) return `--only names no such row: ${missing(only).join(", ")}`;
-  return missing(loaded.optionalOn).length ? `optional_on names no such row: ${missing(loaded.optionalOn).join(", ")}` : null;
+  const row = (id) => rows.find((r) => r.id === id);
+  const yes = [...loaded.paidYes];
+  const found = [
+    ["--only names no such row", [...(only ?? [])].filter((id) => !row(id))],
+    ["optional_on names no such row", [...loaded.optionalOn].filter((id) => !row(id))],
+    ["paid_yes names rows billed per use, which rules/compute.md never allows", yes.filter((id) => row(id)?.paid?.kind === "per_use")],
+    ["paid_yes names no flat paid row", yes.filter((id) => !["flat", "per_use"].includes(row(id)?.paid?.kind))],
+  ].find(([, ids]) => ids.length);
+  return found ? `${found[0]}: ${found[1].join(", ")}` : null;
 }
 
 // The --user problem: none only when gh is logged in as that user (in any case), since PATCH user writes to gh's own account.
