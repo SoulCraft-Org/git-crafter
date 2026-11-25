@@ -114,6 +114,25 @@ function nav(results, total) {
     .join("")}</nav>`;
 }
 
+// The four levels a page can score, in config.mjs's order, by the plan's names.
+export const LEVEL_NAMES = [["user", "User"], ["repo", "Repository"], ["org", "Organization"], ["enterprise", "Enterprise"]];
+
+// The level switcher: all four levels, the page's own marked current. A level
+// whose page is built links to it (links, from build.mjs); one not set up yet
+// is plain text, so the switcher never links to a page that is not there.
+export function levelSwitch(level = "repo", links = {}) {
+  const item = ([id, name]) =>
+    id === level
+      ? `<li><a href="${esc(links[id] ?? "./")}" aria-current="page">${name}</a></li>`
+      : links[id]
+        ? `<li><a href="${esc(links[id])}">${name}</a></li>`
+        : `<li><span>${name}<span class="vh"> (not set up)</span></span></li>`;
+  return `<nav class="levels" aria-label="Levels"><ul>${LEVEL_NAMES.map(item).join("")}</ul></nav>`;
+}
+
+// A page built from sample files, not a live read, says so beside its title.
+export const sampleBadge = (sample) => (sample ? `<p class="sample"><strong>Sample data</strong> <span>These scores come from sample files, not a live read.</span></p>` : "");
+
 // ---- Metric rows --------------------------------------------------------------
 
 // The breakdown under an open row. chart names the drawing (CHARTS in
@@ -368,7 +387,7 @@ export function render({ defs, dropped = [], metrics, reviews = {}, reviewHistor
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <link rel="icon" href="data:,">
-<title>Quality, Speed and Consumption${meta.name ? `: ${esc(meta.name)}` : ""}</title>
+<title>Quality, Speed and Consumption${meta.name ? `: ${esc(meta.name)}` : ""}${meta.sample ? " (sample data)" : ""}</title>
 <script>if (!location.hash || location.hash === "#overview") document.documentElement.classList.add("rise");</script>
 <style>
 ${tightCss(css)}
@@ -379,7 +398,9 @@ ${PAGE_CSS}
 <body${REPO ? ` data-repo="${esc(REPO)}"` : ""}>
 ${SPRITE}
 <header class="top">
+${levelSwitch(meta.level, meta.levels)}
 <h1>Quality, Speed and Consumption</h1>
+${sampleBadge(meta.sample)}
 <p class="meta"><span>commit ${commit}</span><span>built ${esc(meta.builtAt ?? "")}</span></p>
 <ul class="key" aria-label="Status key">${legend}</ul>
 </header>
