@@ -42,6 +42,12 @@ test("table lists each page with its result", () => {
   assert.match(table([{ url: URL_A, read: null, result: "holds" }]), /\| https:\/\/code\.claude\.com\/docs\/en\/claude-projects \| no date \| holds \|  \|/);
 });
 
+test("table keeps a page or model string in its cell: no pipe, no line break, no live @name", () => {
+  const out = table([{ url: URL_A, read: null, result: "changed", changed: "a | b\nc @someone" }]);
+  assert.equal(out.split("\n").length, 3);
+  assert.match(out, /a b c @\u200bsomeone/);
+});
+
 function repo(text) {
   const dir = mkdtempSync(join(tmpdir(), "reread-"));
   writeFileSync(join(dir, "a.md"), text);
