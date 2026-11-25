@@ -17,8 +17,8 @@ flowchart LR
 
 | Decision | Rule | Why |
 |---|---|---|
-| Projects | One per stream of work | A project suits a goal that outlasts one session |
-| Repos | Attach the 1 or 2 repos most tasks touch. Name the rest in [instructions.md](instructions.md) | Each thread starts with the attached repos and their `CLAUDE.md` |
+| Projects | One per stream of work | Suits a goal that outlasts one session |
+| Repos | Attach the 1 or 2 repos most tasks touch. Name the rest in [instructions.md](instructions.md) | Each thread starts with the attached repos' `CLAUDE.md` |
 | Environment | One cloud environment for every project | One place for network access and keys |
 | Setup script | None until a smoke test proves a gap | The image has `uv`, `pip`, `ruff`, `pytest`, `npm`, `pnpm`, `yarn` and `bun` |
 | Keys | Network secrets, never variables | The agent proxy adds a secret outside the VM. Anyone using the environment reads a variable |
@@ -34,8 +34,7 @@ flowchart LR
 | 2 | Paste [instructions.md](instructions.md) into Instructions and fill each `<...>` cell |
 | 3 | Set the shared environment in Project settings, with an empty setup script |
 | 4 | Add each key as a network secret with its host |
-| 5 | Send the setup check below as the first message |
-| 6 | Record each line's answer on the [result card](check-card.md) |
+| 5 | Send the setup check below first, and log it on the [result card](check-card.md) |
 
 ```text
 Setup check only. Start no threads and change nothing.
