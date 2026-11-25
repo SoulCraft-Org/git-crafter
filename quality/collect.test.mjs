@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { FULL_RUN_GUESS, fullRunNeed, prRunRequests, quotaGate, quotaLine, recordLocal, reserveFloor, reserveShort } from './collect-quota.mjs';
-import { collectorFiles, gateFailures, parseArgs, POOL, remoteRepo, repoEnv, runCollectors, slowestLine } from './collect.mjs';
+import { collectorFiles, gateFailures, inScope, parseArgs, POOL, remoteRepo, repoEnv, runCollectors, runRecord, slowestLine } from './collect.mjs';
 import { loadDefs } from './score.mjs';
 
 test('repoEnv: a --local run hands collectors the config repo; a repo the environment names wins (#230)', () => {
@@ -86,8 +86,56 @@ const quota = (core, graphql) => ({ core: { limit: 5000, remaining: core, reset:
 const quotaGh = (resources) => ({ rest: async () => ({ resources }) });
 
 test('parseArgs: --only names one collector and goes with --local', () => {
-  assert.deepEqual(parseArgs(['--local', '--only', 'ci']), { config: null, local: true, out: null, from: null, only: 'ci' });
+  assert.deepEqual(parseArgs(['--local', '--only', 'ci']), { config: null, local: true, sample: false, out: null, from: null, only: 'ci' });
   assert.equal(parseArgs(['--only']), null);
+});
+
+test('parseArgs: --sample goes alone or with --out, never with --local or --from', () => {
+  assert.equal(parseArgs(['--sample']).sample, true);
+  assert.equal(parseArgs(['--sample', '--out', 'run.json']).out, 'run.json');
+  for (const args of [['--sample', '--local'], ['--sample', '--from', 'run.json'], ['--local', '--out', 'run.json']]) assert.equal(parseArgs(args), null, args.join(' '));
+});
+
+test('inScope: a collector with no scope reads a repo; a scope names one level or a list', () => {
+  assert.ok(inScope(undefined, 'repo'));
+  assert.ok(!inScope(undefined, 'org'));
+  assert.ok(inScope('org', 'org'));
+  assert.ok(inScope(['org', 'enterprise'], 'enterprise'));
+  assert.ok(!inScope(['org', 'enterprise'], 'user'));
+});
+
+test('runCollectors: a collector runs only at a level its scope names, and reads level and owner', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'scope-'));
+  try {
+    writeFileSync(join(dir, 'r.mjs'), 'export const collect = () => ({ "r.x": { value: 1 } });');
+    writeFileSync(join(dir, 'o.mjs'), 'export const scope = ["org", "enterprise"];\nexport const collect = ({ level, owner }) => ({ "o.x": { value: 2, source: `${level} ${owner}` } });');
+    const defs = [{ id: 'r.x', file: 'r.json' }, { id: 'o.x', file: 'o.json' }];
+    const repo = await runCollectors({ root: dir, mode: 'ci', dirs: [dir], defs, label: (d, f) => f });
+    assert.deepEqual(repo.ran, ['r']);
+    const org = await runCollectors({ root: dir, mode: 'ci', dirs: [dir], defs, level: 'org', owner: 'acme', label: (d, f) => f });
+    assert.deepEqual(org.ran, ['o']);
+    assert.equal(org.metrics['o.x'].source, 'org acme');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('runCollectors: --sample reads NAME.sample.json in place of collect(), and marks each entry', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sample-'));
+  try {
+    writeFileSync(join(dir, 'a.mjs'), 'export const area = "alpha";\nexport const collect = () => { throw new Error("read live"); };');
+    writeFileSync(join(dir, 'a.sample.json'), JSON.stringify({ 'a.x': { value: 3, source: 'sample' } }));
+    writeFileSync(join(dir, 'b.mjs'), 'export const collect = () => ({ "b.x": { value: 4 } });');
+    const defs = [{ id: 'a.x', file: 'a.json' }, { id: 'b.x', file: 'b.json' }];
+    const run = await runCollectors({ root: dir, mode: 'ci', dirs: [dir], defs, sample: true, label: (d, f) => f });
+    assert.deepEqual(run.ran, ['alpha']);
+    assert.deepEqual(run.metrics['a.x'], { value: 3, source: 'sample', sample: true });
+    assert.match(run.metrics['b.x'].could_not_check, /--sample: no b\.sample\.json beside the collector/);
+    assert.equal(runRecord({ ...run, mode: 'ci', defs, sample: true }).sample, true);
+    assert.equal('sample' in runRecord({ ...run, mode: 'ci', defs }), false);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('fullRunNeed: the last full run\'s own spend, else the stated guess', () => {

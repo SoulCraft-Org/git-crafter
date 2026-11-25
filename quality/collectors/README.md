@@ -12,6 +12,8 @@ flowchart LR
 | Part | Shape |
 | --- | --- |
 | Module | `export const area`; `export async function collect(args)`, args as below |
+| Scope | `export const scope`: the levels it reads, one or a list of `user`, `repo`, `org` and `enterprise`. Unset, it reads a repo. It runs only at the config's `level` |
+| Sample | `<collector>.sample.json` beside it holds what `collect()` returns. `collect.mjs --sample` reads it, makes no API call and marks each entry and the run `sample: true` |
 | Repo values | read only from `params`: owner and repo, paths, URLs, project folders. The template's own `params` are the defaults, for tests and a bare call. A collector never reads the repo's targets folder itself |
 | Returns | `{ [id]: { value, detail?: [{ label, value, unit? }], source, read_at } }`, or `{ [id]: { could_not_check or not_applicable, source } }` |
 | Never | throws for a missing tool, token or file, or scores a miss as 0. It holds no org name, person's name or home path: those go in `params` |
@@ -29,6 +31,7 @@ flowchart LR
 | --- | --- |
 | `root` | the repo measured, absolute. Never Git Crafter's checkout: resolve nothing in the repo from `import.meta.url` |
 | `mode` | `ci` or `local` |
+| `level`, `owner` | the config's `level` and `owner`: the account a user, org or enterprise level measures |
 | `data` | the repo's data folder (config `data`), absolute, for a file a session writes there |
 | `params` | always an object: the union of its targets file's `params`, the template's first, then the repo's override, key by key |
 | `targets` | that file's active entries |

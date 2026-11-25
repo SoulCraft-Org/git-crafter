@@ -11,6 +11,11 @@
 //       RUN, a CI run another job wrote, becomes <data>/latest.json (mode render)
 //   --only NAME   runs one collector (NAME.mjs) alone; a --local run merges
 //       its metrics into <data>/local.json and skips the quota check
+//   --sample   reads each collector's NAME.sample.json beside it instead of
+//       calling collect(): no API call, no quota check, every entry marked
+//       sample. It goes with --out, never with --local or --from
+//
+// A collector runs only at the levels its `scope` names (config level).
 //
 // Each run logs gh api rate_limit before and after (collect-quota.mjs). Under
 // the API reserve, collectors that export githubApi do not run (#679). A full
@@ -103,8 +108,10 @@ export function collectorFiles(dirs) {
 // targets file runs, and its ids reach the page only if a targets file
 // defines them. reserve, the reason the run is under the API reserve
 // (collect-quota.mjs reserveShort), stops each collector that exports
-// githubApi: its metrics are could_not_check with that reason.
-export async function runCollectors({ root, mode, dirs, defs, all = defs, params = {}, data = resolve(root, "quality/data"), pool = POOL, only = null, reserve = null, label = (dir, file) => `${relative(root, dir) || "."}/${file}` }) {
+// githubApi: its metrics are could_not_check with that reason. level and
+// owner come from the config; a collector whose scope leaves out level does
+// not run. sample reads the sample file in place of collect().
+export async function runCollectors({ root, mode, dirs, defs, all = defs, params = {}, data = resolve(root, "quality/data"), pool = POOL, only = null, reserve = null, level = "repo", owner = null, sample = false, label = (dir, file) => `${relative(root, dir) || "."}/${file}` }) {
   const files = collectorFiles(dirs).filter((f) => !only || f.file === `${only}.mjs`);
   if (only && !files.length) throw new Error(`--only ${only}: no collector ${only}.mjs`);
   const seconds = {};
@@ -118,15 +125,17 @@ export async function runCollectors({ root, mode, dirs, defs, all = defs, params
       // The import sits inside the try: a collector whose dependency fails to
       // load must blank only its own metrics, never the page.
       const mod = await import(pathToFileURL(join(dir, file)).href);
-      if (typeof mod.collect !== "function") return null;
+      if (!runsAt(mod, level)) return null;
+      const area = mod.area ?? stem;
+      if (sample) return sampleRun(join(dir, `${stem}.sample.json`), own, source, area);
       if (reserve && mod.githubApi) {
         console.error(`${file}: skipped, ${reserve}`);
         return unread(own, reserve, source);
       }
-      const got = await mod.collect({ root, mode, data: resolve(root, data), params: { ...params[`${stem}.json`] }, targets: own, allParams: structuredClone(params), lib });
+      const got = await mod.collect({ root, mode, level, owner, data: resolve(root, data), params: { ...params[`${stem}.json`] }, targets: own, allParams: structuredClone(params), lib });
       seconds[file] = (Date.now() - started) / 1000;
       console.error(`${file}: ${seconds[file].toFixed(1)} s`);
-      return { metrics: entries(got, source), area: mod.area ?? stem };
+      return { metrics: entries(got, source), area };
     } catch (err) {
       // An error message can carry an absolute path under home (#393).
       const reason = redactText(`collector ${file} failed: ${err.message}`);
@@ -162,6 +171,18 @@ export function slowestLine(seconds, wall, n = 8) {
   return `${wall.toFixed(1)} s in all; slowest ${top.map(([f, s]) => `${f} ${s.toFixed(1)}`).join(", ")}`;
 }
 
+// The levels a collector reads: its `scope`, one level or a list, else repo.
+export const inScope = (scope, level) => [scope ?? "repo"].flat().includes(level);
+const runsAt = (mod, level) => typeof mod.collect === "function" && inScope(mod.scope, level);
+
+// --sample: a collector's sample file, each entry marked sample, in place of
+// a read. With no sample file, each of its metrics could not check.
+function sampleRun(file, own, source, area) {
+  if (!existsSync(file)) return unread(own, `--sample: no ${relative(dirname(file), file)} beside the collector`, source);
+  const got = entries(JSON.parse(readFileSync(file, "utf8")), source);
+  return { metrics: Object.fromEntries(Object.entries(got).map(([id, e]) => [id, { ...e, sample: true }])), area };
+}
+
 // A collector that did not read: each of its own metrics could_not_check `reason`.
 function unread(own, reason, source) {
   return { metrics: Object.fromEntries(own.map((def) => [def.id, { could_not_check: reason, source }])), area: null };
@@ -180,21 +201,24 @@ function entries(got, source) {
 // definition (score.mjs currentMetrics). A collector reads its whole file at
 // once, so it also returns metrics the repo dropped or keeps on a hidden tab;
 // those stay out of every file this writes, latest, local and history alike.
-export function runRecord({ metrics, ran, mode, defs, commit = null, now = new Date() }) {
-  return { generated_at: now.toISOString(), commit, mode, collectors: ran, metrics: currentMetrics(metrics, defs, { stamp: true }) };
+// A sample run says so, for the page's badge.
+export function runRecord({ metrics, ran, mode, defs, commit = null, now = new Date(), sample = false }) {
+  return { generated_at: now.toISOString(), commit, mode, ...(sample && { sample: true }), collectors: ran, metrics: currentMetrics(metrics, defs, { stamp: true }) };
 }
 
-// The CLI flags: --config, --local, --out, --from and --only.
+// The CLI flags: --config, --local, --sample, --out, --from and --only.
 export function parseArgs(args) {
-  const out = { config: null, local: false, out: null, from: null, only: null };
+  const out = { config: null, local: false, sample: false, out: null, from: null, only: null };
   for (let i = 0; i < args.length; i++) {
     const flag = args[i].slice(2);
-    if (args[i] === "--local") out.local = true;
+    if (["--local", "--sample"].includes(args[i])) out[flag] = true;
     else if (["--config", "--out", "--from", "--only"].includes(args[i]) && args[i + 1] && !out[flag]) out[flag] = args[++i];
     else return null;
   }
   // --out and --from are CI runs: neither goes with --local or the other.
-  return [out.local, out.out, out.from].filter(Boolean).length > 1 ? null : out;
+  // A sample never reaches history, and --from runs no collector.
+  const runs = [out.local, out.out, out.from].filter(Boolean).length;
+  return runs > 1 || (out.sample && runs > Number(Boolean(out.out))) ? null : out;
 }
 
 // Exits 2 with the message when `fn` throws: a usage error, not data.
@@ -257,7 +281,7 @@ function outFile(args, config, mode) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (!args) {
-    console.error("usage: node quality/collect.mjs [--config FILE] [--local | --out RUN | --from RUN] [--only NAME]");
+    console.error("usage: node quality/collect.mjs [--config FILE] [--local | [--sample] [--out RUN] | --from RUN] [--only NAME]");
     process.exit(2);
   }
   const mode = args.local ? "local" : "ci";
@@ -271,7 +295,7 @@ async function main() {
   const root = config.root;
   const out = outFile(args, config, mode);
   const gh = ghClient();
-  const { before, local } = await quotaStart(mode, out, args.only, gh);
+  const { before, local } = args.sample ? { before: null, local: null } : await quotaStart(mode, out, args.only, gh);
   const started = Date.now();
   const { metrics, ran, seconds } = await orExit(() => runCollectors({
     root,
@@ -283,6 +307,9 @@ async function main() {
     params: loaded.params,
     data: config.data,
     only: args.only,
+    level: config.level,
+    owner: config.owner,
+    sample: args.sample,
     reserve: reserveShort(before, reserveFloor(loaded.params)),
     label: (dir, file) => (`${dir}/`.startsWith(`${resolve(QUALITY, "collectors")}/`) ? `git-crafter quality/${relative(QUALITY, join(dir, file))}` : `${relative(root, dir)}/${file}`),
   }));
@@ -293,7 +320,7 @@ async function main() {
   console.log(quotaLine(before, after));
 
   const kept = recordLocal(local, { metrics, ran, only: args.only, after });
-  const run = { ...runRecord({ metrics: kept.metrics, ran: kept.ran, mode, defs: loaded.defs, commit: headCommit(root) }), ...kept.extra };
+  const run = { ...runRecord({ metrics: kept.metrics, ran: kept.ran, mode, defs: loaded.defs, commit: headCommit(root), sample: args.sample }), ...kept.extra };
   writeRun(run, out, config, mode);
 
   // Counted over the metrics the page shows: a collector also returns the
