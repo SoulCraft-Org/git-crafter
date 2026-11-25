@@ -46,7 +46,7 @@ Setup check only. Start no threads and change nothing.
 
 ## Smoke test
 
-A setup script runs on every new session, so add one only for a gap a test shows. In one thread, change nothing and report pass or fail.
+Add a setup script only for a test-proven gap: it rebuilds on script or host changes and after about 7 days. Change nothing and report pass or fail.
 
 | Check | How |
 |---|---|
