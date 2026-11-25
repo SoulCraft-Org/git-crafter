@@ -66,6 +66,14 @@ test("a ruleset row: met when an active ruleset holds each rule, else it names w
   assert.equal(state("rules.default_branch", branchSet(held.slice(0, 2), "Organization")).status, "org's rules");
 });
 
+test("a required checks rule: met when each wanted context is required, whatever app or extra checks the live rule names", () => {
+  const [del, nff, pr] = ROW["rules.default_branch"].body.rules;
+  const checks = (list) => branchSet([del, nff, pr, { type: "required_status_checks", parameters: { strict_required_status_checks_policy: false, required_status_checks: list } }]);
+  const live = [{ context: "ci / ci-ok", integration_id: 15368 }, { context: "review" }, { context: "DCO" }];
+  assert.equal(state("rules.default_branch", checks(live)).status, "same");
+  assert.match(state("rules.default_branch", checks(live.slice(0, 1))).note, /holds required_status_checks/);
+});
+
 // An active org `target` ruleset on `refs` (the default branch unless named) of the repos `repos` names, holding `rules`.
 const orgSet = (rules, repos = ["~ALL"], target = "branch", refs = ["~DEFAULT_BRANCH"]) => ({
   "orgs/acme/rulesets?targets=branch,tag,push&per_page=100": [{ id: 9, target, enforcement: "active", source_type: "Organization" }],
@@ -82,7 +90,7 @@ test("under --org a ruleset row reads the org's rulesets, and one counts only wh
   assert.equal(all.status, "same");
   assert.ok(all.gets.every((g) => g.startsWith("orgs/acme/")), "no repo is read");
   const some = scoped(orgSet(held, ["widget"]));
-  assert.deepEqual([some.status, some.note], ["would change", "no active branch ruleset on every repo's ~DEFAULT_BRANCH holds deletion, non_fast_forward, pull_request"]);
+  assert.deepEqual([some.status, some.note], ["would change", "no active branch ruleset on every repo's ~DEFAULT_BRANCH holds deletion, non_fast_forward, pull_request, required_status_checks"]);
   assert.match(scoped({}, "user").note, /reads a repo or an organization, not a user/);
   const literal = scoped(orgSet(held), "org", { ...ROW["rules.default_branch"], check: { ruleset: { ...ROW["rules.default_branch"].check.ruleset, ref: "refs/heads/main" } } });
   assert.deepEqual([literal.status, literal.failed, literal.gets], ["unreadable", true, []], "never read, so --apply never POSTs a duplicate");

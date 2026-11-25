@@ -14,11 +14,13 @@ flowchart LR
 |---|---|
 | 1 | Add `merge_group:` under `on:` in `ci.yml`. Under it `changes` finds no base commit, so every job runs |
 | 2 | Apply the `rules.merge_queue` row with [apply_setup.mjs](../../tools/apply_setup.mjs) |
-| 3 | Merge as before with `gh pr merge`. It stays off `--auto` through `repo.no_auto_merge` |
+| 3 | Add a `merge_group` job that sets the `review` status on `github.sha`. A status sticks to one commit, so the queue's commit lacks the head's `review`. A pull request joins the queue only after its head passed `review` |
+| 4 | Merge as before: `gh pr merge N --squash --auto --match-head-commit <sha>` joins the queue once the head's checks pass |
 
 | Fact | Detail |
 |---|---|
 | CI cost | Each merge adds a CI run, so a quiet repo gains nothing |
+| Required checks | The queue waits for each required check on its merge group commit, and removes the pull request at the status check timeout (GitHub Docs, read 2026-11-25) |
 | Price | Free on public org repos (GitHub Docs, read 2026-11-13) |
 
 ## Attestations
@@ -34,11 +36,3 @@ flowchart LR
 | Who needs it | Only a repo that publishes a built artifact |
 | Git Crafter | It ships none, so it has no such step |
 | Price | Free on public repos (GitHub Docs, read 2026-11-13) |
-
-## Dependabot auto-merge
-
-| Step | Do |
-|---|---|
-| 1 | Skip `repo.no_auto_merge`: leave it out of `--only` |
-| 2 | In the repo's `settings.general_drift` targets, set `expected_from_setup: true` and `expected: {"allow_auto_merge": true}` |
-| 3 | Every other pull request still merges at its head commit |

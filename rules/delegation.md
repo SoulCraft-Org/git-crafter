@@ -25,8 +25,8 @@ that disagrees.
 | IT and settings | GitHub org, repo and App settings and permissions, rulesets and branch protection; any service's settings within the spending rule. Claude analyses, reviews and applies them (the owner, 2026-11-09). |
 | Tracking | Issues and cards: [rules/gates.md](gates.md#tracking). |
 
-Never push to `main`, force-push, hard-reset, take one side of a conflict
-wholesale, or turn on GitHub auto-merge.
+Never push to `main`, force-push, hard-reset, or take one side of a conflict
+wholesale.
 
 ## Pull requests
 

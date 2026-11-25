@@ -45,11 +45,14 @@ test("decide refuses a draft, a closed pull request, a stacked base, a moved hea
   assert.deepEqual(decide(pull(), [{ name: "build", state: "pending" }], opts).on, "checks");
 });
 
-test("a clean pull request gets the verdict, then a squash merge pinned to the head", async () => {
+const STATUS_WRITE = `api repos/${REPO}/statuses/${SHA} -f state=success -f context=review -f description=Review: MERGE`;
+const MERGE_WRITE = `pr merge 7 --repo ${REPO} --squash --auto --match-head-commit ${SHA}`;
+
+test("a clean pull request gets the verdict, the review status, then a squash merge pinned to the head", async () => {
   const r = await merge(ARGV, { pulls: [pull()], runs: [run(5, "ci / ci-ok", "completed", "cancelled"), run(9, "ci / ci-ok", "completed", "success")] });
   assert.equal(r.code, 0);
-  assert.deepEqual(r.writes, [`api repos/${REPO}/issues/7/comments -f body=Review: MERGE at ${SHA}\nFollow-ups: none`, `pr merge 7 --repo ${REPO} --squash --match-head-commit ${SHA}`]);
-  assert.ok(!r.calls.some((c) => /--auto|--admin/.test(c)));
+  assert.deepEqual(r.writes, [`api repos/${REPO}/issues/7/comments -f body=Review: MERGE at ${SHA}\nFollow-ups: none`, STATUS_WRITE, MERGE_WRITE]);
+  assert.ok(!r.calls.some((c) => /--admin/.test(c)));
 });
 
 test("mergeable UNKNOWN is read again until it settles, and gives up after --wait", async () => {
@@ -77,7 +80,7 @@ test("pending checks exit 3 and --check writes nothing", async () => {
 
 test("a verdict already posted is not posted again, and bad arguments exit 2", async () => {
   const r = await merge(ARGV, { pulls: [pull()], comments: [`Review: MERGE at ${SHA}`] });
-  assert.deepEqual(r.writes, [`pr merge 7 --repo ${REPO} --squash --match-head-commit ${SHA}`]);
+  assert.deepEqual(r.writes, [STATUS_WRITE, MERGE_WRITE]);
   for (const bad of [[], ["--repo", REPO, "--pr", "7", "--sha", "abc", "--followups", "none"], [...ARGV, "--auto"], [...ARGV, "--wait", "x"]]) assert.equal((await merge(bad, { pulls: [pull()] })).code, 2);
 });
 

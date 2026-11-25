@@ -50,7 +50,7 @@ flowchart LR
 
 | Not in the list | Call |
 |---|---|
-| Required checks | a `required_status_checks` rule naming CI and DCO in the default branch ruleset |
+| DCO as a required check | add `DCO` beside `ci / ci-ok` and `review` in the `required_status_checks` rule of `rules.default_branch` |
 | Labels | `gh label create <name> --color <hex> --description <text>` per `labels.json` entry |
 | A Release per tag | `gh release create <tag> --verify-tag --generate-notes` |
 
@@ -58,7 +58,7 @@ flowchart LR
 
 | Option (`optional: true`) | For | Row and needs |
 |---|---|---|
-| Merge queue | a busy branch | `rules.merge_queue`. CI runs `on: merge_group` ([how](OPTIONS.md#merge-queue)). `gh pr merge` after checks pass: `repo.no_auto_merge` keeps auto-merge off |
+| Merge queue | a busy branch | `rules.merge_queue`. CI runs `on: merge_group` and reports `review` there ([how](OPTIONS.md#merge-queue)). `gh pr merge --auto` joins the queue once the head's checks pass |
 | Artifact attestations | a repo that publishes an artifact | `manual.artifact_attestations`: [actions/attest](https://github.com/actions/attest), with `id-token: write` and `attestations: write` ([step](OPTIONS.md#attestations)) |
 
 ## Check
