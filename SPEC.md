@@ -39,7 +39,7 @@ Give an AI agent what it needs to run an open-source or open-weight repo with Cl
 
 | Part | Folder |
 |---|---|
-| Quality page, 13 tabs | `quality/`, `config/` |
+| Quality page, one tab per area | `quality/`, `config/` |
 | Process page and maps | `pages/` |
 | CI standard | `templates/ci/`, `actions/` |
 | Rules and guards | `rules/`, `tools/` |
