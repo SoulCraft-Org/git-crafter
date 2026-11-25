@@ -63,7 +63,7 @@ import { adminGh, gated } from "../github/github-core.mjs";
 import { once } from "../github/github-loaders.mjs";
 import { pagesWorkflows, runsOnPush } from "./ci-workflows.mjs";
 import { TARGETS_FILE, RUNS_PER_WORKFLOW, LAST_RUNS, LAST_PRS, QUEUE_SAMPLE, LOG_SAMPLE, LAST, CODE_QUALITY, round1, pct, skip, measured, ms, completed, newest, groupBy, mapLimit } from "./ci-core.mjs";
-import { alwaysRunWhy, describeRun, pushToGreen, cacheVerdict, weightedLightShare, commonStart } from "./ci-describe.mjs";
+import { alwaysRunWhy, describeRun, pushToGreen, weightedLightShare, commonStart } from "./ci-describe.mjs";
 import { skipTriggers, standardCalls } from "./ci-stages.mjs";
 import { pipelineDetail } from "./ci-detail.mjs";
 import { reasonFor, settings } from "./ci-settings.mjs";
