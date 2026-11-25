@@ -1,6 +1,6 @@
 # Contributing
 
-License: [Apache-2.0](LICENSE). Pull requests are welcome; sign off each commit (`git commit -s`) for the [DCO](https://developercertificate.org/) app.
+License: [Apache-2.0](LICENSE). Pull requests are welcome. Sign off each commit (`git commit -s`) for the [DCO](https://developercertificate.org/) app.
 
 ```mermaid
 flowchart LR
@@ -23,7 +23,7 @@ flowchart LR
 | Collector | `quality/collectors/<collector>/`, helpers in `quality/collectors/lib/`, goals in `quality/targets/` | the `*.test.mjs` beside it |
 | Adopter starter | `templates/quality/`, `templates/process/`, `templates/ci/`, `templates/open/`, `templates/projects/` | `tests/pages-build.test.mjs` |
 
-Other repos send changes by PR and keep only [their config and overrides](quality/CONFIG.md).
+Other repos send changes by PR. They keep only [their config and overrides](quality/CONFIG.md).
 
 ## Releases
 
@@ -37,13 +37,14 @@ Dependabot moves an adopter's [SHA pin](templates/ci/README.md) to the newest ta
 | Metric moved to another tab: a repo with its own `tabs` list loses it until it adds the tab | major, `v2.0.0` |
 | Only files the action and `ci-standard.yml` never read: `tools/`, `skills/`, `templates/`, this file | none |
 
-Right after a merge, the orchestrator tags its commit:
+| After a merge | The orchestrator |
+|---|---|
+| Right away | tags its commit, as below |
+| That changes tier 1 | installs the change ([merging skill](skills/merging/SKILL.md)) |
 
 ```bash
 gh api repos/<owner>/git-crafter/git/refs -f ref=refs/tags/v1.3.0 -f sha=<merge sha>
 ```
-
-After a merge that changes tier 1, it installs the change ([merging skill](skills/merging/SKILL.md)).
 
 ## Rules for every PR
 
@@ -54,10 +55,10 @@ After a merge that changes tier 1, it installs the change ([merging skill](skill
 | Visual first, fewest words | [rules/writing-and-gates.md](rules/writing-and-gates.md) |
 | No key value in any file, command or log | [rules/keys.md](rules/keys.md), `secret-scan.yml` |
 | CI runs the checks, defined in one file | [tools/verify.sh](tools/verify.sh) |
-| Outside contributors sign off (`git commit -s`); verified org members skip it | [.github/dco.yml](.github/dco.yml) |
+| Outside contributors sign off (`git commit -s`). Verified org members skip it | [.github/dco.yml](.github/dco.yml) |
 | Squash merge only, after every check passes on the head commit | Repo settings; [rules/delegation.md](rules/delegation.md) |
 | A bug, or a fix one small PR closes within a day, is an issue typed Bug or Task | The org's work-tracking rule |
-| Anything else is a draft card on the org Project; it becomes an issue, with its area label, when its PR opens | [GitHub Docs: draft issues](https://docs.github.com/en/issues/planning-and-tracking-with-projects/managing-items-in-your-project/adding-items-to-your-project) |
+| Anything else is a draft card on the org Project. It becomes an issue, with its area label, when its PR opens | [GitHub Docs: draft issues](https://docs.github.com/en/issues/planning-and-tracking-with-projects/managing-items-in-your-project/adding-items-to-your-project) |
 | A card opens with a picture, drawn by `quality/cards/picture.mjs` and pushed to the `cards` branch | [quality/README.md](quality/README.md); `projects.cards_at_a_glance` |
 | A PR that fixes an issue says `Closes #n` or `Card: PVTI_id` on one line, so GitHub links them | [GitHub Docs: linking a pull request](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue) |
 

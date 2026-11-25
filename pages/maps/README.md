@@ -1,6 +1,11 @@
 # Process maps
 
-The template's process maps, one `<id>.json` each. Every step names a tool, a rule and one metric on the repo's Quality page. Rest of the format: `comment_format` in [maps.json](../../maps.json), checked by [checks.mjs](../checks.mjs).
+| This folder | Detail |
+| --- | --- |
+| Holds | the template's process maps, one `<id>.json` each |
+| Every step names | a tool, a rule and one metric on the repo's Quality page |
+| Rest of the format | `comment_format` in [maps.json](../../maps.json) |
+| Checked by | [checks.mjs](../checks.mjs) |
 
 ```mermaid
 flowchart LR
@@ -33,8 +38,8 @@ flowchart LR
 | a rule of 20 words at most | `MAX_RULE_WORDS`, `checkLibrary` only |
 | `rule_ref` an https link | `checkLibrary` |
 | a step of each kind: quality, speed and consumption | `checkLibrary`; `tests/pages-docs.test.mjs` for a repo's own maps |
-| `at: [col, row]` on every step draws a fork; no two steps share a cell | `checkMaps` |
-| `actor` on every step, one of `ACTORS` in `pages/draw.mjs`, draws a lane per actor, in order of appearance. A fork's pair stacks. Actors on some steps only is an error; a library step needs one | `checkMaps`, `checkLibrary` |
+| `at: [col, row]` on every step draws a fork. No two steps share a cell | `checkMaps` |
+| `actor` on every step, one of `ACTORS` in `pages/draw.mjs`, draws a lane per actor, in order of appearance. A fork's pair stacks. Actors on some steps only is an error. A library step needs one | `checkMaps`, `checkLibrary` |
 | `time_bar`, optional: one metric whose detail rows are step hours, drawn under the trail as one labelled stacked bar. A step it could not read is listed, never a zero | `checkMaps`, `tests/pages-build.test.mjs` |
 | a step's value comes from the repo's own Quality run when the page builds (`withOwnRun`), never an older copy in `data/org.json`: no step to re-run | `tests/pages-build.test.mjs` |
 
@@ -44,8 +49,13 @@ flowchart LR
 | --- | --- |
 | `{ "use": "delivery" }` | the library map as written |
 | `{ "use": "delivery", "steps": { "review": { "rule": "…" } } }` | changes `name`, `why`, `ideal`, `sources`, `critical_path`, `time_bar` (null drops it); a step's `name`, `short`, `actor`, `tools`, `rule`, `rule_ref`, `metric`, `icon`, `gates`, `gates_from`, by step id |
-| `{ "use": "delivery", "steps": { "plan": { "drop": true } } }` | the step is off, and leaves the critical path |
+| `{ "use": "delivery", "steps": { "plan": { "drop": true } } }` | the step is off. It leaves the critical path |
 | a map with its own `id` and `steps` | the repo's own map |
 | an unknown map, step or key | usage error (`pages/library.mjs`) |
 
-A step's metric is an id on the repo's Quality page, read from its own run. A map whose metric sits on a tab the repo drops needs that step dropped too. Git Crafter's `maps.json` is an instance.
+| A step's metric | Then |
+| --- | --- |
+| An id on the repo's Quality page | read from its own run |
+| On a tab the repo drops | drop that step too |
+
+Git Crafter's `maps.json` is an instance.
