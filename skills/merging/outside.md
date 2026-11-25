@@ -39,7 +39,7 @@ flowchart TD
 | Every changed path is AI-mergeable | `python3 -I tools/merge_policy.py --pr N --sha <head>` exits 0 and prints `checked head <sha>` |
 | The verdict comment names that SHA | `Review: MERGE at <sha>` ([Who merges](SKILL.md#who-merges)) |
 
-Then merge with `gh pr merge N --squash --match-head-commit <sha>`, typing the SHA the checker printed.
+Then merge with `gh pr merge N --squash --match-head-commit <sha>`, typing the SHA the checker printed. Where GraphQL is blocked (a cloud session), `gh api -X PUT repos/{owner}/{repo}/pulls/N/merge -f sha=<sha> -f merge_method=squash` does the same: GitHub refuses it when the head has moved.
 
 ## Rebuild with credit
 
