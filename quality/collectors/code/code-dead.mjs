@@ -5,7 +5,7 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSy
 import { tmpdir } from "node:os";
 import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { firstLine, measured, readJson, top, unknownAll, walkAll } from "./code-util.mjs";
+import { firstLine, inArea, measured, readJson, top, unknownAll, walkAll } from "./code-util.mjs";
 import { COVERAGE_PACKAGE } from "./code-test.mjs";
 
 // ---- Quality: dead code ----
@@ -106,7 +106,7 @@ export async function deadCode(root, run, areas) {
 // Unused files and exports count inside the areas only, like every other
 // metric on this tab. Unused dependencies count in every package.json.
 export function summarizeKnip(report, source, areas) {
-  const inAreas = (file) => areas.some((a) => file.startsWith(a + "/"));
+  const inAreas = (file) => areas.some((a) => inArea(file, a));
   const issues = report.issues ?? [];
   const files = issues.flatMap((i) => (i.files ?? []).map((f) => f.name ?? i.file)).filter(inAreas);
   const exports = issues
