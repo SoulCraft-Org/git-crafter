@@ -3,10 +3,13 @@
 // `node --test quality/render/page.test.mjs`; quality/selftest.mjs runs it too.
 
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, it } from "node:test";
 
-import { CSS_STRING_OR_COMMENT, idealBlock, tightCss, tightJs } from "./page.mjs";
+import { levelLinks } from "../build.mjs";
+import { CSS_STRING_OR_COMMENT, idealBlock, levelSwitch, render, sampleBadge, tightCss, tightJs } from "./page.mjs";
 
 const read = (rel) => readFileSync(new URL(rel, import.meta.url), "utf8");
 const STRING = /"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'/g;
@@ -118,5 +121,60 @@ describe("page nav styles", () => {
     const css = noComments(read("./page.css"));
     assert.doesNotMatch(css, /(^|[}\s,])nav[\s{.:[,]/m, "no rule styles the bare nav element");
     assert.match(css, /\.tabnav \{/);
+  });
+});
+
+describe("level switcher", () => {
+  it("names all four levels in order and marks the page's own level current, once", () => {
+    const html = levelSwitch("org", { repo: "../", org: "./" });
+    assert.deepEqual([...html.matchAll(/<li>(?:<a[^>]*>|<span>)(\w+)/g)].map((m) => m[1]), ["User", "Repository", "Organization", "Enterprise"]);
+    assert.equal(html.match(/aria-current/g)?.length, 1);
+    assert.ok(html.includes('<a href="./" aria-current="page">Organization</a>'));
+    assert.ok(html.includes('<a href="../">Repository</a>'));
+  });
+
+  it("links no level whose page is not built, and says so to a screen reader", () => {
+    const html = levelSwitch("repo", { repo: "./" });
+    assert.equal(html.match(/<a /g)?.length, 1, "only the current level links");
+    assert.ok(html.includes('<li><span>User<span class="vh"> (not set up)</span></span></li>'));
+  });
+
+  it("is a nav named apart from the views nav, so each landmark is unique (axe landmark-unique)", () => {
+    const html = render({ defs: [], metrics: {}, tabs: [], meta: { level: "user", levels: { user: "./", repo: "../" } } });
+    const navs = [...html.matchAll(/<nav class="[^"]+" aria-label="([^"]+)"/g)].map((m) => m[1]);
+    assert.deepEqual(navs, ["Levels", "Views"]);
+    assert.ok(html.indexOf('class="levels"') < html.indexOf("</header>"), "the switcher sits in the header");
+  });
+
+  it("gives every entry a target at least 24 px tall at any width (WCAG 2.5.8)", () => {
+    const css = noComments(read("./page.css"));
+    assert.match(css, /\.levels a, \.levels li > span \{[^}]*min-height: var\(--size-tap\)/);
+    assert.ok(Number(read("./tokens.css").match(/--size-tap: (\d+)px/)[1]) >= 24);
+  });
+});
+
+describe("levelLinks", () => {
+  it("links the repo page always and a level once its config sits in levels/ beside the repo config", () => {
+    const dir = mkdtempSync(join(tmpdir(), "levels-"));
+    try {
+      mkdirSync(join(dir, "levels"));
+      writeFileSync(join(dir, "levels", "org.json"), "{}");
+      assert.deepEqual(levelLinks({ level: "repo", file: join(dir, "quality.json") }), { repo: "./", org: "org/" });
+      assert.deepEqual(levelLinks({ level: "org", file: join(dir, "levels", "org.json") }), { repo: "../", org: "./" });
+      assert.deepEqual(levelLinks({ level: "repo", file: null }), { repo: "./" });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("sample badge", () => {
+  it("shows only on a page built from sample data, in the header and the title", () => {
+    assert.equal(sampleBadge(false), "");
+    assert.ok(sampleBadge(true).startsWith('<p class="sample"><strong>Sample data</strong>'));
+    const html = render({ defs: [], metrics: {}, tabs: [], meta: { name: "acme", sample: true } });
+    assert.ok(html.includes("<title>Quality, Speed and Consumption: acme (sample data)</title>"));
+    assert.ok(html.indexOf('class="sample"') < html.indexOf("</header>"));
+    assert.ok(!render({ defs: [], metrics: {}, tabs: [], meta: {} }).includes('class="sample"'));
   });
 });

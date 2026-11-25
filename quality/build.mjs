@@ -12,13 +12,13 @@
 // yet.
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { dirname, join, relative, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { parseArgs } from "./collect.mjs";
 import { CONFIG_DEFAULTS, loadConfig, QUALITY } from "./config.mjs";
 import { configDefs, configIdeals } from "./packs.mjs";
-import { render } from "./render/page.mjs";
+import { LEVEL_NAMES, render } from "./render/page.mjs";
 import { currentMetrics, loadAllReviews, loadData, mergeMetrics, newestReviews, TABS, tabGaps } from "./score.mjs";
 
 // The drawing lives in quality/render/ (charts, layout, styles, client
@@ -60,6 +60,18 @@ export function readInputs(config, { template = QUALITY } = {}) {
   return { code: 0, defs, dropped, ideals, reviewHistory, latest, local, history };
 }
 
+// The level pages the switcher links to, by level, relative to this page.
+// The repo page is always there. Another level is set up once its config is
+// levels/<level>.json beside the repo page's config (config/quality.json and
+// config/levels/org.json), and it builds into <out>/<level>/ under the repo page.
+export function levelLinks(config) {
+  const here = config.level ?? "repo";
+  const dir = config.file && (here === "repo" ? join(dirname(config.file), "levels") : dirname(config.file));
+  const up = here === "repo" ? "" : "../";
+  const built = (id) => id === here || id === "repo" || Boolean(dir && existsSync(join(dir, `${id}.json`)));
+  return Object.fromEntries(LEVEL_NAMES.map(([id]) => id).filter(built).map((id) => [id, id === here ? "./" : id === "repo" ? up : `${up}${id}/`]));
+}
+
 // Reads the targets, data and reviews in config and renders the page; a
 // nonzero code means an input failed and nothing was rendered.
 export function buildPage(config, { now = new Date(), template } = {}) {
@@ -80,7 +92,17 @@ export function buildPage(config, { now = new Date(), template } = {}) {
     history,
     tabs: config.tabs,
     ideals,
-    meta: { commit: (latest ?? local).commit, builtAt: `${now.toISOString().slice(0, 16).replace("T", " ")} UTC`, name: config.name, repoUrl: config.repoUrl, reviews: relative(config.root, config.reviews).split(sep).join("/") },
+    meta: {
+      commit: (latest ?? local).commit,
+      builtAt: `${now.toISOString().slice(0, 16).replace("T", " ")} UTC`,
+      name: config.name,
+      repoUrl: config.repoUrl,
+      reviews: relative(config.root, config.reviews).split(sep).join("/"),
+      level: config.level ?? "repo",
+      levels: levelLinks(config),
+      // A run collect.mjs --sample wrote carries sample: true, and the page wears the badge.
+      sample: Boolean(latest?.sample || local?.sample),
+    },
     css,
   });
   return { code: 0, html, defs, reviewed: Object.keys(reviewHistory).length };

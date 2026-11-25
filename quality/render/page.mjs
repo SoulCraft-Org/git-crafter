@@ -10,27 +10,7 @@
 import { existsSync, readFileSync } from "node:fs";
 
 import { DEFAULT_TABS, isMeasured, KIND_LIST, mergeMetrics, newestReviews, scoreTab } from "../score.mjs";
-import {
-  bars,
-  bullet,
-  esc,
-  finite,
-  fmt,
-  fmtCompact,
-  funnel,
-  glyph,
-  labelFirst,
-  meter,
-  miniMassif,
-  range,
-  scoreStatus,
-  scrollBox,
-  spark,
-  stack,
-  STATUS_WORD,
-  statusCounts,
-  statusStack,
-} from "./charts.mjs";
+import { bars, bullet, esc, finite, fmt, fmtCompact, funnel, glyph, labelFirst, meter, miniMassif, range, scoreStatus, scrollBox, spark, stack, STATUS_WORD, statusCounts, statusStack } from "./charts.mjs";
 import { icon, iconId, shortName, SPRITE } from "./icons.mjs";
 import { ledger } from "./ledger.mjs";
 import { reviewBlock } from "./review.mjs";
@@ -112,6 +92,38 @@ function nav(results, total) {
   return `<nav class="tabnav" aria-label="Views">${link("overview", "Overview", "Overview", total.quality, total.speed)}${results
     .map((r) => link(r.tab, tabName(r.tab), shortName(r.tab, tabName(r.tab)), r.quality, r.speed))
     .join("")}</nav>`;
+}
+
+// The four levels a page can score, in config.mjs's order, by the plan's names.
+export const LEVEL_NAMES = [["user", "User"], ["repo", "Repository"], ["org", "Organization"], ["enterprise", "Enterprise"]];
+
+// The level switcher: all four levels, the page's own marked current. A level
+// whose page is built links to it (links, from build.mjs); one not set up yet
+// is plain text, so the switcher never links to a page that is not there.
+export function levelSwitch(level = "repo", links = {}) {
+  const item = ([id, name]) =>
+    id === level
+      ? `<li><a href="${esc(links[id] ?? "./")}" aria-current="page">${name}</a></li>`
+      : links[id]
+        ? `<li><a href="${esc(links[id])}">${name}</a></li>`
+        : `<li><span>${name}<span class="vh"> (not set up)</span></span></li>`;
+  return `<nav class="levels" aria-label="Levels"><ul>${LEVEL_NAMES.map(item).join("")}</ul></nav>`;
+}
+
+// A page built from sample files, not a live read, says so beside its title.
+export const sampleBadge = (sample) => (sample ? `<p class="sample"><strong>Sample data</strong> <span>These scores come from sample files, not a live read.</span></p>` : "");
+
+// The page header: the level switcher, the title, the sample badge, the commit and build time, and the status key.
+function pageHeader(meta, total) {
+  const commit = !meta.commit ? "unknown" : REPO ? `<a href="${esc(REPO)}/commit/${esc(meta.commit)}">${esc(meta.commit.slice(0, 7))}</a>` : esc(meta.commit.slice(0, 7));
+  const legend = ["meets", "near", "misses", "not-measured", ...(total.master.metricsNotApplicable ? ["not-applicable"] : [])].map((s) => `<li>${glyph(s, "")}${STATUS_WORD[s]}</li>`).join("");
+  return `<header class="top">
+${levelSwitch(meta.level, meta.levels)}
+<h1>Quality, Speed and Consumption</h1>
+${sampleBadge(meta.sample)}
+<p class="meta"><span>commit ${commit}</span><span>built ${esc(meta.builtAt ?? "")}</span></p>
+<ul class="key" aria-label="Status key">${legend}</ul>
+</header>`;
 }
 
 // ---- Metric rows --------------------------------------------------------------
@@ -359,8 +371,6 @@ export function render({ defs, dropped = [], metrics, reviews = {}, reviewHistor
     return { date, scores: Object.fromEntries(tabs.map(([tab]) => [tab, scoreTab(tab, defs, mergeMetrics(h), then)])) };
   });
   const total = overall(results);
-  const commit = !meta.commit ? "unknown" : REPO ? `<a href="${esc(REPO)}/commit/${esc(meta.commit)}">${esc(meta.commit.slice(0, 7))}</a>` : esc(meta.commit.slice(0, 7));
-  const legend = ["meets", "near", "misses", "not-measured", ...(total.master.metricsNotApplicable ? ["not-applicable"] : [])].map((s) => `<li>${glyph(s, "")}${STATUS_WORD[s]}</li>`).join("");
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -368,7 +378,7 @@ export function render({ defs, dropped = [], metrics, reviews = {}, reviewHistor
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <link rel="icon" href="data:,">
-<title>Quality, Speed and Consumption${meta.name ? `: ${esc(meta.name)}` : ""}</title>
+<title>Quality, Speed and Consumption${meta.name ? `: ${esc(meta.name)}` : ""}${meta.sample ? " (sample data)" : ""}</title>
 <script>if (!location.hash || location.hash === "#overview") document.documentElement.classList.add("rise");</script>
 <style>
 ${tightCss(css)}
@@ -378,11 +388,7 @@ ${PAGE_CSS}
 </head>
 <body${REPO ? ` data-repo="${esc(REPO)}"` : ""}>
 ${SPRITE}
-<header class="top">
-<h1>Quality, Speed and Consumption</h1>
-<p class="meta"><span>commit ${commit}</span><span>built ${esc(meta.builtAt ?? "")}</span></p>
-<ul class="key" aria-label="Status key">${legend}</ul>
-</header>
+${pageHeader(meta, total)}
 ${nav(results, total)}
 <main>
 ${overview(results, total, dropped)}

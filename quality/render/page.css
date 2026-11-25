@@ -41,6 +41,15 @@ p { margin: 0; }
 .meta { display: flex; flex-wrap: wrap; gap: 0.125rem var(--s-4); font-size: 0.8125rem; color: var(--c-text-dim); }
 .key { display: flex; flex-wrap: wrap; gap: var(--s-1) 0.875rem; margin: 0 0 0 auto; padding: 0; list-style: none; font-size: 0.8125rem; color: var(--c-text-dim); }
 .key li { display: inline-flex; align-items: center; gap: 0.3125rem; }
+/* The level switcher, its own row above the title. Each entry is --size-tap
+   (44 px) tall, past WCAG 2.5.8's 24 px target minimum, and the row wraps on a phone. */
+.levels { flex: 0 0 100%; }
+.levels ul { display: flex; flex-wrap: wrap; gap: var(--s-1); margin: 0; padding: 0; list-style: none; }
+.levels a, .levels li > span { display: inline-flex; align-items: center; min-height: var(--size-tap); padding: 0 var(--s-3); border: var(--line-hair) solid var(--c-rule); border-radius: var(--r-chisel); font-size: 0.875rem; color: var(--c-text); text-decoration: none; }
+.levels a:hover { background: var(--c-surface); }
+.levels a[aria-current] { background: var(--c-night); border-color: var(--c-night); color: var(--c-on-night); font-weight: 650; }
+.levels li > span { color: var(--c-text-dim); border-style: dashed; }
+.sample { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0.125rem var(--s-2); padding: var(--s-1) var(--s-3); border: var(--line-hair) solid var(--c-brass); border-radius: var(--r-chisel); background: var(--c-copper-wash); font-size: 0.8125rem; }
 
 .tabnav { position: sticky; top: 0; z-index: 5; display: flex; gap: 0.125rem; padding: 0 var(--gut); background: var(--c-ground); border-bottom: var(--line-hair) solid var(--c-rule); overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: thin; }
 .tabnav a { flex: none; scroll-snap-align: start; display: flex; flex-direction: column; gap: 0.0625rem; min-height: var(--size-tap); padding: var(--s-2) 0.625rem 0.3125rem; color: var(--c-text); text-decoration: none; white-space: nowrap; border-bottom: var(--line-bold) solid transparent; }
