@@ -11,7 +11,7 @@ Canonical: Git Crafter `rules/comfy.md`, the Comfy half of
 The account's facts are `compute.comfy` and `machine.admin` in
 `~/.claude/code-os/account.json`.
 
-Climb one tier only when the one below cannot do the job; say why first.
+Climb one tier only when the one below cannot do the job. Say why first.
 
 | Tier | Where | Before running |
 |---|---|---|
@@ -31,9 +31,18 @@ Climb one tier only when the one below cannot do the job; say why first.
 | Gate | Covers |
 |---|---|
 | `permissions.ask` in `~/.claude/settings.json` | `partner_generate` and the MCP's publish and send tools |
-| [`tools/comfy_guard.py`](../tools/comfy_guard.py), a PreToolUse hook once `settings.json` wires it | the four run tools: denies unless `usage-guard check comfy-cloud` answers go (exit 1). It asks the owner in Claude Code's own prompt before any `confirm`, a batch item's `confirm`, or a `submit_batch` with a `partner_generate` item. In bypassPermissions or dontAsk mode a confirm denies instead. It runs only `~/.local/bin/usage-guard` in the account's home, never one on PATH. It fails closed (a missing, hung or crashed guard denies), since this is a money stop. Its `"onFailure": "block"` entry in the hook settings blocks the call if the hook itself fails |
+| [`tools/comfy_guard.py`](../tools/comfy_guard.py), a PreToolUse hook once `settings.json` wires it | the four run tools, as the next table says |
 | `compute.comfy.guard`, run by hand | the stop where the hook is not wired. Go is exit 1 only: 0 is paused, 2 unknown, so never chain it with `&&` |
 | The deny list's `local-compute` rule (`tools/claude_deny.json`) | `comfy launch` and an explicit `--where local`. A `comfy run` with no `--where` passes, so pass `--where cloud`; a case it misses still applies |
 | No gate | tier 4; the ask in chat is its stop. `comfy build push`, `build release create`, `deploy up`, `start`, `scale` and `run` all spend |
+
+| `tools/comfy_guard.py` | Rule |
+|---|---|
+| Any run tool | It denies unless `usage-guard check comfy-cloud` answers go (exit 1) |
+| Any `confirm`, a batch item's `confirm`, or a `submit_batch` with a `partner_generate` item | It asks the owner first, in Claude Code's own prompt |
+| bypassPermissions or dontAsk mode | A confirm denies instead |
+| Which guard | Only `~/.local/bin/usage-guard` in the account's home, never one on PATH |
+| A missing, hung or crashed guard | It denies: the hook fails closed, since this is a money stop |
+| The hook itself fails | Its `"onFailure": "block"` entry in the hook settings blocks the call |
 
 Checked against `tools/comfy_guard.py` at 3210091, 2026-11-23.
