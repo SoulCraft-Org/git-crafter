@@ -136,15 +136,20 @@ function readRaw(path, named) {
   return raw;
 }
 
+// Throws on a bad level, or an owner that is malformed or wrong for the level.
+function checkLevel(c) {
+  if (!LEVELS.includes(c.level)) throw new Error(`level must be one of ${LEVELS.join(", ")}, not ${JSON.stringify(c.level)}`);
+  if (c.owner !== null && !(typeof c.owner === "string" && OWNER_RE.test(c.owner))) throw new Error(`owner must be a login or enterprise slug, not ${JSON.stringify(c.owner)}`);
+  if (c.level === "repo" && c.owner !== null) throw new Error('owner is for a level page; a repo page names its repo with "repo"');
+  if (c.level === "enterprise" && c.owner === null) throw new Error("level enterprise needs owner, the enterprise's slug");
+}
+
 // Throws on an unknown key or a bad repo, level, owner or budget.
 function checkRaw(raw, c) {
   const unknown = Object.keys(raw).filter((k) => k !== "comment" && !(k in CONFIG_DEFAULTS));
   if (unknown.length) throw new Error(`unknown config key${unknown.length > 1 ? "s" : ""} ${unknown.join(", ")}; known: ${Object.keys(CONFIG_DEFAULTS).join(", ")}`);
   if (c.repo !== null && !REPO_RE.test(c.repo)) throw new Error(`repo must be "owner/name", not "${c.repo}"`);
-  if (!LEVELS.includes(c.level)) throw new Error(`level must be one of ${LEVELS.join(", ")}, not ${JSON.stringify(c.level)}`);
-  if (c.owner !== null && !(typeof c.owner === "string" && OWNER_RE.test(c.owner))) throw new Error(`owner must be a login or enterprise slug, not ${JSON.stringify(c.owner)}`);
-  if (c.level === "repo" && c.owner !== null) throw new Error('owner is for a level page; a repo page names its repo with "repo"');
-  if (c.level === "enterprise" && c.owner === null) throw new Error("level enterprise needs owner, the enterprise's slug");
+  checkLevel(c);
   if (!Number.isInteger(c.budget) || c.budget <= 0) throw new Error("budget must be a whole number of bytes");
   if (!isIds(c.drop_needs)) throw new Error('drop_needs must be a list of `needs` values, such as ["local-files"]');
   if (c.issue_sync !== null && !isSync(c.issue_sync)) throw new Error('issue_sync must be null or { "label": "area", "labels": { "tab": "area" }, "project": 3, "quick": ["metric.id"], "waiting": ["metric.id"] }');
@@ -175,6 +180,11 @@ function readConfig(path, named) {
 // The level's built-in pack, then the config's packs (packs.mjs).
 const packsFor = (c, { root, env, ci }) => [...levelPacks(c.level, env), ...resolvePacks(c.packs, { root: resolve(root), env, ci })];
 
+// The account a level page measures: the config's, else at level org the repo's owner.
+const ownerOf = (c, repo) => c.owner ?? (c.level === "org" && repo ? repo.split("/")[0] : null);
+// The page title's name: the config's, else a level page's owner, else the repo's or the folder's name.
+const nameOf = (c, { owner, repo, root }) => c.name ?? (c.level !== "repo" && owner ? owner : repo ? repo.split("/")[1] : basename(resolve(root)));
+
 // The config's packs alone, for the checkout that runs before they are
 // there. Tabs are not checked: a pack's tab ids are known only once it is
 // checked out, and loadConfig checks them then.
@@ -191,7 +201,7 @@ export function loadConfig({ root = process.cwd(), file = null, env = process.en
   const c = readConfig(path, Boolean(file));
   const repo = c.repo ?? (REPO_RE.test(env.GITHUB_REPOSITORY ?? "") ? env.GITHUB_REPOSITORY : null);
   const named = Boolean(file) || existsSync(path);
-  const owner = c.owner ?? (c.level === "org" && repo ? repo.split("/")[0] : null);
+  const owner = ownerOf(c, repo);
   const packs = packsFor(c, { root, env, ci });
   const unread = packs.filter((p) => !existsSync(p.dir)).map((p) => p.spec);
   const settings = {
@@ -200,7 +210,7 @@ export function loadConfig({ root = process.cwd(), file = null, env = process.en
     file: named ? path : null,
     repo,
     owner,
-    name: c.name ?? (c.level !== "repo" && owner ? owner : repo ? repo.split("/")[1] : basename(resolve(root))),
+    name: nameOf(c, { owner, repo, root }),
     repoUrl: repoUrl(repo, env),
     packs,
     tabs: resolveTabs(c, packs.flatMap((p) => p.tabs), unread),
