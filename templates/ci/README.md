@@ -55,21 +55,11 @@ GitHub's runner pricing (read 2026-11-03): $0.002 a minute on 1 core, $0.006 on 
 | `permissions` | top-level `read` or `none`. No `write-all` |
 | `concurrency` | a group that cancels superseded runs, never a deploy |
 | `timeout` | every job has `timeout-minutes` |
-| `runner` | `ubuntu-slim` or a standard hosted label. Else an exception with a reason in `<repo>/.github/ci-standard.json`, five jobs at most |
+| `runner` | `ubuntu-slim` or a standard hosted label. Else an exception with a reason in `<repo>/.github/ci-standard.json`, five jobs at most ([pool](POOL.md)) |
 | `pinned` | every remote `uses:`, local actions' steps included, at a full SHA or locked in `.github/workflows/actions.lock` |
 | `cache` | `npm ci` or `pip install` with a setup cache |
 | `no-share` | no per-repo minute guard |
 | `blacksmith` | Blacksmith labels only via the chooser. No sticky disk or layer cache |
-
-## Free pool input
-
-| Fact | Detail |
-| --- | --- |
-| Input | `pool: <label>` on the `ci-standard.yml` call. One self-hosted runner label from a pool the org runs for nothing. Empty: GitHub's pool, as above |
-| Effect | `short` and `standard` both run on that label, ahead of the overflow switch |
-| Rule | A caller that sets it fails the `runner` rule until `.github/ci-standard.json` holds an exception for its job (`ci.yml/ci`) with a reason. A pool is a written choice, never a default |
-| Why | An org whose included minutes run out stops at its budget of $0 (the owner, 2026-11-25), the hard stop. It can then run CI on runners it already holds, with no spend |
-| Not covered | The pool's own health. A job that finds no runner waits, so the caller keeps its own fallback plan |
 
 ## Overflow switch
 
