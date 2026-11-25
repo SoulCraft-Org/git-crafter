@@ -3,7 +3,7 @@
 
 import { execFileSync } from "node:child_process";
 
-import { DAY, ORG } from "./org_base.mjs";
+import { ORG } from "./org_base.mjs";
 import { isServerError, runMany } from "./org_many.mjs";
 import { WORKERS_APP } from "./org_signals.mjs";
 
@@ -107,25 +107,30 @@ export function fetchOpen(gh, repo, wait = (ms) => Atomics.wait(new Int32Array(n
 }
 
 // The runs list answers at most 1,000 runs per filtered query, and one repo
-// can start more than that in a day, so a range over the cap is halved until
-// each slice fits. Slices overlap by their inclusive ends; ids dedupe them.
+// can start more than that in a day, so a range over the cap is cut into
+// slices until each fits. Slices overlap by their inclusive ends; ids dedupe them.
 export function fetchRuns(gh, repo, since, now) {
   const jq = "{t: .total_count, r: [.workflow_runs[] | {id, name, path, event, status, conclusion, head_sha, created_at, run_started_at, updated_at}]}";
   const iso = (ms) => new Date(ms).toISOString().replace(/\.\d{3}Z$/, "Z");
   const url = ([from, to], page) => `repos/${ORG}/${repo}/actions/runs?per_page=100&page=${page}&created=${iso(from)}..${iso(to)}`;
-  // GitHub lists at most 1,000 runs for one query, so a range over that is halved, down to 10 minutes, where
-  // its first 1,000 are kept. Each round reads the first page of every open range side by side; the ranges
-  // that fit then read their other pages side by side, in one batch at the end.
+  // The whole range is read first: a quiet repo then costs one read, not one a week (#381). A range over
+  // 1,000 runs is cut by its total into slices of equal time, about 800 runs each and at least a minute long,
+  // down to 10 minutes, where its first 1,000 are kept. Each round reads the first page of every open range
+  // side by side; the ranges that fit then read their other pages side by side, in one batch at the end.
+  const slices = ([from, to], t) => {
+    const k = Math.min(Math.ceil(t / 800), Math.floor((to - from) / 60_000));
+    const edge = (i) => (i === 0 ? from : i === k ? to : Math.floor((from + ((to - from) * i) / k) / 1000) * 1000);
+    return Array.from({ length: k }, (_, i) => [edge(i), edge(i + 1)]);
+  };
   const out = new Map();
   const rest = [];
-  let open = [];
-  for (let start = since; start < now; start += 7 * DAY) open.push([start, Math.min(start + 7 * DAY, now)]);
+  let open = [[since, now]];
   while (open.length) {
     const firsts = gh.restMany(open.map((range) => url(range, 1)), jq);
     const split = [];
     open.forEach((range, i) => {
-      const [{ t, r }, [from, to], mid] = [firsts[i], range, Math.floor((range[0] + range[1]) / 2000) * 1000];
-      if (t > 1000 && to - from > 10 * 60_000) return split.push([from, mid], [mid, to]);
+      const [{ t, r }, [from, to]] = [firsts[i], range];
+      if (t > 1000 && to - from > 10 * 60_000) return split.push(...slices(range, t));
       for (const run of r) out.set(run.id, run);
       if (r.length) for (let page = 2; page <= Math.min(10, Math.ceil(t / 100)); page += 1) rest.push(url(range, page));
     });
