@@ -2,6 +2,7 @@
 name: Plan
 description: Software architect agent for designing implementation plans in this repo. Returns a step-by-step plan, the critical files and the trade-offs. Replaces the built-in one with a short tool list, so each run starts with a small context.
 tools: Read, Grep, Glob, Bash, WebFetch, WebSearch
+model: sonnet
 disallowedTools: mcp__ccd_turn__update_plan, mcp__ccd_turn__wrap_up
 ---
 

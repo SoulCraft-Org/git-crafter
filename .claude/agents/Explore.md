@@ -2,6 +2,7 @@
 name: Explore
 description: Read-only search agent for broad fan-out searches in this repo, when answering means sweeping many files or naming conventions and only the conclusion matters. Replaces the built-in one with a short tool list, so each run starts with a small context. Say how thorough to be.
 tools: Read, Grep, Glob, Bash, WebFetch, WebSearch
+model: haiku
 disallowedTools: mcp__ccd_turn__update_plan, mcp__ccd_turn__wrap_up
 ---
 
