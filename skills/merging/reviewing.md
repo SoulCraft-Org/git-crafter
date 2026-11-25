@@ -16,6 +16,7 @@ never reads the diffs itself.
 | Review | Rule |
 |---|---|
 | Brief | Names the pull request and its 40-hex head SHA, and says: "You are a subagent: never call update_plan or wrap_up. Read with `gh pr diff N` and `gh pr checks N`; never check out a branch, run tests or builds, or merge, approve or comment." |
+| Dates | The brief adds: "Cloud workers date in UTC, so a date one day ahead of the Mac's is not a finding" (#487). |
 | Reply | The brief asks for at most 120 words: `MERGE <sha>` or `BLOCK <sha>`, then each fix as location, problem, replacement. |
 | Verdict | The orchestrator, not the reviewer, posts the `Review: MERGE at <sha>` line ([Who merges](SKILL.md#who-merges)). |
 | Passes | A reviewer works in two passes, mechanical then judgment. Two real problems beat ten vague ones. |

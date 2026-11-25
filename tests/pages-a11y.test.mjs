@@ -63,3 +63,10 @@ test("a tab's ideal heads at h2 under the page's h1; a map's or outcome's stays 
   assert.match(ideal("tab-build", doc, "Maps", 2), /<h2 id="tab-build-ideal">Ideal state<\/h2>/);
   assert.match(ideal("map-m", doc, "Map"), /<h3 id="map-m-ideal">Ideal state<\/h3>/);
 });
+
+test("a step key with Alt, Ctrl, Cmd or Shift is left to the browser, so Alt+Arrow still goes back and forward (#484)", () => {
+  const js = readFileSync(new URL("../pages/client.js", import.meta.url), "utf8");
+  const handler = /const onStepKey = \(e, ctx\) => \{([\s\S]*?)\n  \};/.exec(js)?.[1] ?? "";
+  assert.ok(handler, "onStepKey is found");
+  for (const key of ["altKey", "ctrlKey", "metaKey", "shiftKey"]) assert.match(handler.split("preventDefault")[0], new RegExp(`e\\.${key}`), `${key} stops the handler before preventDefault`);
+});

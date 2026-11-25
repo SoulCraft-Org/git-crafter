@@ -126,6 +126,8 @@ it("gh-replay immutable names the reads that cannot change: a commit, annotation
   for (const route of ["pulls", "actions/runs/5", "actions/runs", "commits/main", "community/profile"]) assert.ok(!immutable(api(route), '{"sha":"a","status":"completed"}', now), route);
   assert.ok(!immutable([...api(JOBS), "--jq", ".jobs"], jobs(done(40)), now) && !immutable(api(JOBS), "not json", now), "a plain route with JSON only");
   assert.equal(familyOf(api(JOBS)), "actions/runs/{}/jobs");
+  assert.equal(familyOf(["api", "--paginate", ...api(JOBS).slice(1)]), "actions/runs/{}/jobs", "a flag before the path (#391)");
+  assert.equal(familyOf(["api", "-X", "GET", "-H", "Accept: x", "--paginate", ...api(JOBS).slice(1)]), "actions/runs/{}/jobs", "flags and their values before the path (#391)");
   assert.equal(familyOf(api(`git/commits/${"b".repeat(40)}`)), "git/commits/{}");
   assert.equal(topReads([["a/{}", "3"], ["pulls", "5"], ["a/{}", "4"], ["tags", "1"]], 2), "a/{} 7, pulls 5");
 });

@@ -74,6 +74,11 @@ CASES = [
                             {"tool": "run_template", "name": "t"}]}), "go",
      ("ask", ["submit_batch", "1 partner_generate item"])),
     ("paused denies", call(WF, {"workflow": {}}), "paused", ("deny", ["paused", "is paused"])),
+    ("the claude.ai connector form of a run tool is held too (#325)",
+     call("mcp__claude_ai_Comfy_Cloud_MCP__submit_workflow", {"workflow": {}}), "paused", ("deny", ["paused", "is paused"])),
+    ("the server form of a run tool is held too (#325)",
+     call("mcp__Comfy_Cloud_MCP__run_template", {"name": "t"}), "paused", ("deny", ["paused", "is paused"])),
+    ("a non-run tool in the server form passes", call("mcp__Comfy_Cloud_MCP__estimate_credits", {}), "missing", SILENT),
     ("paused denies a confirm before asking", call(WF, {"confirm": True}), "paused", ("deny", ["paused"])),
     ("unknown denies", call(TPL, {"name": "t"}), "unknown", ("deny", ["unknown", "signed out"])),
     ("any other exit denies", call(TPL, {"name": "t"}), "odd", ("deny", ["exit 3, read as unknown"])),
@@ -212,9 +217,10 @@ def check_wiring(checks, tool):
         checks.check(hook.get("command") == "python3 -I ~/.claude/code-os/comfy_guard.py",
                      "the documented command runs the installed copy", repr(hook.get("command")))
         matcher = re.compile(entry["matcher"])
-        for name in tool.RUN_TOOLS:
+        for name in tool.RUN_TOOLS + tuple(p + t for p in tool.SERVERS[1:] for t in tool.RUN_NAMES):
             checks.check(bool(matcher.search(name)), "the matcher takes " + name)
-        for name in (PARTNER, SERVER + "estimate_credits", SERVER + "share_workflow", "Bash"):
+        for name in (PARTNER, SERVER + "estimate_credits", SERVER + "share_workflow", "Bash",
+                     tool.SERVERS[1] + "partner_generate", tool.SERVERS[2] + "estimate_credits"):
             checks.check(not matcher.search(name), "the matcher skips " + name)
     except (ValueError, KeyError, IndexError, TypeError, re.error) as exc:
         checks.check(False, "the documented settings entry parses", repr(exc))

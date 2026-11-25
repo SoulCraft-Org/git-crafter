@@ -186,7 +186,8 @@
 
   // Left and right arrow keys on a step button open the step before or after it and move focus there.
   const onStepKey = (e, ctx) => {
-    const by = { ArrowLeft: -1, ArrowRight: 1 }[e.key];
+    // Alt, Ctrl, Cmd or Shift with an arrow is the browser's own shortcut, such as back and forward (#484).
+    const by = e.altKey || e.ctrlKey || e.metaKey || e.shiftKey ? 0 : { ArrowLeft: -1, ArrowRight: 1 }[e.key];
     const b = by && e.target.closest(".stepbar button");
     const m = b && b.closest(".map");
     const to = m && stepFrom(m, b.dataset.step, by);
