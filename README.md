@@ -22,7 +22,7 @@ Both pages are public.
 
 | Step | Do |
 |---|---|
-| 1 | Run the block; set `ci.yml`'s `paths`, `short`, `standard`; `pages.yml`'s doc globs; the process config's `repos`, `repo_url`, `heading`; drop unused tabs ([ci](templates/ci/README.md), [process](templates/process/README.md)) |
+| 1 | Run the block; set `ci.yml`'s `paths`, `short`, `standard`; `pages.yml`'s doc globs; process config's `repos`, `repo_url`, `heading`; drop unused tabs ([ci](templates/ci/README.md), [process](templates/process/README.md)) |
 | 2 | A ruleset on `main` requiring `ci / ci-ok` |
 | 3 | Settings, Pages: source "GitHub Actions" |
 
