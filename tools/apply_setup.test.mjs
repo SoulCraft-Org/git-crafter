@@ -232,6 +232,30 @@ test("--org reads each file of its folder in name order, fills {org} and {node_i
   assert.equal(got.lines.at(-1), "org acme: 1 changed, 2 same");
 });
 
+test("paid_yes: a flat row is set only once its budget's hard stop holds; a per-use row, an unknown row or a non-list exits 2", () => {
+  const flat = { ...ORG_ROWS[0], id: "org.paid", ui_url: "https://github.com/organizations/{org}/settings/billing", paid: { kind: "flat", price: "a flat fee", budget: { get: "organizations/{org}/settings/billing/budgets", field: "budgets", where: { prevent_further_usage: true } } } };
+  const rows = { "a.json": [flat, { ...flat, id: "org.metered", paid: { kind: "per_use", price: "metered" } }] };
+  const dir = mkdtempSync(path.join(tmpdir(), "yes-"));
+  const run = (yes, extra = {}) => {
+    writeFileSync(path.join(dir, "v.json"), JSON.stringify({ paid_yes: yes }));
+    return scoped(["--org", "acme", "--apply", "--check", "--values", path.join(dir, "v.json")], { ...structuredClone(ORG), ...extra }, rows);
+  };
+  try {
+    const asked = run([]);
+    assert.deepEqual([asked.code, asked.rows, asked.writes()], [0, [["paid", "org.paid"], ["refused", "org.metered"]], []]);
+    const bare = run(["org.paid"]);
+    assert.deepEqual([bare.code, bare.rows[0], bare.writes()], [1, ["no budget", "org.paid"], []]);
+    const stopped = run(["org.paid"], { "organizations/acme/settings/billing/budgets": { budgets: [{ prevent_further_usage: true }] } });
+    assert.deepEqual([stopped.code, stopped.rows[0], stopped.writes().length], [0, ["changed", "org.paid"], 1]);
+    for (const [yes, said] of [[["org.metered"], /billed per use, which rules\/compute\.md never allows: org\.metered/], [["org.nope"], /no flat paid row: org\.nope/], ["org.paid", /paid_yes in .* must be a list/]]) {
+      const bad = run(yes);
+      assert.deepEqual([bad.code, bad.calls, said.test(bad.lines.join("\n"))], [2, [], true], String(yes));
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("--user and --enterprise fill their placeholders, --user only as gh's own account; a missing folder holds no rows", () => {
   const user = { id: "user.node_id", method: "PATCH", path: "user", body: {}, check: { get: "users/{user}", field: "node_id", value: "{node_id}" } };
   assert.deepEqual(scoped(["--user", "ada"], { user: { login: "Ada" }, "users/ada": { node_id: "U_1" } }, { "a.json": [user] }).rows, [["same", "user.node_id"]]);
