@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Git Crafter spec</title>
+<style>
+:root{--bg:#fbfbfa;--fg:#1c1f24;--mut:#5a6270;--card:#fff;--line:#d9dde3;--acc:#0b5fc4;--ok:#1e7a3a;--warn:#b35a00}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171c;--fg:#e8eaee;--mut:#9aa3b2;--card:#1c2027;--line:#2c333d;--acc:#6aa6ff;--ok:#5cc47a;--warn:#f0a050}}
+:root[data-theme="dark"]{--bg:#14171c;--fg:#e8eaee;--mut:#9aa3b2;--card:#1c2027;--line:#2c333d;--acc:#6aa6ff;--ok:#5cc47a;--warn:#f0a050}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:860px;margin:0 auto;padding:24px 16px 64px}
+h1{font-size:1.7rem;margin:0 0 4px}
+h2{font-size:1.15rem;margin:32px 0 10px;border-bottom:1px solid var(--line);padding-bottom:6px}
+p{margin:8px 0}
+.sub{color:var(--mut);margin:0 0 16px}
+.pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.8rem;color:var(--mut);margin-right:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.card b{display:block;font-size:1.5rem;color:var(--acc)}
+.card span{color:var(--mut);font-size:.9rem}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top;font-size:.93rem}
+th{color:var(--mut);font-weight:600}
+tr:last-child td{border-bottom:0}
+.ok{color:var(--ok)} .warn{color:var(--warn)}
+svg{width:100%;height:auto;display:block}
+svg text{fill:var(--fg);font:13px system-ui,sans-serif}
+svg .b{fill:var(--card);stroke:var(--line)}
+svg .a{stroke:var(--acc);fill:none;stroke-width:1.6}
+.q{border-left:4px solid var(--acc)}
+a{color:var(--acc)}
+.src{color:var(--mut);font-size:.8rem}
+</style>
+</head>
+<body>
+<main>
+<h1>Git Crafter spec</h1>
+<p class="sub">One page: what this repo is for, how it works, where it stands, and the one decision that is the owner's. <span class="pill">Draft</span><span class="pill">Read 2026-11-25</span></p>
+
+<h2>Purpose</h2>
+<p>Git Crafter holds the rules, templates and guards for repos that AI agents run (AGENTS.md, read 2026-11-25). It is built for Claude Code and OpenCode, on open-source or open-weight repos (README.md, read 2026-11-25).</p>
+<p>It gives each repo two public pages, a Quality, Speed and Consumption page and a Process page, so the repo's state stays visible after the first day (README.md, read 2026-11-25).</p>
+<p>The owner set the aim in chat on 2026-11-02: the highest-quality build and product, built as fast as possible, with as few tokens as possible (goals.json, read 2026-11-25).</p>
+
+<h2>Who it is for</h2>
+<table>
+<tr><th>User</th><th>Wants</th><th>Gets</th></tr>
+<tr><td>A maintainer adopting it</td><td>A scored repo and a standard CI, without writing either</td><td>Starters in <code>templates/</code> and the <code>actions/pages</code> action, pinned by SHA (README.md)</td></tr>
+<tr><td>A repo in the owner's org</td><td>One shared engine and one set of goals</td><td>The Process page covers 11 repos (live Process page, read 2026-11-25)</td></tr>
+<tr><td>A Claude session</td><td>Clear limits on what it may do and merge</td><td>Rules, a deny list and the <code>merging</code> skill (README.md, rules/delegation.md)</td></tr>
+</table>
+
+<h2>How it works</h2>
+<svg viewBox="0 0 820 120" role="img" aria-label="Copy starters, pin the SHA, CI builds and scores, a miss becomes an issue, a pull request fixes it">
+<rect class="b" x="6" y="30" width="136" height="56" rx="8"/><text x="74" y="62" text-anchor="middle">Copy starters</text>
+<rect class="b" x="170" y="30" width="136" height="56" rx="8"/><text x="238" y="62" text-anchor="middle">Pin the SHA</text>
+<rect class="b" x="334" y="30" width="136" height="56" rx="8"/><text x="402" y="55" text-anchor="middle">CI builds</text><text x="402" y="72" text-anchor="middle">and scores</text>
+<rect class="b" x="498" y="30" width="150" height="56" rx="8"/><text x="573" y="55" text-anchor="middle">A miss becomes</text><text x="573" y="72" text-anchor="middle">an issue or card</text>
+<rect class="b" x="676" y="30" width="136" height="56" rx="8"/><text x="744" y="55" text-anchor="middle">A pull request</text><text x="744" y="72" text-anchor="middle">fixes it</text>
+<path class="a" d="M142 58H170M306 58H334M470 58H498M648 58H676"/>
+</svg>
+<p>Dependabot then moves each adopter's pin to the newest tag (CONTRIBUTING.md, Releases, read 2026-11-25). The engine lives in <code>quality/</code> and <code>pages/</code>; a repo keeps only its config and overrides (quality/README.md).</p>
+
+<h2>What is in scope</h2>
+<table>
+<tr><th>In</th><th>Out</th></tr>
+<tr><td>Quality page: 13 tabs in the README, each scored against a dated ideal (README.md; 13 files in <code>quality/ideals/</code>)</td><td>One org's names or paths in a template file (they go in <code>config/&lt;org&gt;.json</code>, CONTRIBUTING.md)</td></tr>
+<tr><td>Process page: 13 maps, each step with a tool, rule and metric (<code>pages/maps/</code>)</td><td>One account's machine, keys tool or naming (a private overlay, CONTRIBUTING.md)</td></tr>
+<tr><td>Six starter folders: agents, ci, open, process, projects, quality, plus <code>setup.json</code> (<code>templates/</code>)</td><td>Any key value, anywhere (AGENTS.md)</td></tr>
+<tr><td>9 rule files for Claude sessions, guards and a sync tool (<code>rules/</code>, <code>tools/</code>)</td><td>Pushes to <code>main</code> (AGENTS.md)</td></tr>
+</table>
+
+<h2>Where it stands (live Quality page, built 2026-11-25 21:50 UTC at 6151b47, read 2026-11-25)</h2>
+<div class="grid">
+<div class="card"><b>95</b><span>master score; Quality 93, Speed 100, Consumption 93</span></div>
+<div class="card"><b>157 of 226</b><span>metrics meet goal; 12 near, 2 miss, 55 not measured</span></div>
+<div class="card"><b>21</b><span>tabs on the page, 18 measured (README says 13)</span></div>
+<div class="card"><b>98</b><span>open issues, GitHub REST list</span></div>
+</div>
+<p>Tab scores, Quality: Code 100, Pull requests 95, Docs 92, Projects 80, Issues 70, Visibility 50. Eleven other tabs read 100. Source: the live Quality page scoreboard.</p>
+<p>The repo's own checks run 21 steps in <code>tools/verify.sh</code>, and CI runs that one file (tools/verify.sh, read 2026-11-25). Seven pull requests are open (GitHub REST list, 2026-11-25).</p>
+
+<h2>Gaps, worked in this order</h2>
+<table>
+<tr><th>Gap</th><th>Why it matters</th><th>Issue</th></tr>
+<tr><td>35 of the 98 open issues build org, user and enterprise levels (titles D, E, F and V)</td><td>The README promises repo-level starters, and this work is a second product</td><td>404 to 468 (e.g. 404, 431, 450, 464)</td></tr>
+<tr><td>README counts 13 tabs, the live page shows 21</td><td>An adopter cannot tell which tabs they get</td><td>No issue yet</td></tr>
+<tr><td>Runs that find nothing to do read 13.1%, goal 10; CI is the org's largest metered consumer</td><td>Wasted CI</td><td>508, 518</td></tr>
+<tr><td>Two author emails in public history; Visibility reads 50</td><td>Not rewritable on a public repo; the metric needs an exemption list</td><td>600, 604</td></tr>
+<tr><td>The quickstart lists 11 rows for "three steps"</td><td>Four rows are labelled step 1, and nothing shows step 1 worked</td><td>599 (PR 602)</td></tr>
+<tr><td>Auto-merge is banned in rules and settings today</td><td>The owner asked for it on 2026-11-25</td><td>584 (PR 586)</td></tr>
+</table>
+<p class="src">Issue numbers and titles: GitHub REST issues list, read 2026-11-25. Row 1 counts titles with a D, E, F or V number prefix.</p>
+
+<h2 id="question">The owner's decision</h2>
+<div class="card q">
+<p><b style="font-size:1.05rem;color:inherit">Who is Git Crafter built for first?</b></p>
+<table>
+<tr><th>Option</th><th>What it means</th></tr>
+<tr><td>A. Adopters first <span class="ok">(recommended)</span></td><td>The product is the repo-level core: Quality page, Process page, CI standard and starters. Org, user and enterprise levels become optional packs or leave for a private overlay.</td></tr>
+<tr><td>B. The owner's whole stack</td><td>One repo runs every level for the owner's accounts and orgs, and adopters take what they need. Today's course.</td></tr>
+<tr><td>C. Split in two</td><td>The engine and templates stay here. Rules and guards for Claude sessions move to their own repo.</td></tr>
+</table>
+<p>Why A: the README and AGENTS.md describe starters for any repo, while 35 of 98 open issues build levels for one owner's accounts.</p>
+</div>
+
+<h2>Decided already</h2>
+<table>
+<tr><th>Decision</th><th>Source</th></tr>
+<tr><td>Apache-2.0, published by SoulCraft</td><td>README.md, LICENSE</td></tr>
+<tr><td>Never push to <code>main</code>; squash merge only, after every check passes at the head commit</td><td>AGENTS.md, CONTRIBUTING.md</td></tr>
+<tr><td>The owner does not review PRs; a thread reviews and merges its own</td><td>rules/delegation.md</td></tr>
+<tr><td>Org names go in <code>config/&lt;org&gt;.json</code>, never a template file</td><td>CONTRIBUTING.md</td></tr>
+<tr><td>Public history is not rewritten</td><td>Issue 600</td></tr>
+<tr><td>Aim: quality, speed, few tokens</td><td>goals.json, 2026-11-02</td></tr>
+</table>
+</main>
+</body>
+</html>
