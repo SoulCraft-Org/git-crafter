@@ -58,6 +58,7 @@ export const EXPECTED = {
   "security.dependabot_open": 5, // the malware alert is counted apart
   "security.malware_open": 1,
   "security.code_scanning_open": "Code scanning is off, so it has no findings to count",
+  "security.last_analysis_hours": "Code scanning is off, so it has no analysis to time",
   "security.secret_scanning_open": "Secret scanning is off, so it has no findings to count",
   "security.code_quality_open": "Code quality is off, so it has no findings to count",
   "security.headers": 3, // Referrer-Policy missing

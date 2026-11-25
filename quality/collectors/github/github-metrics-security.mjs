@@ -1,5 +1,5 @@
 // The GitHub collector's Actions-hardening, supply-chain and Claude Code metrics: each reads through the loaders and returns measured(...) or skip(...).
-import { measured, flag, skip, pct, count, round1, TARGETS_FILE, DAY } from "./github-core.mjs";
+import { measured, flag, skip, pct, count, round1, TARGETS_FILE, DAY, HOUR } from "./github-core.mjs";
 import { workflowsOr, prtJobs, fixedAlerts, openAlerts, PAID } from "./github-helpers.mjs";
 import path from "node:path";
 import { existsSync, readFileSync } from "node:fs";
@@ -170,6 +170,15 @@ export const SECURITY_REVIEW_METRICS = {
       const oldest = open.reduce((a, b) => (Date.parse(a.createdAt) <= Date.parse(b.createdAt) ? a : b));
       const days = round1((now - Date.parse(oldest.createdAt)) / DAY);
       return measured(days, [{ label: `oldest: ${oldest.kind}`, value: days, unit: "days" }, count("open alerts read", open.length)]);
+    },
+  },
+  "security.last_analysis_hours": {
+    source: "gh api repos/{repo}/code-scanning/analyses?per_page=1: the newest analysis on any ref, hours from its created_at to read time",
+    async run(L, { now }) {
+      const latest = await L.latestAnalysis();
+      if (!latest) return skip("Code scanning is off, so it has no analysis to time");
+      const hours = round1(Math.max(0, now - Date.parse(latest.created_at)) / HOUR);
+      return measured(hours, [{ label: `latest: ${latest.tool?.name ?? "code scanning"} on ${latest.ref ?? "an unnamed ref"}`, value: hours, unit: "hours" }]);
     },
   },
 

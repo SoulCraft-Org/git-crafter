@@ -177,15 +177,17 @@ function repoLoaders(L, { gh, repo, root, cfg, fetchImpl }) {
       }
       return out;
     }),
-    codeScanning: once(async () => {
+    // The newest code scanning analysis on any ref, or null when there is none.
+    latestAnalysis: once(async () => {
       try {
-        return (await gh.rest(`repos/${repo}/code-scanning/analyses?per_page=1`)).length > 0;
+        return (await gh.rest(`repos/${repo}/code-scanning/analyses?per_page=1`))[0] ?? null;
       } catch (err) {
         // 404 "no analysis found", or 403 when Code Security is not enabled: both mean off.
-        if (err instanceof GhError && (err.status === 404 || /must be enabled/i.test(err.message))) return false;
+        if (err instanceof GhError && (err.status === 404 || /must be enabled/i.test(err.message))) return null;
         throw err;
       }
     }),
+    codeScanning: once(async () => (await L.latestAnalysis()) !== null),
     protection: once(() => readProtection(L, gh, repo)),
     pages: once(() => gh.rest(`repos/${repo}/pages`)),
     // Active Actions caches: their count and bytes, as GitHub last refreshed them.
