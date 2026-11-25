@@ -228,7 +228,7 @@ jobs:
         run: |
           set -euo pipefail
           node -e 'const fs = require("fs"); const c = JSON.parse(fs.readFileSync("config/quality.json", "utf8"));
-            fs.writeFileSync(process.argv[1], JSON.stringify({ ...c, tabs: ["documentation"] }))' "$RUNNER_TEMP/docs-gate.json"
+            fs.writeFileSync(process.argv[1], JSON.stringify({ ...c, tabs: ["documentation"], packs: [] }))' "$RUNNER_TEMP/docs-gate.json"
           node quality/collect.mjs --config "$RUNNER_TEMP/docs-gate.json" --out "$RUNNER_TEMP/docs-gate-run.json"
 
   # On a pull request that touches a tool, knip's config or a doc, and nothing build covers: the Code tab alone,
@@ -258,7 +258,7 @@ jobs:
         run: |
           set -euo pipefail
           node -e 'const fs = require("fs"); const c = JSON.parse(fs.readFileSync("config/quality.json", "utf8"));
-            fs.writeFileSync(process.argv[1], JSON.stringify({ ...c, tabs: ["code"] }))' "$RUNNER_TEMP/code-gate.json"
+            fs.writeFileSync(process.argv[1], JSON.stringify({ ...c, tabs: ["code"], packs: [] }))' "$RUNNER_TEMP/code-gate.json"
           node quality/collect.mjs --config "$RUNNER_TEMP/code-gate.json" --out "$RUNNER_TEMP/code-gate-run.json"
 
   action:
@@ -495,6 +495,20 @@ jobs:
 
       # admin-read-token (#837): the ADMIN_READ_TOKEN secret, a fine-grained read-only token, else the App token
       # above, on main only, so a branch's code never runs with it. Neither, those metrics stay not measured.
+      # config/quality.json pins the Claudius pack, which collect, build and issue sync read from CODE_OS_PACKS
+      # (actions/pages fetches it the same way for its own steps).
+      - name: Check out each pack
+        if: ${{ !cancelled() }}
+        run: |
+          set -euo pipefail
+          export CODE_OS_PACKS="$RUNNER_TEMP/code-os-packs"
+          echo "CODE_OS_PACKS=$CODE_OS_PACKS" >> "$GITHUB_ENV"
+          node quality/pack-checkouts.mjs --config config/quality.json | while IFS= read -r -d '' repo && IFS= read -r -d '' sha && IFS= read -r -d '' dir; do
+            git init -q "$dir"
+            git -C "$dir" fetch -q --depth 1 "https://github.com/$repo" "$sha"
+            git -C "$dir" checkout -q --detach FETCH_HEAD
+          done
+
       - name: Quality page from main's scored run, no collector changed
         if: steps.replay.outputs.latest == 'true' && needs.changes.outputs.collect != 'true'
         run: node quality/collect.mjs --config config/quality.json --from "$GH_REPLAY_DIR/latest.json" && node quality/build.mjs --config config/quality.json
@@ -645,6 +659,20 @@ jobs:
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.event.repository.name }}
           permission-organization-projects: write
+
+      # config/quality.json pins the Claudius pack, which collect, build and issue sync read from CODE_OS_PACKS
+      # (actions/pages fetches it the same way for its own steps).
+      - name: Check out each pack
+        if: ${{ !cancelled() }}
+        run: |
+          set -euo pipefail
+          export CODE_OS_PACKS="$RUNNER_TEMP/code-os-packs"
+          echo "CODE_OS_PACKS=$CODE_OS_PACKS" >> "$GITHUB_ENV"
+          node quality/pack-checkouts.mjs --config config/quality.json | while IFS= read -r -d '' repo && IFS= read -r -d '' sha && IFS= read -r -d '' dir; do
+            git init -q "$dir"
+            git -C "$dir" fetch -q --depth 1 "https://github.com/$repo" "$sha"
+            git -C "$dir" checkout -q --detach FETCH_HEAD
+          done
 
       - name: Sync missed metrics to board cards and quick-fix issues
         if: ${{ !cancelled() }}
