@@ -59,6 +59,7 @@ flowchart LR
 | Option (`optional: true`) | For | Row and needs |
 |---|---|---|
 | Merge queue | a busy branch | `rules.merge_queue`. CI runs `on: merge_group` ([how](OPTIONS.md#merge-queue)). `gh pr merge` after checks pass: `repo.no_auto_merge` keeps auto-merge off |
+| Dependabot auto-merge | a repo whose owner lets Dependabot's pull requests merge once CI passes | Skip `repo.no_auto_merge`: leave it out of `--only`. In the repo's `settings.general_drift` targets set `expected_from_setup: true` and `expected: {"allow_auto_merge": true}`, so the Settings tab reads the row as met. Every other pull request still merges at its head commit |
 | Artifact attestations | a repo that publishes an artifact | `manual.artifact_attestations`: [actions/attest](https://github.com/actions/attest), with `id-token: write` and `attestations: write` ([step](OPTIONS.md#attestations)) |
 
 ## Check
