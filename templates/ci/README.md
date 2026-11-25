@@ -22,7 +22,7 @@ flowchart LR
 | [templates/process/config.json](../process/config.json) | `<repo>/quality/process/config.json` | set `repos`, `repo_url` and `heading` |
 | [ci.yml](ci.yml) | `<repo>/.github/workflows/ci.yml` | set `paths`, `short` and `standard` |
 | [pages.yml](pages.yml) | `<repo>/.github/workflows/pages.yml` | add the repo's doc globs to its `pull_request` paths |
-| [dependabot.yml](dependabot.yml) | `<repo>/.github/dependabot.yml` | or add its `github-actions` entry to the repo's own; it bumps both Git Crafter pins together |
+| [dependabot.yml](dependabot.yml) | `<repo>/.github/dependabot.yml` | or add its `github-actions` entry to the repo's own. It bumps both Git Crafter pins together |
 
 Optional, to `<repo>/.github/workflows/` unless noted:
 
@@ -52,14 +52,14 @@ GitHub's runner pricing (read 2026-11-03): $0.002 a minute on 1 core, $0.006 on 
 | `caller` | a `pull_request` workflow calls `ci-standard.yml` |
 | `pin` | at a full SHA with a `# vX.Y.Z` comment |
 | `dependabot` | a `github-actions` entry exists |
-| `permissions` | top-level `read` or `none`; no `write-all` |
+| `permissions` | top-level `read` or `none`. No `write-all` |
 | `concurrency` | a group that cancels superseded runs, never a deploy |
 | `timeout` | every job has `timeout-minutes` |
-| `runner` | `ubuntu-slim` or a standard hosted label; else an exception with a reason in `<repo>/.github/ci-standard.json`, five jobs at most |
+| `runner` | `ubuntu-slim` or a standard hosted label. Else an exception with a reason in `<repo>/.github/ci-standard.json`, five jobs at most |
 | `pinned` | every remote `uses:`, local actions' steps included, at a full SHA or locked in `.github/workflows/actions.lock` |
 | `cache` | `npm ci` or `pip install` with a setup cache |
 | `no-share` | no per-repo minute guard |
-| `blacksmith` | Blacksmith labels only via the chooser; no sticky disk or layer cache |
+| `blacksmith` | Blacksmith labels only via the chooser. No sticky disk or layer cache |
 
 ## Overflow switch
 
@@ -75,6 +75,6 @@ flowchart LR
 | --- | --- |
 | On | `gh variable set CI_OVERFLOW_RUNNER --body blacksmith-2vcpu-ubuntu-2404` |
 | Off | `gh variable delete CI_OVERFLOW_RUNNER` |
-| Opt in | a `runner` job that calls `ci-overflow.yml` with `actions: read`, and `runner:` its label on the `ci` job ([example](../../.github/workflows/ci-overflow.yml)); `pages.yml` is in already |
+| Opt in | a `runner` job that calls `ci-overflow.yml` with `actions: read`, and `runner:` its label on the `ci` job ([example](../../.github/workflows/ci-overflow.yml)). `pages.yml` is in already |
 | Meter | `runner` job log, [DECISIONS.md](DECISIONS.md) |
 | New lane | a `lanes` entry, `.github/ci-overflow.json` |
