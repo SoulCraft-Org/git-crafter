@@ -43,7 +43,7 @@ export const FIX = 'add a line "Closes #N" (or Fixes, Resolves) for the issue th
 export function rules(root = process.cwd(), configFile) {
   const config = configFile ? JSON.parse(readFileSync(resolve(root, configFile), 'utf8')) : {};
   const repoDir = config.targets ? resolve(root, config.targets) : null;
-  const { entries, params } = overlayTargets(readTargetFiles(join(QUALITY, 'targets')), readTargetFiles(repoDir));
+  const { entries, params } = overlayTargets(readTargetFiles(join(QUALITY, 'targets')), readTargetFiles(repoDir), { skipUnknown: true });
   const ignore = (params['github.json']?.pr_body_ignore ?? []).map((p) => new RegExp(p, 'g'));
   const notReviewed = (params['github.json']?.not_reviewed ?? []).map((p) => new RegExp(p));
   // A repo that drops a metric has no goal for it here either.

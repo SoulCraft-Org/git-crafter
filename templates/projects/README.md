@@ -34,15 +34,15 @@ flowchart LR
 | 2 | Paste [instructions.md](instructions.md) into Instructions and fill each `<...>` cell |
 | 3 | Set the shared environment in Project settings, with an empty setup script |
 | 4 | Add each key as a network secret with its host |
-| 5 | Send the setup check below first, and log it on the [result card](check-card.md) |
+| 5 | Send the setup check below first, and log it on the [result card](check-card.md), [scorecard](scorecard.md) and [scrub gate](scrub.md) |
 | 6 | A Claudius repo: follow its [quick start](https://github.com/Soul-Craft/claudius/blob/main/docs/projects-quickstart.md) |
 
 ```text
 Setup check only. Start no threads and change nothing.
-1. For each attached repo: was CLAUDE.md or AGENTS.md read, and does push access work?
-2. Name the connectors and the environment, and say whether it has a setup script.
-3. Name each expected key, by name only, and say whether it is a network secret.
-4. Report pass or fail per line, and name any missing tool or key.
+Reply as a table: Line, Result (pass or fail), What you saw, Read (UTC), Source.
+Per repo: App installed, CLAUDE.md or AGENTS.md read, push access works.
+Once: the environment's network access, an empty setup script, each expected key (by name only) as a network secret, connectors still unfinished.
+A line you did not read is a fail.
 ```
 
 ## Smoke test

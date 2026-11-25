@@ -21,6 +21,15 @@ flowchart LR
 | Hooks and permission rules in `.claude/settings.json` | Not run | Use a local thread |
 | `env` in `.claude/settings.json` | Not applied | Set it in the cloud environment |
 
+## Subagents
+
+A thread keeps its context small by sending wide reads and reviews to a subagent in `.claude/agents/`. Each names its model, so none inherits the thread's.
+
+| Agent | Model | Tools | Use |
+|---|---|---|---|
+| `Explore` | Haiku 5.5 | Read, Grep, Glob, Bash, WebFetch, WebSearch | A search across many files or a CI log: only the answer comes back |
+| `reviewer` | Sonnet 5.5 | Read, Grep, Glob, Bash | One fresh review per pull request at its head commit, read only: `MERGE` or `BLOCK` and each fix ([reviewing.md](../../skills/merging/reviewing.md)) |
+
 ## Limits and cost
 
 Projects need a Pro, Max or Ultra plan, not Team or Enterprise. The thread limit, the cache, models, pull request watching, usage limits and each spend guard are kept in one place: Compute Crafter's [Claude Code Projects spend guards](https://github.com/SoulCraft-Org/compute-crafter/blob/main/docs/claude-code-projects-spend.md). Read the figures there, not a copy here.

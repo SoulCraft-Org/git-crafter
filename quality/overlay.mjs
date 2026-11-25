@@ -37,7 +37,9 @@ export function readTargetFiles(dir) {
 // it does not matter which entry carries them; a dropped entry's params still
 // count. Unchecked: loadDefs checks, and the Process page reads labels and
 // goals from it as they are.
-export function overlayTargets(templateFiles, repoFiles = []) {
+// skipUnknown: a caller that loads no packs (the two PR gates) skips an override of an id it
+// lacks, which a pack defines, instead of a usage error; a full definition is still the repo's own.
+export function overlayTargets(templateFiles, repoFiles = [], { skipUnknown = false } = {}) {
   const entries = [];
   const byId = new Map();
   const params = {};
@@ -55,6 +57,12 @@ export function overlayTargets(templateFiles, repoFiles = []) {
       add({ ...def, file });
     }
   }
+  layRepoFiles(repoFiles, { byId, add, addParams, skipUnknown });
+  return { entries, params };
+}
+
+// Lays each repo file's entries over the template's: an override on its metric, else the repo's own metric.
+function layRepoFiles(repoFiles, { byId, add, addParams, skipUnknown }) {
   const own = new Set();
   for (const { file, list } of repoFiles) {
     for (const o of list) {
@@ -62,16 +70,18 @@ export function overlayTargets(templateFiles, repoFiles = []) {
       if (own.has(o.id)) throw new Error(`${where}: duplicate id`);
       own.add(o.id);
       const base = byId.get(o.id);
-      if (!base) add(ownMetric(o, file, where));
-      else applyOverride(base, o, file, where, addParams);
+      if (base) applyOverride(base, o, file, where, addParams);
+      else if (!(skipUnknown && isOverride(o))) add(ownMetric(o, file, where));
     }
   }
-  return { entries, params };
 }
+
+// An entry that holds only an id and override fields.
+const isOverride = (o) => Object.keys(o).every((k) => k === "id" || OVERRIDES.includes(k));
 
 // A repo's own metric: a full definition, not an override with nothing under it.
 function ownMetric(o, file, where) {
-  if (Object.keys(o).every((k) => k === "id" || OVERRIDES.includes(k))) throw new Error(`${where}: no template metric "${o.id}" to override`);
+  if (isOverride(o)) throw new Error(`${where}: no template metric "${o.id}" to override`);
   return { ...o, file };
 }
 

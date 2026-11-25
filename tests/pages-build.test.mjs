@@ -29,6 +29,8 @@ const PACK = join(PACKS, "Colorado-Startups", "claudius");
 mkdirSync(PACK, { recursive: true });
 writeFileSync(join(PACK, "pack.json"), JSON.stringify({ tabs: [["claude", "Claude"], ["claude-settings", "Claude settings"], ["desktop-app", "Claude desktop app"], ["blockers", "Blockers"], ["tokens", "Tokens"], ["instructions", "Instructions"], ["practices", "Best practices"], ["visibility", "Visibility"]] }));
 for (const dir of ["targets", "ideals", "maps", "collectors"]) mkdirSync(join(PACK, dir));
+// config/quality/targets/visibility.json overrides the pack's params on this one metric, so the stand-in holds it.
+writeFileSync(join(PACK, "targets", "visibility.json"), JSON.stringify([{ id: "visibility.private_public_pages", tab: "visibility", kind: "quality", group: "Public", label: "Private repos with a public page", means: "Private repos that serve a public page.", unit: "repos", goal: 0, near: 1, direction: "lower", goal_source: "stand-in", source: "stand-in", needs: "none", chart: "number", params: { owner: "", org_domains: [] } }]));
 process.env.CODE_OS_PACKS = PACKS;
 const NOW = new Date("2026-11-03T12:00:00Z");
 const ago = (h) => new Date(NOW.getTime() - h * 3_600_000).toISOString();

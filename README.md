@@ -23,8 +23,8 @@ Both pages are public.
 | Step | Do |
 |---|---|
 | 1 | Run the block; set `ci.yml`'s `paths`, `short`, `standard`; `pages.yml`'s doc globs; process config's `repos`, `repo_url`, `heading`; drop unused tabs ([ci](templates/ci/README.md), [process](templates/process/README.md)) |
-| 2 | A ruleset on `main` requiring `ci / ci-ok` |
-| 3 | Settings, Pages: source "GitHub Actions" |
+| 2 | Ruleset on `main` requiring `ci / ci-ok` |
+| 3 | Settings, Pages: source "GitHub Actions". Push: pages at `https://<owner>.github.io/<repo>/` and `.../quality/` |
 
 ```bash
 GC=../git-crafter  # clone
@@ -82,16 +82,15 @@ Each map's steps: [pages/maps](pages/maps/README.md).
 
 | Item | Detail |
 |---|---|
-| What loads when | [memory](https://code.claude.com/docs/en/memory) and [skills](https://code.claude.com/docs/en/skills) docs, read 2026-11-03 |
+| Loads when | [memory](https://code.claude.com/docs/en/memory) and [skills](https://code.claude.com/docs/en/skills) docs, read 2026-11-03 |
 | Install | `tools/claude_os_sync.py apply` copies rules and guards into `~/.claude` from [manifest.json](manifest.json) |
-| When | [CONTRIBUTING](CONTRIBUTING.md#releases) |
 
 ## Folder map
 
 | Folder | Holds |
 |---|---|
 | `actions/` | The `pages` and `ci-pool` actions |
-| `config/` | Its Quality config, its collector in `config/quality/collectors/`, and [account.example.json](config/account.example.json) for a private overlay (`apply --overlay DIR`) |
+| `config/` | Its Quality config, its collector in `config/quality/collectors/`, and [account.example.json](config/account.example.json) for a private overlay |
 | `pages/` | The Process and Metrics builder and map library, `pages/maps/` |
 | `quality/` | The Quality engine and collectors ([README](quality/README.md)) |
 | `rules/` | Rules for Claude sessions |
@@ -108,4 +107,3 @@ Each map's steps: [pages/maps](pages/maps/README.md).
 | Help, bugs, ideas | [SUPPORT.md](SUPPORT.md) |
 | Changes and template fixes | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Security problems | [SECURITY.md](SECURITY.md) |
-| Maintainer | SoulCraft, publisher |

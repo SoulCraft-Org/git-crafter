@@ -1,0 +1,9 @@
+[
+ {
+  "id": "visibility.private_public_pages",
+  "params": {
+   "comment": "org_domains: email domains whose author addresses are not personal, beyond the org profile's own. coloradostartups.org is the sibling org Colorado Startups, whose Git Crafter history this repo carries (67 commits). anthropic.com is the address Claude Code cloud sessions commit as (noreply@anthropic.com, 12 commits), a tool and no person. A public history cannot be rewritten. Replace anthropic.com with the pack's bot_emails once the pinned Claudius pack reads it (upstream Claudius PR 121).",
+   "org_domains": ["coloradostartups.org", "anthropic.com"]
+  }
+ }
+]

@@ -54,7 +54,7 @@ test("every id Git Crafter's own page scored at v6.0.0 has a home or a recorded 
   const before = was("own");
   assert.equal(before.size, 156, "the snapshot holds the 156 ids the page scored at v6.0.0");
   const config = loadConfig({ root: new URL("..", import.meta.url).pathname, file: "config/quality.json", env: {} });
-  const now = tabOf(loadDefs({ templateDir: TEMPLATE, repoDir: config.targets, tabs: config.tabs }).defs);
+  const now = tabOf(loadDefs({ templateDir: TEMPLATE, repoDir: config.targets, tabs: config.tabs, skipUnknown: true }).defs);
   const own = rowsById(LEDGER.own);
   const template = rowsById(LEDGER.template);
   for (const id of new Set([...before.keys(), ...now.keys()])) {
