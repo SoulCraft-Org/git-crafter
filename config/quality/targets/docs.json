@@ -63,13 +63,6 @@
    "text_only_below": 50,
    "areas": [
     {
-     "doc": ".claude/skills/bump-pins/SKILL.md",
-     "area": [
-      "config/quality.json"
-     ],
-     "why": "the skill moves the Claudius pack pin that config/quality.json holds in its packs list"
-    },
-    {
      "doc": "skills/merging/SKILL.md",
      "area": [
       "rules/delegation.md"
