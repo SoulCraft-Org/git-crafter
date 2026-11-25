@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
 import { collect, PARAMS } from "./code.mjs";
+import { knipConfig } from "./code-dead.mjs";
 import { areaOf, inArea, nestedIn } from "./code-util.mjs";
 
 describe("inArea", () => {
@@ -51,5 +52,23 @@ describe("collect with params.areas of [\".\"]", () => {
     assert.equal(result["code.loc_change_pct"].value, 66.7);
     assert.equal(result["code.naming_pct"].could_not_check, undefined, result["code.naming_pct"].could_not_check);
     assert.equal(typeof result["code.naming_pct"].value, "number");
+  });
+});
+
+describe("knipConfig with a one-character workspace", () => {
+  let root;
+  before(() => {
+    root = mkdtempSync(join(tmpdir(), "code-dead-ws-"));
+    mkdirSync(join(root, "a"));
+    writeFileSync(join(root, "package.json"), JSON.stringify({ name: "r", workspaces: ["a"] }));
+    writeFileSync(join(root, "run-root.mjs"), "#!/usr/bin/env node\n");
+    writeFileSync(join(root, "a/run-a.mjs"), "#!/usr/bin/env node\n");
+  });
+  after(() => rmSync(root, { recursive: true, force: true }));
+
+  it("puts a run-directly file under the folder, not under the root that ties on length", () => {
+    const { workspaces } = knipConfig(root);
+    assert.deepEqual(workspaces["."].entry.filter((e) => e.includes("run-")), ["run-root.mjs"]);
+    assert.deepEqual(workspaces.a.entry.filter((e) => e.includes("run-")), ["run-a.mjs"]);
   });
 });
