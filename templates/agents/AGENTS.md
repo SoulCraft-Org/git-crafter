@@ -6,7 +6,7 @@ Instructions for every coding agent in this repo. OpenCode reads this file, and 
 | --- | --- |
 | What this repo is | <one sentence> |
 | Build and test | <the commands>. Suites run in CI through Git Crafter's `ci-standard.yml`; locally, run one test file at a time |
-| Shipping | Branch, commit, push the branch and open a pull request. Never push to `main` |
+| Shipping | Branch, commit, push the branch and open a pull request, then review, correct and merge it per the `merging` skill. Never push to `main` |
 | Bugs and quick fixes | A bug, error or fix one small PR closes within a day is an issue typed Bug or Task in the repo at fault. File it when found. It stays off the board |
 | Features and improvements | Each is a draft card on the owner's board, filed when found. A feature filed as an issue carries the `enhancement` label, so the board's auto-add cards it |
 | Filing locally | Issue: `gh issue create --type Bug`. Card: `gh project item-create <board> --owner <owner> --title <t> --body <b>` |

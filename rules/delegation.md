@@ -32,7 +32,7 @@ wholesale, or turn on GitHub auto-merge.
 
 | The owner | does not review PRs. |
 |---|---|
-| A thread or worker | opens its PR, then reviews, corrects and merges it with no person in the loop, after loading the `merging` skill. One reviewer with a fresh context reads the head commit. The thread corrects, and one check reads the corrections. A squash merge follows once every check and CI are green. |
+| A thread | opens its PR, then reviews, corrects and merges it with no person in the loop, after loading the `merging` skill. An orchestrator merges its workers' PRs the same way. One reviewer with a fresh context reads the head commit. The thread corrects, and one check reads the corrections. A squash merge follows once every check and CI are green. |
 | Never | push to `main`, force-push, hard-reset or turn on GitHub auto-merge, merging included. |
 | A subagent brief | says: "You are a subagent: never call update_plan or wrap_up." |
 

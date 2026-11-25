@@ -37,7 +37,7 @@ Dependabot moves an adopter's [SHA pin](templates/ci/README.md) to the newest ta
 | Metric moved to another tab: a repo with its own `tabs` list loses it until it adds the tab | major, `v2.0.0` |
 | Only files the action and `ci-standard.yml` never read: `tools/`, `skills/`, `templates/`, this file | none |
 
-| After a merge | The orchestrator |
+| After a merge | The merging session |
 |---|---|
 | Right away | tags its commit, as below |
 | That changes tier 1 | installs the change ([merging skill](skills/merging/SKILL.md)) |
