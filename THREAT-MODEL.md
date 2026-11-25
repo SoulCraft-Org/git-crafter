@@ -2,9 +2,9 @@
 
 | Read | Covers |
 |---|---|
-| 2026-11-10 | Every row here and in [tools/THREAT-MODEL.md](tools/THREAT-MODEL.md) (guards, deny rules, sync tool), against `main`; [Microsoft SDL](https://www.microsoft.com/en-us/securityengineering/sdl/practices) practice 3 |
+| 2026-11-10 | Every row here and in [tools/THREAT-MODEL.md](tools/THREAT-MODEL.md) (guards, deny rules, sync tool), against `main`. Source: [Microsoft SDL](https://www.microsoft.com/en-us/securityengineering/sdl/practices) practice 3 |
 | Each PR | Adds a row for a new threat, secret, write scope or hook |
-| Weekly | Re-read against `params.threat_model_covers`; `security.threat_model_current` reads off past its grace goal of 7 days (`threat_model_grace_days`) |
+| Weekly | Re-read against `params.threat_model_covers`. `security.threat_model_current` reads off past its grace goal of 7 days (`threat_model_grace_days`) |
 
 ```mermaid
 flowchart LR
@@ -17,7 +17,7 @@ flowchart LR
 
 | Element | Threat | STRIDE | Control | Gap |
 |---|---|---|---|---|
-| [Workflows](.github/workflows/) | PR code gets secrets or writes | Elevation | Read-only by default; each write on one job ([SECURITY.md](SECURITY.md) lists five). No `pull_request_target` workflow. [branch-cleanup.yml](.github/workflows/branch-cleanup.yml) runs on a schedule: no checkout, no event text, branch names checked before use. The policy allows GitHub-owned and verified creators' actions | branch-cleanup holds `contents: write` on a scheduled run |
+| [Workflows](.github/workflows/) | PR code gets secrets or writes | Elevation | Read-only by default. Each write sits on one job ([SECURITY.md](SECURITY.md) lists five). No `pull_request_target` workflow. [branch-cleanup.yml](.github/workflows/branch-cleanup.yml) runs on a schedule: no checkout, no event text, branch names checked before use. The policy allows GitHub-owned and verified creators' actions | branch-cleanup holds `contents: write` on a scheduled run |
 | [Workflows](.github/workflows/) | Action tag moves | Tampering | Full-SHA pins, policy-enforced; 14-day cooldown; a pinned Node, never `lts/*` | `ossf/scorecard-action` is a Docker action. Its pinned commit pulls `ghcr.io/ossf/scorecard-action:v2.5.0` by tag, in a job with `id-token: write`. Scorecard's server refuses a digest-pinned step (scorecard-infra `verify_workflow.go`, read 2026-11-23) |
 | [Workflows](.github/workflows/) | Secret is committed | Disclosure | gitleaks on PR commits and `main` pushes, required | No Secret Protection (the owner, 2026-11-10) |
 | [Workflows](.github/workflows/) | A secret-named file is pushed | Disclosure | Push ruleset 26972270 refuses it. [push-ruleset-proof.yml](.github/workflows/push-ruleset-proof.yml) proves it by real pushes | Proven only as of the last passing hand-run |
@@ -32,9 +32,9 @@ flowchart LR
 
 | Job that writes | Runs on | Writes |
 |---|---|---|
-| `pages.yml` deploy | Push to main, the daily schedule, or a manual run on main | `contents`, `issues`, `pages` and an OIDC token; an App token with `organization-projects: write` for the board |
+| `pages.yml` deploy | Push to main, the daily schedule, or a manual run on main | `contents`, `issues`, `pages` and an OIDC token. An App token with `organization-projects: write` for the board |
 | `push-ruleset-proof.yml` probe | By hand | `contents`: throwaway branches |
-| `branch-cleanup.yml` | Daily and by hand; reads PRs closed unmerged | `contents`: deletes the PR's branch; no checkout |
+| `branch-cleanup.yml` | Daily and by hand. Reads PRs closed unmerged | `contents`: deletes the PR's branch. No checkout |
 | `wiki.yml` | Push to main touching `wiki/`, or a manual run | `contents`: the wiki's git repo |
 | `scorecard.yml` analysis | Weekly and by hand, main only | An OIDC token that signs the published score |
 
