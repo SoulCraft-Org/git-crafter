@@ -41,7 +41,7 @@ flowchart LR
 Setup check only. Start no threads and change nothing.
 Reply as a table: Line, Result (pass or fail), What you saw, Read (UTC), Source.
 Per repo: App installed, CLAUDE.md or AGENTS.md read, push access works.
-Once: the environment's network access, an empty setup script, each expected key (by name only) as a network secret, connectors still unfinished.
+Once: the environment's network access, the setup script's content, each expected key (by name only) as a network secret, connectors still unfinished.
 A line you did not read is a fail.
 ```
 
