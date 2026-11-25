@@ -4,6 +4,8 @@
 // order asked. Each read is a separate command, so the call count and the API budget stay what they were.
 // GitHub allows 100 concurrent requests before its secondary rate limit (docs.github.com, Rate limits for the REST
 // API, read 2026-11-11); LIMIT stays far under that.
+// org_fetch.mjs drive runs the reads of every repo through runManySettled in lockstep, so a repo's four sources and
+// its pages of runs go out together with every other repo's, and one failed read ends only its own repo's source.
 
 import { execFile, execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -32,24 +34,42 @@ export function runMany(cmd, argsList, { limit = LIMIT, retryMs = 5000 } = {}) {
   }
 }
 
+// Like runMany, but a failed read does not stop the others: each answer is { out } or { err: { message, stderr } },
+// in the order asked. The caller decides what each failure means, so one repo's read cannot fail another's.
+export function runManySettled(cmd, argsList, { limit = LIMIT, retryMs = 5000 } = {}) {
+  if (!argsList.length) return [];
+  const input = JSON.stringify({ cmd, argsList, limit, retryMs, settle: true });
+  try {
+    return JSON.parse(execFileSync(process.execPath, [SELF], { ...OPTS, input, timeout: 30 * 60_000, stdio: ["pipe", "pipe", "pipe"] }));
+  } catch (err) {
+    throw Object.assign(new Error(`runMany: ${String(err.stderr || err.message).trim().slice(0, 500)}`), { stderr: err.stderr });
+  }
+}
+
 const once = (cmd, args) =>
   new Promise((resolve, reject) => execFile(cmd, args, OPTS, (err, stdout, stderr) => (err ? reject(Object.assign(err, { stderr })) : resolve(stdout))));
 
 async function worker() {
   let text = "";
   for await (const chunk of process.stdin) text += chunk;
-  const { cmd, argsList, limit, retryMs } = JSON.parse(text);
+  const { cmd, argsList, limit, retryMs, settle } = JSON.parse(text);
   const out = new Array(argsList.length);
   let next = 0;
   const lane = async () => {
     while (next < argsList.length) {
       const i = next++;
       try {
-        out[i] = await once(cmd, argsList[i]);
+        try {
+          out[i] = await once(cmd, argsList[i]);
+        } catch (err) {
+          if (!isServerError(err)) throw err;
+          await new Promise((r) => setTimeout(r, retryMs));
+          out[i] = await once(cmd, argsList[i]);
+        }
+        if (settle) out[i] = { out: out[i] };
       } catch (err) {
-        if (!isServerError(err)) throw err;
-        await new Promise((r) => setTimeout(r, retryMs));
-        out[i] = await once(cmd, argsList[i]);
+        if (!settle) throw err;
+        out[i] = { err: { message: String(err.message ?? err), stderr: String(err.stderr ?? "") } };
       }
     }
   };
