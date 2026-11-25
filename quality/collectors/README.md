@@ -11,16 +11,17 @@ flowchart LR
 
 | Part | Shape |
 | --- | --- |
-| Module | `export const area`; `export async function collect(args)`, args as below |
-| Repo values | read only from `params`: owner and repo, paths, URLs, project folders. The template's own `params` are the defaults, for tests and a bare call. A collector never reads the repo's targets folder itself |
+| Module | `export const area`; `export const scope`, the level or levels it runs at (unset: `repo`); `export async function collect(args)`, args as below |
+| Sample | `--sample` reads `<collector>.sample.json` beside it, not `collect()`: no API call, each entry and the run `sample: true` |
+| Repo values | only from `params`: owner and repo, paths, URLs, project folders, the template's as defaults for tests and a bare call. Never the repo's targets folder |
 | Returns | `{ [id]: { value, detail?: [{ label, value, unit? }], source, read_at } }`, or `{ [id]: { could_not_check or not_applicable, source } }` |
-| Never | throws for a missing tool, token or file, or scores a miss as 0. It holds no org name, person's name or home path: those go in `params` |
-| Private membership | `pull_requests.reviewed` counts `Review: MERGE\|BLOCK` comments from members only. A private org membership reads as non-member to a token outside the org. When any verdict reads so, the metric is `could_not_check`, never 0. So does `pull_requests.fixed_after_review`. Fix: a public membership, or a token in the org |
-| Basis | Each metric is a state read now, the latest event, or the last N events where new work replaces old within hours. Never a calendar window or a projection. Its `source` says which, and names N and why |
-| Stale input | A metric read from a build output is not measured when that output is older than its source |
-| Failure | A collector that throws or fails to import marks every metric in its targets file `could_not_check` |
-| Packages | `yaml` and `typescript`, from Git Crafter's root `package.json`. A repo's own collector resolves its packages from the repo |
-| Layout | one subfolder per collector, `collectors/<collector>/`, each its own code area; the engine's one door, `collectors/lib/`. `collect.mjs` runs any `*.mjs` that exports `collect()`, at the top or one subfolder down |
+| Never | throws for a missing tool, token or file, or scores a miss as 0. No org name, person's name or home path: those go in `params` |
+| Private membership | `pull_requests.reviewed` and `pull_requests.fixed_after_review` count `Review: MERGE\|BLOCK` comments from members only. To a token outside the org, a private member reads as non-member; when any verdict reads so, each is `could_not_check`, never 0. Fix: a public membership or an org token |
+| Basis | A state read now, the latest event, or the last N events where new work replaces old within hours; never a calendar window or projection. `source` says which, with N and why |
+| Stale input | A metric read from a build output older than its source is not measured |
+| Failure | Throwing or failing to import marks every metric in its targets file `could_not_check` |
+| Packages | `yaml` and `typescript`, from Git Crafter's root `package.json`; a repo's own collector's, from the repo |
+| Layout | `collectors/<collector>/`, one code area each; `collectors/lib/`, the engine's one door. `collect.mjs` runs any `*.mjs` exporting `collect()`, at the top or one subfolder down |
 | Test | `collectors/<collector>/<area>.test.mjs` under `node --test`, fixtures in `fixtures/<area>/`: a good fixture and a missing input |
 
 ## Arguments
@@ -29,10 +30,11 @@ flowchart LR
 | --- | --- |
 | `root` | the repo measured, absolute. Never Git Crafter's checkout: resolve nothing in the repo from `import.meta.url` |
 | `mode` | `ci` or `local` |
-| `data` | the repo's data folder (config `data`), absolute, for a file a session writes there |
-| `params` | always an object: the union of its targets file's `params`, the template's first, then the repo's override, key by key |
+| `level`, `owner` | the config's: a level its `scope` names, and the account measured |
+| `data` | the repo's data folder (config `data`), absolute, for files a session writes |
+| `params` | always an object: its targets file's `params`, the template's, then the repo's override key by key |
 | `targets` | that file's active entries |
-| `allParams` | every targets file's merged `params` by file name (`allParams["docs.json"]`), for a setting another tab owns, so no copy drifts |
+| `allParams` | each targets file's merged `params` by file name (`allParams["docs.json"]`): another tab's setting, never a copy that drifts |
 | `lib` | engine helpers ([`lib/index.mjs`](lib/index.mjs)) |
 
 ## Targets files
