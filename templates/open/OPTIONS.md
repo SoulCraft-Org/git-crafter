@@ -34,3 +34,11 @@ flowchart LR
 | Who needs it | Only a repo that publishes a built artifact |
 | Git Crafter | It ships none, so it has no such step |
 | Price | Free on public repos (GitHub Docs, read 2026-11-13) |
+
+## Dependabot auto-merge
+
+| Step | Do |
+|---|---|
+| 1 | Skip `repo.no_auto_merge`: leave it out of `--only` |
+| 2 | In the repo's `settings.general_drift` targets, set `expected_from_setup: true` and `expected: {"allow_auto_merge": true}` |
+| 3 | Every other pull request still merges at its head commit |

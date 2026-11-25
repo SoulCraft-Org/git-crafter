@@ -158,6 +158,17 @@ test("general drift: expected_from_setup takes setup.json's General rows, with p
   assert.match((await run({}, { params: { expected_from_setup: "yes" } }))[id].could_not_check, /expected_from_setup .* true or false/);
 });
 
+test("general drift: a Dependabot auto-merge rule lays allow_auto_merge true over setup.json's row, and the repo meets it", async () => {
+  const id = "settings.general_drift";
+  const switches = { has_wiki: true, has_discussions: true, has_projects: true, allow_update_branch: true, web_commit_signoff_required: true, allow_rebase_merge: false, delete_branch_on_merge: true };
+  const repo = { [R("")]: { ...REST[R("")], ...switches, allow_auto_merge: true } };
+  const standard = await run(repo, { params: { expected_from_setup: true } });
+  assert.equal(rows(standard[id])["allow_auto_merge is false"], 0, "the template's row says off");
+  const rule = await run(repo, { params: { expected_from_setup: true, expected: { allow_auto_merge: true } } });
+  assert.equal(rule[id].value, 0);
+  assert.equal(rows(rule[id])["allow_auto_merge is true"], 1);
+});
+
 test("outside access: collaborators and open invitations add up", async () => {
   const got = await run({ [R("/collaborators?affiliation=outside&per_page=100")]: [{}, {}], [R("/invitations?per_page=100")]: [{}] });
   assert.equal(got["settings.outside_access"].value, 3);
