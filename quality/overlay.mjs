@@ -57,6 +57,12 @@ export function overlayTargets(templateFiles, repoFiles = [], { skipUnknown = fa
       add({ ...def, file });
     }
   }
+  layRepoFiles(repoFiles, { byId, add, addParams, skipUnknown });
+  return { entries, params };
+}
+
+// Lays each repo file's entries over the template's: an override on its metric, else the repo's own metric.
+function layRepoFiles(repoFiles, { byId, add, addParams, skipUnknown }) {
   const own = new Set();
   for (const { file, list } of repoFiles) {
     for (const o of list) {
@@ -64,17 +70,18 @@ export function overlayTargets(templateFiles, repoFiles = [], { skipUnknown = fa
       if (own.has(o.id)) throw new Error(`${where}: duplicate id`);
       own.add(o.id);
       const base = byId.get(o.id);
-      if (!base) {
-        if (!(skipUnknown && Object.keys(o).every((k) => k === "id" || OVERRIDES.includes(k)))) add(ownMetric(o, file, where));
-      } else applyOverride(base, o, file, where, addParams);
+      if (base) applyOverride(base, o, file, where, addParams);
+      else if (!(skipUnknown && isOverride(o))) add(ownMetric(o, file, where));
     }
   }
-  return { entries, params };
 }
+
+// An entry that holds only an id and override fields.
+const isOverride = (o) => Object.keys(o).every((k) => k === "id" || OVERRIDES.includes(k));
 
 // A repo's own metric: a full definition, not an override with nothing under it.
 function ownMetric(o, file, where) {
-  if (Object.keys(o).every((k) => k === "id" || OVERRIDES.includes(k))) throw new Error(`${where}: no template metric "${o.id}" to override`);
+  if (isOverride(o)) throw new Error(`${where}: no template metric "${o.id}" to override`);
   return { ...o, file };
 }
 
