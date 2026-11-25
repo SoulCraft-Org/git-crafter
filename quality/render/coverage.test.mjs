@@ -35,6 +35,14 @@ describe("the page's coverage line", () => {
     assert.match(html, /1 of 2 metrics read, 1 do not apply, 2 dropped; one not read is shown, never scored as 0\./);
   });
 
+  it("reads at most 50 words before the overview's first action, the score explainer being a fold", () => {
+    const overview = /<section id="overview"[^>]*>(.*?)<\/section>/s.exec(html)[1];
+    const before = overview.slice(0, overview.search(/<(a|button|summary)\b/));
+    const words = before.replace(/<[^>]+>/g, " ").split(/\s+/).filter(Boolean).length;
+    assert.ok(words <= 50, `${words} words before the first action`);
+    assert.match(overview, /<details class="refs-fold"><summary>How the score is made<\/summary><p class="small">Quality, Speed and Consumption weigh a third each/);
+  });
+
   it("lists each dropped metric with its reason, as plain text", () => {
     const fold = /<h3>Dropped<\/h3><b>2<\/b><\/summary>(.*?)<\/details>/s.exec(html)[1];
     assert.match(fold, /<span>t\.gone<\/span><span class="reason">No such thing here \(2026-11-23\)<\/span>/);
