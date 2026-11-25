@@ -90,13 +90,16 @@ test("protections: each missing guard counts once", async () => {
   assert.equal(pushShort[id].value, 1);
   const openEnv = await run({ [R("/environments?per_page=100")]: { environments: [{ name: "production", protection_rules: [], deployment_branch_policy: null }] } });
   assert.equal(openEnv[id].value, 1);
-  // A flag reads 1 when on, so the open environment is the 0.
+  // A flag reads 1 when on. The copilot environment is exempt by params.exempt_environments, so only another open environment is a 0.
   const mixed = await run({ [R("/environments?per_page=100")]: { environments: [
     { name: "github-pages", deployment_branch_policy: { protected_branches: false, custom_branch_policies: true } },
     { name: "copilot", deployment_branch_policy: null },
   ] } });
   assert.equal(rows(mixed[id])["Environment github-pages deploys from named branches only"], 1);
-  assert.equal(rows(mixed[id])["Environment copilot deploys from named branches only"], 0);
+  assert.equal(mixed[id].value, 0);
+  assert.equal(rows(mixed[id])["Environment copilot deploys from named branches only"], undefined);
+  const staging = await run({ [R("/environments?per_page=100")]: { environments: [{ name: "staging", deployment_branch_policy: null }] } });
+  assert.equal(rows(staging[id])["Environment staging deploys from named branches only"], 0);
 });
 
 test("protections: classic rules that admins skip count as a bypass", async () => {

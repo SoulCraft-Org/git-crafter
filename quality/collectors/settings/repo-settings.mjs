@@ -35,12 +35,13 @@ export function setupExpected(file = new URL("../../../templates/setup.json", im
 }
 
 // The params this collector reads, checked; params.expected lies over setup.json's when expected_from_setup is true.
-function settings({ expected, expected_from_setup: fromSetup = false, blocked_paths: blockedPaths, included_cache_gb: includedCacheGb }) {
+function settings({ expected, expected_from_setup: fromSetup = false, blocked_paths: blockedPaths, exempt_environments: exemptEnvs, included_cache_gb: includedCacheGb }) {
   need(isMap(expected) && Object.values(expected).every(isScalar), "expected", "map repo fields to true, false, a string or a number");
   need(typeof fromSetup === "boolean", "expected_from_setup", "be true or false");
   need(Array.isArray(blockedPaths) && blockedPaths.every((p) => typeof p === "string"), "blocked_paths", "be a list of strings");
+  need(Array.isArray(exemptEnvs) && exemptEnvs.every((n) => typeof n === "string"), "exempt_environments", "be a list of strings");
   need(typeof includedCacheGb === "number" && includedCacheGb > 0, "included_cache_gb", "be a number above 0");
-  return { expected: { ...(fromSetup ? setupExpected() : {}), ...expected }, blockedPaths, includedCacheGb };
+  return { expected: { ...(fromSetup ? setupExpected() : {}), ...expected }, blockedPaths, exemptEnvs, includedCacheGb };
 }
 
 // One protection: null when the repo has nothing for it to guard, { hidden } when the token cannot see it.
@@ -71,8 +72,9 @@ async function pushRow(R, cfg) {
 }
 
 // One row for each environment, named, so a miss says which one: an environment names its branches when it holds a deployment_branch_policy.
-async function environmentsRows(R) {
-  const envs = await R.environments();
+// params.exempt_environments leaves out the Copilot cloud agent's own environment, which runs on copilot/ branches a main-only rule would stop.
+async function environmentsRows(R, cfg) {
+  const envs = (await R.environments()).filter((e) => !cfg.exemptEnvs.includes(e.name));
   return envs.map((e) => ({ label: `Environment ${e.name} deploys from named branches only`, ok: Boolean(e.deployment_branch_policy) }));
 }
 
@@ -88,9 +90,9 @@ const sum = (rows) => rows.reduce((n, r) => n + r.value, 0);
 
 const METRICS = {
   "settings.protections_missing": {
-    source: "state: gh api repos/{repo}/rulesets and each active one (bypass_actors, else GraphQL rulesets.bypassActors.totalCount when REST hides the list, read 2026-11-23; tag rules deletion and update, push rule file_path_restriction against params.blocked_paths), branches/{branch}/protection (enforce_admins), tags (the first listed), environments (deployment_branch_policy, one row for each environment); a row with nothing to guard is left out",
+    source: "state: gh api repos/{repo}/rulesets and each active one (bypass_actors, else GraphQL rulesets.bypassActors.totalCount when REST hides the list, read 2026-11-23; tag rules deletion and update, push rule file_path_restriction against params.blocked_paths), branches/{branch}/protection (enforce_admins), tags (the first listed), environments (deployment_branch_policy, one row for each environment except params.exempt_environments, the Copilot cloud agent's, which runs on copilot/ branches); a row with nothing to guard is left out",
     async run(R, cfg) {
-      const rows = (await Promise.all([bypassRow(R), tagsRow(R), pushRow(R, cfg), environmentsRows(R)])).flat().filter(Boolean);
+      const rows = (await Promise.all([bypassRow(R), tagsRow(R), pushRow(R, cfg), environmentsRows(R, cfg)])).flat().filter(Boolean);
       const hidden = rows.find((r) => r.hidden);
       if (hidden) return skip(hidden.hidden);
       if (!rows.length) return skip("this repo has no ruleset, tag or environment to guard yet");
