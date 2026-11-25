@@ -290,7 +290,7 @@ ${rows.length ? chips(rows) : ""}<div class="kinds two three">${kinds.join("")}<
 const coverage = (m, dropped) => `${m.metricsMeasured} of ${m.metricsTotal} metrics read${m.metricsNotApplicable ? `, ${m.metricsNotApplicable} do not apply` : ""}${dropped ? `, ${dropped} dropped` : ""}`;
 
 function masterBlock(m, dropped = 0) {
-  return `<div class="total master"><p class="sb-l">Master score</p><p class="big">${glyph(scoreStatus(m.score))}${finite(m.score) ? m.score : "–"}<span class="small"> / 100</span></p>${meter(m.score, "Master score")}<p class="small">Quality, Speed and Consumption weigh a third each: each is the mean of the tabs scored in it, and the master is the mean of the ${m.categories} categories, over ${m.measured} measured tabs of ${m.total}. A tab is the mean of its categories. ${coverage(m, dropped)}; one not read is shown, never scored as 0.</p></div>`;
+  return `<div class="total master"><p class="sb-l">Master score</p><p class="big">${glyph(scoreStatus(m.score))}${finite(m.score) ? m.score : "–"}<span class="small"> / 100</span></p>${meter(m.score, "Master score")}<p class="small">${coverage(m, dropped)}; one not read is shown, never scored as 0.</p><details class="refs-fold"><summary>How the score is made</summary><p class="small">Quality, Speed and Consumption weigh a third each: each is the mean of the tabs scored in it, and the master is the mean of the ${m.categories} categories, over ${m.measured} measured tabs of ${m.total}. A tab is the mean of its categories.</p></details></div>`;
 }
 
 function totalBlock(label, part) {
