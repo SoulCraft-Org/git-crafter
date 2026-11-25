@@ -1,6 +1,6 @@
 # Security
 
-Git Crafter is licensed under [Apache-2.0](LICENSE) and published by SoulCraft. It began as Code-OS by Colorado Startups ([NOTICE](NOTICE)). Report a security problem privately, never in a public issue.
+Git Crafter is licensed under [Apache-2.0](LICENSE). SoulCraft publishes it. It began as Code-OS by Colorado Startups ([NOTICE](NOTICE)). Report a security problem privately, never in a public issue.
 
 ```mermaid
 flowchart LR
@@ -15,8 +15,8 @@ flowchart LR
 |---|---|
 | Report | GitHub private vulnerability reporting: the repo's Security tab, **Report a vulnerability**. It is on in the repo's security settings |
 | Never | open a public issue for a security problem, or paste a key value anywhere |
-| Then | the fix lands by pull request, and the advisory names the reporter unless they ask otherwise |
-| Supported | the newest release tag. A fix lands on `main` and ships in the next tag, which Dependabot offers to every repo that pins Git Crafter |
+| Then | the fix lands by pull request. The advisory names the reporter unless they ask otherwise |
+| Supported | the newest release tag. A fix lands on `main`. It ships in the next tag. Dependabot offers that tag to every repo that pins Git Crafter |
 
 ## In scope
 
@@ -36,10 +36,10 @@ flowchart LR
 |---|---|
 | No session reads, prints or stores a key value | [rules/keys.md](rules/keys.md); the deny list's credential, Keychain, clipboard and env rules |
 | Every deny and hookify rule ships block and allow examples, run as a self-test in CI | [tools/claude_deny.json](tools/claude_deny.json), [tools/hookify_check.py](tools/hookify_check.py), [tools/verify.sh](tools/verify.sh) |
-| gitleaks scans each PR's own commits, and on a push to main every ancestor of the pushed commit, pinned by version and SHA-256. A ruleset requires the check to merge | [secret-scan.yml](.github/workflows/secret-scan.yml), [secret_scan.sh](tools/secret_scan.sh) |
-| Workflows default to `contents: read`. Five jobs write, each on that job alone. Actions pin by commit SHA; checkouts use `persist-credentials: false`, probe excepted | [.github/workflows/](.github/workflows/); [THREAT-MODEL.md](THREAT-MODEL.md#jobs-that-write) |
+| gitleaks scans each PR's own commits. On a push to main it scans every ancestor of the pushed commit. It is pinned by version and SHA-256. A ruleset requires the check to merge | [secret-scan.yml](.github/workflows/secret-scan.yml), [secret_scan.sh](tools/secret_scan.sh) |
+| Workflows default to `contents: read`. Five jobs write, each on that job alone. Actions pin by commit SHA. Checkouts use `persist-credentials: false`, probe excepted | [.github/workflows/](.github/workflows/); [THREAT-MODEL.md](THREAT-MODEL.md#jobs-that-write) |
 | The repo's Actions policy runs only GitHub-owned and verified creators' actions, only at a full commit SHA | The repo's Settings, Actions, General (set 2026-11-10) |
 | Secret scanning with push protection, CodeQL default setup, Dependabot alerts and security updates, and immutable releases are on. Version updates come weekly, one grouped pull request per ecosystem, after a 14-day cooldown | [dependabot.yml](.github/dependabot.yml); the repo's security settings |
-| The sync tool writes only the paths the manifest and an overlay list, and only on `apply --yes` | [manifest.json](manifest.json), [tools/claude_os_sync.py](tools/claude_os_sync.py) |
+| The sync tool writes only the paths the manifest and an overlay list. It writes only on `apply --yes` | [manifest.json](manifest.json), [tools/claude_os_sync.py](tools/claude_os_sync.py) |
 | An org's names live in its own private overlay, never in this repo. The overlay scans this repo's `main` daily for them (goal 0) | [tools/public_scan.py](tools/public_scan.py) |
 | This repo is its own public copy. `verify` fails when it tracks a private path | [tools/private_paths.sh](tools/private_paths.sh), [.gitignore](.gitignore) |
