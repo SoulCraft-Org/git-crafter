@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { drive, ghClient } from "../tools/org_fetch.mjs";
+import { drive, ghClient, readMerged } from "../tools/org_fetch.mjs";
 import { runManySettled } from "../tools/org_many.mjs";
 
 // A job that asks for `n` graphql reads one after another and returns the answers joined.
@@ -94,4 +94,15 @@ test("ghClient.many with a stand-in exec reads one by one and settles each", () 
   assert.deepEqual(seq, ["ok", "bad", "graphql"]);
   assert.equal(gh.calls, 3);
   assert.equal(gh.graphqlCalls, 1);
+});
+
+test("readMerged pages through its generator as fetchMerged did", () => {
+  const page = (nodes, next) => ({ repository: { pullRequests: { pageInfo: { hasNextPage: Boolean(next), endCursor: next }, nodes } } });
+  const pr = (n, at) => ({ number: n, createdAt: at, mergedAt: at, updatedAt: at, commits: { nodes: [{ commit: { statusCheckRollup: { state: "SUCCESS" } } }] } });
+  const g = readMerged("r", Date.parse("2026-01-01T00:00:00Z"));
+  assert.deepEqual(g.next().value.graphql[1].cursor, null);
+  const second = g.next(page([pr(2, "2026-02-01T00:00:00Z")], "c1"));
+  assert.equal(second.value.graphql[1].cursor, "c1");
+  const done = g.next(page([pr(1, "2025-12-01T00:00:00Z")], null));
+  assert.deepEqual(done.value.map((p) => p.number), [2], "a PR merged before the window is left out");
 });
