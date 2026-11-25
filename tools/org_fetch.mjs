@@ -221,7 +221,13 @@ export function drive(gh, jobs, wait = sleep) {
     const answers = new Map();
     if (asking.length > 1 && gh.many) {
       const units = asking.flatMap((s) => (s.ask.graphql ? [s.ask] : s.ask.rest.map((rest) => ({ rest, jq: s.ask.jq }))));
-      const got = gh.many(units);
+      // A batch that fails as a whole (no child process, a full buffer, the timeout) fails each asking job, never the run.
+      let got;
+      try {
+        got = gh.many(units);
+      } catch (error) {
+        got = units.map(() => ({ error }));
+      }
       let at = 0;
       for (const s of asking) {
         const n = s.ask.graphql ? 1 : s.ask.rest.length;
