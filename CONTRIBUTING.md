@@ -57,8 +57,8 @@ gh api repos/<owner>/git-crafter/git/refs -f ref=refs/tags/v1.3.0 -f sha=<merge 
 | CI runs the checks, defined in one file | [tools/verify.sh](tools/verify.sh) |
 | Outside contributors sign off (`git commit -s`). Verified org members skip it | [.github/dco.yml](.github/dco.yml) |
 | Squash merge only, after every check passes on the head commit | Repo settings; [rules/delegation.md](rules/delegation.md) |
-| A bug, or a fix one small PR closes within a day, is an issue typed Bug or Task | The org's work-tracking rule |
-| Anything else is a draft card on the org Project. It becomes an issue, with its area label, when its PR opens | [GitHub Docs: draft issues](https://docs.github.com/en/issues/planning-and-tracking-with-projects/managing-items-in-your-project/adding-items-to-your-project) |
+| A bug or quick fix is a Bug or Task issue, off the board. A feature is a draft card or `enhancement` issue. Each is filed when found | [templates/agents/AGENTS.md](templates/agents/AGENTS.md), with the commands; `projects.bug_cards` |
+| A card becomes an issue, with its area label, when its PR opens | [GitHub Docs: draft issues](https://docs.github.com/en/issues/planning-and-tracking-with-projects/managing-items-in-your-project/adding-items-to-your-project) |
 | A card opens with a picture, drawn by `quality/cards/picture.mjs` and pushed to the `cards` branch | [quality/README.md](quality/README.md); `projects.cards_at_a_glance` |
 | A PR that fixes an issue says `Closes #n` or `Card: PVTI_id` on one line, so GitHub links them | [GitHub Docs: linking a pull request](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue) |
 
