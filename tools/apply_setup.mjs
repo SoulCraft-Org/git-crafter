@@ -69,7 +69,7 @@ function parseArgs(argv) {
   if (named.length !== 1) return { problem: "name one of --repo, --org, --user or --enterprise" };
   const [scope] = named;
   if (!SCOPES[scope].shape.test(opts[scope])) return { problem: `--${scope} must be ${SCOPES[scope].spelled}` };
-  return { ...opts, scope, name: opts[scope] };
+  return { ...opts, scope, name: opts[scope], label: scope === "repo" ? opts.repo : `${scope} ${opts[scope]}` };
 }
 
 // The rows at `setup`: a file's, or those of each *.json file in a folder in name order; a missing path holds none.
@@ -166,7 +166,7 @@ function report(results, opts, log) {
   const unset = results.filter((r) => r.status === "no value");
   if (unset.length) log(`warning: ${unset.length} row(s) read no value and never fail --check: ${unset.map((r) => r.row.id).join(", ")}`);
   const tally = Object.entries(Object.groupBy(results, (r) => r.status)).map(([s, rs]) => `${rs.length} ${s}`);
-  log(`${opts.scope === "repo" ? "" : `${opts.scope} `}${opts.name}: ${tally.join(", ") || "no rows"}${opts.apply ? "" : " (dry run: nothing changed)"}`);
+  log(`${opts.label}: ${tally.join(", ") || "no rows"}${opts.apply ? "" : " (dry run: nothing changed)"}`);
   const failed = opts.check ? results.filter((r) => r.failed) : [];
   if (failed.length) log(`check failed: ${failed.map((r) => r.row.id).join(", ")}`);
   return failed.length || results.some((r) => r.status === "failed") ? 1 : 0;
