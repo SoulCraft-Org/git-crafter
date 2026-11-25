@@ -23,3 +23,7 @@ Paste this file into the project's Instructions field. Fill each `<...>` cell, t
 | Keys | Never print, copy or commit a key value |
 | Write | Tables and diagrams first. One idea per sentence. No em dashes |
 | `<org>` | `<one rule for how a new repo in this org starts, such as "a new repo starts as a row in <org>/<repo>/repos.toml">` |
+
+| Optional | Do |
+|---|---|
+| Merge | Add only when the owner wants threads to merge. Then change the Ship row's "never merge" to "merge only per the Merge row". Merge when every check is green at the head and a fresh review passed. Post a comment whose first line is `Review: MERGE at <40-hex sha>`, then merge that commit: `gh api -X PUT repos/<owner>/<repo>/pulls/<n>/merge -f sha=<sha> -f merge_method=squash`. A cloud thread has no GraphQL, so this call stands in for `gh pr merge --match-head-commit`. Never `--auto` or `--admin`. The rule: Git Crafter `skills/merging/SKILL.md` |
