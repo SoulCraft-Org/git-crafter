@@ -14,9 +14,12 @@ flowchart LR
 |---|---|
 | 1 | Add `merge_group:` under `on:` in `ci.yml`. Under it `changes` finds no base commit, so every job runs |
 | 2 | Apply the `rules.merge_queue` row with [apply_setup.mjs](../../tools/apply_setup.mjs) |
-| 3 | Merge as before with `gh pr merge`; it stays off `--auto` through `repo.no_auto_merge` |
+| 3 | Merge as before with `gh pr merge`. It stays off `--auto` through `repo.no_auto_merge` |
 
-Each merge adds a CI run, so a quiet repo gains nothing. Free on public org repos (GitHub Docs, read 2026-11-13).
+| Fact | Detail |
+|---|---|
+| CI cost | Each merge adds a CI run, so a quiet repo gains nothing |
+| Price | Free on public org repos (GitHub Docs, read 2026-11-13) |
 
 ## Attestations
 
@@ -26,4 +29,8 @@ Each merge adds a CI run, so a quiet repo gains nothing. Free on public org repo
 | 2 | Give that job `id-token: write`, `attestations: write` and `contents: read` |
 | 3 | Read one back: `gh attestation verify <artifact> --repo <owner>/<repo>` |
 
-Only a repo that publishes a built artifact needs this; Git Crafter ships none, so it has no such step. Free on public repos (GitHub Docs, read 2026-11-13).
+| Fact | Detail |
+|---|---|
+| Who needs it | Only a repo that publishes a built artifact |
+| Git Crafter | It ships none, so it has no such step |
+| Price | Free on public repos (GitHub Docs, read 2026-11-13) |

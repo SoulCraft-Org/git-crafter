@@ -20,7 +20,7 @@ flowchart LR
 | Git Crafter's [`CODE_OF_CONDUCT.md`](../../CODE_OF_CONDUCT.md) | the repo root | the project name |
 | [`templates/agents/`](../agents/) | the repo root | as that folder says |
 | `.github/PULL_REQUEST_TEMPLATE.md`, `.github/ISSUE_TEMPLATE/`, `.github/DISCUSSION_TEMPLATE/`, `.github/CODEOWNERS`, `.github/dco.yml`, `.github/release.yml`, `.github/FUNDING.yml` | the same paths | your `FUNDING.yml` destinations |
-| `labels.json` | anywhere; the Labels row below reads it | nothing |
+| `labels.json` | anywhere. The Labels row below reads it | nothing |
 | [`merge_policy.json`](merge_policy.json) and [`tools/merge_policy.py`](../../tools/merge_policy.py) | `tools/`, side by side | `ai_mergeable` to your content paths |
 | [`wiki/`](wiki/), [`wiki.yml`](../ci/wiki.yml) | `wiki/`, `.github/workflows/` | `<owner>/<repo>` |
 
@@ -43,10 +43,10 @@ flowchart LR
 
 | Row | Do |
 |---|---|
-| From a Git Crafter checkout, `node tools/apply_setup.mjs --repo <owner>/<repo>` | a dry run; `--apply` sets each row it would change, then reads it back; `--check` exits 1 on drift |
-| `method`, `path`, `body` | `gh api -X <method> <path> --input body.json`, the row's `body` in `body.json`; no `body`, no `--input` |
-| `{owner}`, `{repo}`, `{topics}`, `{homepage}`, `{description}` | your values; `{node_id}` is `gh api repos/<owner>/<repo> -q .node_id` |
-| `api: false`, `when: no_org_ruleset` | its `reason` names the web UI step; skip a `no_org_ruleset` row if your org sets that ruleset |
+| From a Git Crafter checkout, `node tools/apply_setup.mjs --repo <owner>/<repo>` | A dry run. `--apply` sets each row it would change, then reads it back. `--check` exits 1 on drift |
+| `method`, `path`, `body` | `gh api -X <method> <path> --input body.json`, the row's `body` in `body.json`. No `body`, no `--input` |
+| `{owner}`, `{repo}`, `{topics}`, `{homepage}`, `{description}` | Your values. `{node_id}` is `gh api repos/<owner>/<repo> -q .node_id` |
+| `api: false`, `when: no_org_ruleset` | Its `reason` names the web UI step. Skip a `no_org_ruleset` row if your org sets that ruleset |
 
 | Not in the list | Call |
 |---|---|
@@ -58,7 +58,7 @@ flowchart LR
 
 | Option (`optional: true`) | For | Row and needs |
 |---|---|---|
-| Merge queue | a busy branch | `rules.merge_queue`; CI runs `on: merge_group` ([how](OPTIONS.md#merge-queue)); `gh pr merge` after checks pass: `repo.no_auto_merge` keeps auto-merge off |
+| Merge queue | a busy branch | `rules.merge_queue`. CI runs `on: merge_group` ([how](OPTIONS.md#merge-queue)). `gh pr merge` after checks pass: `repo.no_auto_merge` keeps auto-merge off |
 | Artifact attestations | a repo that publishes an artifact | `manual.artifact_attestations`: [actions/attest](https://github.com/actions/attest), with `id-token: write` and `attestations: write` ([step](OPTIONS.md#attestations)) |
 
 ## Check
