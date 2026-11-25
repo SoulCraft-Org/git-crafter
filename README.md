@@ -19,16 +19,14 @@ Both pages are public.
 
 ## Quickstart: 3 steps
 
-Re-run end to end in an empty repo on 2026-11-25. Step 1 took under a second, and `ci_standard.py check` then reported that the repo follows the standard.
-
-| Step | Do | From |
-|---|---|---|
-| 1 | Copy the five starter files with the commands below. Then set `paths`, `short` and `standard` in `ci.yml`, and the `my-repo` and `OWNER` placeholders in the process config | [quality](templates/quality/README.md), [process](templates/process/README.md), [ci](templates/ci/README.md) |
-| 2 | A ruleset on `main` requiring `ci / ci-ok` | [templates/ci](templates/ci/README.md) |
-| 3 | Settings, Pages: source "GitHub Actions" | [templates/ci](templates/ci/README.md) |
+| Step | Do |
+|---|---|
+| 1 | Run the block below. Set `ci.yml`'s `paths`, `short` and `standard`, and the process config's placeholders ([ci](templates/ci/README.md), [process](templates/process/README.md)) |
+| 2 | A ruleset on `main` requiring `ci / ci-ok` |
+| 3 | Settings, Pages: source "GitHub Actions" |
 
 ```bash
-GC=../git-crafter   # a checkout of this repo, beside yours
+GC=../git-crafter   # this repo, cloned beside yours
 mkdir -p quality/process .github/workflows
 cp $GC/templates/quality/config.json quality/config.json
 cp $GC/templates/process/config.json quality/process/config.json
@@ -37,15 +35,7 @@ cp $GC/templates/ci/dependabot.yml .github/dependabot.yml
 python3 -I $GC/tools/ci_standard.py check --repo .   # follows the standard
 ```
 
-More, each optional:
-
-| Add | From |
-|---|---|
-| Community files | [open](templates/open/README.md) |
-| Switches | [setup.json](templates/setup.json) with `tools/apply_setup.mjs` |
-| Agent files | [agents](templates/agents/README.md) |
-| Projects | [projects](templates/projects/README.md) |
-| CI pool | [CI-POOL.md](templates/ci/CI-POOL.md) |
+Optional: [open](templates/open/README.md), [setup.json](templates/setup.json), [agents](templates/agents/README.md), [projects](templates/projects/README.md), [CI pool](templates/ci/CI-POOL.md).
 
 ## The 13 tabs
 
