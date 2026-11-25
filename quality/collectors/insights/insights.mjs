@@ -55,11 +55,11 @@ export function communityHealth(profile) {
 // Where GitHub looks for each health file: the root, docs/ and .github/ (About community profiles, read 2026-11-25).
 const HEALTH_DIRS = ["", "docs", ".github"];
 const HEALTH_NAMES = {
-  readme: /^readme(\.[a-z]+)?$/i,
-  license: /^(license|licence|copying)(\.[a-z]+)?$/i,
-  contributing: /^contributing(\.[a-z]+)?$/i,
-  code_of_conduct: /^code[_-]of[_-]conduct(\.[a-z]+)?$/i,
-  pull_request_template: /^pull_request_template(\.[a-z]+)?$/i,
+  readme: /^readme([._-].+)?$/i,
+  license: /^(licen[sc]e|copying|unlicense)([._-].+)?$/i,
+  contributing: /^contributing([._-].+)?$/i,
+  code_of_conduct: /^code[_-]of[_-]conduct([._-].+)?$/i,
+  pull_request_template: /^pull_request_template([._-].+)?$/i,
 };
 
 /**
@@ -69,10 +69,13 @@ const HEALTH_NAMES = {
  */
 export async function forkHealth(gh, repo, info) {
   const lists = await Promise.all(HEALTH_DIRS.map((dir) => gh.rest(`repos/${repo}/contents${dir ? `/${dir}` : ""}`).catch((err) => (err instanceof GhError && err.status === 404 ? [] : Promise.reject(err)))));
-  const names = lists.flatMap((list) => (Array.isArray(list) ? list.map((e) => e.name) : []));
-  const files = Object.fromEntries(Object.entries(HEALTH_NAMES).map(([key, re]) => [key, names.some((n) => re.test(n))]));
+  const entries = lists.map((list) => (Array.isArray(list) ? list : []));
+  // A license counts at the root only (the docs page does not say docs/ or .github/ hold one); a template may be a folder of them.
+  const has = (key, re) => (key === "license" ? entries.slice(0, 1) : entries).flat().some((e) => re.test(e.name) && (e.type === "file" || key === "pull_request_template"));
+  const files = Object.fromEntries(Object.entries(HEALTH_NAMES).map(([key, re]) => [key, has(key, re)]));
   const found = [Boolean(info.description), ...Object.values(files)];
-  return communityHealth({ health_percentage: Math.round((100 * found.filter(Boolean).length) / found.length), description: info.description, files });
+  const own = `state: gh api repos/${repo}/contents of the root, docs and .github: the share of the six community checks found in the fork's own tree, as GitHub answers 404 for a fork's community profile and publishes no weights`;
+  return { ...communityHealth({ health_percentage: Math.round((100 * found.filter(Boolean).length) / found.length), description: info.description, files }), source: own };
 }
 
 const METRICS = {
@@ -103,7 +106,7 @@ async function readMetric(id, metric, ctx) {
   try {
     const result = await metric.run({ ...ctx, gh: client.gh });
     if (result.could_not_check) return [id, { could_not_check: result.could_not_check, source }];
-    return [id, { ...result, source, read_at: new Date().toISOString() }];
+    return [id, { source, ...result, read_at: new Date().toISOString() }];
   } catch (err) {
     return [id, { could_not_check: reasonFor(err, needs, ctx.mode), source }];
   }

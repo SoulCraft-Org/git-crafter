@@ -51,7 +51,7 @@ describe("collect", () => {
 
   it("scores a fork from its own tree where GitHub answers 404 for its profile", async () => {
     const { [`repos/${REPO}/community/profile`]: _gone, ...rest } = REST;
-    const entry = (name) => ({ name });
+    const entry = (name) => ({ name, type: "file" });
     const fork = {
       ...rest,
       [`repos/${REPO}`]: { fork: true, description: "A fork" },
@@ -62,7 +62,21 @@ describe("collect", () => {
     const got = (await collectWith({ gh: fakeGh(fork) }))["insights.community_health_pct"];
     assert.equal(got.value, 83);
     assert.deepEqual(got.detail.map((d) => [d.label, d.value]), [["Description", 1], ["README", 1], ["License", 1], ["Contributing guide", 1], ["Code of conduct", 0], ["Pull request template", 1]]);
-    assert.match(got.source, /fork/);
+    assert.match(got.source, /contents of the root/);
+    assert.doesNotMatch((await collectWith())["insights.community_health_pct"].source, /contents of the root, docs and \.github: the share/);
+    // A missing docs/ or .github/ is an empty list, a localized README and a LICENSE-MIT count, a folder named README does not.
+    const sparse = { ...fork, [`repos/${REPO}/contents`]: [entry("README.zh-CN.md"), entry("LICENSE-MIT"), { name: "CONTRIBUTING.md", type: "dir" }] };
+    delete sparse[`repos/${REPO}/contents/docs`];
+    delete sparse[`repos/${REPO}/contents/.github`];
+    const few = (await collectWith({ gh: fakeGh(sparse) }))["insights.community_health_pct"];
+    assert.deepEqual(few.detail.map((d) => d.value), [1, 1, 1, 0, 0, 0]);
+    // Any other failure stays unread: a refused contents read, or the repo read after the 404.
+    const refused = fakeGh(fork);
+    const real = refused.rest;
+    refused.rest = async (route) => (route.endsWith("/contents/docs") ? Promise.reject(new GhError("forbidden", { status: 403 })) : real(route));
+    assert.ok((await collectWith({ gh: refused }))["insights.community_health_pct"].could_not_check);
+    const { [`repos/${REPO}`]: _info, ...noInfo } = fork;
+    assert.ok((await collectWith({ gh: fakeGh(noInfo) }))["insights.community_health_pct"].could_not_check);
     // A repo that is not a fork keeps the 404 as a could_not_check, never a score.
     const plain = { ...rest, [`repos/${REPO}`]: { fork: false, description: "x" } };
     assert.ok((await collectWith({ gh: fakeGh(plain) }))["insights.community_health_pct"].could_not_check);
