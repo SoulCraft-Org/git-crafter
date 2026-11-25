@@ -7,10 +7,10 @@ A repo's page settings (`config.mjs`) and target overrides (`overlay.mjs`). [Bac
 | Key | Default | Means |
 | --- | --- | --- |
 | `repo` | `GITHUB_REPOSITORY` | `owner/name`, for issue, commit and review links |
-| `level` | `"repo"` | `"user"`, `"repo"`, `"org"` or `"enterprise"`; any but `repo` adds the level's [built-in pack](#packs) |
-| `owner` | at level `org`, the repo's owner; at level `user`, the signed-in user | the login or enterprise slug a level page measures; level `enterprise` needs it, and level `repo` refuses it |
-| `name` | the owner at a level page, else the repo's name | the page title |
-| `tabs` | every template tab but `pages`; at a level page, the packs' tabs only | tab ids in order; `["id", "Name"]` adds a tab of the repo's own; a removed id stops ([migration](../templates/quality/README.md#from-v6-to-v7)) |
+| `level` | `"repo"` | `"user"`, `"org"` or `"enterprise"`: its [pack](#packs) replaces template tabs |
+| `owner` | org: the repo's owner | the account a level page measures; `enterprise` needs it |
+| `name` | the repo's name | the page title |
+| `tabs` | every template tab but `pages` | tab ids in order; `["id", "Name"]` adds a tab of the repo's own; a removed id stops ([migration](../templates/quality/README.md#from-v6-to-v7)) |
 | `web` | `false` | `true` shows the Pages tab |
 | `targets` | `<repo>/quality/targets` | overrides and own metrics |
 | `collectors` | `<repo>/quality/collectors` | own collectors; a template collector's name is a usage error |
@@ -20,7 +20,7 @@ A repo's page settings (`config.mjs`) and target overrides (`overlay.mjs`). [Bac
 | `tokens_css` | `render/tokens.css` | page colors |
 | `budget` | 1,000,000, per `config.mjs` | page bytes; one over is exit 1 |
 | `drop_needs` | `[]` | a metric whose `needs` is listed is off, as `drop` does; an unused value is a usage error |
-| `issue_sync` | `null`, off | `{ "label", "labels", "project", "quick", "waiting" }` turns on [`sync-issues.mjs`](sync-issues.mjs): one draft card per missed metric on org project `project`, Todo, or Waiting on data for ids in `waiting`. Ids in `quick` open a Task issue instead, labeled `labels[tab]` or `label`; with no `project`, every id does. Cards need `BOARD_TOKEN` |
+| `issue_sync` | `null`, off | `{ "label", "labels", "project", "quick", "waiting" }` turns on [`sync-issues.mjs`](sync-issues.mjs): a card or issue per missed metric ([keys](config.mjs)). Cards need `BOARD_TOKEN` |
 | `comment` | | allowed |
 | an unknown key | | a usage error |
 
@@ -33,7 +33,7 @@ A pack adds another repo's Quality tabs and Process maps ([`packs.mjs`](packs.mj
 | `"owner/repo@<40-hex sha>"` | `actions/pages` fetches that commit ([`pack-checkouts.mjs`](pack-checkouts.mjs)) |
 | a tag, branch or short SHA | refused: each can move |
 | a folder path | `--local` runs only |
-| `level:<level>` | built in: `quality/levels/<level>`, added by the `level` key; it ships with the engine, so nothing fetches it |
+| `level:<level>` | built in, never fetched |
 
 | Pack file | Adds |
 | --- | --- |

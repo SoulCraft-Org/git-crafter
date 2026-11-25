@@ -45,7 +45,7 @@
 //               sync-issues.mjs makes a draft card on the owner's org
 //               project number `project` per missed metric, Status Waiting
 //               on data for ids in waiting, else Todo; ids in quick, or
-//               every id with no project, open an issue with label, or
+//               every id with no project, open a Task issue with label, or
 //               labels[tab] for its tab
 //
 // An unknown key is a usage error, so a typo never silently does nothing.
