@@ -64,8 +64,12 @@ figcaption { margin-bottom: var(--s-1); font-size: 0.75rem; color: var(--c-text-
 .k-ring { fill: none; stroke: var(--c-community); stroke-width: 2.5; }
 @media (prefers-reduced-motion: no-preference) {
   .t-ring { animation: ring 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .t-main, .t-off { stroke-dasharray: 4000; animation: flow 4s linear both; }
 }
 @keyframes ring { from { stroke-dasharray: 0 100; } }
+/* The lines draw in the way the work flows, 1000 px a second, once: done within 5 s (WCAG 2.2.2). */
+@keyframes flow { from { stroke-dashoffset: 4000; } }
+.t-step.off { opacity: 0.3; }
 
 /* ---- One section per process map ---- */
 .map + .map { margin-top: var(--s-7); padding-top: 1.75rem; border-top: var(--line-hair) solid var(--c-border); }
@@ -74,9 +78,11 @@ figcaption { margin-bottom: var(--s-1); font-size: 0.75rem; color: var(--c-text-
 
 /* ---- Step panels ---- */
 .stepbar { display: flex; gap: 0.375rem; margin: 1.75rem 0 0; overflow-x: auto; scrollbar-width: thin; }
-.stepbar button { flex: none; min-height: 2.5rem; padding: var(--s-1) var(--s-3); border: var(--line-hair) solid var(--c-border); border-radius: var(--r-chisel); background: var(--c-ground); color: var(--c-text); font-size: 0.875rem; cursor: pointer; }
+.stepbar button, .stepnav button, .lanefilter button { flex: none; min-height: 2.5rem; padding: var(--s-1) var(--s-3); border: var(--line-hair) solid var(--c-border); border-radius: var(--r-chisel); background: var(--c-ground); color: var(--c-text); font-size: 0.875rem; cursor: pointer; }
 .stepbar button b { margin-right: 0.375rem; }
-.stepbar button[aria-pressed="true"] { border-color: var(--c-night); background: var(--c-night); color: var(--c-on-night); }
+.stepnav, .lanefilter { display: flex; flex-wrap: wrap; gap: 0.375rem; margin: var(--s-2) 0 0; }
+.stepnav button[aria-disabled="true"] { color: var(--c-text-dim); cursor: default; }
+.stepbar button[aria-pressed="true"], .lanefilter button[aria-pressed="true"] { border-color: var(--c-night); background: var(--c-night); color: var(--c-on-night); }
 .panel { margin-top: var(--s-5); scroll-margin-top: 4rem; }
 .panel + .panel { padding-top: var(--s-5); border-top: var(--line-hair) solid var(--c-rule); }
 .p-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) 0.875rem; }

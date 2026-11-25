@@ -62,7 +62,7 @@
   // The step before (by -1) or after (by 1) a map's step, skipping steps the lane filter dims; null at either end.
   const stepFrom = (m, from, by) => {
     const bar = $$(".stepbar button", m);
-    for (let i = bar.findIndex((b) => b.dataset.step === from) + by; i >= 0 && i < bar.length; i += by) if (!bar[i].classList.contains("off")) return bar[i].dataset.step;
+    for (let i = bar.findIndex((b) => b.dataset.step === from) + by; i >= 0 && i < bar.length; i += by) if (!bar[i].hidden) return bar[i].dataset.step;
     return null;
   };
 
@@ -84,7 +84,7 @@
   // Previous and Next walk a map's steps in order, after its step buttons.
   const addStepNav = (m) => $(".stepbar", m)?.after(group(m, "stepnav", "previous or next step", [["go", "-1", "Previous step"], ["go", "1", "Next step"]]));
 
-  // A lane map gets one toggle per lane, named as its band is: one picked dims the other lanes' steps.
+  // A lane map gets one toggle per lane, named as its band is: one picked dims the other lanes' steps and hides their step buttons.
   const addLaneFilter = (m) => {
     const svg = $("svg.lanes", m);
     if (!svg) return;
@@ -97,7 +97,7 @@
   const filterLanes = (m, actor) => {
     const of = Object.fromEntries($$(".t-step", m).map((a) => [a.dataset.step, a.dataset.actor]));
     for (const a of $$(".t-step", m)) a.classList.toggle("off", Boolean(actor) && a.dataset.actor !== actor);
-    for (const b of $$(".stepbar button", m)) b.classList.toggle("off", Boolean(actor) && of[b.dataset.step] !== actor);
+    for (const b of $$(".stepbar button", m)) b.hidden = Boolean(actor) && of[b.dataset.step] !== actor;
     for (const b of $$(".lanefilter button", m)) b.setAttribute("aria-pressed", String(b.dataset.actor === actor));
   };
 

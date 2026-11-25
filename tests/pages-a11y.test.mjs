@@ -28,6 +28,19 @@ test("a step's status mark sits outside its ring, covering none of its share (#6
   assert.ok(dist - Number(mark[3]) >= TRAIL.r + 7 + stroke / 2, `mark edge ${dist - mark[3]} clears the ring's outer edge`);
 });
 
+test("lines and rings move only when the reader allows motion, and the flow stops within 5 s (WCAG 2.2.2)", () => {
+  const css = readFileSync(new URL("../pages/site.css", import.meta.url), "utf8");
+  const motion = /@media \(prefers-reduced-motion: no-preference\) \{((?:[^{}]*\{[^{}]*\})*)\s*\}/g;
+  const allowed = [...css.matchAll(motion)].map((m) => m[1]).join("");
+  assert.doesNotMatch(css.replace(motion, ""), /animation:/, "no animation outside the no-preference block");
+  const flow = /\.t-main, \.t-off \{[^}]*animation: flow ([\d.]+)s linear both/.exec(allowed);
+  assert.ok(flow && Number(flow[1]) <= 5, "the flow draws once along the lines, in at most 5 s");
+  const js = readFileSync(new URL("../pages/client.js", import.meta.url), "utf8");
+  const smooth = js.split("\n").filter((l) => l.includes('"smooth"'));
+  assert.ok(smooth.length > 0);
+  for (const line of smooth) assert.match(line, /prefers-reduced-motion: reduce/, "a smooth scroll checks reduced motion first");
+});
+
 test("each ideal region is named after its section, so no two share a name (axe landmark-unique)", () => {
   const doc = { ideal: "Every step scored.", sources: [{ title: "T", url: "https://example.com", date: "2026-11-11" }] };
   const names = ["Build", "Delivery"].map((n) => ideal(`tab-${n}`, doc, n).match(/<section class="ideal" aria-label="([^"]+)">/)[1]);

@@ -28,6 +28,8 @@ test("a lane map has one band per actor in order of first appearance, each step 
   const svg = lanes(LINE, readouts(LINE), new Set(["plan", "merge"]), "plan");
   const bands = [...svg.matchAll(/<rect class="t-lane[^"]*" x="0" y="([\d.]+)" width="[\d.]+" height="([\d.]+)"\/><text class="t-actor"[^>]*>([^<]+)</g)];
   assert.deepEqual(bands.map((b) => b[3]), ["Owner", "Worker", "CI", "Orchestrator"]);
+  const actors = [...new Set([...svg.matchAll(/data-actor="([^"]+)"/g)].map((m) => m[1]))];
+  assert.deepEqual(actors.map((a) => ACTORS[a]), bands.map((b) => b[3]), "the lane filter pairs each toggle with its band in this order");
   assert.deepEqual(bands.map((b) => Number(b[1])), [0, 160, 320, 480], "bands stack from the top, one row each");
   assert.deepEqual(ys(svg), [72, 232, 392, 232, 552], "a step sits in its actor's band, so Build and Fix share a line");
   assert.match(svg, new RegExp(`viewBox="0 0 ${LANES.width} 640"`), "920 wide, the phone scroll width, and as tall as its bands");
