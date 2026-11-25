@@ -1097,7 +1097,7 @@
     "kind": "consumption",
     "group": "Cost",
     "label": "Security features billed a month",
-    "means": "Dollars a month the organization is billed for GitHub's paid security features; the goal is what it chose to buy.",
+    "means": "Dollars a month the organization is billed for GitHub's paid security features. Free is the goal unless it buys one.",
     "unit": "dollars",
     "goal": 0,
     "near": 19,
