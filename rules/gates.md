@@ -51,5 +51,5 @@ Linked from the Tracking row in [`rules/delegation.md`](delegation.md). It resta
 | A bug or quick fix is found | File a Bug or Task issue in the repo at fault, off the board. |
 | A feature or improvement is found | File a draft card on the owner's board. |
 | Before work starts | Each step is filed; a feature step is typed Feature. |
-| A PR opens | Its first line is `Closes #n` or `Card: PVTI_id`. |
+| A PR opens | It has a `Closes #n` or `Card: PVTI_id` line. |
 | A review finding | Is fixed before merge, or filed. |
