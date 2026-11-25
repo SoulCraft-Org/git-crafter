@@ -101,9 +101,10 @@ export function nestedIn(root, a, areas) {
   return new Set(areas.filter((b) => b !== a && inArea(b, a)).map((b) => join(root, b)));
 }
 
-// The area a repo path belongs to: the longest area it sits under.
+// The area a repo path belongs to: the longest area it sits under. The root "." is the least specific, even against a one-character folder.
 export function areaOf(path, areas) {
-  return areas.filter((a) => inArea(path, a)).sort((x, y) => y.length - x.length)[0];
+  const rank = (a) => (a === "." ? 0 : a.length);
+  return areas.filter((a) => inArea(path, a)).sort((x, y) => rank(y) - rank(x))[0];
 }
 
 

@@ -17,6 +17,9 @@ describe("inArea", () => {
     assert.equal(inArea("srcs/a.mjs", "src"), false);
     assert.equal(areaOf("src/a.mjs", [".", "src"]), "src");
     assert.equal(areaOf("a.mjs", [".", "src"]), ".");
+    // A one-character folder is more specific than the root, whatever the order of the areas.
+    assert.equal(areaOf("a/x.mjs", [".", "a"]), "a");
+    assert.equal(areaOf("a/x.mjs", ["a", "."]), "a");
     assert.deepEqual([...nestedIn("/r", ".", [".", "src"])], ["/r/src"]);
     assert.deepEqual([...nestedIn("/r", "src", [".", "src"])], []);
   });
