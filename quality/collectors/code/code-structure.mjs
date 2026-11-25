@@ -4,7 +4,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { namingRule } from "./shape.mjs";
-import { countsAsCode, firstLine, isDir, measured, round, top, unknown, unknownAll } from "./code-util.mjs";
+import { countsAsCode, firstLine, inArea, isDir, measured, round, top, unknown, unknownAll } from "./code-util.mjs";
 
 const PATH_TOKEN = /(?<![\w./:@~-])((?:\.\.?\/)*[\w@][\w@.-]*(?:\/[\w@.-]+)+)/g;
 
@@ -21,7 +21,7 @@ export async function structure(root, run, { areas, naming, skip }) {
   if (r.code !== 0) return unknownAll(STRUCTURE_IDS, `git ls-files failed (${firstLine(r.stderr)})`, STRUCTURE_SOURCE);
   const paths = r.stdout.split("\0").filter(Boolean);
   if (!paths.length) return unknownAll(STRUCTURE_IDS, "git ls-files listed no files", STRUCTURE_SOURCE);
-  const inAreas = paths.filter((p) => areas.some((a) => p.startsWith(a + "/")));
+  const inAreas = paths.filter((p) => areas.some((a) => inArea(p, a)));
   const code = inAreas.filter((p) => countsAsCode(p, skip));
   const named = [...code, ...codeFolders(code, areas)].map((p) => ({ path: p, ...namingRule(p, naming) })).filter((n) => n.rule);
   const rules = [...new Set(named.map((n) => n.rule))].sort();
@@ -76,6 +76,7 @@ function mappedAreas(root, paths, areas) {
     .map((p) => readmePicture(root, paths, p))
     .filter((r) => r.visual);
   const drawnBy = (area, { dir, visual }) => {
+    if (area === ".") return dir === "";
     if (dir === area) return true;
     if (dir && !area.startsWith(dir + "/")) return false;
     const rel = (dir ? area.slice(dir.length + 1) : area).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -94,7 +95,7 @@ function codeFolders(code, areas) {
     const parts = p.split("/").slice(0, -1);
     for (let i = 1; i <= parts.length; i++) {
       const dir = parts.slice(0, i).join("/");
-      if (areas.some((a) => dir === a || dir.startsWith(a + "/"))) folders.add(dir + "/");
+      if (areas.some((a) => dir === a || inArea(dir, a))) folders.add(dir + "/");
     }
   }
   return [...folders].sort();
