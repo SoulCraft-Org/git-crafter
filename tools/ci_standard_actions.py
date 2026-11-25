@@ -79,7 +79,7 @@ def local_action_findings(repo: str, steps: list) -> tuple:
 def pool_findings(where: str, uses: str, with_) -> list:
     """The pool input of a call to the standard: a self-hosted label needs an exception, and the label itself is never excepted."""
     path = uses.split("@", 1)[0].lower().replace("\\", "/")
-    text = str((with_ or {}).get("pool") or "") if isinstance(with_, dict) else ""
+    text = next((str(v or "") for k, v in with_.items() if str(k).lower() == "pool"), "") if isinstance(with_, dict) else ""
     if not text or not path.endswith(("/ci-standard.yml", "/ci-standard.yaml")):
         return []
     found = [("runner", where, f"pool: {text} sends the standard's jobs to a self-hosted runner; add an exception with a reason")]

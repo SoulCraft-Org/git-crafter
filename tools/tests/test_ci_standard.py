@@ -157,6 +157,8 @@ CASES = [
     ("a whitespace pool fails the pool rule", edit(".github/workflows/ci.yml", "      short: npm run lint\n", "      pool: ' '\n      short: npm run lint\n"), {"runner", "pool"}),
     ("an expression as the pool fails the pool rule", edit(".github/workflows/ci.yml", "      short: npm run lint\n", f"      pool: {EXPR} vars.POOL }}}}\n      short: npm run lint\n"), {"runner", "pool"}),
     ("a mixed-case call to the standard still sees the pool", {".github/workflows/other.yml": "on: workflow_dispatch\npermissions:\n  contents: read\njobs:\n  x:\n    uses: Example-Org/Code-OS/.github/workflows/ci-standard.yml@" + PIN + "\n    with:\n      pool: my-free-pool\n"}, {"runner"}),
+    ("a differently cased pool key still sees the pool", edit(".github/workflows/ci.yml", "      short: npm run lint\n", "      Pool: my-free-pool\n      short: npm run lint\n"), {"runner"}),
+    ("a differently cased pool key with a Blacksmith label fails the pool rule", edit(".github/workflows/ci.yml", "      short: npm run lint\n", "      POOL: blacksmith-2vcpu-ubuntu-2404\n      short: npm run lint\n"), {"runner", "pool"}),
     ("a caller whose pool is empty passes", edit(".github/workflows/ci.yml", "      short: npm run lint\n", "      pool: ''\n      short: npm run lint\n"), set()),
     ("the short job's pool runs-on is only a runner finding", edit(".github/workflows/deploy.yml", "runs-on: ubuntu-slim",
                                                                  f"runs-on: {EXPR} inputs.pool != '' && inputs.pool || 'ubuntu-slim' }}}}"), {"runner"}),

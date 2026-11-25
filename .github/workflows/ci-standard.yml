@@ -712,7 +712,7 @@ jobs:
           def pool_findings(where: str, uses: str, with_) -> list:
               """The pool input of a call to the standard: a self-hosted label needs an exception, and the label itself is never excepted."""
               path = uses.split("@", 1)[0].lower().replace("\\", "/")
-              text = str((with_ or {}).get("pool") or "") if isinstance(with_, dict) else ""
+              text = next((str(v or "") for k, v in with_.items() if str(k).lower() == "pool"), "") if isinstance(with_, dict) else ""
               if not text or not path.endswith(("/ci-standard.yml", "/ci-standard.yaml")):
                   return []
               found = [("runner", where, f"pool: {text} sends the standard's jobs to a self-hosted runner; add an exception with a reason")]
@@ -1153,7 +1153,7 @@ jobs:
 
   short:
     needs: changes
-    if: inputs.short != '' && needs.changes.outputs.run == 'true' && (inputs.pool == '' || (needs.changes.outputs.conform == 'success' && github.event.pull_request.head.repo.fork != true))
+    if: inputs.short != '' && needs.changes.outputs.run == 'true' && (inputs.pool == '' || (needs.changes.outputs.conform == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)))
     runs-on: ${{ inputs.pool != '' && inputs.pool || 'ubuntu-slim' }}
     timeout-minutes: 15
     steps: &steps
@@ -1198,7 +1198,7 @@ jobs:
 
   standard:
     needs: changes
-    if: inputs.standard != '' && needs.changes.outputs.run_standard == 'true' && (inputs.pool == '' || (needs.changes.outputs.conform == 'success' && github.event.pull_request.head.repo.fork != true))
+    if: inputs.standard != '' && needs.changes.outputs.run_standard == 'true' && (inputs.pool == '' || (needs.changes.outputs.conform == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)))
     # The lane labels are .github/ci-overflow.json's (tools/tests/test_ci_overflow.py holds them equal).
     runs-on: ${{ inputs.pool != '' && inputs.pool || contains(fromJSON('["blacksmith-2vcpu-ubuntu-2404"]'), inputs.runner) && inputs.runner || 'ubuntu-latest' }}
     timeout-minutes: ${{ inputs.timeout }}

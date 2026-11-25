@@ -8,7 +8,7 @@
 | Effect | `short` and `standard` run on that label, ahead of the [overflow switch](README.md#overflow-switch) |
 | Rule | A caller that sets it fails the `runner` rule until `.github/ci-standard.json` holds an exception for its `<file>/<job>`, such as `ci.yml/ci`, with a reason |
 | Label | The `pool` rule takes no exception: one literal label of letters, digits, dot, dash and underscore. No expression, space, comma, Blacksmith or GitHub-hosted name |
-| Guard | A pool job waits for the conformance check and never runs a fork's pull request |
+| Guard | A pool job waits for the conformance check and skips a pull request from outside the repo, so `ci-ok` fails for it. A pull request can still edit its own caller to name the label, so also set the runner group to refuse public repos and fork pull requests |
 | Not covered | The pool's health. A job that finds no runner waits, for about 24 hours before GitHub cancels it ([Actions limits](https://docs.github.com/en/actions/reference/limits), read 2026-11-25), so the caller plans its own fallback |
 
 ```mermaid
