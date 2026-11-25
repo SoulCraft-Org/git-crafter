@@ -51,7 +51,7 @@ test("the script fits the setup script box", () => {
   assert.equal(spawnSync("bash", ["-n", "-c", SCRIPT]).status, 0, "bash -n");
   assert.match(SCRIPT, /^#!\/usr\/bin\/env bash\n/);
   assert.match(SCRIPT, /^set -euo pipefail$/m);
-  // The environment tools take a script of at most 100 lines of at most 200 bytes, with Unix newlines.
+  // A goal, not a documented limit (the docs allow 64 KB): short enough to paste into the environment editor, with Unix newlines.
   const lines = SCRIPT.trimEnd().split("\n");
   assert.ok(lines.length <= 100, `${lines.length} lines`);
   for (const line of lines) assert.ok(Buffer.byteLength(line) <= 200, line);
@@ -69,7 +69,7 @@ test("every git checkout installs from its lockfile, with package scripts off", 
   assert.equal(r.status, 0, r.out);
   assert.deepEqual(r.lines, [
     "a npm ci --ignore-scripts --no-audit --no-fund",
-    "a uv sync --frozen",
+    "a uv sync --frozen --no-install-project",
     "b pnpm install --frozen-lockfile --ignore-scripts",
     "c yarn install --frozen-lockfile --ignore-scripts",
   ]);

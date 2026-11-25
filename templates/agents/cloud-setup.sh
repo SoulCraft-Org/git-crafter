@@ -25,7 +25,7 @@ setup_repo() {
     yarn install --frozen-lockfile --ignore-scripts
   fi
   if [ -f uv.lock ]; then
-    uv sync --frozen
+    uv sync --frozen --no-install-project
   fi
   cd - > /dev/null
   echo "cloud-setup: $dir ready"
@@ -38,7 +38,7 @@ if [ "${#REPOS[@]}" -eq 0 ]; then
     fi
   done
 fi
-for repo in "${REPOS[@]}"; do
+for repo in ${REPOS[@]+"${REPOS[@]}"}; do
   setup_repo "$repo"
 done
 echo "cloud-setup: done, ${#REPOS[@]} repos"
