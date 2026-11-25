@@ -131,7 +131,7 @@ export const OPEN_DISCUSSIONS = `query OpenDiscussions($owner: String!, $name: S
   repository(owner: $owner, name: $name) {
     discussions(first: 100, after: $cursor, states: [OPEN], orderBy: {field: CREATED_AT, direction: ASC}) {
       pageInfo { hasNextPage endCursor }
-      nodes { number createdAt isAnswered category { isAnswerable } }
+      nodes { number createdAt isAnswered category { isAnswerable } answer { createdAt } comments(first: 50) { nodes { createdAt } } }
     }
   }
 }`;

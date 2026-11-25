@@ -1,5 +1,5 @@
-// The GitHub collector's Discussions metrics: answerable discussions that no one has answered.
-import { measured, notApplicable, count, round1, hours, DAY } from "./github-core.mjs";
+// The GitHub collector's Discussions metrics: answerable discussions that no one has answered, and the comments an answer takes.
+import { measured, notApplicable, skip, count, round1, hours, percentile, DAY } from "./github-core.mjs";
 
 // The open discussions in a category that takes an answer and have none, oldest first; null while Discussions is off.
 async function unanswered(L) {
@@ -32,6 +32,21 @@ export const DISCUSSION_METRICS = {
       const oldest = waiting.reduce((a, b) => (Date.parse(a.createdAt) <= Date.parse(b.createdAt) ? a : b));
       const h = round1(hours(oldest.createdAt, new Date(now).toISOString()));
       return measured(h, [{ label: `#${oldest.number}`, value: h, unit: "hours" }]);
+    },
+  },
+  // Consumption: the top-level comments each open answered question took, the answer included; comments after it are left out.
+  "discussions.comments_to_answer": {
+    source: "state: gh api graphql: repository.discussions (open: isAnswered, category.isAnswerable, answer.createdAt, the first 50 comments' createdAt), median of the comments up to the answer",
+    async run(L) {
+      if ((await L.repo()).has_discussions !== true) return notApplicable(OFF);
+      const answered = (await L.discussions()).filter((d) => d.category?.isAnswerable === true && d.isAnswered === true && d.answer?.createdAt);
+      if (!answered.length) return skip("no open discussion has a marked answer yet");
+      const rows = answered.map((d) => {
+        const by = Date.parse(d.answer.createdAt);
+        const n = (d.comments?.nodes ?? []).filter((c) => Date.parse(c.createdAt) <= by).length;
+        return { label: `#${d.number}`, value: n, unit: "comments" };
+      });
+      return measured(round1(percentile(rows.map((r) => r.value), 0.5)), rows);
     },
   },
 };
