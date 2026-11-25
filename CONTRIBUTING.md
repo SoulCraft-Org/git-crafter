@@ -57,10 +57,8 @@ gh api repos/<owner>/git-crafter/git/refs -f ref=refs/tags/v1.3.0 -f sha=<merge 
 | CI runs the checks, defined in one file | [tools/verify.sh](tools/verify.sh) |
 | Outside contributors sign off (`git commit -s`). Verified org members skip it | [.github/dco.yml](.github/dco.yml) |
 | Squash merge only, after every check passes on the head commit | Repo settings; [rules/delegation.md](rules/delegation.md) |
-| A bug, error or fix one small PR closes within a day is an issue typed Bug or Task, filed when found. It stays off the board | [templates/agents/AGENTS.md](templates/agents/AGENTS.md); `issues.parked_open`, `projects.bug_cards` |
-| Anything else is a draft card on the org Project, filed when found. It becomes an issue, with its area label, when its PR opens | [GitHub Docs: draft issues](https://docs.github.com/en/issues/planning-and-tracking-with-projects/managing-items-in-your-project/adding-items-to-your-project) |
-| A cloud session files both over REST, since its proxy blocks GraphQL | [REST: draft Project items](https://docs.github.com/en/rest/projects/drafts), read 2026-11-24 |
-| The board's auto-add cards each new open issue labelled `enhancement`, so no bug lands on it | [GitHub Docs: adding items automatically](https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project/adding-items-automatically); `manual.project_auto_add` |
+| A bug or quick fix is an issue typed Bug or Task, off the board. Anything else is a draft card. Each is filed when found | [templates/agents/AGENTS.md](templates/agents/AGENTS.md), with the commands; `projects.bug_cards` |
+| A card becomes an issue, with its area label, when its PR opens | [GitHub Docs: draft issues](https://docs.github.com/en/issues/planning-and-tracking-with-projects/managing-items-in-your-project/adding-items-to-your-project) |
 | A card opens with a picture, drawn by `quality/cards/picture.mjs` and pushed to the `cards` branch | [quality/README.md](quality/README.md); `projects.cards_at_a_glance` |
 | A PR that fixes an issue says `Closes #n` or `Card: PVTI_id` on one line, so GitHub links them | [GitHub Docs: linking a pull request](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue) |
 

@@ -44,13 +44,12 @@ automated check: a lint, a hook, a guard, a parity or token check.
 
 ## Tracking
 
-Linked from the Tracking row in [`rules/delegation.md`](delegation.md). This table restates the tracking rows of `templates/agents/AGENTS.md`, which also hold the commands. Where the two differ, the template wins.
+Linked from the Tracking row in [`rules/delegation.md`](delegation.md). It restates `templates/agents/AGENTS.md`, which holds the commands and wins.
 
 | When | Rule |
 |---|---|
-| A bug, error or quick fix is found | It is an issue typed Bug or Task in the repo at fault, filed when found. It stays off the board. |
-| A feature or improvement is found | It is a draft card on the owner's board, filed when found. |
-| Before work starts | Each planned step is filed by the two rows above. |
-| A cloud session files | It uses REST, since its proxy blocks GraphQL. |
+| A bug or quick fix is found | File an issue typed Bug or Task in the repo at fault, off the board. |
+| A feature or improvement is found | File a draft card on the owner's board. |
+| Before work starts | Each planned step is filed, as above. |
 | A PR opens | Its first line is `Closes #n` or `Card: PVTI_id`. |
-| A review finding | Is fixed before merge, or filed and named in the merge's follow-ups. |
+| A review finding | Is fixed before merge, or filed. |

@@ -25,7 +25,6 @@ flowchart LR
 | First message | A setup check that starts no threads | A gap shows before work depends on it |
 | Mac folders | Only a local thread's **Allow once** card | The card names the folder and asks first |
 | Dot-named repo | Work on it in a local thread (Remote Control) | A cloud thread with a dot-named repo skips every repo's skills |
-| Tracking | The Track row in [instructions.md](instructions.md). Bugs are issues and features are draft cards, each filed over REST | A cloud thread's proxy blocks GraphQL. A project thread runs no repo hooks |
 
 ## Steps
 
@@ -59,4 +58,4 @@ Add a setup script only for a test-proven gap: it rebuilds on script or host cha
 
 ## Sources
 
-Read 2026-11-24: [claude-projects](https://code.claude.com/docs/en/claude-projects) for threads, instructions, dot-named repos and **Allow once**. [cloud-environments](https://code.claude.com/docs/en/cloud-environments) for the default environment, pre-installed tools, network secrets and setup scripts. [REST draft Project items](https://docs.github.com/en/rest/projects/drafts) for the cards a thread files.
+Read 2026-11-24: [claude-projects](https://code.claude.com/docs/en/claude-projects) for threads, instructions, dot-named repos and **Allow once**. [cloud-environments](https://code.claude.com/docs/en/cloud-environments) for the default environment, pre-installed tools, network secrets and setup scripts.
