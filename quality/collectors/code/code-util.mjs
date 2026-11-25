@@ -91,14 +91,19 @@ export function* walk(dir, skip, nested = new Set()) {
   }
 }
 
+// Whether a repo path sits under area a. The area "." is the whole repo, which a single-area repo names.
+export function inArea(path, a) {
+  return a === "." || path.startsWith(a + "/");
+}
+
 // The other areas inside area a, as absolute folders walk() leaves out.
 export function nestedIn(root, a, areas) {
-  return new Set(areas.filter((b) => b.startsWith(a + "/")).map((b) => join(root, b)));
+  return new Set(areas.filter((b) => b !== a && inArea(b, a)).map((b) => join(root, b)));
 }
 
 // The area a repo path belongs to: the longest area it sits under.
 export function areaOf(path, areas) {
-  return areas.filter((a) => path.startsWith(a + "/")).sort((x, y) => y.length - x.length)[0];
+  return areas.filter((a) => inArea(path, a)).sort((x, y) => y.length - x.length)[0];
 }
 
 
