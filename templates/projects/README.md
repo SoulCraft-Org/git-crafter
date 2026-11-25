@@ -35,6 +35,7 @@ flowchart LR
 | 3 | Set the shared environment in Project settings, with an empty setup script |
 | 4 | Add each key as a network secret with its host |
 | 5 | Send the setup check below as the first message |
+| 6 | A Claudius repo: follow its [quick start](https://github.com/Soul-Craft/claudius/blob/main/docs/projects-quickstart.md) |
 
 ```text
 Setup check only. Start no threads and change nothing.
@@ -54,8 +55,8 @@ Add a setup script only for a test-proven gap: it rebuilds on script or host cha
 | Repo check | Run the fastest check the repo's `CLAUDE.md` names |
 | Variables | Print names only, never values. `AWS_*`, `CLOUDSDK_*`, `GH_TOKEN` and `GITHUB_TOKEN` are the sandbox's own |
 
-`bun` has known proxy issues fetching packages, so install through `npm` or `pnpm`.
+`bun` has known proxy issues, so use `npm` or `pnpm`.
 
 ## Sources
 
-Read 2026-11-24: [claude-projects](https://code.claude.com/docs/en/claude-projects) for threads, instructions, dot-named repos and **Allow once**. [cloud-environments](https://code.claude.com/docs/en/cloud-environments) for the default environment, pre-installed tools, network secrets and setup scripts.
+Read 2026-11-24: [claude-projects](https://code.claude.com/docs/en/claude-projects) for threads and **Allow once**. [cloud-environments](https://code.claude.com/docs/en/cloud-environments) for environments, tools, secrets and setup scripts.
