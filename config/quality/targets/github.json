@@ -34,8 +34,8 @@
  {
   "id": "security.features_dollars_per_month",
   "goal": 49,
-  "near": 98,
-  "goal_source": "the owner, 2026-11-25: Code Security and Secret Protection stay bought for the organization, as monthly subscriptions that help it. The goal is their list price for one active committer, $30 plus $19 a month (github.com/security/plans, read 2026-11-03); near is a second committer. Delete this entry to return to the template's goal of 0"
+  "near": 68,
+  "goal_source": "the owner, 2026-11-24 and again 2026-11-25: Code Security and Secret Protection stay bought for the organization, as flat monthly subscriptions that help it (rules/compute.md, Money; recorded in compute.spend_exceptions). The goal is their list price for one active committer, $30 plus $19 a month (github.com/security/plans, read 2026-11-03); near adds one more committer's Secret Protection, as Compute Crafter's override does. Delete this entry to return to the template's goal of 0"
  },
  {
   "id": "security.threat_model_current",
