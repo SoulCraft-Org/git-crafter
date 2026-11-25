@@ -52,7 +52,7 @@ Add a setup script only for a test-proven gap: it rebuilds on script or host cha
 |---|---|
 | Versions | Print `node`, `npm`, `python3` and `uv` versions |
 | Repo check | Run the fastest check the repo's `CLAUDE.md` names |
-| Variables | Print names only, never values |
+| Variables | Print names only, never values. `AWS_*`, `CLOUDSDK_*`, `GH_TOKEN` and `GITHUB_TOKEN` are the sandbox's own |
 
 `bun` has known proxy issues fetching packages, so install through `npm` or `pnpm`.
 
