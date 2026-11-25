@@ -88,111 +88,6 @@ const OPEN_Q = `query($owner:String!,$name:String!,$cursor:String){repository(ow
 const historyQ = (n) =>
   `query($owner:String!,$name:String!,$since:GitTimestamp!,$cursor:String){repository(owner:$owner,name:$name){defaultBranchRef{target{... on Commit{history(since:$since,first:${n},after:$cursor){pageInfo{hasNextPage endCursor} nodes{oid committedDate message checkSuites(first:15){nodes{app{slug} checkRuns(first:6){nodes{name conclusion completedAt}}}}}}}}}}}`;
 
-// A repo's pull requests merged since `since`, with their last commit's check state.
-export function fetchMerged(gh, repo, since) {
-  const out = [];
-  let cursor = null;
-  for (let page = 0; page < 20; page += 1) {
-    const prs = gh.graphql(MERGED_Q, { owner: ORG, name: repo, cursor }).repository.pullRequests;
-    for (const p of prs.nodes) {
-      if (Date.parse(p.mergedAt) >= since) out.push({ number: p.number, createdAt: p.createdAt, mergedAt: p.mergedAt, rollup: p.commits.nodes[0]?.commit.statusCheckRollup?.state ?? null });
-    }
-    const oldest = prs.nodes.at(-1);
-    if (!prs.pageInfo.hasNextPage || !oldest || Date.parse(oldest.updatedAt) < since) break;
-    cursor = prs.pageInfo.endCursor;
-  }
-  return out;
-}
-
-// Every open PR, 100 a page.
-export function fetchOpen(gh, repo, wait = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)) {
-  const read = () => {
-    const out = [];
-    let cursor = null;
-    for (let page = 0; page < 30; page += 1) {
-      const prs = gh.graphql(OPEN_Q, { owner: ORG, name: repo, cursor }).repository.pullRequests;
-      out.push(...prs.nodes);
-      if (!prs.pageInfo.hasNextPage) return out;
-      cursor = prs.pageInfo.endCursor;
-    }
-    throw new Error("more than 3,000 open PRs; not all were read");
-  };
-  let prs = read();
-  // GitHub computes mergeable lazily; the first read asks it to, the second gets the answer.
-  if (prs.some((p) => p.mergeable === "UNKNOWN")) {
-    wait(4000);
-    prs = read();
-  }
-  return prs;
-}
-
-// The runs list answers at most 1,000 runs per filtered query, and one repo
-// can start more than that in a day, so a range over the cap is cut into
-// slices until each fits. Slices overlap by their inclusive ends; ids dedupe them.
-export function fetchRuns(gh, repo, since, now) {
-  const jq = "{t: .total_count, r: [.workflow_runs[] | {id, name, path, event, status, conclusion, head_sha, created_at, run_started_at, updated_at}]}";
-  const iso = (ms) => new Date(ms).toISOString().replace(/\.\d{3}Z$/, "Z");
-  const url = ([from, to], page) => `repos/${ORG}/${repo}/actions/runs?per_page=100&page=${page}&created=${iso(from)}..${iso(to)}`;
-  // The whole range is read first: a quiet repo then costs one read, not one a week (#381). A range over
-  // 1,000 runs is cut by its total into slices of equal time, about 800 runs each and at least a minute long,
-  // down to 10 minutes, where its first 1,000 are kept. Each round reads the first page of every open range
-  // side by side; the ranges that fit then read their other pages side by side, in one batch at the end.
-  const slices = ([from, to], t) => {
-    const k = Math.min(Math.ceil(t / 800), Math.floor((to - from) / 60_000));
-    const edge = (i) => (i === 0 ? from : i === k ? to : Math.floor((from + ((to - from) * i) / k) / 1000) * 1000);
-    return Array.from({ length: k }, (_, i) => [edge(i), edge(i + 1)]);
-  };
-  const out = new Map();
-  const rest = [];
-  let open = [[since, now]];
-  while (open.length) {
-    const firsts = gh.restMany(open.map((range) => url(range, 1)), jq);
-    const split = [];
-    open.forEach((range, i) => {
-      const [{ t, r }, [from, to]] = [firsts[i], range];
-      if (t > 1000 && to - from > 10 * 60_000) return split.push(...slices(range, t));
-      for (const run of r) out.set(run.id, run);
-      if (r.length) for (let page = 2; page <= Math.min(10, Math.ceil(t / 100)); page += 1) rest.push(url(range, page));
-    });
-    open = split;
-  }
-  for (let i = 0; i < rest.length; i += 100) for (const { r } of gh.restMany(rest.slice(i, i + 100), jq)) for (const run of r) out.set(run.id, run);
-  return [...out.values()].filter((r) => Date.parse(r.created_at) >= since);
-}
-
-// A repo's default-branch commits since `since`, with their deploy check runs.
-export function fetchHistory(gh, repo, since) {
-  const out = [];
-  let cursor = null;
-  let size = 40;
-  for (let page = 0; page < 60; page += 1) {
-    let h;
-    try {
-      h = gh.graphql(historyQ(size), { owner: ORG, name: repo, since: new Date(since).toISOString(), cursor }).repository.defaultBranchRef?.target?.history;
-    } catch (err) {
-      // A repo with many check suites per commit can pass GitHub's per-query
-      // resource limit; a smaller page asks for fewer nodes.
-      if (size > 5 && /resource limits/i.test(String(err.stderr || err.message))) {
-        size = Math.floor(size / 2);
-        page -= 1;
-        continue;
-      }
-      throw err;
-    }
-    if (!h) break;
-    for (const c of h.nodes) {
-      const deploys = c.checkSuites.nodes
-        .filter((s) => s.app?.slug === WORKERS_APP)
-        .flatMap((s) => s.checkRuns.nodes)
-        .filter((r) => /Workers Builds/i.test(r.name));
-      out.push({ oid: c.oid, committedDate: c.committedDate, message: c.message, deploys });
-    }
-    if (!h.pageInfo.hasNextPage) break;
-    cursor = h.pageInfo.endCursor;
-  }
-  return out;
-}
-
 // The reads below are generators: each yields the gh read it needs next and receives its answer, so `drive` can run
 // the reads of many repos side by side, one round of reads at a time. A read is { graphql: [query, vars] } (answered
 // with its data), { rest: [paths], jq } (answered with one value per path) or a number of milliseconds to wait.
@@ -246,6 +141,121 @@ export function drive(gh, jobs, wait = sleep) {
   }
   return states.map((s) => (s.error ? { error: s.error } : { value: s.value }));
 }
+
+const alone = (gh, job, wait) => {
+  const [r] = drive(gh, [job], wait);
+  if (r.error) throw r.error;
+  return r.value;
+};
+
+// A repo's pull requests merged since `since`, with their last commit's check state.
+export function* readMerged(repo, since) {
+  const out = [];
+  let cursor = null;
+  for (let page = 0; page < 20; page += 1) {
+    const prs = (yield { graphql: [MERGED_Q, { owner: ORG, name: repo, cursor }] }).repository.pullRequests;
+    for (const p of prs.nodes) {
+      if (Date.parse(p.mergedAt) >= since) out.push({ number: p.number, createdAt: p.createdAt, mergedAt: p.mergedAt, rollup: p.commits.nodes[0]?.commit.statusCheckRollup?.state ?? null });
+    }
+    const oldest = prs.nodes.at(-1);
+    if (!prs.pageInfo.hasNextPage || !oldest || Date.parse(oldest.updatedAt) < since) break;
+    cursor = prs.pageInfo.endCursor;
+  }
+  return out;
+}
+export const fetchMerged = (gh, repo, since) => alone(gh, readMerged(repo, since));
+
+// Every open PR, 100 a page.
+export function* readOpen(repo) {
+  const read = function* () {
+    const out = [];
+    let cursor = null;
+    for (let page = 0; page < 30; page += 1) {
+      const prs = (yield { graphql: [OPEN_Q, { owner: ORG, name: repo, cursor }] }).repository.pullRequests;
+      out.push(...prs.nodes);
+      if (!prs.pageInfo.hasNextPage) return out;
+      cursor = prs.pageInfo.endCursor;
+    }
+    throw new Error("more than 3,000 open PRs; not all were read");
+  };
+  let prs = yield* read();
+  // GitHub computes mergeable lazily; the first read asks it to, the second gets the answer.
+  if (prs.some((p) => p.mergeable === "UNKNOWN")) {
+    yield 4000;
+    prs = yield* read();
+  }
+  return prs;
+}
+export const fetchOpen = (gh, repo, wait = sleep) => alone(gh, readOpen(repo), wait);
+
+// The runs list answers at most 1,000 runs per filtered query, and one repo
+// can start more than that in a day, so a range over the cap is cut into
+// slices until each fits. Slices overlap by their inclusive ends; ids dedupe them.
+export function* readRuns(repo, since, now) {
+  const jq = "{t: .total_count, r: [.workflow_runs[] | {id, name, path, event, status, conclusion, head_sha, created_at, run_started_at, updated_at}]}";
+  const iso = (ms) => new Date(ms).toISOString().replace(/\.\d{3}Z$/, "Z");
+  const url = ([from, to], page) => `repos/${ORG}/${repo}/actions/runs?per_page=100&page=${page}&created=${iso(from)}..${iso(to)}`;
+  // The whole range is read first: a quiet repo then costs one read, not one a week (#381). A range over
+  // 1,000 runs is cut by its total into slices of equal time, about 800 runs each and at least a minute long,
+  // down to 10 minutes, where its first 1,000 are kept. Each round reads the first page of every open range
+  // side by side; the ranges that fit then read their other pages side by side, in one batch at the end.
+  const slices = ([from, to], t) => {
+    const k = Math.min(Math.ceil(t / 800), Math.floor((to - from) / 60_000));
+    const edge = (i) => (i === 0 ? from : i === k ? to : Math.floor((from + ((to - from) * i) / k) / 1000) * 1000);
+    return Array.from({ length: k }, (_, i) => [edge(i), edge(i + 1)]);
+  };
+  const out = new Map();
+  const rest = [];
+  let open = [[since, now]];
+  while (open.length) {
+    const firsts = yield { rest: open.map((range) => url(range, 1)), jq };
+    const split = [];
+    open.forEach((range, i) => {
+      const [{ t, r }, [from, to]] = [firsts[i], range];
+      if (t > 1000 && to - from > 10 * 60_000) return split.push(...slices(range, t));
+      for (const run of r) out.set(run.id, run);
+      if (r.length) for (let page = 2; page <= Math.min(10, Math.ceil(t / 100)); page += 1) rest.push(url(range, page));
+    });
+    open = split;
+  }
+  for (let i = 0; i < rest.length; i += 100) for (const { r } of yield { rest: rest.slice(i, i + 100), jq }) for (const run of r) out.set(run.id, run);
+  return [...out.values()].filter((r) => Date.parse(r.created_at) >= since);
+}
+export const fetchRuns = (gh, repo, since, now) => alone(gh, readRuns(repo, since, now));
+
+// A repo's default-branch commits since `since`, with their deploy check runs.
+export function* readHistory(repo, since) {
+  const out = [];
+  let cursor = null;
+  let size = 40;
+  for (let page = 0; page < 60; page += 1) {
+    let h;
+    try {
+      h = (yield { graphql: [historyQ(size), { owner: ORG, name: repo, since: new Date(since).toISOString(), cursor }] }).repository.defaultBranchRef?.target?.history;
+    } catch (err) {
+      // A repo with many check suites per commit can pass GitHub's per-query
+      // resource limit; a smaller page asks for fewer nodes.
+      if (size > 5 && /resource limits/i.test(String(err.stderr || err.message))) {
+        size = Math.floor(size / 2);
+        page -= 1;
+        continue;
+      }
+      throw err;
+    }
+    if (!h) break;
+    for (const c of h.nodes) {
+      const deploys = c.checkSuites.nodes
+        .filter((s) => s.app?.slug === WORKERS_APP)
+        .flatMap((s) => s.checkRuns.nodes)
+        .filter((r) => /Workers Builds/i.test(r.name));
+      out.push({ oid: c.oid, committedDate: c.committedDate, message: c.message, deploys });
+    }
+    if (!h.pageInfo.hasNextPage) break;
+    cursor = h.pageInfo.endCursor;
+  }
+  return out;
+}
+export const fetchHistory = (gh, repo, since) => alone(gh, readHistory(repo, since));
 
 const TREE = "... on Tree{entries{name object{... on Blob{text}}}}";
 // Every repo's workflow files, git hooks and cloud-test list, in one GraphQL
