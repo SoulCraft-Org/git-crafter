@@ -1,6 +1,6 @@
 # <Project name>: instructions
 
-Paste this file into the project's Instructions field. Fill each `<...>` cell, then delete this paragraph and the rows you do not need. [README.md](README.md) says why each row exists. [threads.md](threads.md) lists what a thread loads and each limit.
+Paste this file into the project's Instructions field. Fill each `<...>` cell, then delete this paragraph and the rows you do not need. [README.md](README.md) says why each row exists. [threads.md](threads.md) lists what a thread loads and links the limits and spend guards.
 
 | | |
 |---|---|
