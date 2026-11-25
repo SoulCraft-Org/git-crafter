@@ -1,6 +1,6 @@
 # Governance
 
-<Owner> owns the project. AI agents run its day-to-day work under `AGENTS.md`; people hold the seats in [`MAINTAINERS.md`](MAINTAINERS.md).
+<Owner> owns the project. AI agents run its day-to-day work under `AGENTS.md`. People hold the seats in [`MAINTAINERS.md`](MAINTAINERS.md).
 
 ```mermaid
 flowchart LR
@@ -25,6 +25,5 @@ flowchart LR
 | Who decides | <Owner> |
 | What the seat can do | Review and merge PRs on maintainer-only paths; turn ideas into issues; welcome new contributors |
 | What stays <Owner>'s | The merge policy, the gates, secrets, deploy settings and production |
-| How it ends | Stepping down at any time, or six months with no review; <Owner> can end it |
-
-Every seat is held by a person. AI agents never hold one and never approve a pull request.
+| How it ends | Stepping down at any time, or six months with no review. <Owner> can also end it |
+| Who holds it | A person. AI agents never hold a seat and never approve a pull request |

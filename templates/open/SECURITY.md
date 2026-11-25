@@ -6,8 +6,9 @@
 |---|---|
 | [Report a vulnerability](https://github.com/<owner>/<repo>/security/advisories/new) (GitHub private reporting) | Anything in this repo |
 | <contact address> | When you cannot use GitHub |
+| A public issue | Nothing: please do not open one |
 
-Please do not open a public issue. A person replies.
+A person replies.
 
 ## How outside code is kept safe
 

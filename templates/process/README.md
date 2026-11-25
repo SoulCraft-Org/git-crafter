@@ -22,7 +22,7 @@ flowchart LR
 
 | Key | Set it to |
 |---|---|
-| `repos` | the repo the page reads; the first is its own |
+| `repos` | the repo the page reads. The first is its own |
 | `repo_url` | `https://github.com/<owner>/<repo>/blob/main`, where each rule link points |
 | `docs` | `maps` names this file: it is the maps file too. Git Crafter's goals and process docs fill the rest |
 | `maps` | `{ "use": "<id>" }` per map ([pages/maps](../../pages/maps/README.md)) |
@@ -31,7 +31,7 @@ flowchart LR
 | `out` | the folder the pages are built into |
 | `pages` | the Process page's file name, beside the Quality page's `index.html` |
 | `tabs` | the Process tabs: `build` (titled "Maps"), `ci`, `testing` |
-| `quality_config` | the Quality config whose metric ids the maps use; `null` reads `<repo>/quality/config.json` |
+| `quality_config` | the Quality config whose metric ids the maps use. `null` reads `<repo>/quality/config.json` |
 | `heading` | the title on every page |
 | `collector` | the name the footer gives the data's writer |
 | `nav` | the links on every page: the Quality page, then this one |

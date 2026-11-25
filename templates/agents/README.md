@@ -12,7 +12,12 @@ flowchart LR
 | `AGENTS.md` | every coding agent; Claude Code when the repo has no `CLAUDE.md` | each `<...>` cell |
 | `CLAUDE.md` | Claude Code: `@AGENTS.md`, then the Claude-only rows | nothing, or Claude-only rows |
 
-Claude Code reads `AGENTS.md` directly when no `CLAUDE.md` exists, and an `@AGENTS.md` import never loads it twice (code.claude.com/docs/en/memory, read 2026-11-13). The Claude-only repo files (`.claude/settings.json`, a reviewer agent, a skill, `REVIEW.md`) are in the Claudius pack's [Claude templates](https://github.com/Colorado-Startups/claudius/tree/main/templates/claude).
+| Claude Code (code.claude.com/docs/en/memory, read 2026-11-13) | Loads `AGENTS.md` |
+|---|---|
+| With no `CLAUDE.md` | directly |
+| Through an `@AGENTS.md` import | never twice |
+
+The Claude-only repo files (`.claude/settings.json`, a reviewer agent, a skill, `REVIEW.md`) are in the Claudius pack's [Claude templates](https://github.com/Colorado-Startups/claudius/tree/main/templates/claude).
 
 ## Cloud environment for workers
 

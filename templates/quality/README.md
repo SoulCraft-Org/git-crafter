@@ -42,17 +42,27 @@ A metric whose token is missing reads not measured, never 0, so a tab you keep i
 
 ## The pages tab
 
-It reads `params.origin` (the production URL) or `params.site_dir` (a built site folder). Edit [targets/web.json](targets/web.json), then copy it to `<repo>/quality/targets/web.json`. Its `comment` says what each entry sets.
+| It reads | Which is |
+| --- | --- |
+| `params.origin` | the production URL |
+| or `params.site_dir` | a built site folder |
+
+Edit [targets/web.json](targets/web.json), then copy it to `<repo>/quality/targets/web.json`. Its `comment` says what each entry sets.
 
 ## The Issues tab
 
 | To reach its goal | Do |
 | --- | --- |
-| `issues.intake_ready` | Copy [bug.yml, fix.yml and config.yml](../open/.github/ISSUE_TEMPLATE); each form sets its issue type |
-| `issues.parked_open` | Keep work that is not a bug or a quick fix as a draft card on the board. `params.issue_types` lists the types an issue may have; empty turns the check off |
+| `issues.intake_ready` | Copy [bug.yml, fix.yml and config.yml](../open/.github/ISSUE_TEMPLATE). Each form sets its issue type |
+| `issues.parked_open` | Keep work that is not a bug or a quick fix as a draft card on the board. `params.issue_types` lists the types an issue may have. Empty turns the check off |
 | `issues.area_labeled`, `issues.stray_labels` | Name your area labels in `params.area_labels`, and archive each label nothing uses |
 
-Renamed on 2026-11-10: `issues.templates_present` is `issues.intake_ready`, `issues.oldest_open_bug_days` is `issues.oldest_open_days`. An override naming an old id stops the build (exit 2).
+| Renamed on 2026-11-10 | Now |
+| --- | --- |
+| `issues.templates_present` | `issues.intake_ready` |
+| `issues.oldest_open_bug_days` | `issues.oldest_open_days` |
+
+An override naming an old id stops the build (exit 2).
 
 ## From v6 to v7
 

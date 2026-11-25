@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for helping. Every contribution takes the same path, and AI agents run most of it.
+Thank you for helping. Every contribution takes the same path. AI agents run most of it.
 
 ```mermaid
 flowchart LR
@@ -18,7 +18,7 @@ flowchart LR
 | An idea | Open a [Discussion in Ideas](https://github.com/<owner>/<repo>/discussions/categories/ideas) |
 | A bug | Open an issue with the bug form |
 | A question | [`SUPPORT.md`](SUPPORT.md) |
-| A security problem | [`SECURITY.md`](SECURITY.md); never a public issue |
+| A security problem | [`SECURITY.md`](SECURITY.md). Never a public issue |
 | Time now | Pick a [`good first issue`](https://github.com/<owner>/<repo>/labels/good%20first%20issue) |
 
 ## 2. Run it
@@ -47,4 +47,8 @@ cd <repo>
 | Only paths on `ai_mergeable` in `merge_policy.json`, beside `tools/merge_policy.py` | An AI agent squash-merges it once the checks and both reviews pass |
 | Any other path: dependencies, build config, CI, hooks, gates, these docs | The orchestrator rebuilds it as its own PR with you as `Co-authored-by`. It links the new PR from yours |
 
-Check your paths first: `python3 -I tools/merge_policy.py --base origin/main`. Agents never approve a PR. A fork's run waits for approval and gets no secrets.
+| Before you push | Rule |
+|---|---|
+| Check your paths | `python3 -I tools/merge_policy.py --base origin/main` |
+| Approvals | Agents never approve a PR |
+| A fork's run | It waits for approval and gets no secrets |
