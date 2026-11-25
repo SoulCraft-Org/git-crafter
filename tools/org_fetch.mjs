@@ -4,7 +4,7 @@
 import { execFileSync } from "node:child_process";
 
 import { ORG } from "./org_base.mjs";
-import { isServerError, runMany } from "./org_many.mjs";
+import { isServerError, runMany, runManySettled } from "./org_many.mjs";
 import { WORKERS_APP } from "./org_signals.mjs";
 
 export { isServerError };
@@ -21,6 +21,11 @@ const sleep = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 
 
 // A gh wrapper that counts calls and retries a server error once. restMany reads a list of REST paths side by
 // side (org_many.mjs) when it runs the real gh; a stand-in exec, as in the tests, reads them one by one.
+const graphqlArgs = (query, vars) => ["api", "graphql", "-f", `query=${query}`, ...Object.entries(vars).filter(([, v]) => v !== null && v !== undefined).flatMap(([k, v]) => ["-f", `${k}=${v}`])];
+// The gh arguments of one read: { graphql: [query, vars] } or { rest: path, jq }.
+const unitArgs = (u) => (u.graphql ? graphqlArgs(...u.graphql) : ["api", u.rest, ...(u.jq ? ["--jq", u.jq] : [])]);
+const unitValue = (u, text) => (u.graphql ? JSON.parse(text).data : JSON.parse(text));
+
 export function ghClient(exec = execFileSync, wait = sleep) {
   let calls = 0;
   let graphqlCalls = 0;
@@ -58,8 +63,23 @@ export function ghClient(exec = execFileSync, wait = sleep) {
         .filter(Boolean)
         .map((l) => JSON.parse(l)),
     raw: (path) => run(["api", path, "-H", "Accept: application/vnd.github.raw"]),
-    graphql: (query, vars) =>
-      JSON.parse(run(["api", "graphql", "-f", `query=${query}`, ...Object.entries(vars).filter(([, v]) => v !== null && v !== undefined).flatMap(([k, v]) => ["-f", `${k}=${v}`])])).data,
+    graphql: (query, vars) => JSON.parse(run(graphqlArgs(query, vars))).data,
+    // Reads of different repos side by side: one { value } or { error } per unit, in order, a failure never stopping the
+    // others. A stand-in exec, as in the tests, reads them one by one. Each unit counts as one call.
+    many: (units) => {
+      const answer = (u, get) => {
+        try {
+          return { value: unitValue(u, get()) };
+        } catch (error) {
+          return { error };
+        }
+      };
+      if (exec !== execFileSync) return units.map((u) => answer(u, () => run(unitArgs(u))));
+      calls += units.length;
+      graphqlCalls += units.filter((u) => u.graphql).length;
+      const got = runManySettled("gh", units.map(unitArgs), { retryMs: RETRY_MS });
+      return units.map((u, i) => (got[i].err ? { error: Object.assign(new Error(got[i].err.message), { stderr: got[i].err.stderr }) } : answer(u, () => got[i].out)));
+    },
   };
 }
 
@@ -171,6 +191,60 @@ export function fetchHistory(gh, repo, since) {
     cursor = h.pageInfo.endCursor;
   }
   return out;
+}
+
+// The reads below are generators: each yields the gh read it needs next and receives its answer, so `drive` can run
+// the reads of many repos side by side, one round of reads at a time. A read is { graphql: [query, vars] } (answered
+// with its data), { rest: [paths], jq } (answered with one value per path) or a number of milliseconds to wait.
+// fetchMerged, fetchOpen, fetchRuns and fetchHistory run one of them alone, as every caller did before.
+
+// Each job's { value } or { error }, in order. Every round, the reads that jobs ask for go out together, up to
+// org_many.mjs LIMIT at once; one job's failure ends that job and no other. A gh without `many` is read one by one.
+export function drive(gh, jobs, wait = sleep) {
+  const states = jobs.map((g) => ({ g, done: false }));
+  const step = (s, fn) => {
+    try {
+      const r = fn();
+      if (r.done) Object.assign(s, { done: true, value: r.value });
+      else s.ask = r.value;
+    } catch (error) {
+      Object.assign(s, { done: true, error });
+    }
+  };
+  const serve = (req) => (req.graphql ? gh.graphql(...req.graphql) : gh.restMany(req.rest, req.jq));
+  states.forEach((s) => step(s, () => s.g.next()));
+  for (let live = states.filter((s) => !s.done); live.length; live = states.filter((s) => !s.done)) {
+    const asking = live.filter((s) => typeof s.ask !== "number");
+    const pause = Math.max(0, ...live.filter((s) => typeof s.ask === "number").map((s) => s.ask));
+    if (pause) wait(pause);
+    live.filter((s) => typeof s.ask === "number").forEach((s) => step(s, () => s.g.next()));
+    const answers = new Map();
+    if (asking.length > 1 && gh.many) {
+      const units = asking.flatMap((s) => (s.ask.graphql ? [s.ask] : s.ask.rest.map((rest) => ({ rest, jq: s.ask.jq }))));
+      const got = gh.many(units);
+      let at = 0;
+      for (const s of asking) {
+        const n = s.ask.graphql ? 1 : s.ask.rest.length;
+        const mine = got.slice(at, at + n);
+        at += n;
+        const bad = mine.find((m) => m.error);
+        answers.set(s, bad ? { error: bad.error } : { value: s.ask.graphql ? mine[0].value : mine.map((m) => m.value) });
+      }
+    } else {
+      for (const s of asking) {
+        try {
+          answers.set(s, { value: serve(s.ask) });
+        } catch (error) {
+          answers.set(s, { error });
+        }
+      }
+    }
+    for (const s of asking) {
+      const a = answers.get(s);
+      step(s, () => (a.error ? s.g.throw(a.error) : s.g.next(a.value)));
+    }
+  }
+  return states.map((s) => (s.error ? { error: s.error } : { value: s.value }));
 }
 
 const TREE = "... on Tree{entries{name object{... on Blob{text}}}}";
