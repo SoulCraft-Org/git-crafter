@@ -32,16 +32,16 @@ flowchart LR
 |---|---|
 | 1 | Create the project. Attach the repos, each with the Claude GitHub App installed |
 | 2 | Paste [instructions.md](instructions.md) into Instructions and fill each `<...>` cell |
-| 3 | Set the shared environment in Project settings. Leave the setup script empty until a smoke test proves a gap |
+| 3 | Set the shared environment in Project settings, with an empty setup script |
 | 4 | Add each key as a network secret with its host |
-| 5 | Send the setup check below first, and log it on the [result card](check-card.md), [scorecard](scorecard.md) and [scrub gate](scrub.md). Then list what is on and unused in the [audit](audit.md) |
+| 5 | Send the setup check below first, and log it on the [result card](check-card.md), [scorecard](scorecard.md) and [scrub gate](scrub.md) |
 | 6 | A Claudius repo: follow its [quick start](https://github.com/Soul-Craft/claudius/blob/main/docs/projects-quickstart.md) |
 
 ```text
 Setup check only. Start no threads and change nothing.
 Reply as a table: Line, Result (pass or fail), What you saw, Read (UTC), Source.
 Per repo: App installed, CLAUDE.md or AGENTS.md read, push access works.
-Once: the environment's network access, a setup script that is empty or proven by a smoke test, each expected key (by name only) as a network secret, connectors still unfinished.
+Once: the environment's network access, the setup script's content, each expected key (by name only) as a network secret, connectors still unfinished.
 A line you did not read is a fail.
 ```
 
@@ -52,7 +52,7 @@ Add a setup script only for a test-proven gap: it rebuilds on script or host cha
 | Check | How |
 |---|---|
 | Versions | Print `node`, `npm`, `python3` and `uv` versions |
-| Repo check | Run the fastest check the repo's `CLAUDE.md` names. The image lacks the repo's own test requirements, which CI installs: install them first, or mark the row CI-only |
+| Repo check | Run the fastest check the repo's `CLAUDE.md` names |
 | Variables | Print names only, never values. `AWS_*`, `CLOUDSDK_*`, `GH_TOKEN` and `GITHUB_TOKEN` are the sandbox's own |
 
 `bun` has known proxy issues, so use `npm` or `pnpm`.
