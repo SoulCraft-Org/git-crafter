@@ -52,5 +52,6 @@ echo "== quality";      node quality/selftest.mjs
                         suite Quality quality.lcov 'quality/**/*.test.mjs' 'config/**/*.test.mjs'
 echo "== cloud setup";  node --test tests/cloud-setup.test.mjs
 echo "== setup list";   node --test tools/apply_setup*.test.mjs tools/merge_pr*.test.mjs
+echo "== private terms"; node --test tests/private-terms.test.mjs
 echo "== verify";       node --test tests/verify.test.mjs
 echo "verify: ok"
