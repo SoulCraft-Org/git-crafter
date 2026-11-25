@@ -52,8 +52,13 @@ async function getOnSite(site, origin, start) {
   throw new Error(`more than ${MAX_HOPS} redirects`);
 }
 
-// Breadth first from "/", same origin only, GET only, at most `max` fetches.
-// Query strings are dropped, so filters do not multiply pages. A path under a
+// The path a site is served under, with a trailing slash: "/" for a site at
+// the host root, "/repo/" for a project site at https://<org>.github.io/repo/.
+export const basePath = (origin) => new URL(origin).pathname.replace(/\/?$/, "/");
+
+// Breadth first from the site's base path, same origin only, GET only, at most
+// `max` fetches. A link outside the base path is not followed, and a goal path
+// that is not absolute reads under it. Query strings are dropped, so filters do not multiply pages. A path under a
 // `skip` prefix (params.crawl_skip) is never fetched: an /api/ route can act
 // on a GET (an unsubscribe link, say). A link that redirects off the site is
 // answered by its redirect: `final` holds the other host's URL, and nothing
@@ -61,9 +66,10 @@ async function getOnSite(site, origin, start) {
 export function crawl(site, { max = 200, skip = [], concurrency = 4 } = {}) {
   return once(site, `crawl ${max} ${skip.join(" ")}`, async () => {
     const origin = new URL(site.origin).origin;
+    const base = basePath(site.origin);
     const skipped = (path) => skip.some((s) => path.startsWith(s));
     const pages = new Map();
-    const queue = ["/"];
+    const queue = [base];
     const seen = new Set(queue);
     let fetched = 0;
     const visit = async (path) => {
@@ -79,7 +85,7 @@ export function crawl(site, { max = 200, skip = [], concurrency = 4 } = {}) {
           rec.links = extractLinks(await res.text(), at.href);
           for (const link of rec.links) {
             const u = new URL(link);
-            if (u.origin !== origin || skipped(u.pathname) || seen.has(u.pathname)) continue;
+            if (u.origin !== origin || !u.pathname.startsWith(base) || skipped(u.pathname) || seen.has(u.pathname)) continue;
             seen.add(u.pathname);
             queue.push(u.pathname);
           }
@@ -96,11 +102,11 @@ export function crawl(site, { max = 200, skip = [], concurrency = 4 } = {}) {
       fetched += batch.length;
       await Promise.all(batch.map(visit));
     }
-    const root = pages.get("/");
+    const root = pages.get(base);
     if (!root || root.status !== 200) {
-      return { error: `GET / ${root?.error ?? `answered HTTP ${root?.status}`}` };
+      return { error: `GET ${base} ${root?.error ?? `answered HTTP ${root?.status}`}` };
     }
-    return { origin, pages, truncated: queue.length > 0, max, skip, read_at: now() };
+    return { origin, base, pages, truncated: queue.length > 0, max, skip, read_at: now() };
   });
 }
 
@@ -125,15 +131,16 @@ export function brokenLinks({ origin, pages, skip = [] }) {
 // Shortest clicks from "/" over the crawled link graph. A goal is an internal
 // path (clicks to land on it) or an external href prefix (clicks to the page
 // that links to it, plus the click on that link).
-export function shortestClicks({ origin, pages }, goals) {
+export function shortestClicks({ origin, base = "/", pages }, goals) {
   const resolve = (path) => {
     const f = pages.get(path)?.final;
     return typeof f === "string" && f.startsWith("/") ? f : path;
   };
+  const under = (path) => new URL(path, origin + base).pathname;
   const byFinal = new Map();
   for (const [path, rec] of pages) byFinal.set(resolve(path), rec);
-  const dist = new Map([[resolve("/"), 0]]);
-  const queue = [resolve("/")];
+  const dist = new Map([[resolve(base), 0]]);
+  const queue = [resolve(base)];
   while (queue.length) {
     const at = queue.shift();
     for (const link of byFinal.get(at)?.links ?? []) {
@@ -144,7 +151,7 @@ export function shortestClicks({ origin, pages }, goals) {
     }
   }
   return goals.map((goal) => {
-    if (goal.path) return { ...goal, clicks: dist.get(resolve(goal.path)) ?? null };
+    if (goal.path) return { ...goal, clicks: dist.get(resolve(under(goal.path))) ?? null };
     let best = null;
     for (const [path, d] of dist) {
       if (byFinal.get(path)?.links.some((l) => l.startsWith(goal.href)) && (best === null || d + 1 < best)) best = d + 1;
@@ -158,20 +165,21 @@ export function shortestClicks({ origin, pages }, goals) {
 // that leads on and the page it lands on (null when it leaves the site). An
 // external goal ends at the nearest page linking it. null when the crawl
 // reached no route.
-export function taskRoute({ origin, pages }, goal) {
+export function taskRoute({ origin, base = "/", pages }, goal) {
   const resolve = (path) => {
     const f = pages.get(path)?.final;
     return typeof f === "string" && f.startsWith("/") ? f : path;
   };
   const byFinal = new Map();
   for (const [path, rec] of pages) byFinal.set(resolve(path), rec);
-  const parent = clickParents({ origin, pages, byFinal, resolve });
+  const parent = clickParents({ origin, base, pages, byFinal, resolve });
+  const under = (path) => new URL(path, origin + base).pathname;
   const hopsTo = (path) => {
     const hops = [];
     for (let hop = parent.get(path); hop; hop = parent.get(hop.from)) hops.unshift(hop);
     return hops;
   };
-  if (goal.path) return parent.has(resolve(goal.path)) ? hopsTo(resolve(goal.path)) : null;
+  if (goal.path) return parent.has(resolve(under(goal.path))) ? hopsTo(resolve(under(goal.path))) : null;
   // Breadth-first order: the first page linking the goal is the nearest.
   for (const path of parent.keys()) {
     const link = byFinal.get(path)?.links.find((l) => l.startsWith(goal.href));
@@ -181,9 +189,9 @@ export function taskRoute({ origin, pages }, goal) {
 }
 
 // Breadth-first from the home page: each page's first hop, { from, link, to }.
-function clickParents({ origin, pages, byFinal, resolve }) {
-  const parent = new Map([[resolve("/"), null]]);
-  const queue = [resolve("/")];
+function clickParents({ origin, base, pages, byFinal, resolve }) {
+  const parent = new Map([[resolve(base), null]]);
+  const queue = [resolve(base)];
   while (queue.length) {
     const at = queue.shift();
     for (const link of byFinal.get(at)?.links ?? []) {

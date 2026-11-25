@@ -12,8 +12,10 @@ import { fileURLToPath } from "node:url";
 import { area, collect, PARAMS } from "./usability.mjs";
 import {
   PSI_ENDPOINT,
+  basePath,
   brokenLinks,
   crawl,
+  shortestClicks,
   extractLinks,
   formFields,
   keyboardPass,
@@ -415,6 +417,35 @@ test("a built static site: the crawl reads the folder, and Google is never asked
   assert.deepEqual(got["usability.broken_links"].detail.map((d) => d.label), ["/missing-page/ ← /", "/broken-from-rankings/ ← /rankings/"]);
   assert.equal(got["usability.task_clicks"].value, 3);
   assert.match(got["usability.tbt_mobile"].could_not_check, /not a public URL \(a built static site\); lab: no browser/);
+});
+
+// A project site: https://example.test/repo/ answers under /repo/ and 404s at the host root.
+test("a site under a subpath is crawled from its own base path", async () => {
+  const pages = {
+    "/repo/": '<a href="process.html">Process</a> <a href="/other/">Other site</a> <a href="gone.html">Gone</a>',
+    "/repo/process.html": '<a href="./">Home</a>',
+  };
+  const asked = [];
+  const site = {
+    origin: "https://example.test/repo",
+    fetch: async (url) => {
+      const path = new URL(url).pathname;
+      asked.push(path);
+      return pages[path] ? new Response(pages[path], { headers: { "content-type": "text/html" } }) : new Response("no", { status: 404 });
+    },
+  };
+  assert.equal(basePath("https://example.test"), "/");
+  assert.equal(basePath("https://example.test/repo"), "/repo/");
+  const links = await crawl(site);
+  assert.equal(links.error, undefined);
+  assert.equal(links.base, "/repo/");
+  assert.deepEqual([...links.pages.keys()].sort(), ["/repo/", "/repo/gone.html", "/repo/process.html"]);
+  assert.equal(asked.includes("/") || asked.includes("/other/"), false, "nothing outside the base path is fetched");
+  assert.deepEqual([...brokenLinks(links)].map(([t]) => t), ["/repo/gone.html"]);
+  const [byPath, byRelative] = shortestClicks(links, [{ path: "/repo/process.html" }, { path: "process.html" }]);
+  assert.equal(byPath.clicks, 1);
+  assert.equal(byRelative.clicks, 1, "a relative goal path reads under the base");
+  assert.deepEqual(taskRoute(links, { path: "process.html" }).map((h) => h.to), ["/repo/process.html"]);
 });
 
 test("targets/usability.json: params are generic, and goals cite their public source", () => {
