@@ -1,7 +1,15 @@
-// Sets the GitHub repo switches templates/setup.json lists, through gh api.
+// Sets the GitHub switches a setup list names, through gh api: a repo's from
+// templates/setup.json, or an organization's, a user's or an enterprise's from
+// each *.json file in templates/setup/org, user or enterprise (a missing folder
+// holds no rows).
 //
-//   node tools/apply_setup.mjs --repo owner/name [--values file.json] [--only id,id] [--apply] [--check]
+//   node tools/apply_setup.mjs --repo owner/name | --org name | --user login | --enterprise slug
+//     [--values file.json] [--only id,id] [--apply] [--check]
 //
+// Paths and bodies fill {owner} and {repo}, {org}, {user} or {enterprise}, and
+// {node_id} (an enterprise's comes from the values file). Under --org a ruleset
+// row reads the organization's rulesets, and one counts only when it reaches
+// every repo.
 // A dry run by default: each row prints as same, would change, by hand,
 // optional, org's rules, no value or unreadable, and nothing changes.
 // --apply sets each "would change" row, then reads it back: changed or failed;
@@ -13,14 +21,24 @@
 // Exit 2: a usage error.
 
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { fill, reader, rowState } from "./apply_setup_rows.mjs";
 
-/** The setup list this tool reads by default. */
+/** The setup list --repo reads by default; --org, --user and --enterprise read the folder of that name in SETUP_DIR. */
 export const SETUP = fileURLToPath(new URL("../templates/setup.json", import.meta.url));
-const USAGE = "usage: node tools/apply_setup.mjs --repo owner/name [--values file.json] [--only id,id] [--apply] [--check]";
+const SETUP_DIR = fileURLToPath(new URL("../templates/setup/", import.meta.url));
+const USAGE = "usage: node tools/apply_setup.mjs --repo owner/name | --org name | --user login | --enterprise slug [--values file.json] [--only id,id] [--apply] [--check]";
+
+// Each scope: the shape of its name, the placeholders it fills, and the route that holds its node_id.
+const LOGIN = /^[A-Za-z0-9][A-Za-z0-9-]*$/;
+const SCOPES = {
+  repo: { shape: /^[\w.-]+\/[\w.-]+$/, spelled: "owner/name", vars: (n) => ({ owner: n.split("/")[0], repo: n.split("/")[1] }), node: "repos/{owner}/{repo}" },
+  org: { shape: LOGIN, spelled: "an organization login", vars: (org) => ({ org }), node: "orgs/{org}" },
+  user: { shape: LOGIN, spelled: "a user login", vars: (user) => ({ user }), node: "users/{user}" },
+  enterprise: { shape: LOGIN, spelled: "an enterprise slug", vars: (enterprise) => ({ enterprise }) },
+};
 
 /** gh as a function of its arguments and stdin: its stdout, or an Error carrying the HTTP status gh names. */
 export function ghRunner(exec = spawnSync) {
@@ -36,7 +54,7 @@ export function ghRunner(exec = spawnSync) {
 }
 
 const SWITCHES = new Set(["--apply", "--check"]);
-const OPTIONS = new Set(["--repo", "--values", "--only"]);
+const OPTIONS = new Set(["--values", "--only", ...Object.keys(SCOPES).map((s) => `--${s}`)]);
 
 // The command line as options, or { problem }.
 function parseArgs(argv) {
@@ -47,8 +65,18 @@ function parseArgs(argv) {
     else if (OPTIONS.has(a) && argv[i + 1]) opts[a.slice(2)] = argv[++i];
     else return { problem: `unknown or incomplete argument ${a}` };
   }
-  if (!/^[\w.-]+\/[\w.-]+$/.test(opts.repo ?? "")) return { problem: "--repo must be owner/name" };
-  return opts;
+  const named = Object.keys(SCOPES).filter((s) => s in opts);
+  if (named.length !== 1) return { problem: "name one of --repo, --org, --user or --enterprise" };
+  const [scope] = named;
+  if (!SCOPES[scope].shape.test(opts[scope])) return { problem: `--${scope} must be ${SCOPES[scope].spelled}` };
+  return { ...opts, scope, name: opts[scope] };
+}
+
+// The rows at `setup`: a file's, or those of each *.json file in a folder in name order; a missing path holds none.
+function loadRows(setup) {
+  if (!existsSync(setup)) return [];
+  if (!statSync(setup).isDirectory()) return JSON.parse(readFileSync(setup, "utf8")).rows;
+  return readdirSync(setup).filter((f) => f.endsWith(".json")).sort().flatMap((f) => loadRows(join(setup, f)));
 }
 
 // The values file as { values, optionalOn }, or { problem }.
@@ -77,12 +105,13 @@ function applyRow(row, ctx) {
   return back.status === "same" ? { status: "changed", note: "read back" } : { status: "failed", note: `read back ${back.status}: ${back.note}`, failed: true };
 }
 
-// The context every row reads through: cached GETs, GraphQL, the values and the optional rows turned on.
-function context(run, owner, repo, { values, optionalOn }) {
+// The context every row reads through: cached GETs, GraphQL over the scope's names, the values, the optional rows turned on and the scope.
+function context(run, { scope, name }, { values, optionalOn }) {
   const read = reader(run);
-  const graphql = (query) => JSON.parse(run(["api", "graphql", "-f", `query=${query}`, "-f", `owner=${owner}`, "-f", `repo=${repo}`]));
-  const vars = { ...values, owner, repo, node_id: () => read(`repos/${owner}/${repo}`)?.node_id };
-  return { run, read, graphql, vars, optionalOn };
+  const named = SCOPES[scope].vars(name);
+  const graphql = (query) => JSON.parse(run(["api", "graphql", "-f", `query=${query}`, ...Object.entries(named).flatMap(([k, v]) => ["-f", `${k}=${v}`])]));
+  const node = SCOPES[scope].node && { node_id: () => read(fill(SCOPES[scope].node, named))?.node_id };
+  return { run, read, graphql, vars: { ...values, ...named, ...node }, optionalOn, scope };
 }
 
 // The first usage problem: from the options, the values file, --only or optional_on; null when none.
@@ -112,13 +141,14 @@ function resultsOf(rows, ctx, opts, only) {
 
 /**
  * The command line. `run` is gh (injectable for tests), `setup` the setup
- * list's path, `root` where --values resolves, `log` and `error` where
- * lines go. Returns the exit code.
+ * list's path (a file, or a folder of them; the scope's own by default),
+ * `root` where --values resolves, `log` and `error` where lines go. Returns
+ * the exit code.
  */
-export function main(argv = process.argv.slice(2), { run = ghRunner(), setup = SETUP, root = process.cwd(), log = console.log, error = console.error } = {}) {
+export function main(argv = process.argv.slice(2), { run = ghRunner(), setup, root = process.cwd(), log = console.log, error = console.error } = {}) {
   const opts = parseArgs(argv);
   const loaded = opts.problem ? opts : loadValues(opts.values, root);
-  const rows = JSON.parse(readFileSync(setup, "utf8")).rows;
+  const rows = opts.problem ? [] : loadRows(setup ?? (opts.scope === "repo" ? SETUP : join(SETUP_DIR, opts.scope)));
   const only = opts.only ? new Set(opts.only.split(",")) : null;
   const problem = problemOf(loaded, rows, only);
   if (problem) {
@@ -127,8 +157,7 @@ ${USAGE}`);
     return 2;
   }
   if (only && !opts.apply) log("note: --only names rows for --apply; without --apply nothing is set");
-  const [owner, repo] = opts.repo.split("/");
-  return report(resultsOf(rows, context(run, owner, repo, loaded), opts, only), opts, log);
+  return report(resultsOf(rows, context(run, opts, loaded), opts, only), opts, log);
 }
 
 // Prints one line per row and a tally; the exit code: 1 for a failed write, or a failed row under --check.
@@ -137,7 +166,7 @@ function report(results, opts, log) {
   const unset = results.filter((r) => r.status === "no value");
   if (unset.length) log(`warning: ${unset.length} row(s) read no value and never fail --check: ${unset.map((r) => r.row.id).join(", ")}`);
   const tally = Object.entries(Object.groupBy(results, (r) => r.status)).map(([s, rs]) => `${rs.length} ${s}`);
-  log(`${opts.repo}: ${tally.join(", ")}${opts.apply ? "" : " (dry run: nothing changed)"}`);
+  log(`${opts.scope === "repo" ? "" : `${opts.scope} `}${opts.name}: ${tally.join(", ") || "no rows"}${opts.apply ? "" : " (dry run: nothing changed)"}`);
   const failed = opts.check ? results.filter((r) => r.failed) : [];
   if (failed.length) log(`check failed: ${failed.map((r) => r.row.id).join(", ")}`);
   return failed.length || results.some((r) => r.status === "failed") ? 1 : 0;

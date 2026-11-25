@@ -50,6 +50,7 @@ const WRITES = {
   [`PUT ${P("/vulnerability-alerts")}`]: (s) => (s[P("/vulnerability-alerts")] = ""),
   [`PATCH ${P("/code-scanning/default-setup")}`]: (s, body) => (s[P("/code-scanning/default-setup")] = s.slowScan ? { state: "not-configured" } : body),
   [`PUT ${P("/topics")}`]: (s, body) => (s[P()].topics = body.names),
+  "PATCH orgs/acme": (s, body) => Object.assign(s["orgs/acme"], body),
   "POST graphql": (s, body) => {
     if (body.variables.id !== s[P()].node_id) throw notFound(body.variables.id);
     s[P()].has_discussions = true;
@@ -196,8 +197,52 @@ test("Git Crafter's values file fills every values row and turns on only optiona
   assert.ok(own.optional_on.every((id) => ROW[id]?.optional));
 });
 
+// Org rows: a field, the org's own node_id, and a default-branch ruleset.
+const ORG_ROWS = [
+  { id: "org.no_public_repos", method: "PATCH", path: "orgs/{org}", body: { members_can_create_public_repositories: false }, check: { field: "members_can_create_public_repositories", value: false } },
+  { id: "org.node_id", method: "PATCH", path: "orgs/{org}", body: {}, check: { field: "node_id", value: "{node_id}" } },
+  { id: "org.rules", method: "POST", path: "orgs/{org}/rulesets", body: {}, check: { ruleset: { target: "branch", ref: "~DEFAULT_BRANCH", rules: { deletion: {} } } } },
+];
+const ORG = {
+  "orgs/acme": { node_id: "O_1", members_can_create_public_repositories: true },
+  "orgs/acme/rulesets?targets=branch,tag,push&per_page=100": [{ id: 7, target: "branch", enforcement: "active", source_type: "Organization" }],
+  "orgs/acme/rulesets/7": { id: 7, target: "branch", conditions: { ref_name: { include: ["~DEFAULT_BRANCH"], exclude: [] }, repository_name: { include: ["~ALL"], exclude: [] } }, rules: [{ type: "deletion" }] },
+};
+
+// Runs the tool with `argv` over a temp folder holding `files` ({ name: rows }), or over a missing folder when `files` is null.
+function scoped(argv, state, files) {
+  const gh = fakeGh(state);
+  const lines = [];
+  const dir = mkdtempSync(path.join(tmpdir(), "setup-"));
+  try {
+    for (const [name, rows] of Object.entries(files ?? {})) writeFileSync(path.join(dir, name), JSON.stringify({ rows }));
+    const code = main(argv, { run: gh.run, setup: files ? dir : path.join(dir, "none"), root: dir, log: (l) => lines.push(l) });
+    return { code, lines, rows: lines.map((l) => /^(.{13}) (\S+)/.exec(l)?.slice(1).map((x) => x.trim())).filter(Boolean), ...gh };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test("--org reads each file of its folder in name order, fills {org} and {node_id}, checks the org's ruleset and sets an org row", () => {
+  const got = scoped(["--org", "acme", "--apply", "--check"], structuredClone(ORG), { "b.json": ORG_ROWS.slice(2), "a.json": ORG_ROWS.slice(0, 2) });
+  assert.equal(got.code, 0, got.lines.join("\n"));
+  assert.deepEqual(got.rows, [["changed", "org.no_public_repos"], ["same", "org.node_id"], ["same", "org.rules"]]);
+  assert.deepEqual(got.writes(), [{ call: "PATCH orgs/acme", body: { members_can_create_public_repositories: false } }]);
+  assert.ok(!got.calls.some((c) => c.args[1].startsWith("repos/")), "no repo is read");
+  assert.equal(got.lines.at(-1), "org acme: 1 changed, 2 same");
+});
+
+test("--user and --enterprise fill their placeholders; a missing folder holds no rows", () => {
+  const user = { id: "user.node_id", method: "PATCH", path: "user", body: {}, check: { get: "users/{user}", field: "node_id", value: "{node_id}" } };
+  assert.deepEqual(scoped(["--user", "ada"], { "users/ada": { node_id: "U_1" } }, { "a.json": [user] }).rows, [["same", "user.node_id"]]);
+  const ent = { id: "ent.actions", method: "PUT", path: "enterprises/{enterprise}/actions/permissions", body: { enabled_organizations: "all" }, check: { field: "enabled_organizations", value: "all" } };
+  assert.deepEqual(scoped(["--enterprise", "bigco"], { "enterprises/bigco/actions/permissions": { enabled_organizations: "all" } }, { "a.json": [ent] }).rows, [["same", "ent.actions"]]);
+  const none = scoped(["--org", "acme", "--check"], {}, null);
+  assert.deepEqual([none.code, none.lines, none.calls], [0, ["org acme: no rows (dry run: nothing changed)"], []]);
+});
+
 test("usage errors exit 2 and read nothing", () => {
-  for (const argv of [["--repo", "nope"], ["--repo", REPO, "--force"], ["--repo", REPO, "--values", "missing.json"], ["--repo", REPO, "--only", "repo.nope"]]) {
+  for (const argv of [[], ["--repo", REPO, "--org", "acme"], ["--org", "ac/me"], ["--enterprise", "../x"], ["--repo", "nope"], ["--repo", REPO, "--force"], ["--repo", REPO, "--values", "missing.json"], ["--repo", REPO, "--only", "repo.nope"]]) {
     const gh = fakeGh(standard());
     const said = [];
     assert.equal(main(argv, { run: gh.run, root: tmpdir(), log: () => {}, error: (l) => said.push(l) }), 2, argv.join(" "));

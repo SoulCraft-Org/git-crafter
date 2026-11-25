@@ -66,6 +66,26 @@ test("a ruleset row: met when an active ruleset holds each rule, else it names w
   assert.equal(state("rules.default_branch", branchSet(held.slice(0, 2), "Organization")).status, "org's rules");
 });
 
+// An active org ruleset on the default branch of the repos `repos` names, holding `rules`.
+const orgSet = (rules, repos = ["~ALL"]) => ({
+  "orgs/acme/rulesets?targets=branch,tag,push&per_page=100": [{ id: 9, target: "branch", enforcement: "active", source_type: "Organization" }],
+  "orgs/acme/rulesets/9": { id: 9, target: "branch", conditions: { ref_name: { include: ["~DEFAULT_BRANCH"], exclude: [] }, repository_name: { include: repos, exclude: [] } }, rules },
+});
+const scoped = (answers, scope = "org") => {
+  const c = { ...ctx(answers), vars: { org: "acme" }, scope };
+  return { ...rowState(ROW["rules.default_branch"], c), gets: c.gets };
+};
+
+test("under --org a ruleset row reads the org's rulesets, and one counts only when it reaches every repo", () => {
+  const held = ROW["rules.default_branch"].body.rules;
+  const all = scoped(orgSet(held));
+  assert.equal(all.status, "same");
+  assert.ok(all.gets.every((g) => g.startsWith("orgs/acme/")), "no repo is read");
+  const some = scoped(orgSet(held, ["widget"]));
+  assert.deepEqual([some.status, some.note], ["would change", "no active branch ruleset on every repo's ~DEFAULT_BRANCH holds deletion, non_fast_forward, pull_request"]);
+  assert.match(scoped({}, "user").note, /reads a repo or an organization, not a user/);
+});
+
 test("reader: one GET per route, null for a 404, and forget makes the next read ask again", () => {
   const c = ctx({ [REPO]: { id: 1 } });
   assert.deepEqual([c.read(REPO), c.read(REPO), c.read(`${REPO}/gone`)], [{ id: 1 }, { id: 1 }, null]);

@@ -1,10 +1,12 @@
-// What one templates/setup.json row reads as on a repo: same, would change,
-// set by hand, optional, org's rules, no value or unreadable. Used by
-// tools/apply_setup.mjs; every read goes through a cached gh api GET.
+// What one setup row reads as on a repo, an organization, a user or an
+// enterprise: same, would change, set by hand, optional, org's rules, no value
+// or unreadable. Used by tools/apply_setup.mjs; every read goes through a
+// cached gh api GET.
 
 import { reaches } from "../quality/collectors/settings/repo-settings-refs.mjs";
 
 const RULESETS = "repos/{owner}/{repo}/rulesets?includes_parents=true&targets=branch,tag,push&per_page=100";
+const ORG_RULESETS = "orgs/{org}/rulesets?targets=branch,tag,push&per_page=100";
 
 /** A value with each `{key}` filled from `vars`: a whole-string `{key}` takes the value as is. Throws { missing } for an unknown key. */
 export function fill(value, vars) {
@@ -36,15 +38,29 @@ const holds = (params, want) => Object.entries(want).every(([k, v]) => same(para
 
 const at = (obj, dotted) => dotted.split(".").reduce((o, k) => (o == null ? undefined : o[k]), obj);
 
-// The ruleset check: met, or the reason it is not; org is true when an organization ruleset of the target applies.
-function rulesetCheck(read, want, vars) {
-  const repo = read(fill("repos/{owner}/{repo}", vars));
-  const ref = want.ref === "~DEFAULT_BRANCH" ? `refs/heads/${repo.default_branch}` : want.ref;
-  const listed = (read(fill(RULESETS, vars)) ?? []).filter((s) => s.target === want.target && s.enforcement === "active");
-  const sets = listed.map((s) => read(fill(`repos/{owner}/{repo}/rulesets/${s.id}`, vars))).filter((s) => reaches(s, ref, `refs/heads/${repo.default_branch}`));
+// Whether an organization ruleset reaches every repo: its repository_name condition includes ~ALL and excludes none.
+function everyRepo(set) {
+  const { include = [], exclude = [] } = set.conditions?.repository_name ?? {};
+  return include.includes("~ALL") && !exclude.length;
+}
+
+// Where a ruleset row reads: the list, one ruleset by id, the ref and the default branch's ref, which sets count, and the words for where.
+function rulesetSource(read, want, vars, scope = "repo") {
+  if (scope === "org") return { list: fill(ORG_RULESETS, vars), one: (id) => fill(`orgs/{org}/rulesets/${id}`, vars), ref: want.ref, defaultRef: "~DEFAULT_BRANCH", counts: everyRepo, on: `every repo's ${want.ref}` };
+  if (scope !== "repo") throw new Error(`a ruleset row reads a repo or an organization, not a ${scope}`);
+  const defaultRef = `refs/heads/${read(fill("repos/{owner}/{repo}", vars)).default_branch}`;
+  const ref = want.ref === "~DEFAULT_BRANCH" ? defaultRef : want.ref;
+  return { list: fill(RULESETS, vars), one: (id) => fill(`repos/{owner}/{repo}/rulesets/${id}`, vars), ref, defaultRef, counts: () => true, on: ref };
+}
+
+// The ruleset check: met, or the reason it is not; org is true when an organization ruleset of the target applies to the repo.
+function rulesetCheck(read, want, vars, scope) {
+  const src = rulesetSource(read, want, vars, scope);
+  const listed = (read(src.list) ?? []).filter((s) => s.target === want.target && s.enforcement === "active");
+  const sets = listed.map((s) => read(src.one(s.id))).filter((s) => src.counts(s) && reaches(s, src.ref, src.defaultRef));
   const rules = sets.flatMap((s) => s.rules ?? []);
   const lacking = Object.entries(want.rules).filter(([type, params]) => !rules.some((r) => r.type === type && holds(r.parameters ?? {}, params))).map(([type]) => type);
-  return { met: !lacking.length, note: lacking.length ? `no active ${want.target} ruleset on ${ref} holds ${lacking.join(", ")}` : "", org: listed.some((s) => s.source_type === "Organization") };
+  return { met: !lacking.length, note: lacking.length ? `no active ${want.target} ruleset on ${src.on} holds ${lacking.join(", ")}` : "", org: scope !== "org" && listed.some((s) => s.source_type === "Organization") };
 }
 
 // A field, exists or graphql check: met, or what it read.
@@ -57,10 +73,10 @@ function fieldCheck(read, check, path, vars, graphql) {
   return { met: same(got, want), note: `${check.field} is ${JSON.stringify(got ?? null)}, want ${JSON.stringify(want)}` };
 }
 
-// Whether a row's check holds on the repo: { met, note, org }, { missing } or { unreadable }.
-function checkRow(row, { read, graphql, vars }) {
+// Whether a row's check holds: { met, note, org }, { missing } or { unreadable }.
+function checkRow(row, { read, graphql, vars, scope }) {
   try {
-    if (row.check.ruleset) return rulesetCheck(read, row.check.ruleset, vars);
+    if (row.check.ruleset) return rulesetCheck(read, row.check.ruleset, vars, scope);
     return fieldCheck(read, row.check, row.path, vars, graphql);
   } catch (err) {
     if (err.missing) return { missing: err.missing };
