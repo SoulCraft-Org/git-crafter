@@ -44,8 +44,6 @@ Optional, to `<repo>/.github/workflows/` unless noted:
 | `standard` | `ubuntu-latest` | The `standard` commands, when the change touched `standard-paths` (default `paths`) |
 | `ci-ok` | `ubuntu-slim` | Fails on a failed job, a failed check, or work skipped although its paths changed |
 
-Runner pricing, read 2026-11-03: [$0.002 a minute on 1 core, $0.006 on 2](https://docs.github.com/en/billing/reference/actions-runner-pricing).
-
 ## Rules
 
 | Rule | Passes when |

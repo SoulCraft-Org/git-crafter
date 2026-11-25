@@ -36,13 +36,11 @@ Projects need a Pro, Max or Ultra plan, not Team or Enterprise. The thread limit
 
 ## Limits seen in a setup run
 
-Read 2026-11-25 in a project setup run. Check each against the current docs before relying on it.
+Seen 2026-11-25 in a project setup run. Check against the current docs before relying on it.
 
 | Limit | Do |
 |---|---|
-| Artifact publishes stop at 200 a day per account | Publish a page once and update it in place |
-| Adding a repo to a running thread holds its next message to the coordinator until the owner clicks trust | Attach the repo before the thread starts |
-| `issue_sync` with a label and no `project` key needs no board token | Set `project` only where the board is reachable |
+| Adding a repo to a running thread stops that thread's next message to the coordinator until the owner confirms trust in the app | Attach the repo before the thread starts |
 
 ## Scoring
 
