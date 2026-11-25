@@ -15,4 +15,4 @@ The owner asked for these rules in their own chat on 2026-11-25:
 
 > "Git Crafter's template is wrong. It should be merging. It's autonomous development. There should be no person in the loop. The agents need to review and correct, and they need to do it well."
 
-> "If you need me to put yes somewhere, to click allow, to copy something, to paste something, to do a quick action, you need to put the link here in this main chat."
+The same chat added a second rule. A step only the owner can take, such as a yes, an Allow click, a copy or a paste, goes in the main chat with its link.
