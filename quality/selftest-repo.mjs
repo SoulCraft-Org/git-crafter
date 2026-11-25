@@ -227,9 +227,7 @@ check("every tab the template fills has an ideal and all three categories", () =
   const dir = fileURLToPath(new URL("./targets/", import.meta.url));
   const ideals = loadIdeals({ templateDir: fileURLToPath(new URL("./ideals/", import.meta.url)) });
   const { all } = loadDefs({ templateDir: dir, tabs: TABS });
-  // Scanning waits on a speed metric: a later PR.
-  const known = [["scanning", "speed"]].map(([tab, missing]) => ({ tab, missing }));
-  assert.deepEqual(tabGaps(TABS, all.filter((d) => d.drop !== true), ideals), known, "a tab lacks its ideal or a category");
+  assert.deepEqual(tabGaps(TABS, all.filter((d) => d.drop !== true), ideals), [], "a tab lacks its ideal or a category");
   for (const d of all) assert.ok(!/\/Users\/|\/home\/[a-z]/.test(JSON.stringify(d.params ?? {})), `${d.id}: a home path in the template's params`);
   assert.ok(readFileSync(new URL("./render/client.js", import.meta.url), "utf8").includes("dataset.repo"), "the client reads the repo from the page");
 });

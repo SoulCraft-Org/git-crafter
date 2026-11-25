@@ -144,6 +144,21 @@ describe("Security and quality: GitHub's five features, their findings, fix time
     assert.equal(out["security.oldest_open_alert_days"].value, 0, "an hour old rounds to 0 days");
     assert.equal(out["security.latest_fix_days"].could_not_check, "no alert has been fixed yet");
   });
+
+  it("times the newest code scanning analysis in hours with one read; off is could_not_check", async () => {
+    const analyses = `repos/${REPO}/code-scanning/analyses?per_page=1`;
+    const gh = withRest({ [analyses]: [{ created_at: "2026-11-01T08:30:00Z", ref: "refs/heads/main", tool: { name: "CodeQL" } }] });
+    const out = await run({ gh });
+    // NOW is 2026-11-02T20:00Z: 35.5 hours after the analysis.
+    assert.deepEqual(out["security.last_analysis_hours"].detail, [{ label: "latest: CodeQL on refs/heads/main", value: 35.5, unit: "hours" }]);
+    assert.equal(out["security.last_analysis_hours"].value, 35.5);
+    assert.equal(out["security.code_scanning_on"].value, 1, "an analysis still proves code scanning on");
+    assert.equal(gh.calls.filter((c) => c === analyses).length, 1, "the on check and the age share one read");
+    for (const answer of [[], { __error: { status: 404, message: "no analysis found" } }]) {
+      const off = await run({ gh: withRest({ [analyses]: answer }) });
+      assert.equal(off["security.last_analysis_hours"].could_not_check, "Code scanning is off, so it has no analysis to time");
+    }
+  });
 });
 
 describe("Security and quality: Actions hardening, supply chain and Claude Code", () => {

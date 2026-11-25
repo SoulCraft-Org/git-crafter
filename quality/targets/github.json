@@ -884,6 +884,22 @@
     "chart": "bar"
   },
   {
+    "id": "security.last_analysis_hours",
+    "tab": "scanning",
+    "kind": "speed",
+    "group": "Scan age",
+    "label": "Hours since the last analysis",
+    "means": "How long ago code scanning last analyzed the repo, in hours; lower is better; not read while code scanning is off.",
+    "unit": "hours",
+    "goal": 168,
+    "near": 336,
+    "direction": "lower",
+    "goal_source": "template goal (2026-11-25): an analysis at least once a week, near two weeks",
+    "source": "state: gh api repos/{repo}/code-scanning/analyses?per_page=1: the newest analysis on any ref, its age at read time; could_not_check while code scanning is off",
+    "needs": "github-admin",
+    "chart": "number"
+  },
+  {
     "id": "security.code_quality_open",
     "tab": "code",
     "kind": "quality",
