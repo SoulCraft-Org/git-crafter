@@ -22,6 +22,14 @@ import { stepReadout } from "../pages/model.mjs";
 import { stripAll } from "../quality/collectors/lib/strip.mjs";
 
 const ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..");
+// config/quality.json pins the Claudius pack, which actions/pages checks out in CI. A stand-in with the pack's tab list and no
+// metrics lets these tests read the page's definitions without a network fetch.
+const PACKS = mkdtempSync(join(tmpdir(), "cos-packs-"));
+const PACK = join(PACKS, "Colorado-Startups", "claudius");
+mkdirSync(PACK, { recursive: true });
+writeFileSync(join(PACK, "pack.json"), JSON.stringify({ tabs: [["claude", "Claude"], ["claude-settings", "Claude settings"], ["desktop-app", "Claude desktop app"], ["blockers", "Blockers"], ["tokens", "Tokens"], ["instructions", "Instructions"], ["practices", "Best practices"], ["visibility", "Visibility"]] }));
+for (const dir of ["targets", "ideals", "maps", "collectors"]) mkdirSync(join(PACK, dir));
+process.env.CODE_OS_PACKS = PACKS;
 const NOW = new Date("2026-11-03T12:00:00Z");
 const ago = (h) => new Date(NOW.getTime() - h * 3_600_000).toISOString();
 const readAt = NOW.toISOString();
@@ -66,7 +74,7 @@ test("maps: a known-good file passes, a known-bad one fails on every rule, and G
 });
 
 test("Git Crafter's own Quality page turns every tab on, and each of its map steps names a tool, a rule and a metric", () => {
-  assert.deepEqual(readJson("config/quality.json").tabs.slice().sort(), TEMPLATE_TABS.map(([id]) => id).sort(), "every template tab, Design, Usability and Deploy included");
+  assert.deepEqual(readJson("config/quality.json").tabs.filter((t) => typeof t === "string").sort(), TEMPLATE_TABS.map(([id]) => id).sort(), "every template tab, Design, Usability and Deploy included");
   const steps = resolveMaps(readJson("maps.json")).maps.flatMap((m) => m.steps);
   assert.ok(steps.every((s) => s.tools?.length && s.rule && s.metric), "each step names a tool, a rule and a metric");
 });
