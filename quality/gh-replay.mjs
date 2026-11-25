@@ -141,15 +141,16 @@ function fetchSave(real, dir, env) {
   }
   return [got.join(" + "), n];
 }
-const modeOf = (env, pr) => (pr ? "replay" : env.GITHUB_EVENT_NAME === "push" && env.GITHUB_REF === "refs/heads/main" ? "record" : "count");
+// A caller's job (actions/pages) only counts: no save to replay, none to record, so no request to list artifacts.
+const countOnly = (env) => env.GH_REPLAY_COUNT_ONLY === "1";
+const pullRequestOf = (env) => (countOnly(env) ? undefined : JSON.parse(readFileSync(env.GITHUB_EVENT_PATH, "utf8")).pull_request);
+const modeOf = (env, pr) => (countOnly(env) ? "count" : pr ? "replay" : env.GITHUB_EVENT_NAME === "push" && env.GITHUB_REF === "refs/heads/main" ? "record" : "count");
 const liveTokens = (env, pr) => [env.GITHUB_SHA, env.GITHUB_RUN_ID, pr?.head.sha, ...(pr ? ["pulls/", "issues/", "pull/"].map((p) => p + pr.number) : [])].filter(Boolean).join(",");
 function setup(env) {
   const dir = path.join(env.RUNNER_TEMP, "gh-replay");
   const real = spawnSync("sh", ["-c", "command -v gh"]).stdout.toString().trim();
-  // A caller's job (actions/pages) only counts: no save to replay, none to record, so no request to list artifacts.
-  const countOnly = env.GH_REPLAY_COUNT_ONLY === "1";
-  const pr = countOnly ? undefined : JSON.parse(readFileSync(env.GITHUB_EVENT_PATH, "utf8")).pull_request;
-  const mode = countOnly ? "count" : modeOf(env, pr);
+  const pr = pullRequestOf(env);
+  const mode = modeOf(env, pr);
   mkdirSync(path.join(dir, "r"), { recursive: true }), mkdirSync(`${dir}-bin`), writeShim(`${dir}-bin`);
   const prev = mode === "record" ? `${dir}-prev` : "";
   const [id, n] = pr || prev ? fetchSave(real, prev || dir, env) : ["", 0];
