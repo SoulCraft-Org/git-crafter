@@ -4,6 +4,8 @@ name: private-terms
 # The private half of the private-term rule (tools/private_terms.py). The names this public repo must never contain
 # live in the org secret PRIVATE_TERMS, not in any tracked file. A fork's or Dependabot's pull request gets no
 # secret and only notes the skip; every push to main runs the full scan.
+# Differs from the Compute Crafter copy: where the secret is not set at all, the run notes the skip and passes, so a repo
+# that has no private names to guard needs no secret.
 on:
   pull_request:
   push:
@@ -28,4 +30,9 @@ jobs:
       - name: Scan every tracked file
         env:
           PRIVATE_TERMS: ${{ secrets.PRIVATE_TERMS }}
-        run: python3 -I tools/private_terms.py
+        run: |
+          if [ -z "$PRIVATE_TERMS" ]; then
+            echo "::notice::PRIVATE_TERMS is not set for this repo, so the private-term scan is skipped. Set the secret to turn it on."
+            exit 0
+          fi
+          python3 -I tools/private_terms.py
