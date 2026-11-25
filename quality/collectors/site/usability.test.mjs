@@ -21,6 +21,7 @@ import {
   launchChrome,
   readingStats,
   runAxe,
+  shortestClicks,
   siteFor,
   syllables,
   taskRoute,
@@ -276,6 +277,29 @@ test("the crawl stops at its limit and says so", async () => {
   const small = await crawl(site, { max: 3 });
   assert.equal(small.pages.size, 3);
   assert.equal(small.truncated, true);
+});
+
+test("a site under a subpath is crawled from that path, and a link above it is left alone (#524)", async () => {
+  const html = (links) => `<!doctype html><title>t</title>${links.map((l) => `<a href="${l}">x</a>`).join("")}`;
+  const served = { "/repo/": html(["./guide.html", "/", "/other/page.html"]), "/repo/guide.html": html(["./"]) };
+  const asked = [];
+  const site = {
+    origin: "https://org.test/repo/",
+    fetch: async (url) => {
+      const path = new URL(url).pathname;
+      asked.push(path);
+      return served[path]
+        ? new Response(served[path], { headers: { "content-type": "text/html" } })
+        : new Response("<h1>Not found</h1>", { status: 404, headers: { "content-type": "text/html" } });
+    },
+  };
+  const links = await crawl(site);
+  assert.equal(links.error, undefined, "the crawl starts at /repo/, not at the 404 host root");
+  assert.equal(links.base, "/repo/");
+  assert.deepEqual([...links.pages.keys()].sort(), ["/repo/", "/repo/guide.html"]);
+  assert.deepEqual(asked.sort(), ["/repo/", "/repo/guide.html"], "the host root and /other/ are never fetched");
+  assert.equal(shortestClicks(links, [{ path: "/repo/guide.html" }])[0].clicks, 1);
+  assert.equal(brokenLinks(links).size, 0);
 });
 
 test("missing inputs read could_not_check, never 0 and never a throw", async () => {

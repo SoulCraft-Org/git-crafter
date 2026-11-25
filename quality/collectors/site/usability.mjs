@@ -56,7 +56,7 @@ export async function collect({ root, mode, params = PARAMS, site = siteFor(para
     vitalsPages(site, pages),
   ]);
   const auditSource = `Playwright (Chrome) on ${site.origin}`;
-  const crawlSource = `GET crawl of ${site.origin} from /, same origin, at most ${max} fetches${skip.length ? `, ${skip.join(" and ")} skipped` : ""}`;
+  const crawlSource = `GET crawl of ${site.origin} from ${new URL(site.origin).pathname}, same origin, at most ${max} fetches${skip.length ? `, ${skip.join(" and ")} skipped` : ""}`;
   const tasks = list(params.tasks);
   return {
     ...fromAudit(run, { pages, widths, longWords: Number(params.long_sentence_words) || 30, source: auditSource }),
