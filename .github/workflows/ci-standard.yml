@@ -631,7 +631,7 @@ jobs:
               return doc
           CI_STANDARD_YAML_PY
           cat > "$RUNNER_TEMP/ci_standard_actions.py" <<'CI_STANDARD_ACTIONS_PY'
-          """ci_standard_actions.py: the pinned rule, on a job's steps and the local actions they call (#200). Embedded with
+          """ci_standard_actions.py: the pinned rule, on a job's steps and the local actions they call (#200), and the pool input check. Embedded with
           ci_standard.py. A step's uses: ./PATH or $/PATH runs PATH/action.yml in the caller's job, so its steps are read too; a
           link or a path out of the repo is never read (could not check). Standard library only."""
 
@@ -647,6 +647,8 @@ jobs:
           OWN = ("./", "$/")
           LOCK_FILE = "actions.lock"
           ACTION_FILES = ("action.yml", "action.yaml")
+          POOL_LABEL_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+          HOSTED_PREFIXES = ("ubuntu", "windows", "macos")
 
 
           def pin_findings(where: str, steps: list, locked=frozenset()) -> list:
@@ -705,6 +707,18 @@ jobs:
                   found += pin_findings(rel, inner)
                   todo += inner
               return found, unread
+
+
+          def pool_findings(where: str, uses: str, with_) -> list:
+              """The pool input of a call to the standard: a self-hosted label needs an exception, and the label itself is never excepted."""
+              path = uses.split("@", 1)[0].lower().replace("\\", "/")
+              text = str((with_ or {}).get("pool") or "") if isinstance(with_, dict) else ""
+              if not text or not path.endswith(("/ci-standard.yml", "/ci-standard.yaml")):
+                  return []
+              found = [("runner", where, f"pool: {text} sends the standard's jobs to a self-hosted runner; add an exception with a reason")]
+              if not POOL_LABEL_RE.fullmatch(text) or "blacksmith" in text.lower() or text.lower().startswith(HOSTED_PREFIXES):
+                  found.append(("pool", where, "pool is one literal self-hosted label of letters, digits, dot, dash and underscore: no expression, space, comma, Blacksmith or GitHub-hosted name, and no exception"))
+              return found
           CI_STANDARD_ACTIONS_PY
           cat > "$RUNNER_TEMP/ci_standard_rules.py" <<'CI_STANDARD_RULES_PY'
           """ci_standard_rules.py: the CI standard's rules, and check_repo, which applies them to one checkout.
@@ -720,7 +734,7 @@ jobs:
           import re
           import subprocess
 
-          from ci_standard_actions import LOCK_FILE, SHA_RE, local_action_findings, pin_findings
+          from ci_standard_actions import LOCK_FILE, SHA_RE, local_action_findings, pin_findings, pool_findings
           from ci_standard_yaml import EXPR, ParseError, parse
 
           RULES = ("caller", "pin", "dependabot", "permissions", "concurrency", "timeout", "runner", "pinned", "cache", "no-share", "blacksmith", "pool")
@@ -730,8 +744,6 @@ jobs:
           # A caller's pool input (a free self-hosted runner label) comes first in both jobs' runs-on; empty falls through to GitHub's pool.
           POOL_PREFIX = r"inputs\.pool != '' && inputs\.pool \|\| "
           CHOOSER_RE = re.compile(r"\$\{\{ (?:" + POOL_PREFIX + r")?contains\(fromJSON\('\[[^\]]*\]'\), inputs\.runner\) && inputs\.runner \|\| 'ubuntu-latest' \}\}")
-          POOL_LABEL_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
-          HOSTED_PREFIXES = ("ubuntu", "windows", "macos")
           POOL_SLIM_RE = re.compile(r"\$\{\{ " + POOL_PREFIX + r"'ubuntu-slim' \}\}")
           # Blacksmith's sticky disk and Docker layer cache actions: they keep storage Blacksmith bills, which the pool meter does not count.
           BLACKSMITH_CACHES = ("useblacksmith/stickydisk", "useblacksmith/build-push-action", "useblacksmith/setup-docker-builder")
@@ -891,21 +903,6 @@ jobs:
                   found.append(("cache", where, "installs npm packages with no download cache; use setup-node with cache: npm, or move the job into the standard"))
               if PIP_RE.search(runs) and not cached(steps, "actions/setup-python@"):
                   found.append(("cache", where, "pip installs with no download cache; use setup-python with cache: pip, or move the job into the standard"))
-              return found
-
-
-          def pool_findings(where: str, uses: str, with_) -> list:
-              """The pool input of a call to the standard: a self-hosted label needs an exception, and the label itself is never excepted."""
-              path = uses.split("@", 1)[0].lower().replace("\\", "/")
-              if not (path.endswith("/ci-standard.yml") or path.endswith("/ci-standard.yaml")) or not isinstance(with_, dict):
-                  return []
-              pool = with_.get("pool")
-              if pool is None or pool == "":
-                  return []
-              text = str(pool)
-              found = [("runner", where, f"pool: {text} sends the standard's jobs to a self-hosted runner; add an exception with a reason")]
-              if not POOL_LABEL_RE.fullmatch(text) or "blacksmith" in text.lower() or text.lower().startswith(HOSTED_PREFIXES):
-                  found.append(("pool", where, "pool is one literal self-hosted label of letters, digits, dot, dash and underscore: no expression, space, comma, Blacksmith or GitHub-hosted name, and no exception"))
               return found
 
 
