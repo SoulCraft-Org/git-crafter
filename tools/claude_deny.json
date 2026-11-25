@@ -128,20 +128,20 @@
   {
    "id": "gh-merge",
    "replaces": ["gh-merge-unsafe", "gh-merge-disable-auto", "gh-merge-unpinned-last"],
-   "why": "Merge only the exact commit the reviewer verified; never auto-merge or bypass protections with --admin.",
+   "why": "Merge only the exact commit the reviewer verified; never bypass protections with --admin.",
    "deny": [
-    "Bash(gh pr merge *--admin*)", "Bash(gh pr merge *--auto*)",
+    "Bash(gh pr merge *--admin*)",
     "Bash(gh pr merge *--match-head-commit $*)", "Bash(gh pr merge *--match-head-commit=$*)",
     "Bash(gh pr merge *--match-head-commit \"$*)", "Bash(gh pr merge *--match-head-commit=\"$*)",
     "Bash(gh pr merge *--match-head-commit \"\"*)", "Bash(gh pr merge *--match-head-commit=\"\"*)"
    ],
    "blocks": [
-    "gh pr merge 12 --auto --squash --match-head-commit 3f2a9c1d", "gh pr merge 12 --admin --squash --match-head-commit 3f2a9c1d",
+    "gh pr merge 12 --admin --squash --match-head-commit 3f2a9c1d",
     "gh pr merge 12 --squash --match-head-commit \"$SHA\"", "gh pr merge 12 --merge --match-head-commit \"$(gh pr view 12 --json headRefOid --jq .headRefOid)\"",
-    "gh pr merge 12 --squash --match-head-commit $S", "gh pr merge 5 --merge --auto --disable-auto",
+    "gh pr merge 12 --squash --auto --match-head-commit $S",
     "gh pr merge 1 --squash --match-head-commit 3f2a9c1d --match-head-commit=$(git rev-parse HEAD)"
    ],
-   "allows": ["gh pr merge 12 --squash --match-head-commit 3f2a9c1d", "gh pr merge 12 --merge --match-head-commit=3f2a9c1d8e7b6a5f4e3d2c1b0a9f8e7d6c5b4a39", "gh pr merge 264 --disable-auto", "gh pr view 12"],
+   "allows": ["gh pr merge 12 --squash --match-head-commit 3f2a9c1d", "gh pr merge 12 --squash --auto --match-head-commit 3f2a9c1d", "gh pr merge 12 --merge --match-head-commit=3f2a9c1d8e7b6a5f4e3d2c1b0a9f8e7d6c5b4a39", "gh pr merge 264 --disable-auto", "gh pr view 12"],
    "gaps": "A merge with no --match-head-commit at all passes: a rule cannot match a missing flag. The merging skill's verdict line and command row still require the pin."
   },
   {

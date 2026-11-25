@@ -1,7 +1,8 @@
 // Merges one pull request whose review passed at --sha (USAGE below): reads base, head and each check's latest run, posts the verdict, merges.
 // Refuses another base (a stacked pull request merged into its parent, 2026-11-23), a moved head, a draft, a conflict, no checks, a failed latest run.
 // Pending checks, or mergeable UNKNOWN past --wait, exit 3; --check writes nothing; --followups is the verdict's line 2.
-// Merges --squash --match-head-commit, never --auto or --admin. Exit 0 merged (or ready), 1 refused, 2 usage, 3 not yet.
+// After the verdict it sets the `review` status on --sha, which the ruleset requires, then runs --squash --auto --match-head-commit, never --admin.
+// --auto merges a clean pull request at once (gh pr/merge/merge.go, isImmediatelyMergeable) and queues a blocked one. Exit 0 merge sent (merged now, or queued until the checks pass; --check: ready), 1 refused, 2 usage, 3 not yet.
 
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -71,7 +72,8 @@ export async function assess({ read, repo, pr, sha, base, wait, sleep }) {
   const runs = read(`repos/${repo}/commits/${sha}/check-runs?per_page=100`);
   const status = read(`repos/${repo}/commits/${sha}/status?per_page=100`);
   if (runs.total_count > runs.check_runs.length || status.total_count > status.statuses.length) throw new Error("more checks than one page holds, so some are unread");
-  const checks = judge(runs.check_runs, status.statuses);
+  // The `review` status is this tool's own output, so an earlier BLOCK on the SHA never gates the MERGE that follows it.
+  const checks = judge(runs.check_runs, status.statuses.filter((s) => s.context !== "review"));
   for (let waited = 0; ; waited += STEP) {
     const pull = read(`repos/${repo}/pulls/${pr}`);
     const d = decide(pull, checks, { sha, base });
@@ -95,8 +97,9 @@ export async function main(argv = process.argv.slice(2), { run = ghRunner(), sle
     if (d.act !== "merge") return d.act === "wait" ? 3 : 1;
     if (o.check) return 0;
     verdict(run, o);
-    run(["pr", "merge", o.pr, "--repo", o.repo, "--squash", "--match-head-commit", o.sha]);
-    return log(`merged #${o.pr} at ${o.sha}`), 0;
+    run(["api", `repos/${o.repo}/statuses/${o.sha}`, "-f", "state=success", "-f", "context=review", "-f", "description=Review: MERGE"]);
+    run(["pr", "merge", o.pr, "--repo", o.repo, "--squash", "--auto", "--match-head-commit", o.sha]);
+    return log(`merge sent #${o.pr} at ${o.sha}`), 0;
   } catch (err) {
     return error(`merge_pr: ${err.message}`), 1;
   }

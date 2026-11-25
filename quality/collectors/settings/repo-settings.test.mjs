@@ -19,7 +19,7 @@ const REST = JSON.parse(readFileSync(path.join(FIXTURES, "rest.json"), "utf8"));
 const REPO = "fixture-org/fixture-repo";
 const R = (route) => `repos/${REPO}${route}`;
 const AGE = "settings.admin_read_age_hours";
-const EXPECTED = { allow_squash_merge: true, allow_merge_commit: false, allow_auto_merge: false };
+const EXPECTED = { allow_squash_merge: true, allow_merge_commit: false, allow_auto_merge: true };
 
 // A gh client that answers from the fixture; `over` replaces or adds routes. over.graphql is the repository GraphQL answers; asked lists each query's fields.
 function fakeGh(over = {}) {
@@ -127,9 +127,9 @@ test("protections: a bypass list REST hides reads through GraphQL's count; with 
 
 test("general drift: counts fields off the repo's standard; no standard is not measured", async () => {
   const id = "settings.general_drift";
-  const drift = await run({ [R("")]: { ...REST[R("")], allow_auto_merge: true } });
+  const drift = await run({ [R("")]: { ...REST[R("")], allow_auto_merge: false } });
   assert.equal(drift[id].value, 1);
-  assert.equal(rows(drift[id])["allow_auto_merge is false"], 0);
+  assert.equal(rows(drift[id])["allow_auto_merge is true"], 0);
   assert.match((await run({}, { params: {} }))[id].could_not_check, /params\.expected .* is empty/);
   const { allow_auto_merge: _, ...withheld } = REST[R("")];
   assert.match((await run({ [R("")]: withheld }))[id].could_not_check, /answered without allow_auto_merge/);
@@ -138,9 +138,9 @@ test("general drift: counts fields off the repo's standard; no standard is not m
 test("general drift: a switch the repos answer withholds reads through GraphQL; the repos answer wins where it has one", async () => {
   const id = "settings.general_drift";
   const { allow_squash_merge: _, ...withheld } = REST[R("")];
-  const gh = fakeGh({ [R("")]: withheld, graphql: { squashMergeAllowed: true, autoMergeAllowed: true } });
+  const gh = fakeGh({ [R("")]: withheld, graphql: { squashMergeAllowed: true, autoMergeAllowed: false } });
   const got = await collect({ root: path.join(FIXTURES, "repo"), mode: "local", params: { expected: EXPECTED }, gh, repo: REPO });
-  assert.equal(got[id].value, 0, "squash is true by GraphQL; auto merge is false by the repos answer, whatever GraphQL says");
+  assert.equal(got[id].value, 0, "squash is true by GraphQL; auto merge is true by the repos answer, whatever GraphQL says");
   assert.deepEqual(gh.asked, [["squashMergeAllowed"]], "one query, for the one switch withheld");
   assert.equal((await run({ [R("")]: withheld, graphql: { squashMergeAllowed: false } }))[id].value, 1);
 });
@@ -149,24 +149,13 @@ test("general drift: expected_from_setup takes setup.json's General rows, with p
   const id = "settings.general_drift";
   assert.deepEqual(setupExpected(), {
     has_wiki: true, has_discussions: true, has_projects: true, allow_update_branch: true, web_commit_signoff_required: true,
-    allow_squash_merge: true, allow_merge_commit: false, allow_rebase_merge: false, delete_branch_on_merge: true, allow_auto_merge: false,
+    allow_squash_merge: true, allow_merge_commit: false, allow_rebase_merge: false, delete_branch_on_merge: true, allow_auto_merge: true,
   });
   const switches = { has_wiki: true, has_discussions: true, has_projects: true, allow_update_branch: true, web_commit_signoff_required: true, allow_rebase_merge: false, delete_branch_on_merge: true };
   const repo = { [R("")]: { ...REST[R("")], ...switches, has_wiki: false } };
   assert.equal((await run(repo, { params: { expected_from_setup: true } }))[id].value, 1);
   assert.equal((await run(repo, { params: { expected_from_setup: true, expected: { has_wiki: false } } }))[id].value, 0);
   assert.match((await run({}, { params: { expected_from_setup: "yes" } }))[id].could_not_check, /expected_from_setup .* true or false/);
-});
-
-test("general drift: a Dependabot auto-merge rule lays allow_auto_merge true over setup.json's row, and the repo meets it", async () => {
-  const id = "settings.general_drift";
-  const switches = { has_wiki: true, has_discussions: true, has_projects: true, allow_update_branch: true, web_commit_signoff_required: true, allow_rebase_merge: false, delete_branch_on_merge: true };
-  const repo = { [R("")]: { ...REST[R("")], ...switches, allow_auto_merge: true } };
-  const standard = await run(repo, { params: { expected_from_setup: true } });
-  assert.equal(rows(standard[id])["allow_auto_merge is false"], 0, "the template's row says off");
-  const rule = await run(repo, { params: { expected_from_setup: true, expected: { allow_auto_merge: true } } });
-  assert.equal(rule[id].value, 0);
-  assert.equal(rows(rule[id])["allow_auto_merge is true"], 1);
 });
 
 test("outside access: collaborators and open invitations add up", async () => {

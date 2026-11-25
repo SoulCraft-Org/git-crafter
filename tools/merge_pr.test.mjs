@@ -11,11 +11,12 @@ const run = (id, name, status, conclusion, app = 1) => ({ id, name, status, conc
 const PASSING = [run(1, "ci / ci-ok", "completed", "success"), run(2, "dco", "completed", "success", 2)];
 
 // Runs main against a fake repo: `pulls` is each read of the pull request in turn (the last repeats), `comments` the verdicts already posted.
-async function merge(argv, { pulls, runs = PASSING, statuses = [], comments = [] } = {}) {
+async function merge(argv, { pulls, runs = PASSING, statuses = [], comments = [], fail } = {}) {
   const calls = [], sleeps = [], lines = [];
   const read = [...pulls];
   const gh = (args) => {
     calls.push(args.join(" "));
+    if (fail && fail.test(args.join(" "))) throw new Error("HTTP 403");
     const route = args[1];
     if (route.includes("/pulls/")) return JSON.stringify(read.length > 1 ? read.shift() : read[0]);
     if (route.includes("/check-runs")) return JSON.stringify({ total_count: runs.length, check_runs: runs });
@@ -45,11 +46,14 @@ test("decide refuses a draft, a closed pull request, a stacked base, a moved hea
   assert.deepEqual(decide(pull(), [{ name: "build", state: "pending" }], opts).on, "checks");
 });
 
-test("a clean pull request gets the verdict, then a squash merge pinned to the head", async () => {
+const STATUS_WRITE = `api repos/${REPO}/statuses/${SHA} -f state=success -f context=review -f description=Review: MERGE`;
+const MERGE_WRITE = `pr merge 7 --repo ${REPO} --squash --auto --match-head-commit ${SHA}`;
+
+test("a clean pull request gets the verdict, the review status, then a squash merge pinned to the head", async () => {
   const r = await merge(ARGV, { pulls: [pull()], runs: [run(5, "ci / ci-ok", "completed", "cancelled"), run(9, "ci / ci-ok", "completed", "success")] });
   assert.equal(r.code, 0);
-  assert.deepEqual(r.writes, [`api repos/${REPO}/issues/7/comments -f body=Review: MERGE at ${SHA}\nFollow-ups: none`, `pr merge 7 --repo ${REPO} --squash --match-head-commit ${SHA}`]);
-  assert.ok(!r.calls.some((c) => /--auto|--admin/.test(c)));
+  assert.deepEqual(r.writes, [`api repos/${REPO}/issues/7/comments -f body=Review: MERGE at ${SHA}\nFollow-ups: none`, STATUS_WRITE, MERGE_WRITE]);
+  assert.ok(!r.calls.some((c) => /--admin/.test(c)));
 });
 
 test("mergeable UNKNOWN is read again until it settles, and gives up after --wait", async () => {
@@ -77,7 +81,7 @@ test("pending checks exit 3 and --check writes nothing", async () => {
 
 test("a verdict already posted is not posted again, and bad arguments exit 2", async () => {
   const r = await merge(ARGV, { pulls: [pull()], comments: [`Review: MERGE at ${SHA}`] });
-  assert.deepEqual(r.writes, [`pr merge 7 --repo ${REPO} --squash --match-head-commit ${SHA}`]);
+  assert.deepEqual(r.writes, [STATUS_WRITE, MERGE_WRITE]);
   for (const bad of [[], ["--repo", REPO, "--pr", "7", "--sha", "abc", "--followups", "none"], [...ARGV, "--auto"], [...ARGV, "--wait", "x"]]) assert.equal((await merge(bad, { pulls: [pull()] })).code, 2);
 });
 
@@ -90,4 +94,12 @@ test("--followups is required, takes #n, PVTI_ ids or none, and lands on line 2 
   assert.equal(r.code, 0);
   const body = r.writes[0].split("-f body=")[1];
   assert.deepEqual(body.split("\n"), [`Review: MERGE at ${SHA}`, "Follow-ups: #12, PVTI_lADO-1"]);
+});
+
+test("an earlier review failure on the SHA does not gate the merge, and a failed status write sends no merge", async () => {
+  const blocked = [{ context: "review", state: "failure" }];
+  assert.equal((await merge(ARGV, { pulls: [pull()], statuses: blocked })).code, 0);
+  const r = await merge(ARGV, { pulls: [pull()], fail: /statuses\/.* -f state=success/ });
+  assert.equal(r.code, 1);
+  assert.ok(!r.calls.some((c) => c.startsWith("pr merge")));
 });
