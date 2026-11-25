@@ -3,6 +3,7 @@
 // every tests/pages*.test.mjs through tools/verify.sh.
 
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
@@ -219,6 +220,38 @@ test("every rules/ and skills/ anchor resolves to a heading", () => {
   walk(ROOT);
   const readRepo = (p) => (existsSync(join(ROOT, p)) ? readFileSync(join(ROOT, p), "utf8") : null);
   assert.deepEqual(deadRuleAnchors(texts, readRepo), []);
+});
+
+// The README is visual first (rules/writing-and-gates.md): facts sit in tables,
+// the image and the diagram, and any prose line left is a one-line caption.
+const CAPTION_WORDS = 30;
+function captionFaults(text) {
+  const faults = [];
+  let fence = false;
+  for (const [i, line] of text.split("\n").entries()) {
+    if (/^\s*(```|~~~)/.test(line)) fence = !fence;
+    if (fence || /^\s*(```|~~~|#|\||!\[|<!--|$)/.test(line)) continue;
+    const plain = line.replace(/`[^`]*`/g, "code").replace(/\]\([^)]*\)/g, "]");
+    const sentences = plain.split(/(?<=[.!?])\s+(?=[A-Z`[])/).length;
+    const words = plain.split(/\s+/).filter(Boolean).length;
+    if (sentences > 1) faults.push(`line ${i + 1}: ${sentences} sentences; a caption is one`);
+    if (words > CAPTION_WORDS) faults.push(`line ${i + 1}: ${words} words; a caption keeps ${CAPTION_WORDS} at most`);
+  }
+  return faults;
+}
+
+test("README.md is visual first: an image, a diagram, tables, one-sentence captions, and no content-lint finding (#383)", () => {
+  const good = "# T\n\nOne caption with a [link](a.md).\n\n| A | B |\n|---|---|\n| x. Y. | z |\n\n```mermaid\nflowchart LR\n  A. --> B.\n```\n";
+  assert.deepEqual(captionFaults(good), [], "known-clean sample");
+  const bad = `One idea. Two ideas.\n\n${"word ".repeat(31)}\n`;
+  assert.deepEqual(captionFaults(bad), ["line 1: 2 sentences; a caption is one", "line 3: 31 words; a caption keeps 30 at most"], "known-bad sample");
+  const readme = readFileSync(join(ROOT, "README.md"), "utf8");
+  assert.deepEqual(captionFaults(readme), []);
+  assert.match(readme, /^!\[[^\]]+\]\([^)]+\.svg\)$/m, "the README shows its pages image, with alt text");
+  assert.match(readme, /^```mermaid$/m, "the README draws its maps as a diagram");
+  assert.ok((readme.match(/^\|---/gm) ?? []).length >= 6, "the README's facts sit in tables");
+  const lint = execFileSync("python3", ["-I", join(ROOT, "tools/voice_lint.py"), join(ROOT, "README.md")], { encoding: "utf8" });
+  assert.match(lint.trim().split("\n").at(-1), /1 file\(s\) checked, 0 FAIL, 0 WARN$/, "docs.lint_warn finds nothing in the README");
 });
 
 // ---- The map library ----------------------------------------------------------
