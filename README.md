@@ -15,8 +15,6 @@ Templates for AI agents to run an open-source or open-weight repo with Claude Co
 | [CI standard](templates/ci/README.md) | One reusable workflow on GitHub's standard hosted runners |
 | [Rules](rules/) and [guards](tools/) | What Claude sessions may do, and the `permissions.deny` list and hookify rules that block one-way doors |
 
-Both pages are public.
-
 ## Adopt in four steps
 
 | Step | Copy or set | From |
@@ -27,8 +25,7 @@ Both pages are public.
 | 1 | `<repo>/.github/dependabot.yml`, which bumps the Git Crafter pin | [templates/ci/dependabot.yml](templates/ci/dependabot.yml) |
 | 2 | A ruleset on `main` requiring `ci / ci-ok` | [templates/ci](templates/ci/README.md) |
 | 3 | Settings, Pages: source "GitHub Actions" | [templates/ci](templates/ci/README.md) |
-| 4 | After the first push to `main`, open `https://<owner>.github.io/<repo>/` (Process) and `.../quality/` (Quality) | [pages.yml](templates/ci/pages.yml) publishes both |
-| Check | In a Git Crafter checkout, `node quality/selftest.mjs`: 34 of 34 pass in about 1 second (run 2026-11-25) | [quality/README.md](quality/README.md) |
+| 4 | Push to `main`: pages at `https://<owner>.github.io/<repo>/` and `.../quality/` | [pages.yml](templates/ci/pages.yml) |
 | Optional | Community files | [open](templates/open/README.md) |
 | Optional | Switches | [setup.json](templates/setup.json) with `tools/apply_setup.mjs` |
 | Optional | Agent files | [agents](templates/agents/README.md) |
@@ -79,16 +76,15 @@ Each map's steps: [pages/maps](pages/maps/README.md).
 
 | Item | Detail |
 |---|---|
-| What loads when | [memory](https://code.claude.com/docs/en/memory) and [skills](https://code.claude.com/docs/en/skills) docs, read 2026-11-03 |
+| Loads when | [memory](https://code.claude.com/docs/en/memory) and [skills](https://code.claude.com/docs/en/skills) docs, read 2026-11-03 |
 | Install | `tools/claude_os_sync.py apply` copies rules and guards into `~/.claude` from [manifest.json](manifest.json) |
-| When | [CONTRIBUTING](CONTRIBUTING.md#releases) |
 
 ## Folder map
 
 | Folder | Holds |
 |---|---|
 | `actions/` | The `pages` and `ci-pool` actions |
-| `config/` | Its Quality config, its collector in `config/quality/collectors/`, and [account.example.json](config/account.example.json) for a private overlay (`apply --overlay DIR`) |
+| `config/` | Its Quality config, its collector in `config/quality/collectors/`, and [account.example.json](config/account.example.json) for a private overlay |
 | `pages/` | The Process and Metrics builder and map library, `pages/maps/` |
 | `quality/` | The Quality engine and collectors ([README](quality/README.md)) |
 | `rules/` | Rules for Claude sessions |
@@ -105,4 +101,3 @@ Each map's steps: [pages/maps](pages/maps/README.md).
 | Help, bugs, ideas | [SUPPORT.md](SUPPORT.md) |
 | Changes and template fixes | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Security problems | [SECURITY.md](SECURITY.md) |
-| Maintainer | SoulCraft, publisher |

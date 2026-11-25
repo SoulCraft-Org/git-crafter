@@ -34,15 +34,15 @@ flowchart LR
 | 2 | Paste [instructions.md](instructions.md) into Instructions and fill each `<...>` cell |
 | 3 | Set the shared environment in Project settings, with an empty setup script |
 | 4 | Add each key as a network secret with its host |
-| 5 | Send the setup check below first, and log it on the [result card](check-card.md), then roll every repo into its [readiness scorecard](check-card.md#readiness-scorecard) |
+| 5 | Send the setup check below first, and log it on the [result card](check-card.md), [scorecard](scorecard.md) and [scrub gate](scrub.md) |
 | 6 | A Claudius repo: follow its [quick start](https://github.com/Soul-Craft/claudius/blob/main/docs/projects-quickstart.md) |
 
 ```text
 Setup check only. Start no threads and change nothing.
-Reply with one table: Line, Result (pass or fail), What you saw, Read (UTC), Source.
-Per attached repo, one row each: the Claude GitHub App is installed; CLAUDE.md or AGENTS.md was read; push access to a non-default branch works.
-Once, one row each: the shared environment's name and network access; the setup script is empty; each expected key, by name only, is a network secret; connectors, how many are connected and how many are unfinished.
-A line you did not read is a fail. Name any missing tool or key. Never print a key value.
+Reply as a table: Line, Result (pass or fail), What you saw, Read (UTC), Source.
+Per repo: App installed, CLAUDE.md or AGENTS.md read, push access works.
+Once: the environment's network access, an empty setup script, each expected key (by name only) as a network secret, connectors still unfinished.
+A line you did not read is a fail.
 ```
 
 ## Smoke test
