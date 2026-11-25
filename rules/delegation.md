@@ -32,7 +32,8 @@ wholesale, or turn on GitHub auto-merge.
 
 | The owner | does not review PRs. |
 |---|---|
-| A worker | stops at an open PR; only the orchestrator reviews and merges, after loading the `merging` skill. |
+| A thread or worker | opens its PR, then reviews, corrects and merges it with no person in the loop, after loading the `merging` skill. One reviewer with a fresh context reads the head commit. The thread corrects, and one check reads the corrections. A squash merge follows once every check and CI are green. |
+| Never | push to `main`, force-push, hard-reset or turn on GitHub auto-merge, merging included. |
 | A subagent brief | says: "You are a subagent: never call update_plan or wrap_up." |
 
 ## Owner's queue
@@ -41,9 +42,22 @@ Claude runs every command and setting.
 
 | These always wait for the owner; only they reach the owner: | Covers |
 |---|---|
-| Questions | an important product, strategy or billing question (purchases, plans, paid compute, top-ups). |
+| Questions | a billing question (purchases, plans, paid compute, top-ups), a vision question, or a critical website decision. It goes through the orchestrator as one decision card, after research, with options and a recommendation. A thread decides and executes everything else. |
 | Human steps | A password, passkey or sign-in (keys: `rules/keys-detail.md`); sending as the owner; a payment or billing change; the macOS admin password dialog. Each admin password covers one named change, after the owner's yes in chat: Claude holds no standing admin rights (the owner, 2026-11-07). Each is one click or button, never a typed command. |
 
-Workers send each item to the orchestrator; only it asks the owner, in its chat. A block with no fix goes to the orchestrator, which fixes the
+Workers send each item to the orchestrator; only it asks the owner, in its chat. Every action the owner must take goes in the main chat with a direct link to the exact place. That covers a yes, an Allow, something to copy or paste, and a quick click. Never send the owner into a thread or a browser tab. A block with no fix goes to the orchestrator, which fixes the
 rule by PR. Queue an item and keep working. When nothing else
 can move, ask once, listing every queued item with a default.
+
+## Other owners' repos
+
+| Another owner's template | is read and pinned, never written to: no push, PR, issue or card there. Link what is shared; copy none of it. |
+|---|---|
+
+## Authority for these rules
+
+The owner asked for them in their own chat on 2026-11-25:
+
+> "Git Crafter's template is wrong. It should be merging. It's autonomous development. There should be no person in the loop. The agents need to review and correct, and they need to do it well."
+
+> "If you need me to put yes somewhere, to click allow, to copy something, to paste something, to do a quick action, you need to put the link here in this main chat."
