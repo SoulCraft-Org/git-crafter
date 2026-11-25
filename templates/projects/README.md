@@ -35,6 +35,7 @@ flowchart LR
 | 3 | Set the shared environment in Project settings, with an empty setup script |
 | 4 | Add each key as a network secret with its host |
 | 5 | Send the setup check below as the first message |
+| 6 | Record each line's answer on the [result card](check-card.md) |
 
 ```text
 Setup check only. Start no threads and change nothing.
