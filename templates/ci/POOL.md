@@ -6,8 +6,10 @@
 | --- | --- |
 | Input | `pool: <label>` on the `ci-standard.yml` call. Empty runs on GitHub's pool, as before |
 | Effect | `short` and `standard` run on that label, ahead of the [overflow switch](README.md#overflow-switch) |
-| Rule | A caller that sets it fails the `runner` rule until `.github/ci-standard.json` holds an exception for its job (`ci.yml/ci`) with a reason |
-| Not covered | The pool's health. A job that finds no runner waits, up to GitHub's 24-hour queue limit, so the caller plans its own fallback |
+| Rule | A caller that sets it fails the `runner` rule until `.github/ci-standard.json` holds an exception for its `<file>/<job>`, such as `ci.yml/ci`, with a reason |
+| Label | The `pool` rule takes no exception: one literal label of letters, digits, dot, dash and underscore. No expression, space, comma, Blacksmith or GitHub-hosted name |
+| Guard | A pool job waits for the conformance check and never runs a fork's pull request |
+| Not covered | The pool's health. A job that finds no runner waits, for about 24 hours before GitHub cancels it ([Actions limits](https://docs.github.com/en/actions/reference/limits), read 2026-11-25), so the caller plans its own fallback |
 
 ```mermaid
 flowchart LR

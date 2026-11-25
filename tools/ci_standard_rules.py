@@ -14,13 +14,15 @@ import subprocess
 from ci_standard_actions import LOCK_FILE, SHA_RE, local_action_findings, pin_findings
 from ci_standard_yaml import EXPR, ParseError, parse
 
-RULES = ("caller", "pin", "dependabot", "permissions", "concurrency", "timeout", "runner", "pinned", "cache", "no-share", "blacksmith")
+RULES = ("caller", "pin", "dependabot", "permissions", "concurrency", "timeout", "runner", "pinned", "cache", "no-share", "blacksmith", "pool")
 # Rules no .github/ci-standard.json can waive: each one is a bill that no meter stops.
-NEVER_EXCEPTED = ("blacksmith",)
+NEVER_EXCEPTED = ("blacksmith", "pool")
 # ci-standard.yml's standard job: a Blacksmith label only from its runner input, and only one of the listed lanes.
 # A caller's pool input (a free self-hosted runner label) comes first in both jobs' runs-on; empty falls through to GitHub's pool.
 POOL_PREFIX = r"inputs\.pool != '' && inputs\.pool \|\| "
 CHOOSER_RE = re.compile(r"\$\{\{ (?:" + POOL_PREFIX + r")?contains\(fromJSON\('\[[^\]]*\]'\), inputs\.runner\) && inputs\.runner \|\| 'ubuntu-latest' \}\}")
+POOL_LABEL_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+HOSTED_PREFIXES = ("ubuntu", "windows", "macos")
 POOL_SLIM_RE = re.compile(r"\$\{\{ " + POOL_PREFIX + r"'ubuntu-slim' \}\}")
 # Blacksmith's sticky disk and Docker layer cache actions: they keep storage Blacksmith bills, which the pool meter does not count.
 BLACKSMITH_CACHES = ("useblacksmith/stickydisk", "useblacksmith/build-push-action", "useblacksmith/setup-docker-builder")
@@ -183,6 +185,21 @@ def cache_findings(where: str, steps: list) -> list:
     return found
 
 
+def pool_findings(where: str, uses: str, with_) -> list:
+    """The pool input of a call to the standard: a self-hosted label needs an exception, and the label itself is never excepted."""
+    path = uses.split("@", 1)[0].lower().replace("\\", "/")
+    if not (path.endswith("/ci-standard.yml") or path.endswith("/ci-standard.yaml")) or not isinstance(with_, dict):
+        return []
+    pool = with_.get("pool")
+    if pool is None or pool == "":
+        return []
+    text = str(pool)
+    found = [("runner", where, f"pool: {text} sends the standard's jobs to a self-hosted runner; add an exception with a reason")]
+    if not POOL_LABEL_RE.fullmatch(text) or "blacksmith" in text.lower() or text.lower().startswith(HOSTED_PREFIXES):
+        found.append(("pool", where, "pool is one literal self-hosted label of letters, digits, dot, dash and underscore: no expression, space, comma, Blacksmith or GitHub-hosted name, and no exception"))
+    return found
+
+
 def job_findings(where: str, job: dict, locked=frozenset()) -> list:
     """One job's permissions, pin, timeout, runner and steps; a reusable-workflow call is checked where it is defined. A lockfile covers steps only."""
     found = []
@@ -192,10 +209,7 @@ def job_findings(where: str, job: dict, locked=frozenset()) -> list:
         uses = str(job["uses"])
         if not uses.startswith("./") and not SHA_RE.fullmatch(uses):
             found.append(("pinned", where, f"{uses} is not pinned to a full commit SHA"))
-        pool = job["with"].get("pool") if isinstance(job.get("with"), dict) else None
-        if str(pool or "").strip() and (STANDARD_RE.match(uses) or uses == LOCAL_STANDARD):
-            found.append(("runner", where, f"pool: {pool} sends the standard's jobs to a self-hosted runner; add an exception with a reason"))
-        return found
+        return found + pool_findings(where, uses, job.get("with"))
     if not job.get("timeout-minutes"):
         found.append(("timeout", where, "no timeout-minutes; a hung job bills to GitHub's 6-hour limit"))
     why = runner_finding(job.get("runs-on"))
