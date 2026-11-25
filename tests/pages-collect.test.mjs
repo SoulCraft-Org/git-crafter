@@ -43,7 +43,6 @@ import { runMany } from "../tools/org_many.mjs";
 import { TEST_PATTERN, hookText, jobNames, jobsText, readWorkflow, repoFlow, repoTests, runsFor, workflowStats } from "../tools/workflows.mjs";
 import { build } from "../pages/build.mjs";
 import { ciFlow } from "../quality/render/ci-flow.mjs";
-import { codeLiteral } from "../quality/collectors/lib/strip.mjs";
 
 const ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const NOW = new Date("2026-11-03T12:00:00Z");
@@ -113,16 +112,15 @@ test("fetchRuns reads every run, and each round of pages goes out in one batch",
 });
 
 test("restMany keeps the order, runs reads side by side, and a failure reaches the caller", () => {
-  const sleepy = (ms, out) => ["-e", `setTimeout(() => process.stdout.write(${codeLiteral(out)}), ${ms})`];
-  // The sleeps sum to 4,500 ms, the floor for reads one by one on any runner. Side by side they take the longest,
-  // 1,500 ms, plus process startups: about 1,500 ms more on a busy 1-core runner (#861, 1,781 ms for 300 ms
-  // sleeps). The 4,000 ms bound sits 1,000 ms above that and 500 ms under the serial floor. The second read ends
-  // first, so the order check means something.
-  const t0 = Date.now();
-  const outs = runMany(process.execPath, [sleepy(1500, '{"n":1}'), sleepy(1000, '{"n":2}'), sleepy(1000, '{"n":3}'), sleepy(1000, '{"n":4}')], { limit: 4 });
-  const took = Date.now() - t0;
-  assert.deepEqual(outs.map((o) => JSON.parse(o).n), [1, 2, 3, 4], "answers in the order asked");
-  assert.ok(took < 4000, `four reads side by side took ${took} ms; one by one they take at least 4,500`);
+  // Each child records when it started and when it answered. Side by side, every interval holds one common instant;
+  // one by one, the first would end before the last began. No wall-clock bound, so a slow runner cannot fail it (#534).
+  const sleepy = (n, ms) => ["-e", `const s = Date.now(); setTimeout(() => process.stdout.write(JSON.stringify({ n: ${n}, s, e: Date.now() })), ${ms})`];
+  // The first read ends last and the second first, so the order check means something.
+  const outs = runMany(process.execPath, [sleepy(1, 2500), sleepy(2, 2000), sleepy(3, 2000), sleepy(4, 2000)], { limit: 4 }).map((o) => JSON.parse(o));
+  assert.deepEqual(outs.map((o) => o.n), [1, 2, 3, 4], "answers in the order asked");
+  const began = Math.max(...outs.map((o) => o.s));
+  const ended = Math.min(...outs.map((o) => o.e));
+  assert.ok(began < ended, `the last read began ${began - ended} ms after the first one ended: they ran one by one`);
   assert.throws(() => runMany(process.execPath, [["-e", "process.stderr.write('gh: Not Found (HTTP 404)'); process.exit(1)"]], { limit: 2 }), /HTTP 404/);
   const seq = [];
   const gh = ghClient((cmd, args) => (seq.push(args[1]), '{"a":1}'));
