@@ -18,8 +18,9 @@ name: claude-review
 # (thinking included) per push (rules/compute.md, Money). Set the workspace's monthly limit and leave auto-reload off.
 #
 # Proven live in Compute Crafter (PR 279, 2026-11-25). Three traps it found: a reply cut at max_tokens is never posted
-# (the script checks the stop reason); the token is fetched after the install step so install-time code cannot read it;
-# and a reusable action missing from actions.lock fails the run at startup, not in a step.
+# (the script checks the stop reason); the token file is written after the install step, and the install takes wheels
+# only (--only-binary), so it runs no build code; and a reusable action missing from actions.lock fails the run at
+# startup, not in a step.
 #
 # No pull_request_target: a pull request's code never runs with a secret from outside the repo. A fork's pull request
 # gets no secrets, so the job skips it. The script sends the diff as data, clipped at 60,000 characters, and says so in
