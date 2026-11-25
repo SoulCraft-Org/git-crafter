@@ -31,6 +31,11 @@ name: ci-standard
 # runner: the overflow switch (templates/ci/DECISIONS.md, 2026-11-11). Empty, the standard job runs on ubuntu-latest.
 # A caller that opts in passes ci-overflow.yml's label output here; a label that is no lane's in
 # .github/ci-overflow.json is ubuntu-latest too, so no caller input picks another runner. short stays on ubuntu-slim.
+#
+# pool: a free self-hosted runner label (an org's own pool, with no GitHub minutes). Empty, both jobs run on GitHub's
+# pool as above. Set, short and standard both run on that label, ahead of the overflow switch. ci_standard.py check fails
+# a caller that sets it until .github/ci-standard.json holds an exception for the caller's job with a reason, so a pool
+# is always a written, reviewed choice (templates/ci/POOL.md). A pool also waits for the conformance check and never runs a fork's pull request.
 on:
   workflow_call:
     inputs:
@@ -64,6 +69,10 @@ on:
         default: ""
       runner:
         description: The standard job's runner, from ci-overflow.yml's label output. Empty, or no lane's label, is ubuntu-latest
+        type: string
+        default: ""
+      pool:
+        description: One self-hosted runner label from a free pool the org runs, for the short and standard jobs. Empty runs them on GitHub's pool. The caller needs an exception with a reason in .github/ci-standard.json
         type: string
         default: ""
       timeout:
@@ -622,7 +631,7 @@ jobs:
               return doc
           CI_STANDARD_YAML_PY
           cat > "$RUNNER_TEMP/ci_standard_actions.py" <<'CI_STANDARD_ACTIONS_PY'
-          """ci_standard_actions.py: the pinned rule, on a job's steps and the local actions they call (#200). Embedded with
+          """ci_standard_actions.py: the pinned rule, on a job's steps and the local actions they call (#200), and the pool input check. Embedded with
           ci_standard.py. A step's uses: ./PATH or $/PATH runs PATH/action.yml in the caller's job, so its steps are read too; a
           link or a path out of the repo is never read (could not check). Standard library only."""
 
@@ -638,6 +647,8 @@ jobs:
           OWN = ("./", "$/")
           LOCK_FILE = "actions.lock"
           ACTION_FILES = ("action.yml", "action.yaml")
+          POOL_LABEL_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+          HOSTED_PREFIXES = ("ubuntu", "windows", "macos")
 
 
           def pin_findings(where: str, steps: list, locked=frozenset()) -> list:
@@ -696,6 +707,18 @@ jobs:
                   found += pin_findings(rel, inner)
                   todo += inner
               return found, unread
+
+
+          def pool_findings(where: str, uses: str, with_) -> list:
+              """The pool input of a call to the standard: a self-hosted label needs an exception, and the label itself is never excepted."""
+              path = uses.split("@", 1)[0].lower().replace("\\", "/")
+              text = next((str(v or "") for k, v in with_.items() if str(k).lower() == "pool"), "") if isinstance(with_, dict) else ""
+              if not text or not path.endswith(("/ci-standard.yml", "/ci-standard.yaml")):
+                  return []
+              found = [("runner", where, f"pool: {text} sends the standard's jobs to a self-hosted runner; add an exception with a reason")]
+              if not POOL_LABEL_RE.fullmatch(text) or "blacksmith" in text.lower() or text.lower().startswith(HOSTED_PREFIXES):
+                  found.append(("pool", where, "pool is one literal self-hosted label of letters, digits, dot, dash and underscore: no expression, space, comma, Blacksmith or GitHub-hosted name, and no exception"))
+              return found
           CI_STANDARD_ACTIONS_PY
           cat > "$RUNNER_TEMP/ci_standard_rules.py" <<'CI_STANDARD_RULES_PY'
           """ci_standard_rules.py: the CI standard's rules, and check_repo, which applies them to one checkout.
@@ -711,14 +734,17 @@ jobs:
           import re
           import subprocess
 
-          from ci_standard_actions import LOCK_FILE, SHA_RE, local_action_findings, pin_findings
+          from ci_standard_actions import LOCK_FILE, SHA_RE, local_action_findings, pin_findings, pool_findings
           from ci_standard_yaml import EXPR, ParseError, parse
 
-          RULES = ("caller", "pin", "dependabot", "permissions", "concurrency", "timeout", "runner", "pinned", "cache", "no-share", "blacksmith")
+          RULES = ("caller", "pin", "dependabot", "permissions", "concurrency", "timeout", "runner", "pinned", "cache", "no-share", "blacksmith", "pool")
           # Rules no .github/ci-standard.json can waive: each one is a bill that no meter stops.
-          NEVER_EXCEPTED = ("blacksmith",)
+          NEVER_EXCEPTED = ("blacksmith", "pool")
           # ci-standard.yml's standard job: a Blacksmith label only from its runner input, and only one of the listed lanes.
-          CHOOSER_RE = re.compile(r"\$\{\{ contains\(fromJSON\('\[[^\]]*\]'\), inputs\.runner\) && inputs\.runner \|\| 'ubuntu-latest' \}\}")
+          # A caller's pool input (a free self-hosted runner label) comes first in both jobs' runs-on; empty falls through to GitHub's pool.
+          POOL_PREFIX = r"inputs\.pool != '' && inputs\.pool \|\| "
+          CHOOSER_RE = re.compile(r"\$\{\{ (?:" + POOL_PREFIX + r")?contains\(fromJSON\('\[[^\]]*\]'\), inputs\.runner\) && inputs\.runner \|\| 'ubuntu-latest' \}\}")
+          POOL_SLIM_RE = re.compile(r"\$\{\{ " + POOL_PREFIX + r"'ubuntu-slim' \}\}")
           # Blacksmith's sticky disk and Docker layer cache actions: they keep storage Blacksmith bills, which the pool meter does not count.
           BLACKSMITH_CACHES = ("useblacksmith/stickydisk", "useblacksmith/build-push-action", "useblacksmith/setup-docker-builder")
           STANDARD_LABELS = {"ubuntu-latest", "ubuntu-24.04", "ubuntu-22.04"}
@@ -841,6 +867,8 @@ jobs:
               text = runs_on if isinstance(runs_on, str) else json.dumps(runs_on)
               if text == SLIM or text in STANDARD_LABELS:
                   return None
+              if POOL_SLIM_RE.fullmatch(text):
+                  return "the short job's runs-on; a self-hosted label only from the caller's pool input"
               if "blacksmith" in text.lower():
                   return "the chooser's runs-on; a lane label only from ci-overflow.yml" if CHOOSER_RE.fullmatch(text) else None
               if "vars.CI_RUNNER" in text:
@@ -887,7 +915,7 @@ jobs:
                   uses = str(job["uses"])
                   if not uses.startswith("./") and not SHA_RE.fullmatch(uses):
                       found.append(("pinned", where, f"{uses} is not pinned to a full commit SHA"))
-                  return found
+                  return found + pool_findings(where, uses, job.get("with"))
               if not job.get("timeout-minutes"):
                   found.append(("timeout", where, "no timeout-minutes; a hung job bills to GitHub's 6-hour limit"))
               why = runner_finding(job.get("runs-on"))
@@ -1125,8 +1153,8 @@ jobs:
 
   short:
     needs: changes
-    if: inputs.short != '' && needs.changes.outputs.run == 'true'
-    runs-on: ubuntu-slim
+    if: inputs.short != '' && needs.changes.outputs.run == 'true' && (inputs.pool == '' || (needs.changes.outputs.conform == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)))
+    runs-on: ${{ inputs.pool != '' && inputs.pool || 'ubuntu-slim' }}
     timeout-minutes: 15
     steps: &steps
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -1170,9 +1198,9 @@ jobs:
 
   standard:
     needs: changes
-    if: inputs.standard != '' && needs.changes.outputs.run_standard == 'true'
+    if: inputs.standard != '' && needs.changes.outputs.run_standard == 'true' && (inputs.pool == '' || (needs.changes.outputs.conform == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)))
     # The lane labels are .github/ci-overflow.json's (tools/tests/test_ci_overflow.py holds them equal).
-    runs-on: ${{ contains(fromJSON('["blacksmith-2vcpu-ubuntu-2404"]'), inputs.runner) && inputs.runner || 'ubuntu-latest' }}
+    runs-on: ${{ inputs.pool != '' && inputs.pool || contains(fromJSON('["blacksmith-2vcpu-ubuntu-2404"]'), inputs.runner) && inputs.runner || 'ubuntu-latest' }}
     timeout-minutes: ${{ inputs.timeout }}
     steps: *steps
 

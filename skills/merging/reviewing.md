@@ -5,9 +5,9 @@ Part of the [`merging`](SKILL.md) skill, with its authority and precedence.
 Every review is a subagent with a fresh context from Anthropic's
 `pr-review-toolkit` plugin (claude-plugins-official), with the Agent call's
 `model` set by the table below. When several pull requests are ready, the
-merging session (a thread for its own PR, or an orchestrator for its workers')
-starts one reviewer per pull request, all in one message, and never reads the
-diffs itself.
+merging session starts one reviewer per pull request, all in one message, and
+never reads the diffs itself. That session is a thread for its own PR, or an
+orchestrator for its workers'.
 
 | The change | Reviewer |
 |---|---|

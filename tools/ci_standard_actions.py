@@ -1,4 +1,4 @@
-"""ci_standard_actions.py: the pinned rule, on a job's steps and the local actions they call (#200). Embedded with
+"""ci_standard_actions.py: the pinned rule, on a job's steps and the local actions they call (#200), and the pool input check. Embedded with
 ci_standard.py. A step's uses: ./PATH or $/PATH runs PATH/action.yml in the caller's job, so its steps are read too; a
 link or a path out of the repo is never read (could not check). Standard library only."""
 
@@ -14,6 +14,8 @@ SHA_RE = re.compile(r"[^@\s]+@[0-9a-f]{40}")
 OWN = ("./", "$/")
 LOCK_FILE = "actions.lock"
 ACTION_FILES = ("action.yml", "action.yaml")
+POOL_LABEL_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+HOSTED_PREFIXES = ("ubuntu", "windows", "macos")
 
 
 def pin_findings(where: str, steps: list, locked=frozenset()) -> list:
@@ -72,3 +74,15 @@ def local_action_findings(repo: str, steps: list) -> tuple:
         found += pin_findings(rel, inner)
         todo += inner
     return found, unread
+
+
+def pool_findings(where: str, uses: str, with_) -> list:
+    """The pool input of a call to the standard: a self-hosted label needs an exception, and the label itself is never excepted."""
+    path = uses.split("@", 1)[0].lower().replace("\\", "/")
+    text = next((str(v or "") for k, v in with_.items() if str(k).lower() == "pool"), "") if isinstance(with_, dict) else ""
+    if not text or not path.endswith(("/ci-standard.yml", "/ci-standard.yaml")):
+        return []
+    found = [("runner", where, f"pool: {text} sends the standard's jobs to a self-hosted runner; add an exception with a reason")]
+    if not POOL_LABEL_RE.fullmatch(text) or "blacksmith" in text.lower() or text.lower().startswith(HOSTED_PREFIXES):
+        found.append(("pool", where, "pool is one literal self-hosted label of letters, digits, dot, dash and underscore: no expression, space, comma, Blacksmith or GitHub-hosted name, and no exception"))
+    return found
