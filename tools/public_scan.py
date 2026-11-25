@@ -30,7 +30,7 @@ import sys
 import tempfile
 
 SKIP_DIRS = {".git", "node_modules"}
-HOME_PLACEHOLDERS = {"someone", "Shared", "runner"}
+HOME_PLACEHOLDERS = {"someone", "x", "Shared", "runner"}
 EMAIL_RE = re.compile(r"(?<![\w.+:/-])([\w.+-]+)@([A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,})\b")
 EMAIL_OK_LOCAL = {"noreply", "no-reply", "git"}
 # Reserved for examples and tests (RFC 2606), and GitHub's noreply addresses.
@@ -143,7 +143,7 @@ def _seed(tree: str, at: str) -> None:
         "rules/bad.md": f"Ask Alice Smith.\nacme-corp owns it. {home}\ntoken {key}\nuses: Acme-Corp/tool@v1, acme-corp/tool\n",
         "rules/clean.md": "uses: Acme-Corp/tool/.github/workflows/x.yml@v1, repo_url Acme-Corp/tool\n"
                           "a@b, actions/checkout@v4.1.0, noreply@anthropic.com, 1+me@users.noreply.github.com,\n"
-                          "x@example.com, f@x.invalid, 41898282+github-actions[bot]@users.noreply.github.com, https://u:pw@registry.npmjs.org/, /Users/someone/x, /Users/Shared, /Users/runner, acmecorporate, malice smithy\n",
+                          "x@example.com, f@x.invalid, 41898282+github-actions[bot]@users.noreply.github.com, https://u:pw@registry.npmjs.org/, /Users/someone/x, /Users/x/site, /Users/Shared, /Users/runner, acmecorporate, malice smithy\n",
         "SECURITY.md": f"Report to Security{at}Acme.io or ops{at}acme.io, never security{at}acme.io.evil.io\n",
         "allow.txt": f"# published contacts\nsecurity{at}acme.io  # the security contact\n",
         "terms.txt": "# private\nAlice Smith\n!Acme-Corp/tool\nAcme Corp :: README.md\n",
