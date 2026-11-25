@@ -146,8 +146,10 @@ const liveTokens = (env, pr) => [env.GITHUB_SHA, env.GITHUB_RUN_ID, pr?.head.sha
 function setup(env) {
   const dir = path.join(env.RUNNER_TEMP, "gh-replay");
   const real = spawnSync("sh", ["-c", "command -v gh"]).stdout.toString().trim();
-  const pr = JSON.parse(readFileSync(env.GITHUB_EVENT_PATH, "utf8")).pull_request;
-  const mode = modeOf(env, pr);
+  // A caller's job (actions/pages) only counts: no save to replay, none to record, so no request to list artifacts.
+  const countOnly = env.GH_REPLAY_COUNT_ONLY === "1";
+  const pr = countOnly ? undefined : JSON.parse(readFileSync(env.GITHUB_EVENT_PATH, "utf8")).pull_request;
+  const mode = countOnly ? "count" : modeOf(env, pr);
   mkdirSync(path.join(dir, "r"), { recursive: true }), mkdirSync(`${dir}-bin`), writeShim(`${dir}-bin`);
   const prev = mode === "record" ? `${dir}-prev` : "";
   const [id, n] = pr || prev ? fetchSave(real, prev || dir, env) : ["", 0];

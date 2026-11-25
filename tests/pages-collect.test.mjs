@@ -559,7 +559,7 @@ test("the pages action runs scripts that exist, passes its inputs only through e
   const dir = join(ROOT, "actions", "pages");
   const yml = readFileSync(join(dir, "action.yml"), "utf8");
   const scripts = [...new Set([...yml.matchAll(/"\$GITHUB_ACTION_PATH\/([^"]+\.mjs)"/g)].map((m) => m[1]))];
-  assert.deepEqual(scripts.sort(), ["../../pages/build.mjs", "../../quality/build.mjs", "../../quality/collect.mjs", "../../quality/pack-checkouts.mjs", "../../tools/collect_org.mjs"]);
+  assert.deepEqual(scripts.sort(), ["../../pages/build.mjs", "../../quality/build.mjs", "../../quality/collect.mjs", "../../quality/gh-replay.mjs", "../../quality/pack-checkouts.mjs", "../../tools/collect_org.mjs"]);
   // Each action is fixed: a full SHA, or a reference .github/workflows/actions.lock records with its commit.
   const lock = readFileSync(join(ROOT, ".github", "workflows", "actions.lock"), "utf8");
   const locked = (ref) => new RegExp(`^ {4}'${ref.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}':\\n {8}ref: '[^']+'\\n {8}commit: 'sha1-[0-9a-f]{40}'$`, "m").test(lock);
@@ -604,6 +604,21 @@ test("the pages action's pack keys are optional and reach the Quality collect st
     assert.match(step, /^- name: Collect this repo's quality data\n/);
     assert.ok(!wf.includes(secret) && !wf.includes(`${input}:`), `pages.yml passes no ${input}`);
   }
+});
+
+test("the pages action counts its GitHub requests: a count-only setup before any read, the notice after the builds, both skipped when a caller's own setup ran", () => {
+  const yml = readFileSync(join(ROOT, "actions", "pages", "action.yml"), "utf8");
+  const setup = yml.indexOf("- name: Count this run's GitHub requests");
+  const report = yml.indexOf("- name: Print the GitHub requests notice");
+  assert.ok(setup > 0 && report > setup, "setup first, report later");
+  assert.ok(setup < yml.indexOf("- name: Collect this repo's quality data"), "setup runs before the first read");
+  assert.ok(report > yml.indexOf("- name: Build the Process page") && report < yml.indexOf("- name: Fail the pull request on a quality gate"), "the notice follows the builds and comes before the gate step");
+  const setupStep = yml.slice(setup, yml.indexOf("\n    #", setup));
+  assert.match(setupStep, /if: env\.GH_REPLAY_DIR == ''/, "a caller's own setup wins");
+  assert.match(setupStep, /GH_REPLAY_COUNT_ONLY: "1"/, "count only, so a pull request run lists no artifact");
+  assert.match(yml.slice(report), /^- name: Print the GitHub requests notice\n {6}if: always\(\) && steps\.replay\.outcome == 'success'\n/, "it prints even when a build failed, and only after this action's own setup");
+  const wf = readFileSync(join(ROOT, ".github", "workflows", "pages.yml"), "utf8");
+  assert.ok(wf.includes("node quality/gh-replay.mjs setup") && !wf.includes("GH_REPLAY_COUNT_ONLY"), "pages.yml keeps its own record and replay setup");
 });
 
 test("the pages action pins each remote step by full SHA with its version comment, and the lockfile keys it that way", () => {

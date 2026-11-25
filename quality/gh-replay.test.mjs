@@ -97,6 +97,21 @@ it("gh-replay setup on a pull request replays the newest main save, tops a faile
     assert.match(readFileSync(path.join(tmp, "GITHUB_OUTPUT"), "utf8"), chosen === "none" ? /latest=false/ : /latest=true/);
   }
 });
+it("gh-replay setup with GH_REPLAY_COUNT_ONLY counts a caller's reads and lists no artifact, on a pull request or on main", () => {
+  for (const [event, ref, pull_request] of [["pull_request", "refs/pull/7/merge", { number: 7, head: { sha: "abc" } }], ["push", "refs/heads/main", undefined]]) {
+    const tmp = mkdtempSync(path.join(tmpdir(), "gh-replay-"));
+    writeFileSync(path.join(tmp, "gh"), `#!/bin/sh\necho "$*" >> "${tmp}/calls"\n`, { mode: 0o755 });
+    writeFileSync(path.join(tmp, "event.json"), JSON.stringify({ pull_request }));
+    const files = Object.fromEntries(["GITHUB_ENV", "GITHUB_PATH", "GITHUB_OUTPUT"].map((k) => [k, path.join(tmp, k)]));
+    const env = { ...process.env, ...files, PATH: `${tmp}:${process.env.PATH}`, RUNNER_TEMP: tmp, GITHUB_EVENT_PATH: path.join(tmp, "event.json"), GITHUB_EVENT_NAME: event, GITHUB_REF: ref, GITHUB_REPOSITORY: "o/r", GH_REPLAY_COUNT_ONLY: "1" };
+    const out = spawnSync(process.execPath, [fileURLToPath(new URL("gh-replay.mjs", import.meta.url)), "setup"], { env }).stdout.toString();
+    assert.ok(out.includes("gh-replay: count; main save under 24 h old: none\n"), out);
+    assert.ok(!existsSync(path.join(tmp, "calls")), "no gh call, so no artifact listing");
+    assert.match(readFileSync(path.join(tmp, "GITHUB_ENV"), "utf8"), /GH_REPLAY_MODE=count\n/);
+    const report = spawnSync(process.execPath, [fileURLToPath(new URL("gh-replay.mjs", import.meta.url)), "report"], { env: { ...env, GH_REPLAY_DIR: path.join(tmp, "gh-replay"), GH_REPLAY_MODE: "count" }, cwd: tmp }).stdout.toString();
+    assert.match(report, /::notice title=GitHub requests::live 0 REST, 0 GraphQL; 0 replayed from main \(count\)/);
+  }
+});
 it("gh-replay report saves main's scored run only from a run that passed (#38)", () => {
   for (const [status, saved] of [["success", true], ["failure", false]]) {
     const tmp = mkdtempSync(path.join(tmpdir(), "gh-replay-"));
