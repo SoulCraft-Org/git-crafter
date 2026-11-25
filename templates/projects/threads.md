@@ -40,7 +40,7 @@ Seen 2026-11-25 in a project setup run. Check against the current docs before re
 
 | Limit | Do |
 |---|---|
-| Adding a repo to a running thread stops that thread's next message to the coordinator until the owner confirms trust in the app | Attach the repo before the thread starts |
+| A repo added to a running thread holds the thread's next message until the owner confirms trust | Attach the repo before the thread starts |
 
 ## Scoring
 
