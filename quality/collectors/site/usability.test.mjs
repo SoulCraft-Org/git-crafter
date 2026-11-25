@@ -436,6 +436,8 @@ test("a site under a subpath is crawled from its own base path", async () => {
   };
   assert.equal(basePath("https://example.test"), "/");
   assert.equal(basePath("https://example.test/repo"), "/repo/");
+  assert.equal(basePath("https://example.test/repo/"), "/repo/");
+  assert.equal(basePath("https://example.test/repo?a=1#top"), "/repo/");
   const links = await crawl(site);
   assert.equal(links.error, undefined);
   assert.equal(links.base, "/repo/");
@@ -446,6 +448,10 @@ test("a site under a subpath is crawled from its own base path", async () => {
   assert.equal(byPath.clicks, 1);
   assert.equal(byRelative.clicks, 1, "a relative goal path reads under the base");
   assert.deepEqual(taskRoute(links, { path: "process.html" }).map((h) => h.to), ["/repo/process.html"]);
+  // A goal off the site or outside the base path is not reached, and neither is a link to one.
+  const off = shortestClicks(links, [{ path: "https://other.test/repo/process.html" }, { path: "//other.test/repo/process.html" }, { path: "/other/" }, { path: "/process.html" }]);
+  assert.deepEqual(off.map((g) => g.clicks), [null, null, null, null]);
+  assert.equal(taskRoute(links, { path: "/other/" }), null);
 });
 
 test("targets/usability.json: params are generic, and goals cite their public source", () => {

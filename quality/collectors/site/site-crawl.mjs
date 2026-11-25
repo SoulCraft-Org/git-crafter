@@ -56,6 +56,16 @@ async function getOnSite(site, origin, start) {
 // the host root, "/repo/" for a project site at https://<org>.github.io/repo/.
 export const basePath = (origin) => new URL(origin).pathname.replace(/\/?$/, "/");
 
+// A link's pathname when it is a page of this site under its base path, else null.
+const onSite = (link, origin, base) => {
+  const u = new URL(link);
+  return u.origin === origin && `${u.pathname}/`.startsWith(base) ? u.pathname : null;
+};
+
+// A goal path as a crawled pathname: an absolute path stays, a relative one reads
+// under the base. null when it is off the site or outside the base path.
+const goalPath = (path, origin, base) => onSite(new URL(path, origin + base).href, origin, base);
+
 // Breadth first from the site's base path, same origin only, GET only, at most
 // `max` fetches. A link outside the base path is not followed, and a goal path
 // that is not absolute reads under it. Query strings are dropped, so filters do not multiply pages. A path under a
@@ -75,10 +85,10 @@ export function crawl(site, { max = 200, skip = [], concurrency = 4 } = {}) {
     // Links to pages on this site, under its base path and not skipped, that the crawl has not queued.
     const enqueue = (links) => {
       for (const link of links) {
-        const u = new URL(link);
-        if (u.origin !== origin || !u.pathname.startsWith(base) || skipped(u.pathname) || seen.has(u.pathname)) continue;
-        seen.add(u.pathname);
-        queue.push(u.pathname);
+        const path = onSite(link, origin, base);
+        if (path === null || skipped(path) || seen.has(path)) continue;
+        seen.add(path);
+        queue.push(path);
       }
     };
     const visit = async (path) => {
@@ -140,7 +150,6 @@ export function shortestClicks({ origin, base = "/", pages }, goals) {
     const f = pages.get(path)?.final;
     return typeof f === "string" && f.startsWith("/") ? f : path;
   };
-  const under = (path) => new URL(path, origin + base).pathname;
   const byFinal = new Map();
   for (const [path, rec] of pages) byFinal.set(resolve(path), rec);
   const dist = new Map([[resolve(base), 0]]);
@@ -148,14 +157,17 @@ export function shortestClicks({ origin, base = "/", pages }, goals) {
   while (queue.length) {
     const at = queue.shift();
     for (const link of byFinal.get(at)?.links ?? []) {
-      const u = new URL(link);
-      if (u.origin !== origin) continue;
-      const next = resolve(u.pathname);
+      const path = onSite(link, origin, base);
+      if (path === null) continue;
+      const next = resolve(path);
       if (!dist.has(next)) dist.set(next, dist.get(at) + 1), queue.push(next);
     }
   }
   return goals.map((goal) => {
-    if (goal.path) return { ...goal, clicks: dist.get(resolve(under(goal.path))) ?? null };
+    if (goal.path) {
+      const at = goalPath(goal.path, origin, base);
+      return { ...goal, clicks: at === null ? null : (dist.get(resolve(at)) ?? null) };
+    }
     let best = null;
     for (const [path, d] of dist) {
       if (byFinal.get(path)?.links.some((l) => l.startsWith(goal.href)) && (best === null || d + 1 < best)) best = d + 1;
@@ -177,13 +189,15 @@ export function taskRoute({ origin, base = "/", pages }, goal) {
   const byFinal = new Map();
   for (const [path, rec] of pages) byFinal.set(resolve(path), rec);
   const parent = clickParents({ origin, base, pages, byFinal, resolve });
-  const under = (path) => new URL(path, origin + base).pathname;
   const hopsTo = (path) => {
     const hops = [];
     for (let hop = parent.get(path); hop; hop = parent.get(hop.from)) hops.unshift(hop);
     return hops;
   };
-  if (goal.path) return parent.has(resolve(under(goal.path))) ? hopsTo(resolve(under(goal.path))) : null;
+  if (goal.path) {
+    const at = goalPath(goal.path, origin, base);
+    return at !== null && parent.has(resolve(at)) ? hopsTo(resolve(at)) : null;
+  }
   // Breadth-first order: the first page linking the goal is the nearest.
   for (const path of parent.keys()) {
     const link = byFinal.get(path)?.links.find((l) => l.startsWith(goal.href));
@@ -199,10 +213,10 @@ function clickParents({ origin, base, pages, byFinal, resolve }) {
   while (queue.length) {
     const at = queue.shift();
     for (const link of byFinal.get(at)?.links ?? []) {
-      const u = new URL(link);
-      if (u.origin !== origin) continue;
-      const next = resolve(u.pathname);
-      const away = /^https?:/.test(pages.get(u.pathname)?.final ?? "");
+      const path = onSite(link, origin, base);
+      if (path === null) continue;
+      const next = resolve(path);
+      const away = /^https?:/.test(pages.get(path)?.final ?? "");
       if (!parent.has(next)) parent.set(next, { from: at, link, to: away ? null : next }), queue.push(next);
     }
   }
