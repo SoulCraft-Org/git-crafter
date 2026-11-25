@@ -28,7 +28,7 @@ flowchart TD
 | Agents never approve a pull request | Approvals stay a person's act |
 | No workflow from a fork runs with a secret: `pull_request`, never `pull_request_target` with a checkout of the fork | GitHub Docs, events that trigger workflows |
 | Every fork run waits for approval (`all_external_contributors`). The orchestrator approves one with `gh api -X POST repos/{owner}/{repo}/actions/runs/{id}/approve` only after the diff read | A first-time setting skips approval after one harmless merged PR (GitHub Docs, approving workflow runs from forks) |
-| Every comment an agent posts opens with its AI disclosure | The repo's AI disclosure rule |
+| Every agent comment opens with its AI disclosure | The repo's AI disclosure rule |
 
 ## Merge
 
@@ -39,7 +39,11 @@ flowchart TD
 | Every changed path is AI-mergeable | `python3 -I tools/merge_policy.py --pr N --sha <head>` exits 0 and prints `checked head <sha>` |
 | The verdict comment names that SHA | `Review: MERGE at <sha>` ([Who merges](SKILL.md#who-merges)) |
 
-Then merge with `gh pr merge N --squash --match-head-commit <sha>`, typing the SHA the checker printed. Where GraphQL is blocked (a cloud session), use `gh api -X PUT repos/{owner}/{repo}/pulls/N/merge -f sha=<sha> -f merge_method=squash`.
+| Step | Command, at the checker's SHA |
+|---|---|
+| Status | `gh api repos/{owner}/{repo}/statuses/<sha> -f state=success -f context=review` |
+| Merge | `gh pr merge N --squash --auto --match-head-commit <sha>` |
+| Cloud | `gh api -X PUT repos/{owner}/{repo}/pulls/N/merge -f sha=<sha> -f merge_method=squash` |
 
 ## Rebuild with credit
 

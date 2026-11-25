@@ -28,13 +28,18 @@ function lookup(vars, key) {
 
 const sorted = (v) => (Array.isArray(v) && v.every((x) => typeof x !== "object") ? [...v].sort() : v);
 
-// Whether `got` equals `want`; a list of scalars in any order.
+// Whether `got` equals `want`: a list of scalars in any order, or a list of
+// objects each held by some item of `got`, so a live check's extra keys
+// (`integration_id`) and extra checks still match.
 function same(got, want) {
+  if (Array.isArray(want) && want.some((w) => w && typeof w === "object")) return Array.isArray(got) && want.every((w) => got.some((g) => holds(g, w)));
   return JSON.stringify(sorted(got)) === JSON.stringify(sorted(want));
 }
 
 /** Whether `params` holds every key of `want` with an equal value. */
-const holds = (params, want) => Object.entries(want).every(([k, v]) => same(params?.[k], v));
+function holds(params, want) {
+  return Object.entries(want).every(([k, v]) => same(params?.[k], v));
+}
 
 const at = (obj, dotted) => dotted.split(".").reduce((o, k) => (o == null ? undefined : o[k]), obj);
 

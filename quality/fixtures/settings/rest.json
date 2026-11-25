@@ -6,7 +6,7 @@
     "visibility": "private",
     "allow_squash_merge": true,
     "allow_merge_commit": false,
-    "allow_auto_merge": false
+    "allow_auto_merge": true
   },
   "repos/fixture-org/fixture-repo/rulesets?includes_parents=true&targets=branch,tag,push&per_page=100": [
     { "id": 1, "target": "branch", "enforcement": "active" },
