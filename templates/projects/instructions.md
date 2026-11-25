@@ -14,7 +14,8 @@ Paste this file into the project's Instructions field. Fill each `<...>` cell, t
 | Every thread | Do |
 |---|---|
 | Ship | Branch `claude/<topic>`. Draft PR within 10 minutes. Push after every step. Review, correct and merge your own PR: one fresh reviewer at the head commit, your corrections, one check of them, then merge once checks and CI are green. Post `Review: MERGE at <40-hex sha>`, then `gh api -X PUT repos/<owner>/<repo>/pulls/<n>/merge -f sha=<sha> -f merge_method=squash`. Never `--auto` or `--admin`, never push to `<default branch>`, never force-push or hard-reset. The rule: Git Crafter `skills/merging/SKILL.md` |
-| Track | A bug, quick fix or error is an issue typed Bug or Task. A feature or improvement is a draft card on board `<board number>`. A planned feature step is an issue typed Feature, labelled `enhancement`. A thread that cannot reach the board files every feature that way. File each when found, over REST. Record done and to do, and search first ([tracking.md](tracking.md)). The PR's first line is `Closes #n` or `Card: PVTI_id`, in every repo the thread touches. Commands: the repo's `AGENTS.md`, from Git Crafter's `templates/agents/AGENTS.md` |
+| Branch | Push only your own branch. To change a predecessor's work, open a new pull request that supersedes it |
+| Track | A bug, quick fix or error is an issue typed Bug or Task. A feature or improvement is a draft card on board `<board number>`. A planned feature step is an issue typed Feature, labelled `enhancement`. A thread that cannot reach the board files every feature that way. File each when found, over REST. Record done and to do, and search first ([tracking.md](tracking.md)). The PR's link line is `Closes #n` or `Card: PVTI_id`, directly after any attribution lines, in every repo the thread touches. Commands: the repo's `AGENTS.md`, from Git Crafter's `templates/agents/AGENTS.md` |
 | Check | Read the repo's `CLAUDE.md` and `AGENTS.md` first, also after adding a repo. CI is the gate |
 | GitHub | `<the GitHub tool this environment allows, such as "gh api, not gh pr">` |
 | Ask first | Only billing, vision or a critical website decision reaches the owner, as one decision card with options and a recommendation, after research. Human steps wait per Git Crafter `rules/delegation.md`. Decide and execute the rest |
@@ -26,3 +27,11 @@ Paste this file into the project's Instructions field. Fill each `<...>` cell, t
 | Keys | Never print, copy or commit a key value |
 | Write | Tables and diagrams first. One idea per sentence. No em dashes |
 | `<org>` | `<one rule for how a new repo in this org starts, such as "a new repo starts as a row in <org>/<repo>/repos.toml">` |
+
+## Ship with a merge desk
+
+Use this row in place of Ship when one named desk must merge and every other thread stops at its open pull request.
+
+| Every thread | Do |
+|---|---|
+| Ship | Branch `claude/<topic>`. Draft PR within 10 minutes. Push after every step. Stop at the open PR once checks and CI are green, and post its head SHA. The desk `<desk name>` reviews at the head commit, corrects, posts `Review: MERGE at <40-hex sha>` and merges. Never `--auto` or `--admin`, never push to `<default branch>`, never force-push or hard-reset |

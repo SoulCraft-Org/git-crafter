@@ -28,7 +28,7 @@ flowchart LR
 | Search first | Search open and closed issues and the board before filing. Extend a match, never duplicate it |
 | One cause | One issue per cause, one card per outcome |
 | Area label | Every issue carries one area label from `area_labels` in the repo's `config/quality/targets/github.json`, next to `enhancement` or its type. The Issues tab reads it (`issues.area_labeled`, goal 100%) |
-| Link | The pull request's first line is `Closes #n`, or `Card: PVTI_...` for a draft card with no issue number |
+| Link | The pull request's link line is `Closes #n`, or `Card: PVTI_...` for a draft card with no issue number. It sits directly after any attribution lines |
 | Public repos | File only what the pull request needs. Never put a private name, path or key in a public issue |
 | Missed metrics | `quality/sync-issues.mjs` files them. Do not file them by hand |
 
