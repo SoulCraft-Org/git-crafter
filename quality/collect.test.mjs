@@ -258,7 +258,7 @@ test('a "warn" gate annotates its miss and passes; a true gate fails', (t) => {
 test("Git Crafter's Code gate: a seeded TODO marker fails, a seeded unused export warns and passes", (t) => {
   t.mock.method(console, 'error', () => {});
   const quality = fileURLToPath(new URL('.', import.meta.url));
-  const loaded = loadDefs({ templateDir: join(quality, 'targets'), repoDir: join(quality, '../config/quality/targets'), tabs: [['code', 'Code']] });
+  const loaded = loadDefs({ templateDir: join(quality, 'targets'), repoDir: join(quality, '../config/quality/targets'), tabs: [['code', 'Code']], skipUnknown: true });
   const gate = (id) => loaded.gated.find((d) => d.id === id)?.gate;
   // The four guards that left the score in #643 still block, unscored; the four unused-code counts warn.
   for (const id of ['code.duplicated_pct', 'code.drift_markers', 'code.commented_code', 'code.purpose_comments_pct']) {

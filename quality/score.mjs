@@ -153,9 +153,10 @@ const offPage = (def) => def.drop === true && !def.gate && typeof def.tab === "s
 // the dropped ones on a shown tab, which the page counts and lists.
 // dropNeeds (the config's drop_needs) drops every metric with one of those
 // `needs` values, as drop: true does; a value no metric needs is a usage error.
-export function loadDefs({ templateDir, packDirs = [], repoDir = null, tabs = DEFAULT_TABS, tabIds = new Set([...TAB_IDS, ...tabs.map(([id]) => id)]), dropNeeds = [] }) {
+// skipUnknown (overlayTargets): a caller that does not check the packs out skips an override of an id a pack defines.
+export function loadDefs({ templateDir, packDirs = [], repoDir = null, tabs = DEFAULT_TABS, tabIds = new Set([...TAB_IDS, ...tabs.map(([id]) => id)]), dropNeeds = [], skipUnknown = false }) {
   const repoFiles = repoDir && repoDir !== templateDir ? readTargetFiles(repoDir) : [];
-  const { entries, params } = overlayTargets(baseFiles(templateDir, packDirs), repoFiles);
+  const { entries, params } = overlayTargets(baseFiles(templateDir, packDirs), repoFiles, { skipUnknown });
   dropByNeeds(entries, dropNeeds);
   for (const def of entries) checkDef(def, `${def.overridden_in ? `${def.overridden_in} over the template's ${def.file}` : def.file}: ${def.id ?? "(no id)"}`, offPage(def) ? new Set([...tabIds, def.tab]) : tabIds);
   const on = new Set(tabs.map(([id]) => id));
