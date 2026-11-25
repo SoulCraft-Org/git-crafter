@@ -182,6 +182,7 @@ export function* readMerged(repo, since) {
   }
   return out;
 }
+// One repo's merged pull requests, read alone.
 export const fetchMerged = (gh, repo, since) => alone(gh, readMerged(repo, since));
 
 // Every open PR, 100 a page.
@@ -205,6 +206,7 @@ export function* readOpen(repo) {
   }
   return prs;
 }
+// One repo's open pull requests, read alone.
 export const fetchOpen = (gh, repo, wait = sleep) => alone(gh, readOpen(repo), wait);
 
 // The runs list answers at most 1,000 runs per filtered query, and one repo
@@ -240,6 +242,7 @@ export function* readRuns(repo, since, now) {
   for (let i = 0; i < rest.length; i += 100) for (const { r } of yield { rest: rest.slice(i, i + 100), jq }) for (const run of r) out.set(run.id, run);
   return [...out.values()].filter((r) => Date.parse(r.created_at) >= since);
 }
+// One repo's runs, read alone.
 export const fetchRuns = (gh, repo, since, now) => alone(gh, readRuns(repo, since, now));
 
 // A repo's default-branch commits since `since`, with their deploy check runs.
@@ -274,6 +277,7 @@ export function* readHistory(repo, since) {
   }
   return out;
 }
+// One repo's default-branch commits, read alone.
 export const fetchHistory = (gh, repo, since) => alone(gh, readHistory(repo, since));
 
 const TREE = "... on Tree{entries{name object{... on Blob{text}}}}";
