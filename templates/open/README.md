@@ -23,6 +23,7 @@ flowchart LR
 | `labels.json` | anywhere. The Labels row below reads it | nothing |
 | [`merge_policy.json`](merge_policy.json) and [`tools/merge_policy.py`](../../tools/merge_policy.py) | `tools/`, side by side | `ai_mergeable` to your content paths |
 | [`wiki/`](wiki/), [`wiki.yml`](../ci/wiki.yml) | `wiki/`, `.github/workflows/` | `<owner>/<repo>` |
+| [`PERSONAL-PRIVATE.md`](PERSONAL-PRIVATE.md) | read, not copied | the 8 rows a private repo on a personal Pro account skips, and each free stand-in |
 
 ## Placeholders
 
