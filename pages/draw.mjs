@@ -139,7 +139,7 @@ export function stepNode({ key, s, i, ro, x, y, hitW, crit, selected }) {
   // The words it shows name the link, spaced in one text (axe label-content-name-mismatch, WCAG 2.5.3);
   // the tip is its description, never part of its name.
   const words = `<text><tspan class="t-num" x="${x}" y="${y + 7}">${i + 1}</tspan> <tspan class="t-name" x="${x}" y="${y + 50}">${esc(s.short ?? s.name)}</tspan> ${line}</text>`;
-  return `<a class="t-step${crit ? " crit" : ""}" href="#step-${esc(key)}" data-step="${esc(key)}"${s.id === selected ? ' aria-current="step"' : ""} data-tip="${esc(tip)}"><desc>${esc(tip)}</desc>${hit}<circle class="t-halo" cx="${x}" cy="${y}" r="${R + 15}"/>${ring}<circle class="t-node" cx="${x}" cy="${y}" r="${R}"/>${mark}${words}</a>`;
+  return `<a class="t-step${crit ? " crit" : ""}" href="#step-${esc(key)}" data-step="${esc(key)}"${s.actor ? ` data-actor="${esc(s.actor)}"` : ""}${s.id === selected ? ' aria-current="step"' : ""} data-tip="${esc(tip)}"><desc>${esc(tip)}</desc>${hit}<circle class="t-halo" cx="${x}" cy="${y}" r="${R + 15}"/>${ring}<circle class="t-node" cx="${x}" cy="${y}" r="${R}"/>${mark}${words}</a>`;
 }
 
 // ---- The goal strip ------------------------------------------------------
