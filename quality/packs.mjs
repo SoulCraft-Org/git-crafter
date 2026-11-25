@@ -72,10 +72,11 @@ function checkedOut(packs) {
 // Every tab id a definition or an ideal may name: the template's, the pack's and the page's.
 const tabIdsOf = (config) => new Set([...TABS.map(([id]) => id), ...packsOf(config).flatMap((p) => p.tabs.map(([id]) => id)), ...config.tabs.map(([id]) => id)]);
 
-// The page's metric definitions (score.mjs loadDefs) with each pack's targets beside the template's.
+// The page's metric definitions (score.mjs loadDefs) with each pack's targets beside the template's. A config with no
+// packs (the code gate) skips an override of a pack's metric, as the two PR gates do.
 export function configDefs(config, templateDir) {
   checkedOut(packsOf(config));
-  return loadDefs({ templateDir, packDirs: packsOf(config).map((p) => p.targets), repoDir: config.targets, tabs: config.tabs, tabIds: tabIdsOf(config), dropNeeds: config.drop_needs });
+  return loadDefs({ templateDir, packDirs: packsOf(config).map((p) => p.targets), repoDir: config.targets, tabs: config.tabs, tabIds: tabIdsOf(config), dropNeeds: config.drop_needs, skipUnknown: packsOf(config).length === 0 });
 }
 
 // The page's ideals (score.mjs loadIdeals): the template's, each pack's, then the repo's.
