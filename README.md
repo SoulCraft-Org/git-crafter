@@ -31,7 +31,7 @@ GC=../git-crafter  # clone
 mkdir -p quality/process .github/workflows
 cp -n $GC/templates/quality/config.json quality/config.json
 cp -n $GC/templates/process/config.json quality/process/config.json
-cp $GC/templates/ci/ci.yml $GC/templates/ci/pages.yml .github/workflows/
+cp -n $GC/templates/ci/ci.yml $GC/templates/ci/pages.yml .github/workflows/
 cp -n $GC/templates/ci/dependabot.yml .github/dependabot.yml
 python3 -I $GC/tools/ci_standard.py check --repo .
 ```
