@@ -20,11 +20,11 @@ import { configDefs, configIdeals, resolvePacks } from "./packs.mjs";
 const FIXTURE = join(QUALITY, "fixtures", "pack");
 const SHA = "0123456789abcdef0123456789abcdef01234567";
 
-// A repo root whose quality/config.json names these packs.
-function repoWith(packs) {
+// A repo root whose quality/config.json names these packs, with the extra keys.
+function repoWith(packs, extra = {}) {
   const root = mkdtempSync(join(tmpdir(), "packs-"));
   mkdirSync(join(root, "quality"));
-  writeFileSync(join(root, "quality", "config.json"), JSON.stringify({ packs }));
+  writeFileSync(join(root, "quality", "config.json"), JSON.stringify({ packs, ...extra }));
   return root;
 }
 
@@ -89,6 +89,18 @@ test("packs: the Quality build and issue sync refuse a path pack in CI", () => {
     assert.equal(run.status, 2, `${script}: ${run.stderr}`);
     assert.match(run.stderr, /only a --local run takes/, script);
   }
+});
+
+test("packs: a pack tab named by bare id in tabs waits for the checkout, which reads the packs alone (#368)", () => {
+  const root = repoWith([`octo/pack@${SHA}`], { tabs: ["code", "claude"] });
+  const env = { CODE_OS_PACKS: join(mkdtempSync(join(tmpdir(), "packs-out-")), "packs") };
+  const dir = join(env.CODE_OS_PACKS, "octo", "pack");
+  const run = spawnSync(process.execPath, [join(QUALITY, "pack-checkouts.mjs")], { cwd: root, env: { ...process.env, ...env }, encoding: "utf8" });
+  assert.equal(run.status, 0, run.stderr);
+  assert.equal(run.stdout, ["octo/pack", SHA, dir].map((f) => `${f}\0`).join(""), "actions/pages gets the pack to fetch");
+  assert.throws(() => loadConfig({ root, env, ci: true }), /tab "claude" is no template tab, and pack octo\/pack@\w+ is not checked out yet/, "the cause, not a gone tab");
+  cpSync(packWith([["claude", "Claude"]]), dir, { recursive: true });
+  assert.deepEqual(loadConfig({ root, env, ci: true }).tabs, [["code", "Code"], ["claude", "Claude"]], "checked out, the bare id names the pack's tab");
 });
 
 test("packs: a local path is a --local run's only; CI refuses it", () => {

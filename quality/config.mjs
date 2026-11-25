@@ -9,7 +9,8 @@
 //   tabs        the tab ids to show, in order. Default: the template's tabs
 //               (score.mjs TABS) less the web tabs. An entry [id, name] adds a
 //               tab of the repo's own. A removed tab id (score.mjs MOVED_TABS)
-//               stops with where its metrics went
+//               stops with where its metrics went. A pack's tab id is known
+//               once the pack is checked out
 //   web         true shows the web tab (Pages) in the default list
 //   targets     the repo's targets folder, laid over the template's by id
 //               (score.mjs overlayTargets)
@@ -84,16 +85,19 @@ function checkPackTabs(packTabs) {
   }
 }
 
+// Why a bare tab id is unknown. A pack not checked out yet, in unread, comes first: its tabs are not read.
+const whyUnknown = (id, unread) => (unread.length ? `tab "${id}" is no template tab, and pack ${unread.join(", ")} is not checked out yet, so its tabs are unknown` : `${unknownTab(id)}; a tab of the repo's own is ["id", "Name"]`);
+
 // The tabs a page shows, as [id, name] pairs; packTabs, the packs' own, join
-// the default list and may be named by id.
-export function resolveTabs({ tabs = null, web = false } = {}, packTabs = []) {
+// the default list and may be named by id. unread lists the packs not checked out.
+export function resolveTabs({ tabs = null, web = false } = {}, packTabs = [], unread = []) {
   checkPackTabs(packTabs);
   const names = new Map([...TABS, ...packTabs]);
   if (tabs === null) return [...TABS.filter(([id]) => web || !WEB_TABS.includes(id)), ...packTabs];
   if (!Array.isArray(tabs) || !tabs.length) throw new Error("tabs must be a list of tab ids");
   const out = tabs.map((t) => {
     if (typeof t === "string") {
-      if (!names.has(t)) throw new Error(`tabs: ${unknownTab(t)}; a tab of the repo's own is ["id", "Name"]`);
+      if (!names.has(t)) throw new Error(`tabs: ${whyUnknown(t, unread)}`);
       return [t, names.get(t)];
     }
     if (Array.isArray(t) && t.length === 2 && t.every((x) => typeof x === "string" && x.trim()) && TAB_ID.test(t[0])) return t;
@@ -142,18 +146,32 @@ function checkLabels(labels, tabs) {
   if (gone) throw new Error(`issue_sync.labels: ${unknownTab(gone)}`);
 }
 
+// The config file at `path` over the defaults, its keys checked. Throws on a bad file.
+function readConfig(path, named) {
+  const raw = readRaw(path, named);
+  const c = { ...CONFIG_DEFAULTS, ...raw };
+  checkRaw(raw, c);
+  return c;
+}
+
+// The config's packs alone (packs.mjs resolvePacks), for the checkout that
+// runs before they are there. Tabs are not checked: a pack's tab ids are
+// known only once it is checked out, and loadConfig checks them then.
+export function loadPacks({ root = process.cwd(), file = null, env = process.env, ci = false } = {}) {
+  return resolvePacks(readConfig(configPath(root, file), Boolean(file)).packs, { root: resolve(root), env, ci });
+}
+
 // The settings for a run in `root`: the named config file, else
 // quality/config.json when the repo has one, else the defaults. Paths come
 // back absolute. ci, a run in CI, refuses a pack named by path. Throws on a
 // bad file: a usage error.
 export function loadConfig({ root = process.cwd(), file = null, env = process.env, ci = false } = {}) {
   const path = configPath(root, file);
-  const raw = readRaw(path, Boolean(file));
-  const c = { ...CONFIG_DEFAULTS, ...raw };
-  checkRaw(raw, c);
+  const c = readConfig(path, Boolean(file));
   const repo = c.repo ?? (REPO_RE.test(env.GITHUB_REPOSITORY ?? "") ? env.GITHUB_REPOSITORY : null);
   const named = Boolean(file) || existsSync(path);
   const packs = resolvePacks(c.packs, { root: resolve(root), env, ci });
+  const unread = packs.filter((p) => !existsSync(p.dir)).map((p) => p.spec);
   const settings = {
     ...c,
     root: resolve(root),
@@ -162,7 +180,7 @@ export function loadConfig({ root = process.cwd(), file = null, env = process.en
     name: c.name ?? (repo ? repo.split("/")[1] : basename(resolve(root))),
     repoUrl: repoUrl(repo, env),
     packs,
-    tabs: resolveTabs(c, packs.flatMap((p) => p.tabs)),
+    tabs: resolveTabs(c, packs.flatMap((p) => p.tabs), unread),
   };
   checkLabels(c.issue_sync?.labels, settings.tabs);
   for (const k of PATHS) settings[k] = absolute(root, c[k]);
