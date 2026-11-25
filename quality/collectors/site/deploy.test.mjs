@@ -9,7 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { after, test } from 'node:test';
 import { loadTargets } from '../lib/score.mjs';
-import { area, collect, median, metricIds, parseJsonList, parseLog, resolveDeploys } from './deploy.mjs';
+import { area, collect, median, metricIds, parseJsonList, parseLog, resolveDeploys, retryEmpty } from './deploy.mjs';
 
 // Only this collector's targets files, so another collector's file never fails these tests.
 function ownTargets(...files) {
@@ -150,4 +150,39 @@ test('collect: a Worker at the repo root counts every merge as one that ships', 
   } finally {
     fs.rmSync(path.join(root, 'wrangler.toml'));
   }
+});
+
+// The Pages reader's GitHub API, from the fixture deploy-pages.test.mjs reads. empty names
+// how many calls to a route get an empty reply first, as gh reports one.
+const PAGES = JSON.parse(fs.readFileSync(new URL('../../fixtures/deploy/pages-api.json', import.meta.url), 'utf8'));
+const LIST = 'repos/o/r/deployments?environment=github-pages&per_page=30';
+function pagesGh(empty = {}) {
+  const calls = {};
+  const rest = async (route) => {
+    calls[route] = (calls[route] ?? 0) + 1;
+    if (calls[route] <= (empty[route] ?? 0)) throw new Error('unexpected end of JSON input');
+    if (!(route in PAGES)) throw new Error(`no fixture for ${route}`);
+    return structuredClone(PAGES[route]);
+  };
+  return { calls, rest };
+}
+const pages = { root: '.', mode: 'ci', now, params: { platform: 'pages', repo: 'o/r' }, retry: { waitMs: 0 } };
+
+test('collect: an empty GitHub reply is read again, so every Pages metric is measured (#379)', async () => {
+  const gh = pagesGh({ [LIST]: 1, 'repos/o/r/deployments/5/statuses?per_page=10': 2 });
+  const out = await collect({ ...pages, gh });
+  for (const id of metricIds) assert.equal(out[id].could_not_check, undefined, id);
+  assert.equal(out['deploy.failure_rate_last10'].value, 25, 'the same deploys as with no empty reply');
+  assert.equal(gh.calls[LIST], 2, 'one empty reply, then the list');
+});
+
+test('collect: three empty replies, or any other failure, stay could_not_check, never 0', async () => {
+  const stuck = pagesGh({ [LIST]: 3 });
+  const out = await collect({ ...pages, gh: stuck });
+  for (const id of metricIds) assert.match(out[id].could_not_check, /unexpected end of JSON input/, id);
+  assert.equal(stuck.calls[LIST], 3);
+  let calls = 0;
+  const denied = await retryEmpty({ rest: async () => { calls += 1; throw new Error('HTTP 403: Resource not accessible'); } }, { waitMs: 0 }).rest(LIST).catch((err) => err.message);
+  assert.equal(denied, 'HTTP 403: Resource not accessible');
+  assert.equal(calls, 1, 'a refusal is not read again');
 });

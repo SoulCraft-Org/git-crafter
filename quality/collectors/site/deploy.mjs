@@ -42,6 +42,7 @@ import { promisify } from 'node:util';
 import { ownRepo } from '../lib/paths.mjs';
 import { failures, liveTimes, median, parseJsonList, parseLog, pushMinutes, resolveDeploys } from './deploy-lib.mjs';
 import { collectPages } from './deploy-pages.mjs';
+import { ghClient } from '../github/github-core.mjs';
 
 export const area = 'deploy';
 // Reads the GitHub API: collect.mjs skips it under the API reserve (ci.json params.api_reserve).
@@ -70,10 +71,32 @@ const iso = (ms) => new Date(ms).toISOString();
 
 export { failures, liveTimes, median, parseJsonList, parseLog, pushMinutes, resolveDeploys } from './deploy-lib.mjs';
 
+// An empty reply: GitHub answered with no body, and gh failed to parse it.
+// The quality run of 2026-11-24 hit one, after 11 days of measured runs, and
+// lost every Pages metric to it.
+export const EMPTY_REPLY = /unexpected end of JSON input/i;
+
+// The gh client with each rest call tried again after an empty reply, up to
+// `tries` calls, waiting waitMs times the try before each new one. Any other
+// failure, or the last empty reply, still throws, so it stays could_not_check.
+export function retryEmpty(gh, { tries = 3, waitMs = 1000 } = {}) {
+  const rest = async (route) => {
+    for (let n = 1; ; n += 1) {
+      try {
+        return await gh.rest(route);
+      } catch (err) {
+        if (n >= tries || !EMPTY_REPLY.test(String(err?.message ?? err))) throw err;
+        await new Promise((r) => setTimeout(r, waitMs * n));
+      }
+    }
+  };
+  return { ...gh, rest };
+}
+
 // Every Deploy metric: from GitHub Pages when params.platform is "pages",
 // else from Wrangler (a --local collect only).
-export async function collect({ root = '.', mode, exec = defaultExec, now = new Date(), params = TEMPLATE, gh } = {}) {
-  if (params.platform === 'pages') return collectPages({ repo: await ownRepo(root, params, exec), gh, now, params });
+export async function collect({ root = '.', mode, exec = defaultExec, now = new Date(), params = TEMPLATE, gh, retry } = {}) {
+  if (params.platform === 'pages') return collectPages({ repo: await ownRepo(root, params, exec), gh: retryEmpty(gh ?? ghClient(), retry), now, params });
   const all = (reason, source = WRANGLER) => Object.fromEntries(metricIds.map((id) => [id, cnc(reason, source)]));
   if (mode !== 'local') return all(CI_REASON);
   const dir = String(params.worker_dir || '.');
