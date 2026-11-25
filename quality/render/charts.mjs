@@ -152,6 +152,22 @@ export function bars(detail, unit, { plain = false } = {}) {
     .join("")}</tbody></table>${trimmed(detail)}`;
 }
 
+// The meter chart: one row per allowance, the bar filled to used / included
+// and capped at full. Text reads "used of included unit, share". A row over
+// its allowance gets class "over". A row without a finite used and a positive
+// included draws no bar and reads "–".
+export function usedOf(detail, unit) {
+  const rows = detail.slice(0, MAX_ROWS);
+  const row = (d) => {
+    const u = d.unit ?? unit;
+    if (!finite(d.used) || !finite(d.included) || d.included <= 0) return `<tr>${labelCell(d.label)}<td class="bar"></td><td class="num">–</td></tr>`;
+    const share = d.used / d.included;
+    const text = `${fmt(d.used)} of ${fmt(d.included, u)}, ${sharePct(share)}`;
+    return `<tr${share > 1 ? ' class="over"' : ""}>${labelCell(d.label)}<td class="bar"><span style="width:${pct(share)}"></span></td><td class="num">${esc(text)}</td></tr>`;
+  };
+  return `<table class="bars used-of"><tbody>${rows.map(row).join("")}</tbody></table>${trimmed(detail)}`;
+}
+
 // Ordered stages, largest first: bars shrink in order, each with its count
 // and its share of the first stage.
 export function funnel(detail, unit) {

@@ -72,8 +72,9 @@ const DIRECTIONS = new Set(["higher", "lower"]);
 // (render/repos.mjs), deploys as one row per production deploy
 // (render/deploys.mjs), credits as one row per free or included allowance
 // (render/credits.mjs), tools as one row per direct dependency
-// (render/tools.mjs).
-export const CHARTS = new Set(["number", "bar", "gauge", "spark", "table", "funnel", "stack", "flow", "ledger", "repos", "deploys", "credits", "tools"]);
+// (render/tools.mjs), meter as one row per allowance with used of included
+// (usedOf in render/charts.mjs).
+export const CHARTS = new Set(["number", "bar", "gauge", "spark", "table", "funnel", "stack", "flow", "ledger", "repos", "deploys", "credits", "tools", "meter"]);
 // Optional display text and its longest length: `means` says in plain words
 // what the number counts, `group` names a sub-section inside its kind.
 // Neither changes the score.
