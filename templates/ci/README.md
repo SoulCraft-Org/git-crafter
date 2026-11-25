@@ -11,7 +11,7 @@
 
 ```mermaid
 flowchart LR
-  C["1 Copy the starter files<br/>in one pull request, and nothing else"] --> R["2 Require ci / ci-ok<br/>in a ruleset on the default branch"]
+  C["1 Copy the starter files<br/>in one pull request, and nothing else"] --> R["2 Require ci / ci-ok and review<br/>in a default-branch ruleset"]
   R --> G["3 Settings, Pages<br/>source: GitHub Actions"]
   G --> P[PR: ci.yml checks<br/>Push to main: pages.yml publishes]
 ```
