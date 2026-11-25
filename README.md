@@ -15,22 +15,28 @@ Templates for AI agents to run an open-source or open-weight repo with Claude Co
 | [CI standard](templates/ci/README.md) | One reusable workflow on GitHub's standard hosted runners |
 | [Rules](rules/) and [guards](tools/) | What Claude sessions may do, and the `permissions.deny` list and hookify rules that block one-way doors |
 
-## Adopt in four steps
+Both pages are public.
 
-| Step | Copy or set | From |
-|---|---|---|
-| 1 | `<repo>/quality/config.json`, less unused tabs | [templates/quality](templates/quality/README.md) |
-| 1 | `<repo>/quality/process/config.json`, with your repo's name | [templates/process](templates/process/README.md) |
-| 1 | `<repo>/.github/workflows/ci.yml` and `<repo>/.github/workflows/pages.yml` | [templates/ci](templates/ci/README.md) |
-| 1 | `<repo>/.github/dependabot.yml`, which bumps the Git Crafter pin | [templates/ci/dependabot.yml](templates/ci/dependabot.yml) |
-| 2 | A ruleset on `main` requiring `ci / ci-ok` | [templates/ci](templates/ci/README.md) |
-| 3 | Settings, Pages: source "GitHub Actions" | [templates/ci](templates/ci/README.md) |
-| 4 | Push to `main`: pages at `https://<owner>.github.io/<repo>/` and `.../quality/` | [pages.yml](templates/ci/pages.yml) |
-| Optional | Community files | [open](templates/open/README.md) |
-| Optional | Switches | [setup.json](templates/setup.json) with `tools/apply_setup.mjs` |
-| Optional | Agent files | [agents](templates/agents/README.md) |
-| Optional | Projects | [projects](templates/projects/README.md) |
-| Optional | CI pool | [CI-POOL.md](templates/ci/CI-POOL.md) |
+
+## Quickstart: 3 steps
+
+| Step | Do |
+|---|---|
+| 1 | Run the block; set `ci.yml`'s `paths`, `short`, `standard`; `pages.yml`'s doc globs; process config's `repos`, `repo_url`, `heading`; drop unused tabs ([ci](templates/ci/README.md), [process](templates/process/README.md)) |
+| 2 | Ruleset on `main` requiring `ci / ci-ok` |
+| 3 | Settings, Pages: source "GitHub Actions". Push: pages at `https://<owner>.github.io/<repo>/` and `.../quality/` |
+
+```bash
+GC=../git-crafter  # clone
+mkdir -p quality/process .github/workflows
+cp -n $GC/templates/quality/config.json quality/config.json
+cp -n $GC/templates/process/config.json quality/process/config.json
+cp -n $GC/templates/ci/ci.yml $GC/templates/ci/pages.yml .github/workflows/
+cp -n $GC/templates/ci/dependabot.yml .github/dependabot.yml
+python3 -I $GC/tools/ci_standard.py check --repo .
+```
+
+More: [open](templates/open/README.md), [setup.json](templates/setup.json), [agents](templates/agents/README.md), [projects](templates/projects/README.md).
 
 ## The 13 tabs
 
