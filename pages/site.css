@@ -47,6 +47,10 @@ figcaption { margin-bottom: var(--s-1); font-size: 0.75rem; color: var(--c-text-
 .t-step[aria-current] .t-hit { fill: var(--c-ground); stroke: var(--c-night); stroke-width: 1.5; }
 .t-step:focus { outline: none; }
 .t-step:focus-visible .t-hit { stroke: var(--c-focus); stroke-width: 2.5; }
+/* A step the lane filter dims: a hollow stone node and dim text, which still meets contrast. */
+.t-step.off .t-node { fill: var(--c-ground); stroke: var(--c-stone-edge); }
+.t-step.off :is(.t-num, .t-name, .t-val) { fill: var(--c-text-dim); }
+.t-step.off .t-ring { opacity: 0.35; }
 /* A map drawn as lanes: a band for each actor, its name at the band's top left. */
 .t-lane { fill: var(--c-ground); }
 .t-lane.alt { fill: var(--c-surface); }
@@ -62,10 +66,15 @@ figcaption { margin-bottom: var(--s-1); font-size: 0.75rem; color: var(--c-text-
 .t-key svg:has(circle) { width: 0.875rem; height: 0.875rem; }
 .k-main { stroke: var(--c-night); stroke-width: 5; }
 .k-ring { fill: none; stroke: var(--c-community); stroke-width: 2.5; }
+/* The flow: dots run each line's way for under 5 seconds (WCAG 2.2.2), then fade. None under reduced motion. */
+.t-flow { display: none; }
 @media (prefers-reduced-motion: no-preference) {
   .t-ring { animation: ring 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .t-flow { display: inline; fill: none; stroke: var(--c-ground); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 0.1 16; pointer-events: none; animation: flow 1.2s linear 4, flow-out 4.8s ease-in both; }
 }
 @keyframes ring { from { stroke-dasharray: 0 100; } }
+@keyframes flow { to { stroke-dashoffset: -16.1; } }
+@keyframes flow-out { 80% { opacity: 1; } to { opacity: 0; } }
 
 /* ---- One section per process map ---- */
 .map + .map { margin-top: var(--s-7); padding-top: 1.75rem; border-top: var(--line-hair) solid var(--c-border); }
@@ -74,9 +83,14 @@ figcaption { margin-bottom: var(--s-1); font-size: 0.75rem; color: var(--c-text-
 
 /* ---- Step panels ---- */
 .stepbar { display: flex; gap: 0.375rem; margin: 1.75rem 0 0; overflow-x: auto; scrollbar-width: thin; }
-.stepbar button { flex: none; min-height: 2.5rem; padding: var(--s-1) var(--s-3); border: var(--line-hair) solid var(--c-border); border-radius: var(--r-chisel); background: var(--c-ground); color: var(--c-text); font-size: 0.875rem; cursor: pointer; }
+.stepbar button, .stepnav button, .lanefilter button { flex: none; min-height: 2.5rem; padding: var(--s-1) var(--s-3); border: var(--line-hair) solid var(--c-border); border-radius: var(--r-chisel); background: var(--c-ground); color: var(--c-text); font-size: 0.875rem; cursor: pointer; }
 .stepbar button b { margin-right: 0.375rem; }
-.stepbar button[aria-pressed="true"] { border-color: var(--c-night); background: var(--c-night); color: var(--c-on-night); }
+.stepbar button[aria-pressed="true"], .lanefilter button[aria-pressed="true"] { border-color: var(--c-night); background: var(--c-night); color: var(--c-on-night); }
+.stepbar button.off:not([aria-pressed="true"]) { border-style: dashed; color: var(--c-text-dim); }
+/* Previous and Next under the step buttons; a lane map's lane toggles above its drawing. */
+.stepnav, .lanefilter { display: flex; flex-wrap: wrap; gap: 0.375rem; margin: var(--s-2) 0 0; }
+.lanefilter { margin: 0 0 var(--s-2); }
+.stepnav button[aria-disabled="true"] { color: var(--c-text-dim); cursor: default; }
 .panel { margin-top: var(--s-5); scroll-margin-top: 4rem; }
 .panel + .panel { padding-top: var(--s-5); border-top: var(--line-hair) solid var(--c-rule); }
 .p-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) 0.875rem; }

@@ -50,3 +50,18 @@ test("a tab's ideal heads at h2 under the page's h1; a map's or outcome's stays 
   assert.match(ideal("tab-build", doc, "Maps", 2), /<h2 id="tab-build-ideal">Ideal state<\/h2>/);
   assert.match(ideal("map-m", doc, "Map"), /<h3 id="map-m-ideal">Ideal state<\/h3>/);
 });
+
+test("the flow on a map's lines and every other animation run only when the reader allows motion, and end within 5 seconds (WCAG 2.2.2)", () => {
+  const css = readFileSync(new URL("../pages/site.css", import.meta.url), "utf8");
+  const blocks = css.match(/@media \(prefers-reduced-motion: no-preference\) \{(?:[^{}]|\{[^{}]*\})*\}/g) ?? [];
+  const outside = blocks.reduce((rest, b) => rest.replace(b, ""), css);
+  assert.doesNotMatch(outside, /animation:/, "no animation outside a no-preference block");
+  assert.match(outside, /\.t-flow \{ display: none; \}/, "under reduced motion the flow is not drawn");
+  const runs = blocks.join("").match(/animation: [^;]+/g).flatMap((a) => a.slice(11).split(/, (?![^(]*\))/));
+  assert.ok(runs.some((r) => r.startsWith("flow ")), "the lines have a flow");
+  for (const r of runs) {
+    const [, n, unit] = /([\d.]+)(m?s)/.exec(r);
+    const times = Number(/ (\d+)(?: |$)/.exec(r)?.[1] ?? 1);
+    assert.ok(!/infinite/.test(r) && (Number(n) / (unit === "ms" ? 1000 : 1)) * times <= 5, `${r} ends within 5 seconds`);
+  }
+});

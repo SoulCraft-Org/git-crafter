@@ -94,6 +94,15 @@
     filterLanes(m, "");
   };
 
+  // Each line gets a copy along its own path, which the stylesheet runs dots on when the reader allows motion.
+  const addFlow = (m) => {
+    for (const p of $$(".trail .t-main, .trail .t-off", m)) {
+      const f = p.cloneNode();
+      f.setAttribute("class", "t-flow");
+      p.after(f);
+    }
+  };
+
   const filterLanes = (m, actor) => {
     const of = Object.fromEntries($$(".t-step", m).map((a) => [a.dataset.step, a.dataset.actor]));
     for (const a of $$(".t-step", m)) a.classList.toggle("off", Boolean(actor) && a.dataset.actor !== actor);
@@ -208,6 +217,7 @@
     for (const m of maps) {
       addStepNav(m);
       addLaneFilter(m);
+      addFlow(m);
     }
     applyProcess(ctx);
     ctx.pick.addEventListener("change", () => {
