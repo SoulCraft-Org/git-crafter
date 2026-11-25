@@ -13,15 +13,14 @@ Templates for AI agents to run an open-source or open-weight repo with Claude Co
 | [Quality, Speed and Consumption page](https://soulcraft-org.github.io/git-crafter/quality/) | 13 tabs, each scored against an ideal from current, dated sources |
 | [Process page](https://soulcraft-org.github.io/git-crafter/) | Process maps: each step's tool, rule and metric |
 | [CI standard](templates/ci/README.md) | One reusable workflow on GitHub's standard hosted runners |
-| [Rules](rules/) and [guards](tools/) | What Claude sessions may do, and the `permissions.deny` list and hookify rules that block one-way doors |
+| [Rules](rules/) and [guards](tools/) | What Claude sessions may do, plus the deny list and hookify rules that block one-way doors |
 
-Both pages are public.
 
 ## Quickstart: 3 steps
 
 | Step | Do |
 |---|---|
-| 1 | Run the block below. Set `ci.yml`'s `paths`, `short` and `standard`, and the process config's placeholders ([ci](templates/ci/README.md), [process](templates/process/README.md)) |
+| 1 | Run the block. Drop unused tabs, add doc globs to `pages.yml`, set `ci.yml`'s inputs, and the process config's `repos`, `repo_url` and `heading` ([ci](templates/ci/README.md), [process](templates/process/README.md)) |
 | 2 | A ruleset on `main` requiring `ci / ci-ok` |
 | 3 | Settings, Pages: source "GitHub Actions" |
 
@@ -104,7 +103,6 @@ Each map's steps: [pages/maps](pages/maps/README.md).
 
 | Need | Go to |
 |---|---|
-| Help, bugs, ideas | [SUPPORT.md](SUPPORT.md) |
+| Help and ideas | [SUPPORT.md](SUPPORT.md) |
 | Changes and template fixes | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Security problems | [SECURITY.md](SECURITY.md) |
-| Maintainer | SoulCraft, publisher |
