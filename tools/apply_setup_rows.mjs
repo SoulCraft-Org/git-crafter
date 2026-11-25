@@ -44,8 +44,9 @@ function everyRepo(set) {
   return include.includes("~ALL") && !exclude.length;
 }
 
-// Where a ruleset row reads: the list, one ruleset by id, the ref and the default branch's ref, which sets count, and the words for where.
+// Where a ruleset row reads: the list, one ruleset by id, the ref and the default branch's ref, which sets count, and the words for where. An org's branch row names ~DEFAULT_BRANCH, since each repo has its own: a literal branch would read missing, and --apply would POST a duplicate.
 function rulesetSource(read, want, vars, scope = "repo") {
+  if (scope === "org" && want.target === "branch" && want.ref !== "~DEFAULT_BRANCH") throw new Error(`an organization's branch ruleset row names ~DEFAULT_BRANCH, not ${want.ref}`);
   if (scope === "org") return { list: fill(ORG_RULESETS, vars), one: (id) => fill(`orgs/{org}/rulesets/${id}`, vars), ref: want.ref, defaultRef: "~DEFAULT_BRANCH", counts: everyRepo, on: `every repo's ${want.ref}` };
   if (scope !== "repo") throw new Error(`a ruleset row reads a repo or an organization, not a ${scope}`);
   const defaultRef = `refs/heads/${read(fill("repos/{owner}/{repo}", vars)).default_branch}`;

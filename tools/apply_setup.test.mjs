@@ -216,7 +216,7 @@ function scoped(argv, state, files) {
   const dir = mkdtempSync(path.join(tmpdir(), "setup-"));
   try {
     for (const [name, rows] of Object.entries(files ?? {})) writeFileSync(path.join(dir, name), JSON.stringify({ rows }));
-    const code = main(argv, { run: gh.run, setup: files ? dir : path.join(dir, "none"), root: dir, log: (l) => lines.push(l) });
+    const code = main(argv, { run: gh.run, setup: files ? dir : path.join(dir, "none"), root: dir, log: (l) => lines.push(l), error: (l) => lines.push(l) });
     return { code, lines, rows: lines.map((l) => /^(.{13}) (\S+)/.exec(l)?.slice(1).map((x) => x.trim())).filter(Boolean), ...gh };
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -232,9 +232,13 @@ test("--org reads each file of its folder in name order, fills {org} and {node_i
   assert.equal(got.lines.at(-1), "org acme: 1 changed, 2 same");
 });
 
-test("--user and --enterprise fill their placeholders; a missing folder holds no rows", () => {
+test("--user and --enterprise fill their placeholders, --user only as gh's own account; a missing folder holds no rows", () => {
   const user = { id: "user.node_id", method: "PATCH", path: "user", body: {}, check: { get: "users/{user}", field: "node_id", value: "{node_id}" } };
-  assert.deepEqual(scoped(["--user", "ada"], { "users/ada": { node_id: "U_1" } }, { "a.json": [user] }).rows, [["same", "user.node_id"]]);
+  assert.deepEqual(scoped(["--user", "ada"], { user: { login: "Ada" }, "users/ada": { node_id: "U_1" } }, { "a.json": [user] }).rows, [["same", "user.node_id"]]);
+  for (const [account, said] of [[{ user: { login: "bob" } }, /^--user ada is not bob, the account gh is logged in as\n/], [{}, /^--user needs the account gh is logged in as: .*HTTP 404/]]) {
+    const other = scoped(["--user", "ada", "--apply"], { ...account, "users/ada": { node_id: "U_2" } }, { "a.json": [user] });
+    assert.deepEqual([other.code, other.calls.map((c) => c.args[1]), said.test(other.lines.join("\n"))], [2, ["user"], true], "gh's own account is read first, and nothing else");
+  }
   const ent = { id: "ent.actions", method: "PUT", path: "enterprises/{enterprise}/actions/permissions", body: { enabled_organizations: "all" }, check: { field: "enabled_organizations", value: "all" } };
   assert.deepEqual(scoped(["--enterprise", "bigco"], { "enterprises/bigco/actions/permissions": { enabled_organizations: "all" } }, { "a.json": [ent] }).rows, [["same", "ent.actions"]]);
   const none = scoped(["--org", "acme", "--check"], {}, null);

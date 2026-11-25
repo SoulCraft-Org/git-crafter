@@ -66,14 +66,14 @@ test("a ruleset row: met when an active ruleset holds each rule, else it names w
   assert.equal(state("rules.default_branch", branchSet(held.slice(0, 2), "Organization")).status, "org's rules");
 });
 
-// An active org ruleset on the default branch of the repos `repos` names, holding `rules`.
-const orgSet = (rules, repos = ["~ALL"]) => ({
-  "orgs/acme/rulesets?targets=branch,tag,push&per_page=100": [{ id: 9, target: "branch", enforcement: "active", source_type: "Organization" }],
-  "orgs/acme/rulesets/9": { id: 9, target: "branch", conditions: { ref_name: { include: ["~DEFAULT_BRANCH"], exclude: [] }, repository_name: { include: repos, exclude: [] } }, rules },
+// An active org `target` ruleset on `refs` (the default branch unless named) of the repos `repos` names, holding `rules`.
+const orgSet = (rules, repos = ["~ALL"], target = "branch", refs = ["~DEFAULT_BRANCH"]) => ({
+  "orgs/acme/rulesets?targets=branch,tag,push&per_page=100": [{ id: 9, target, enforcement: "active", source_type: "Organization" }],
+  "orgs/acme/rulesets/9": { id: 9, target, conditions: { ref_name: { include: refs, exclude: [] }, repository_name: { include: repos, exclude: [] } }, rules },
 });
-const scoped = (answers, scope = "org") => {
+const scoped = (answers, scope = "org", row = ROW["rules.default_branch"]) => {
   const c = { ...ctx(answers), vars: { org: "acme" }, scope };
-  return { ...rowState(ROW["rules.default_branch"], c), gets: c.gets };
+  return { ...rowState(row, c), gets: c.gets };
 };
 
 test("under --org a ruleset row reads the org's rulesets, and one counts only when it reaches every repo", () => {
@@ -84,6 +84,9 @@ test("under --org a ruleset row reads the org's rulesets, and one counts only wh
   const some = scoped(orgSet(held, ["widget"]));
   assert.deepEqual([some.status, some.note], ["would change", "no active branch ruleset on every repo's ~DEFAULT_BRANCH holds deletion, non_fast_forward, pull_request"]);
   assert.match(scoped({}, "user").note, /reads a repo or an organization, not a user/);
+  const literal = scoped(orgSet(held), "org", { ...ROW["rules.default_branch"], check: { ruleset: { ...ROW["rules.default_branch"].check.ruleset, ref: "refs/heads/main" } } });
+  assert.deepEqual([literal.status, literal.failed, literal.gets], ["unreadable", true, []], "never read, so --apply never POSTs a duplicate");
+  assert.equal(scoped(orgSet(ROW["rules.release_tags"].body.rules, ["~ALL"], "tag", ["refs/tags/v*"]), "org", ROW["rules.release_tags"]).status, "same", "a tag row keeps its literal ref");
 });
 
 test("reader: one GET per route, null for a 404, and forget makes the next read ask again", () => {

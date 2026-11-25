@@ -8,8 +8,8 @@
 //
 // Paths and bodies fill {owner} and {repo}, {org}, {user} or {enterprise}, and
 // {node_id} (an enterprise's comes from the values file). Under --org a ruleset
-// row reads the organization's rulesets, and one counts only when it reaches
-// every repo.
+// row reads the org's rulesets, counting one only when it reaches every repo, and
+// a branch row names ~DEFAULT_BRANCH. --user must be gh's own account, or exit 2.
 // A dry run by default: each row prints as same, would change, by hand,
 // optional, org's rules, no value or unreadable, and nothing changes.
 // --apply sets each "would change" row, then reads it back: changed or failed;
@@ -31,12 +31,12 @@ export const SETUP = fileURLToPath(new URL("../templates/setup.json", import.met
 const SETUP_DIR = fileURLToPath(new URL("../templates/setup/", import.meta.url));
 const USAGE = "usage: node tools/apply_setup.mjs --repo owner/name | --org name | --user login | --enterprise slug [--values file.json] [--only id,id] [--apply] [--check]";
 
-// Each scope: the shape of its name, the placeholders it fills, and the route that holds its node_id.
+// Each scope: the shape of its name, the placeholders it fills, the route that holds its node_id, and any problem to read before a run.
 const LOGIN = /^[A-Za-z0-9][A-Za-z0-9-]*$/;
 const SCOPES = {
   repo: { shape: /^[\w.-]+\/[\w.-]+$/, spelled: "owner/name", vars: (n) => ({ owner: n.split("/")[0], repo: n.split("/")[1] }), node: "repos/{owner}/{repo}" },
   org: { shape: LOGIN, spelled: "an organization login", vars: (org) => ({ org }), node: "orgs/{org}" },
-  user: { shape: LOGIN, spelled: "a user login", vars: (user) => ({ user }), node: "users/{user}" },
+  user: { shape: LOGIN, spelled: "a user login", vars: (user) => ({ user }), node: "users/{user}", problem: accountProblem },
   enterprise: { shape: LOGIN, spelled: "an enterprise slug", vars: (enterprise) => ({ enterprise }) },
 };
 
@@ -122,6 +122,16 @@ function problemOf(loaded, rows, only) {
   return missing(loaded.optionalOn).length ? `optional_on names no such row: ${missing(loaded.optionalOn).join(", ")}` : null;
 }
 
+// The --user problem: none only when gh is logged in as that user (in any case), since PATCH user writes to gh's own account.
+function accountProblem(run, opts) {
+  try {
+    const { login } = JSON.parse(run(["api", "user"]));
+    return login?.toLowerCase() === opts.user.toLowerCase() ? null : `--user ${opts.user} is not ${login}, the account gh is logged in as`;
+  } catch (err) {
+    return `--user needs the account gh is logged in as: ${err.message}`;
+  }
+}
+
 // Each row's result in order; under --apply a would-change row is set (only those named by --only), and after the first failed write the rest read skipped.
 function resultsOf(rows, ctx, opts, only) {
   const results = [];
@@ -150,7 +160,7 @@ export function main(argv = process.argv.slice(2), { run = ghRunner(), setup, ro
   const loaded = opts.problem ? opts : loadValues(opts.values, root);
   const rows = opts.problem ? [] : loadRows(setup ?? (opts.scope === "repo" ? SETUP : join(SETUP_DIR, opts.scope)));
   const only = opts.only ? new Set(opts.only.split(",")) : null;
-  const problem = problemOf(loaded, rows, only);
+  const problem = problemOf(loaded, rows, only) ?? SCOPES[opts.scope].problem?.(run, opts);
   if (problem) {
     error(`${problem}
 ${USAGE}`);
