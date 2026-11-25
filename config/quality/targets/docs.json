@@ -54,6 +54,10 @@
     {
      "glob": "templates/agents/CLAUDE.md",
      "why": "the CLAUDE.md an adopter copies, read by Claude Code, not a doc read in this repo"
+    },
+    {
+     "glob": "templates/projects/instructions.md",
+     "why": "the instructions an adopter pastes into a Claude Project, read by its threads, not a doc read in this repo"
     }
    ],
    "text_only_below": 50,

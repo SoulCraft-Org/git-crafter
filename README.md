@@ -30,6 +30,7 @@ Both pages are public.
 | Optional | Community files | [open](templates/open/README.md) |
 | Optional | Switches | [setup.json](templates/setup.json) with `tools/apply_setup.mjs` |
 | Optional | Agent files | [agents](templates/agents/README.md) |
+| Optional | Claude Projects setup | [projects](templates/projects/README.md) |
 | Optional | CI pool | [CI-POOL.md](templates/ci/CI-POOL.md) |
 
 ## The 13 tabs
@@ -90,7 +91,7 @@ Each map's steps: [pages/maps](pages/maps/README.md).
 | `quality/` | The Quality engine and collectors ([README](quality/README.md)) |
 | `rules/` | Rules for Claude sessions |
 | `skills/` | The `merging` skill |
-| `templates/` | Starters: `quality/`, `process/`, `ci/`, `open/`, `setup.json`, `agents/` |
+| `templates/` | Starters: `quality/`, `process/`, `ci/`, `open/`, `setup.json`, `agents/`, `projects/` |
 | `tests/` | Page and verify tests |
 | `tools/` | Guards, lints, sync, org collector |
 | `wiki/` | Wiki pages, published on merge |

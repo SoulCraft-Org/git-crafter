@@ -22,6 +22,7 @@ flowchart LR
 | A file another repo needs | a copy there, first lines naming its path and SHA | that repo's CI |
 | Collector | `quality/collectors/<collector>/`, helpers in `quality/collectors/lib/`, goals in `quality/targets/` | the `*.test.mjs` beside it |
 | Adopter starter | `templates/quality/`, `templates/process/`, `templates/ci/`, `templates/open/` | `tests/pages-build.test.mjs` |
+| Claude Projects starter | `templates/projects/` | `voice_lint.py` in `tools/verify.sh`, `tests/pages-docs.test.mjs` |
 
 Other repos send changes by PR too, and keep only [their config and overrides](quality/CONFIG.md).
 
