@@ -31,6 +31,7 @@ xychart-beta
 | Master score out of 100 = the mean of Quality, Speed and Consumption, a third each | `master()` in `render/model.mjs` |
 | A tab = the mean of its three categories | `master()` |
 | Work queue = every metric near or missing its goal, ranked by the master points it adds | `workQueue()` in `render/model.mjs` |
+| In Actions, `build.mjs` writes the master, category and tab scores to the job summary and prints one `::notice`, which `gh api repos/<repo>/check-runs/<id>/annotations` reads without downloading the page | `publishScores()` in `summary.mjs` |
 
 ## Gates
 
