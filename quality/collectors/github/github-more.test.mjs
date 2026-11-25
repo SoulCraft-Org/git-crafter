@@ -711,29 +711,34 @@ describe("the template's pr_body_ignore", () => {
   });
 });
 
-// Git Crafter's Claude security review (#191): pinned, on a subscription token, and a clean skip without it.
+// Git Crafter's Claude security review (#191): keyless through workload identity, pinned, same-repo only.
 describe("Git Crafter's optional claude-review.yml template", () => {
-  it("pins claude-code-action, takes only the OAuth token, and skips without the secret", async () => {
+  it("is keyless: federation ids only on the review step, no API key, token fetched after the install", async () => {
     const { default: YAML } = await import("yaml");
-    const file = path.join(HERE, "..", "..", "..", "templates", "ci", "claude-review.yml");
-    let text = null;
-    try {
-      text = readFileSync(file, "utf8");
-    } catch {
-      text = null;
-    }
-    assert.ok(text, "Git Crafter has templates/ci/claude-review.yml");
+    const dir = path.join(HERE, "..", "..", "..", "templates", "ci");
+    const text = readFileSync(path.join(dir, "claude-review.yml"), "utf8");
     const doc = YAML.parse(text);
-    const steps = Object.values(doc.jobs).flatMap((j) => j.steps ?? []);
-    const claude = steps.filter((s) => String(s.uses ?? "").startsWith("anthropics/claude-code-action@"));
-    assert.equal(claude.length, 1, "one claude-code-action step");
-    assert.match(claude[0].uses, /@[0-9a-f]{40}$/, "pinned to a full commit SHA");
-    assert.equal(claude[0].with.claude_code_oauth_token, "${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}");
-    assert.ok(!("anthropic_api_key" in claude[0].with), "never an API key, which bills per use");
-    assert.equal(claude[0].if, "env.HAS_TOKEN == 'true'", "runs only when the secret is set");
-    assert.ok(steps.some((s) => s.if === "env.HAS_TOKEN != 'true'"), "a step names the skip");
-    assert.match(claude[0].with.prompt, /^Security review:/m, "the comment's first line the metric counts");
+    const job = Object.values(doc.jobs)[0];
+    const steps = job.steps;
     assert.deepEqual(Object.keys(doc.on), ["pull_request"], "never pull_request_target, which runs with secrets for code from outside");
+    assert.equal(job.permissions["id-token"], "write", "the OIDC token is the credential");
+    assert.ok(!job.env, "no job-level env: the secrets reach one step only");
+    assert.ok(!/ANTHROPIC_API_KEY\s*:|anthropic_api_key|CLAUDE_CODE_OAUTH_TOKEN|claude-code-action/.test(text.replace(/^#.*$/gm, "")), "no static key, OAuth token or action outside comments");
+    for (const s of steps.filter((x) => x.uses)) assert.match(s.uses, /@[0-9a-f]{40}$/, `${s.uses} is pinned to a full commit SHA`);
+    const install = steps.findIndex((x) => /pip install/.test(x.run ?? ""));
+    const fetch = steps.findIndex((x) => /ACTIONS_ID_TOKEN_REQUEST_URL/.test(x.run ?? ""));
+    const review = steps.findIndex((x) => /tools\/claude_review\.py/.test(x.run ?? ""));
+    assert.ok(install >= 0 && fetch > install && review > fetch, "install, then the token fetch, then the review");
+    assert.deepEqual(Object.keys(steps[review].env).filter((k) => k.startsWith("ANTHROPIC_")).sort(), ["ANTHROPIC_FEDERATION_RULE_ID", "ANTHROPIC_ORGANIZATION_ID", "ANTHROPIC_SERVICE_ACCOUNT_ID"]);
+    assert.match(job.if, /head\.repo\.full_name == github\.repository/, "same-repo pull requests only");
+  });
+
+  it("ships a script that posts only a finished reply starting 'Security review:'", () => {
+    const dir = path.join(HERE, "..", "..", "..", "templates", "ci");
+    const py = readFileSync(path.join(dir, "claude_review.py"), "utf8");
+    assert.match(py, /Security review:/, "the first line the metric counts");
+    assert.match(py, /stop_reason != "end_turn"/, "a cut reply is never posted");
+    assert.match(readFileSync(path.join(dir, "requirements-claude-review.txt"), "utf8"), /^anthropic==\d+\.\d+\.\d+$/m, "the client is pinned");
   });
 
   it("scores claude_review_share on the same paths the workflow reviews", async () => {

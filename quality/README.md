@@ -30,7 +30,7 @@ flowchart LR
 The call, with this repo's Quality config as the example:
 
 ```yaml
-- uses: SoulCraft-Org/git-crafter/actions/pages@<full sha> # v7.0.0
+- uses: SoulCraft-Org/git-crafter/actions/pages@<full sha> # v7.2.0
   with:
     pages: quality            # or: process quality
     quality-config: config/quality.json

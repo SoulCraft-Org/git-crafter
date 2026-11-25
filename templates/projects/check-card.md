@@ -1,33 +1,42 @@
 # Setup check result card
 
-Part of the [Projects setup](README.md). The setup check answers pass or fail per line. This card records the answer, so a later thread reads what the project had on a given day.
+Part of the [Projects setup](README.md). The setup check answers pass or fail per line. This card records the answer, so a later thread reads what the project had on a given day. The [readiness scorecard](scorecard.md) rolls every repo's card into one row.
 
 ```mermaid
 flowchart LR
   C[Setup check] --> S[Smoke test]
-  S --> K[This card]
+  S --> K[This card: 11 lines a repo]
   K -->|fail| I[One issue per cause]
-  K -->|pass| N[Threads start]
+  K -->|pass| R[Scorecard row: ready]
+  R --> G[Scrub gate]
+  G --> N[Threads start]
 ```
 
 ## The card
 
-Copy the table into the first thread's result file or a pull request. One row per line of the check.
+Copy the table into the first thread's result file or a pull request. One row per line of the check, and the same 11 lines for every repo.
 
-| Area | Line | Result | What I saw | Read (UTC) | Source |
+| # | Line | Result | What I saw | Read (UTC) | Source |
 |---|---|---|---|---|---|
-| Repos | `<repo>`: `CLAUDE.md` and `AGENTS.md` loaded | ✔ or ✖ | `<what the thread's context showed>` | `<time>` | `<where>` |
-| Repos | `<repo>`: push access | ✔ or ✖ | `<dry-run result>` | `<time>` | `<where>` |
-| Environment | `<name>`: network, setup script, variable names | ✔ or ✖ | `<names only>` | `<time>` | `<where>` |
-| Connectors | `<n>` connected, `<n>` unfinished | ✔ or ✖ | `<names>` | `<time>` | `<where>` |
-| GitHub | `<repo>`: rulesets, merge settings | ✔ or ✖ | `<count and rule names>` | `<time>` | `<API path>` |
-| Scores | `<page>`: master score | ✔ or ✖ | `<score and build time>` | `<time>` | `<page URL>` |
+| 1 | `<repo>`: Claude GitHub App installed | ✔ or ✖ | `<installation listed>` | `<time>` | `<repo settings>` |
+| 2 | `<repo>`: attached to the project | ✔ or ✖ | `<project name>` | `<time>` | `<Project settings>` |
+| 3 | `<repo>`: `CLAUDE.md` or `AGENTS.md` read | ✔ or ✖ | `<what the thread's context showed>` | `<time>` | `<thread>` |
+| 4 | `<repo>`: push access | ✔ or ✖ | `<dry-run result>` | `<time>` | `<thread>` |
+| 5 | Environment `<name>`: network access set | ✔ or ✖ | `<access level>` | `<time>` | `<Project settings>` |
+| 6 | Setup script empty, or proven by a smoke test | ✔ or ✖ | `<empty, or the gap it fixes>` | `<time>` | `<Project settings>` |
+| 7 | Each expected key is a network secret | ✔ or ✖ | `<key names only>` | `<time>` | `<Project settings>` |
+| 8 | Connectors: none unfinished | ✔ or ✖ | `<n connected, n unfinished>` | `<time>` | `<thread>` |
+| 9 | `<repo>`: default branch requires a pull request and `ci / ci-ok` | ✔ or ✖ | `<ruleset names>` | `<time>` | `<API path>` |
+| 10 | `<repo>`: master score read | ✔ or ✖ | `<score and build time>` | `<time>` | `<page URL>` |
+| 11 | `<repo>`: scrub gate clean | ✔ or ✖ | `<exit code of each scan>` | `<time>` | `<command>` |
 
 | Total | Count |
 |---|---|
 | ✔ pass | `<n>` |
 | ✖ fail | `<n>` |
 | All lines | `<n>` |
+
+Lines 5 to 8 belong to the project, not a repo: read them once. A thread reads lines 1 to 8. The orchestrator reads lines 9 to 11, which need the repo's settings, its page and its tree.
 
 ## Rules
 
