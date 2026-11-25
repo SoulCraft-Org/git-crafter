@@ -23,3 +23,7 @@ Paste this file into the project's Instructions field. Fill each `<...>` cell, t
 | Keys | Never print, copy or commit a key value |
 | Write | Tables and diagrams first. One idea per sentence. No em dashes |
 | `<org>` | `<one rule for how a new repo in this org starts, such as "a new repo starts as a row in <org>/<repo>/repos.toml">` |
+
+| Optional | Do |
+|---|---|
+| Merge | Add only when the owner wants threads to merge. It replaces "never merge" in the Ship row. After a fresh review of the head, post `Review: MERGE at <sha>`, then merge that commit over REST: `gh api -X PUT repos/<owner>/<repo>/pulls/<n>/merge -f sha=<sha> -f merge_method=squash`. Never `--auto` or `--admin`. The rule: Git Crafter `skills/merging/SKILL.md` |
