@@ -2,6 +2,7 @@
 name: general-purpose
 description: General-purpose agent for researching questions, searching code and running multi-step tasks in this repo. Replaces the built-in one with a short tool list, so each run starts with a small context. Use it for any delegated work that needs to read, edit or run commands.
 tools: Bash, Read, Edit, Write, Grep, Glob, WebFetch, WebSearch
+model: sonnet
 disallowedTools: mcp__ccd_turn__update_plan, mcp__ccd_turn__wrap_up
 ---
 
