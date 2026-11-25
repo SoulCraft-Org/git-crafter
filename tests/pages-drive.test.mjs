@@ -46,6 +46,13 @@ test("a read that fails ends its own job only, and the error reaches that job", 
   assert.equal(drive(gh, [job("a", 1), tolerant()])[1].value, "retry");
 });
 
+test("a batch that fails as a whole fails each job in it, and the others still finish", () => {
+  const gh = { many: () => { throw new Error("runMany: spawn failed"); }, graphql: (q) => q };
+  const out = drive(gh, [job("a", 1), job("b", 1)]);
+  assert.deepEqual(out.map((r) => r.error?.message), ["runMany: spawn failed", "runMany: spawn failed"]);
+  assert.equal(drive(gh, [job("c", 1)])[0].value, "c0", "a lone read does not use the batch");
+});
+
 test("a rest read answers one value per path, and a number waits once for every job", () => {
   const waits = [];
   const gh = { many: (units) => units.map((u) => ({ value: u.rest })) };
