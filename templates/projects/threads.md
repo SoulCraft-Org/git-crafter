@@ -41,7 +41,7 @@ Seen 2026-11-25 in a project setup run. Check against the current docs before re
 | Limit | Do |
 |---|---|
 | A repo added to a running thread holds the thread's next message until the owner confirms trust | Attach the repo before the thread starts |
-| The cloud image has `pytest` and the package managers, not the repo's own test requirements, which CI installs | In a smoke test, install them first or mark the row CI-only |
+| The cloud image lacks the repo's own test requirements, which CI installs | In a smoke test, install them first or mark the row CI-only |
 
 ## Scoring
 
