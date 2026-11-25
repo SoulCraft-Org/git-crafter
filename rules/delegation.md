@@ -32,7 +32,7 @@ wholesale, or turn on GitHub auto-merge.
 
 | The owner | does not review PRs. |
 |---|---|
-| A worker | stops at an open PR; only the orchestrator reviews and merges, after loading the `merging` skill. |
+| A thread | reviews, corrects and merges its own PR, after loading the `merging` skill. ([detail](delegation-detail.md)) |
 | A subagent brief | says: "You are a subagent: never call update_plan or wrap_up." |
 
 ## Owner's queue
@@ -41,7 +41,7 @@ Claude runs every command and setting.
 
 | These always wait for the owner; only they reach the owner: | Covers |
 |---|---|
-| Questions | an important product, strategy or billing question (purchases, plans, paid compute, top-ups). |
+| Questions | a billing question (purchases, plans, paid compute, top-ups), a vision question or a critical website decision. |
 | Human steps | A password, passkey or sign-in (keys: `rules/keys-detail.md`); sending as the owner; a payment or billing change; the macOS admin password dialog. Each admin password covers one named change, after the owner's yes in chat: Claude holds no standing admin rights (the owner, 2026-11-07). Each is one click or button, never a typed command. |
 
 Workers send each item to the orchestrator; only it asks the owner, in its chat. A block with no fix goes to the orchestrator, which fixes the

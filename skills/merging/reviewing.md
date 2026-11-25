@@ -5,8 +5,9 @@ Part of the [`merging`](SKILL.md) skill, with its authority and precedence.
 Every review is a subagent with a fresh context from Anthropic's
 `pr-review-toolkit` plugin (claude-plugins-official), with the Agent call's
 `model` set by the table below. When several pull requests are ready, the
-orchestrator starts one reviewer per pull request, all in one message, and
-never reads the diffs itself.
+merging session (a thread for its own PR, or an orchestrator for its workers')
+starts one reviewer per pull request, all in one message, and never reads the
+diffs itself.
 
 | The change | Reviewer |
 |---|---|
@@ -18,7 +19,7 @@ never reads the diffs itself.
 | Brief | Names the pull request and its 40-hex head SHA, and says: "You are a subagent: never call update_plan or wrap_up. Read with `gh pr diff N` and `gh pr checks N`; never check out a branch, run tests or builds, or merge, approve or comment." |
 | Dates | The brief adds: "Cloud workers date in UTC, so a date one day ahead of the Mac's is not a finding" (#487). |
 | Reply | The brief asks for at most 120 words: `MERGE <sha>` or `BLOCK <sha>`, then each fix as location, problem, replacement. |
-| Verdict | The orchestrator, not the reviewer, posts the `Review: MERGE at <sha>` line ([Who merges](SKILL.md#who-merges)). |
+| Verdict | The merging session, not the reviewer, posts the `Review: MERGE at <sha>` line ([Who merges](SKILL.md#who-merges)). |
 | Passes | A reviewer works in two passes, mechanical then judgment. Two real problems beat ten vague ones. |
 | A fix after a passed review | needs only its delta from the reviewed SHA reviewed, at the row its files fall in. |
 
