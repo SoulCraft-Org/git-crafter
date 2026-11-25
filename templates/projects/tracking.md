@@ -16,7 +16,7 @@ flowchart LR
 | Work | Record | State when done | Template |
 |---|---|---|---|
 | Bug, quick fix or error | Issue | Closed as completed by the pull request | `.github/ISSUE_TEMPLATE/fix.yml` or `bug.yml` |
-| Feature or improvement | Draft card on the org project. A thread that cannot reach the board files an issue typed Feature with the `enhancement` label, and the board's auto-add cards it | Status Done | The org project's card fields |
+| Feature or improvement | Draft card on the org project. A thread that cannot reach the board files an issue typed Feature with the `enhancement` label. The board's auto-add cards it | Status Done | The org project's card fields |
 | Idea not yet planned | Card, status Todo | Stays on the board | The same card |
 
 ## Rules
