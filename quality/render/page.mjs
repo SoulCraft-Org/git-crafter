@@ -10,27 +10,7 @@
 import { existsSync, readFileSync } from "node:fs";
 
 import { DEFAULT_TABS, isMeasured, KIND_LIST, mergeMetrics, newestReviews, scoreTab } from "../score.mjs";
-import {
-  bars,
-  bullet,
-  esc,
-  finite,
-  fmt,
-  fmtCompact,
-  funnel,
-  glyph,
-  labelFirst,
-  meter,
-  miniMassif,
-  range,
-  scoreStatus,
-  scrollBox,
-  spark,
-  stack,
-  STATUS_WORD,
-  statusCounts,
-  statusStack,
-} from "./charts.mjs";
+import { bars, bullet, esc, finite, fmt, fmtCompact, funnel, glyph, labelFirst, meter, miniMassif, range, scoreStatus, scrollBox, spark, stack, STATUS_WORD, statusCounts, statusStack } from "./charts.mjs";
 import { icon, iconId, shortName, SPRITE } from "./icons.mjs";
 import { ledger } from "./ledger.mjs";
 import { reviewBlock } from "./review.mjs";
@@ -132,6 +112,19 @@ export function levelSwitch(level = "repo", links = {}) {
 
 // A page built from sample files, not a live read, says so beside its title.
 export const sampleBadge = (sample) => (sample ? `<p class="sample"><strong>Sample data</strong> <span>These scores come from sample files, not a live read.</span></p>` : "");
+
+// The page header: the level switcher, the title, the sample badge, the commit and build time, and the status key.
+function pageHeader(meta, total) {
+  const commit = !meta.commit ? "unknown" : REPO ? `<a href="${esc(REPO)}/commit/${esc(meta.commit)}">${esc(meta.commit.slice(0, 7))}</a>` : esc(meta.commit.slice(0, 7));
+  const legend = ["meets", "near", "misses", "not-measured", ...(total.master.metricsNotApplicable ? ["not-applicable"] : [])].map((s) => `<li>${glyph(s, "")}${STATUS_WORD[s]}</li>`).join("");
+  return `<header class="top">
+${levelSwitch(meta.level, meta.levels)}
+<h1>Quality, Speed and Consumption</h1>
+${sampleBadge(meta.sample)}
+<p class="meta"><span>commit ${commit}</span><span>built ${esc(meta.builtAt ?? "")}</span></p>
+<ul class="key" aria-label="Status key">${legend}</ul>
+</header>`;
+}
 
 // ---- Metric rows --------------------------------------------------------------
 
@@ -378,8 +371,6 @@ export function render({ defs, dropped = [], metrics, reviews = {}, reviewHistor
     return { date, scores: Object.fromEntries(tabs.map(([tab]) => [tab, scoreTab(tab, defs, mergeMetrics(h), then)])) };
   });
   const total = overall(results);
-  const commit = !meta.commit ? "unknown" : REPO ? `<a href="${esc(REPO)}/commit/${esc(meta.commit)}">${esc(meta.commit.slice(0, 7))}</a>` : esc(meta.commit.slice(0, 7));
-  const legend = ["meets", "near", "misses", "not-measured", ...(total.master.metricsNotApplicable ? ["not-applicable"] : [])].map((s) => `<li>${glyph(s, "")}${STATUS_WORD[s]}</li>`).join("");
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -397,13 +388,7 @@ ${PAGE_CSS}
 </head>
 <body${REPO ? ` data-repo="${esc(REPO)}"` : ""}>
 ${SPRITE}
-<header class="top">
-${levelSwitch(meta.level, meta.levels)}
-<h1>Quality, Speed and Consumption</h1>
-${sampleBadge(meta.sample)}
-<p class="meta"><span>commit ${commit}</span><span>built ${esc(meta.builtAt ?? "")}</span></p>
-<ul class="key" aria-label="Status key">${legend}</ul>
-</header>
+${pageHeader(meta, total)}
 ${nav(results, total)}
 <main>
 ${overview(results, total, dropped)}
