@@ -2,7 +2,7 @@
 // Refuses another base (a stacked pull request merged into its parent, 2026-11-23), a moved head, a draft, a conflict, no checks, a failed latest run.
 // Pending checks, or mergeable UNKNOWN past --wait, exit 3; --check writes nothing; --followups is the verdict's line 2.
 // After the verdict it sets the `review` status on --sha, which the ruleset requires, then runs --squash --auto --match-head-commit, never --admin.
-// --auto merges a clean pull request at once (gh pr/merge/merge.go, isImmediatelyMergeable) and queues a blocked one. Exit 0 merged (or ready), 1 refused, 2 usage, 3 not yet.
+// --auto merges a clean pull request at once (gh pr/merge/merge.go, isImmediatelyMergeable) and queues a blocked one. Exit 0 merge sent (merged now, or queued until the checks pass; --check: ready), 1 refused, 2 usage, 3 not yet.
 
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
