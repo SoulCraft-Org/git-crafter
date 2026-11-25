@@ -31,6 +31,7 @@ Optional, to `<repo>/.github/workflows/` unless noted:
 | [wiki.yml](wiki.yml) | publishing `wiki/` ([setup](../open/README.md#settings)) |
 | [scorecard.yml](scorecard.yml) | an advisory Scorecard, public repos only |
 | [claude-review.yml](claude-review.yml) | advisory, keyless Claude security review of each PR |
+| [doc-reread.yml](doc-reread.yml) | a weekly doc re-read, keyless. Off until `DOC_REREAD` is on |
 | [deploy-gate.yml](deploy-gate.yml) | a deploy branch's soak, with `tools/deploy_gate.sh` |
 | [ci-pool.yml](ci-pool.yml), [ci-pool-app.json](ci-pool-app.json) | the org's pool meter, to `<org>/.github` once ([CI-POOL.md](CI-POOL.md)) |
 
@@ -43,7 +44,7 @@ Optional, to `<repo>/.github/workflows/` unless noted:
 | `standard` | `ubuntu-latest` | The `standard` commands, when the change touched `standard-paths` (default `paths`) |
 | `ci-ok` | `ubuntu-slim` | Fails on a failed job, a failed check, or work skipped although its paths changed |
 
-GitHub's runner pricing (read 2026-11-03): $0.002 a minute on 1 core, $0.006 on 2 ([source](https://docs.github.com/en/billing/reference/actions-runner-pricing)).
+Runner pricing, read 2026-11-03: [$0.002 a minute on 1 core, $0.006 on 2](https://docs.github.com/en/billing/reference/actions-runner-pricing).
 
 ## Rules
 
