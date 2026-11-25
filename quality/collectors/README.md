@@ -16,7 +16,7 @@ flowchart LR
 | Repo values | only from `params`: owner and repo, paths, URLs, project folders, the template's as defaults for tests and a bare call. Never the repo's targets folder |
 | Returns | `{ [id]: { value, detail?: [{ label, value, unit? }], source, read_at } }`, or `{ [id]: { could_not_check or not_applicable, source } }` |
 | Never | throws for a missing tool, token or file, or scores a miss as 0. No org name, person's name or home path: those go in `params` |
-| Private membership | `pull_requests.reviewed` and `pull_requests.fixed_after_review` count `Review: MERGE\|BLOCK` comments from members only. To a token outside the org, a private member reads as non-member; when any verdict reads so, each is `could_not_check`, never 0. Fix: a public membership, or a token in the org |
+| Private membership | `pull_requests.reviewed` and `pull_requests.fixed_after_review` count `Review: MERGE\|BLOCK` comments from members only. To a token outside the org, a private member reads as non-member; when any verdict reads so, each is `could_not_check`, never 0. Fix: a public membership or an org token |
 | Basis | A state read now, the latest event, or the last N events where new work replaces old within hours; never a calendar window or projection. `source` says which, with N and why |
 | Stale input | A metric read from a build output older than its source is not measured |
 | Failure | Throwing or failing to import marks every metric in its targets file `could_not_check` |
@@ -31,7 +31,7 @@ flowchart LR
 | `root` | the repo measured, absolute. Never Git Crafter's checkout: resolve nothing in the repo from `import.meta.url` |
 | `mode` | `ci` or `local` |
 | `level`, `owner` | the config's: a level its `scope` names, and the account measured |
-| `data` | the config's `data` folder, absolute, for files a session writes |
+| `data` | the repo's data folder (config `data`), absolute, for files a session writes |
 | `params` | always an object: its targets file's `params`, the template's, then the repo's override key by key |
 | `targets` | that file's active entries |
 | `allParams` | each targets file's merged `params` by file name (`allParams["docs.json"]`): another tab's setting, never a copy that drifts |
