@@ -5,7 +5,7 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSy
 import { tmpdir } from "node:os";
 import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { firstLine, inArea, measured, readJson, top, unknownAll, walkAll } from "./code-util.mjs";
+import { areaOf, firstLine, inArea, measured, readJson, top, unknownAll, walkAll } from "./code-util.mjs";
 import { COVERAGE_PACKAGE } from "./code-test.mjs";
 
 // ---- Quality: dead code ----
@@ -50,7 +50,7 @@ function runDirectly(root, workspaces) {
   for (const abs of walkAll(root)) {
     if (!/\.[cm]?[jt]s$/.test(abs) || !RUN_DIRECTLY.test(readFileSync(abs, "utf8").slice(0, 4000))) continue;
     const path = relative(root, abs).split(sep).join("/");
-    const ws = workspaces.filter((w) => w === "." || path.startsWith(w + "/")).sort((a, b) => b.length - a.length)[0];
+    const ws = areaOf(path, workspaces);
     entries[ws].push(ws === "." ? path : path.slice(ws.length + 1));
   }
   return entries;
