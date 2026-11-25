@@ -49,6 +49,25 @@ describe("collect", () => {
     assert.match(got.read_at, /^\d{4}-\d{2}-\d{2}T/);
   });
 
+  it("scores a fork from its own tree where GitHub answers 404 for its profile", async () => {
+    const { [`repos/${REPO}/community/profile`]: _gone, ...rest } = REST;
+    const entry = (name) => ({ name });
+    const fork = {
+      ...rest,
+      [`repos/${REPO}`]: { fork: true, description: "A fork" },
+      [`repos/${REPO}/contents`]: [entry("README.md"), entry("LICENSE"), entry("src")],
+      [`repos/${REPO}/contents/docs`]: [entry("CONTRIBUTING.md")],
+      [`repos/${REPO}/contents/.github`]: [entry("PULL_REQUEST_TEMPLATE.md")],
+    };
+    const got = (await collectWith({ gh: fakeGh(fork) }))["insights.community_health_pct"];
+    assert.equal(got.value, 83);
+    assert.deepEqual(got.detail.map((d) => [d.label, d.value]), [["Description", 1], ["README", 1], ["License", 1], ["Contributing guide", 1], ["Code of conduct", 0], ["Pull request template", 1]]);
+    assert.match(got.source, /fork/);
+    // A repo that is not a fork keeps the 404 as a could_not_check, never a score.
+    const plain = { ...rest, [`repos/${REPO}`]: { fork: false, description: "x" } };
+    assert.ok((await collectWith({ gh: fakeGh(plain) }))["insights.community_health_pct"].could_not_check);
+  });
+
   it("counts a branch as leftover once its pull request closed, or after a day with none", async () => {
     // merged-b and closed-c had pull requests; never-d and gh-pages are over a day old with none.
     // main, feature-a (open pull request) and fresh-e (pushed 4 hours ago) do not count.
