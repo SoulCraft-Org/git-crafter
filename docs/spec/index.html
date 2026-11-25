@@ -25,6 +25,7 @@ th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);verti
 th{color:var(--mut);font-weight:600}
 tr:last-child td{border-bottom:0}
 .ok{color:var(--ok)} .warn{color:var(--warn)}
+.scroll{overflow-x:auto}
 svg{width:100%;height:auto;display:block}
 svg text{fill:var(--fg);font:13px system-ui,sans-serif}
 svg .b{fill:var(--card);stroke:var(--line)}
@@ -37,7 +38,7 @@ a{color:var(--acc)}
 <body>
 <main>
 <h1>Git Crafter spec</h1>
-<p class="sub">One page: what this repo is for, how it works, where it stands, and the one decision that is the owner's. <span class="pill">Draft</span><span class="pill">Read 2026-11-25</span></p>
+<p class="sub">One page: what this repo is for, how it works, where it stands, and what the owner decided. <span class="pill">Decided</span><span class="pill">Read 2026-11-25</span></p>
 
 <h2>Purpose</h2>
 <p>Git Crafter holds the rules, templates and guards for repos that AI agents run (AGENTS.md, read 2026-11-25). It is built for Claude Code and OpenCode, on open-source or open-weight repos (README.md, read 2026-11-25).</p>
@@ -53,14 +54,14 @@ a{color:var(--acc)}
 </table>
 
 <h2>How it works</h2>
-<svg viewBox="0 0 820 120" role="img" aria-label="Copy starters, pin the SHA, CI builds and scores, a miss becomes an issue, a pull request fixes it">
+<div class="scroll"><svg style="min-width:640px" viewBox="0 0 820 120" role="img" aria-label="Copy starters, pin the SHA, CI builds and scores, a miss becomes an issue, a pull request fixes it">
 <rect class="b" x="6" y="30" width="136" height="56" rx="8"/><text x="74" y="62" text-anchor="middle">Copy starters</text>
 <rect class="b" x="170" y="30" width="136" height="56" rx="8"/><text x="238" y="62" text-anchor="middle">Pin the SHA</text>
 <rect class="b" x="334" y="30" width="136" height="56" rx="8"/><text x="402" y="55" text-anchor="middle">CI builds</text><text x="402" y="72" text-anchor="middle">and scores</text>
 <rect class="b" x="498" y="30" width="150" height="56" rx="8"/><text x="573" y="55" text-anchor="middle">A miss becomes</text><text x="573" y="72" text-anchor="middle">an issue or card</text>
 <rect class="b" x="676" y="30" width="136" height="56" rx="8"/><text x="744" y="55" text-anchor="middle">A pull request</text><text x="744" y="72" text-anchor="middle">fixes it</text>
 <path class="a" d="M142 58H170M306 58H334M470 58H498M648 58H676"/>
-</svg>
+</svg></div>
 <p>Dependabot then moves each adopter's pin to the newest tag (CONTRIBUTING.md, Releases, read 2026-11-25). The engine lives in <code>quality/</code> and <code>pages/</code>; a repo keeps only its config and overrides (quality/README.md).</p>
 
 <h2>What is in scope</h2>
@@ -94,14 +95,15 @@ a{color:var(--acc)}
 </table>
 <p class="src">Issue numbers and titles: GitHub REST issues list, read 2026-11-25. Row 1 counts titles with a D, E, F or V number prefix.</p>
 
-<h2 id="question">The owner's decision</h2>
+<h2 id="question">The owner's decision, made 2026-11-25</h2>
 <div class="card q">
-<p><b style="font-size:1.05rem;color:inherit">Who is Git Crafter built for first?</b></p>
+<p><b style="font-size:1.05rem;color:inherit">Git Crafter is built for adopters first.</b></p>
+<p>The product is the repo-level core: Quality page, Process page, CI standard and starters. Org, user and enterprise levels become optional packs or leave for a private overlay.</p>
 <table>
-<tr><th>Option</th><th>What it means</th></tr>
-<tr><td>A. Adopters first <span class="ok">(recommended)</span></td><td>The product is the repo-level core: Quality page, Process page, CI standard and starters. Org, user and enterprise levels become optional packs or leave for a private overlay.</td></tr>
-<tr><td>B. The owner's whole stack</td><td>One repo runs every level for the owner's accounts and orgs, and adopters take what they need. Today's course.</td></tr>
-<tr><td>C. Split in two</td><td>The engine and templates stay here. Rules and guards for Claude sessions move to their own repo.</td></tr>
+<tr><th>Option</th><th>Result</th></tr>
+<tr><td>A. Adopters first <span class="ok">(chosen)</span></td><td>The repo-level core is the product.</td></tr>
+<tr><td>B. The owner's whole stack</td><td>Not chosen. Today's course changes.</td></tr>
+<tr><td>C. Split in two</td><td>Not chosen.</td></tr>
 </table>
 <p>Why A: the README and AGENTS.md describe starters for any repo, while 35 of 98 open issues build levels for one owner's accounts.</p>
 </div>
@@ -115,6 +117,7 @@ a{color:var(--acc)}
 <tr><td>Org names go in <code>config/&lt;org&gt;.json</code>, never a template file</td><td>CONTRIBUTING.md</td></tr>
 <tr><td>Public history is not rewritten</td><td>Issue 600</td></tr>
 <tr><td>Aim: quality, speed, few tokens</td><td>goals.json, 2026-11-02</td></tr>
+<tr><td>Adopters first: the repo-level core is the product</td><td>The owner, 2026-11-25</td></tr>
 </table>
 </main>
 </body>
