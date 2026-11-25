@@ -59,13 +59,56 @@
     history.replaceState(null, "", t ? `#${t}` : location.pathname);
   };
 
-  // Each map shows its open step's panel, trail link and step button.
+  // The step before (by -1) or after (by 1) a map's step, skipping steps the lane filter dims; null at either end.
+  const stepFrom = (m, from, by) => {
+    const bar = $$(".stepbar button", m);
+    for (let i = bar.findIndex((b) => b.dataset.step === from) + by; i >= 0 && i < bar.length; i += by) if (!bar[i].classList.contains("off")) return bar[i].dataset.step;
+    return null;
+  };
+
+  // A group of buttons the client adds to a map; each button's text is its name.
+  const group = (m, cls, label, buttons) => {
+    const box = document.createElement("div");
+    box.className = cls;
+    box.setAttribute("role", "group");
+    box.setAttribute("aria-label", `${$("h2", m).textContent}: ${label}`);
+    for (const [key, value, text] of buttons) {
+      const b = box.appendChild(document.createElement("button"));
+      b.type = "button";
+      b.dataset[key] = value;
+      b.textContent = text;
+    }
+    return box;
+  };
+
+  // Previous and Next walk a map's steps in order, after its step buttons.
+  const addStepNav = (m) => $(".stepbar", m)?.after(group(m, "stepnav", "previous or next step", [["go", "-1", "Previous step"], ["go", "1", "Next step"]]));
+
+  // A lane map gets one toggle per lane, named as its band is: one picked dims the other lanes' steps.
+  const addLaneFilter = (m) => {
+    const svg = $("svg.lanes", m);
+    if (!svg) return;
+    const names = $$(".t-actor", svg).map((t) => t.textContent);
+    const ids = [...new Set($$(".t-step", svg).map((a) => a.dataset.actor))];
+    svg.closest(".hero").before(group(m, "lanefilter", "show the steps of", [["actor", "", "Everyone"], ...ids.map((id, i) => ["actor", id, names[i]])]));
+    filterLanes(m, "");
+  };
+
+  const filterLanes = (m, actor) => {
+    const of = Object.fromEntries($$(".t-step", m).map((a) => [a.dataset.step, a.dataset.actor]));
+    for (const a of $$(".t-step", m)) a.classList.toggle("off", Boolean(actor) && a.dataset.actor !== actor);
+    for (const b of $$(".stepbar button", m)) b.classList.toggle("off", Boolean(actor) && of[b.dataset.step] !== actor);
+    for (const b of $$(".lanefilter button", m)) b.setAttribute("aria-pressed", String(b.dataset.actor === actor));
+  };
+
+  // Each map shows its open step's panel, trail link and step button; Previous or Next is off at its end.
   const showSteps = (maps, open) => {
     for (const m of maps) {
       const step = open[m.dataset.map];
       for (const p of $$(".panel", m)) p.hidden = p.dataset.step !== step;
       for (const a of $$(".t-step", m)) toggleCurrent(a, a.dataset.step === step, "step");
       for (const b of $$(".stepbar button", m)) b.setAttribute("aria-pressed", String(b.dataset.step === step));
+      for (const b of $$(".stepnav button", m)) b.setAttribute("aria-disabled", String(!stepFrom(m, step, Number(b.dataset.go))));
     }
   };
 
@@ -96,7 +139,16 @@
     showRepoSections(state.repo);
   };
 
-  // A click on a tab link switches tabs, and on a step link or button opens that step.
+  // Opens one step of a map, and brings its panel into view when it starts low on the screen.
+  const openStep = (ctx, m, step) => {
+    ctx.open[m.dataset.map] = ctx.state.step = step;
+    applyProcess(ctx);
+    writeProcessHash(ctx.state);
+    const panel = $(`#step-${step}`);
+    if (panel.getBoundingClientRect().top > innerHeight * 0.7) panel.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  };
+
+  // A click on a tab link switches tabs; on a lane toggle filters; on a step link, step button, Previous or Next opens that step.
   const onProcessClick = (e, ctx) => {
     const { pick, open, state } = ctx;
     const refresh = () => {
@@ -113,13 +165,35 @@
       scrollTo(0, 0);
       return;
     }
+    const lane = e.target.closest(".lanefilter button");
+    if (lane) {
+      filterLanes(lane.closest(".map"), lane.dataset.actor);
+      applyProcess(ctx);
+      return;
+    }
+    const go = e.target.closest(".stepnav button");
+    if (go) {
+      const m = go.closest(".map");
+      const to = stepFrom(m, open[m.dataset.map], Number(go.dataset.go));
+      if (to) openStep(ctx, m, to);
+      return;
+    }
     const a = e.target.closest(".t-step, .stepbar button");
     if (!a) return;
     e.preventDefault();
-    open[a.closest(".map").dataset.map] = state.step = a.dataset.step;
-    refresh();
-    const panel = $(`#step-${a.dataset.step}`);
-    if (panel.getBoundingClientRect().top > innerHeight * 0.7) panel.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    openStep(ctx, a.closest(".map"), a.dataset.step);
+  };
+
+  // Left and right arrow keys on a step button open the step before or after it and move focus there.
+  const onStepKey = (e, ctx) => {
+    const by = { ArrowLeft: -1, ArrowRight: 1 }[e.key];
+    const b = by && e.target.closest(".stepbar button");
+    const m = b && b.closest(".map");
+    const to = m && stepFrom(m, b.dataset.step, by);
+    if (!to) return;
+    e.preventDefault();
+    openStep(ctx, m, to);
+    $(`.stepbar button[data-step="${CSS.escape(to)}"]`, m).focus();
   };
 
   const initProcess = () => {
@@ -131,6 +205,10 @@
     const ctx = { ptabs, maps, pick: $("#prepo"), open, state: { tab: "build", repo: "", step: null } };
     readProcessHash(ctx);
     for (const bar of $$(".stepbar")) bar.hidden = false;
+    for (const m of maps) {
+      addStepNav(m);
+      addLaneFilter(m);
+    }
     applyProcess(ctx);
     ctx.pick.addEventListener("change", () => {
       ctx.state.repo = ctx.pick.value;
@@ -138,6 +216,7 @@
       writeProcessHash(ctx.state);
     });
     document.addEventListener("click", (e) => onProcessClick(e, ctx));
+    document.addEventListener("keydown", (e) => onStepKey(e, ctx));
   };
   initProcess();
 
