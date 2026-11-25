@@ -72,6 +72,15 @@ export function crawl(site, { max = 200, skip = [], concurrency = 4 } = {}) {
     const queue = [base];
     const seen = new Set(queue);
     let fetched = 0;
+    // Links to pages on this site, under its base path and not skipped, that the crawl has not queued.
+    const enqueue = (links) => {
+      for (const link of links) {
+        const u = new URL(link);
+        if (u.origin !== origin || !u.pathname.startsWith(base) || skipped(u.pathname) || seen.has(u.pathname)) continue;
+        seen.add(u.pathname);
+        queue.push(u.pathname);
+      }
+    };
     const visit = async (path) => {
       try {
         const got = await getOnSite(site, origin, new URL(path, origin).href);
@@ -83,12 +92,7 @@ export function crawl(site, { max = 200, skip = [], concurrency = 4 } = {}) {
         const rec = { status: res.status, final: at.pathname, links: [] };
         if (res.ok && (res.headers.get("content-type") ?? "").includes("text/html")) {
           rec.links = extractLinks(await res.text(), at.href);
-          for (const link of rec.links) {
-            const u = new URL(link);
-            if (u.origin !== origin || !u.pathname.startsWith(base) || skipped(u.pathname) || seen.has(u.pathname)) continue;
-            seen.add(u.pathname);
-            queue.push(u.pathname);
-          }
+          enqueue(rec.links);
         } else {
           await res.body?.cancel();
         }
