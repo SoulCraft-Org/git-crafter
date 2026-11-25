@@ -70,10 +70,10 @@ async function pushRow(R, cfg) {
   return { label: "A push rule blocks secret file names", ok: cfg.blockedPaths.every((p) => blocked.has(p)) };
 }
 
-async function environmentsRow(R) {
+// One row for each environment, named, so a miss says which one: an environment names its branches when it holds a deployment_branch_policy.
+async function environmentsRows(R) {
   const envs = await R.environments();
-  if (!envs.length) return null;
-  return { label: "Every environment deploys from named branches only", ok: envs.every((e) => Boolean(e.deployment_branch_policy)) };
+  return envs.map((e) => ({ label: `Environment ${e.name} deploys from named branches only`, ok: Boolean(e.deployment_branch_policy) }));
 }
 
 // The pull request rules on the default branch, rulesets' and classic protection's, in one shape.
@@ -88,9 +88,9 @@ const sum = (rows) => rows.reduce((n, r) => n + r.value, 0);
 
 const METRICS = {
   "settings.protections_missing": {
-    source: "state: gh api repos/{repo}/rulesets and each active one (bypass_actors, else GraphQL rulesets.bypassActors.totalCount when REST hides the list, read 2026-11-23; tag rules deletion and update, push rule file_path_restriction against params.blocked_paths), branches/{branch}/protection (enforce_admins), tags (the first listed), environments (deployment_branch_policy); a row with nothing to guard is left out",
+    source: "state: gh api repos/{repo}/rulesets and each active one (bypass_actors, else GraphQL rulesets.bypassActors.totalCount when REST hides the list, read 2026-11-23; tag rules deletion and update, push rule file_path_restriction against params.blocked_paths), branches/{branch}/protection (enforce_admins), tags (the first listed), environments (deployment_branch_policy, one row for each environment); a row with nothing to guard is left out",
     async run(R, cfg) {
-      const rows = (await Promise.all([bypassRow(R), tagsRow(R), pushRow(R, cfg), environmentsRow(R)])).filter(Boolean);
+      const rows = (await Promise.all([bypassRow(R), tagsRow(R), pushRow(R, cfg), environmentsRows(R)])).flat().filter(Boolean);
       const hidden = rows.find((r) => r.hidden);
       if (hidden) return skip(hidden.hidden);
       if (!rows.length) return skip("this repo has no ruleset, tag or environment to guard yet");
