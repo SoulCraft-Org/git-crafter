@@ -20,6 +20,7 @@ import { CONFIG_DEFAULTS, loadConfig, QUALITY } from "./config.mjs";
 import { configDefs, configIdeals } from "./packs.mjs";
 import { LEVEL_NAMES, render } from "./render/page.mjs";
 import { currentMetrics, loadAllReviews, loadData, mergeMetrics, newestReviews, TABS, tabGaps } from "./score.mjs";
+import { pageScores, publishScores } from "./summary.mjs";
 
 // The drawing lives in quality/render/ (charts, layout, styles, client
 // script); these two stay exported here for the self-test.
@@ -105,7 +106,8 @@ export function buildPage(config, { now = new Date(), template } = {}) {
     },
     css,
   });
-  return { code: 0, html, defs, reviewed: Object.keys(reviewHistory).length };
+  const scores = pageScores({ defs, metrics: mergeMetrics(local, latest), reviewHistory, tabs: config.tabs });
+  return { code: 0, html, defs, reviewed: Object.keys(reviewHistory).length, scores, commit: (latest ?? local).commit };
 }
 
 function main() {
@@ -133,6 +135,9 @@ function main() {
   const size = sizeCheck(page.html, config.budget);
   const bytes = (n) => n.toLocaleString("en-US");
   console.log(`wrote ${relative(config.root, file)} (${page.defs.length} metrics, ${config.tabs.length} tabs, ${page.reviewed} reviewed tab(s), ${bytes(size.bytes)} of ${bytes(config.budget)} bytes)`);
+  // Inside Actions, the scores go to the job summary and to a check-run annotation (#585), so a
+  // session that cannot download the page's artifact reads them through the REST API.
+  publishScores(page.scores, { name: config.name, commit: page.commit });
   if (!size.ok) {
     console.error(`${relative(config.root, file)} is ${bytes(size.bytes - config.budget)} bytes over its ${bytes(config.budget)}-byte budget; make rows lighter`);
     process.exit(1);

@@ -40,7 +40,7 @@ The call, with this repo's Quality config as the example:
 | --- | --- | --- |
 | `actions/pages`, `pages: quality` | `npm ci`, then `collect.mjs` (ci) and `build.mjs`. Modes `collect` and `render` split it over two jobs. Optional `admin-read-token` reads admin metrics in CI; `hf-token` and `openrouter-api-key` serve a pack's collectors | Fires: the repo's workflow |
 | `node <git-crafter>/quality/collect.mjs --local` | admin, transcript and other local-only metrics into `<data>/local.json` and `<history>/<date>.json`. It runs from a Git Crafter checkout at the repo's pinned SHA. It exits 4 when this hour's quota left is under a full run's last recorded spend. `--only NAME` runs one collector alone | Waits for a session; commit the result by PR |
-| `node <git-crafter>/quality/build.mjs` | render `<out>/index.html`, print its size, exit 1 over the budget | Either |
+| `node <git-crafter>/quality/build.mjs` | render `<out>/index.html`, print its size, exit 1 over the budget. In Actions it also writes the master, category and tab scores to the job summary and to one `::notice`, which `gh api repos/<repo>/check-runs/<id>/annotations` reads | Either |
 | `node quality/selftest.mjs` | the engine's self-test, which runs `render/*.test.mjs` | Fires: `tools/verify.sh` in CI |
 | `node <git-crafter>/quality/cards/picture.mjs spec.json > card.svg` | a board card's picture: its pillar, a meter from now to goal, its steps. Push the file to the repo's `cards` branch and link it from the card as `https://github.com/<owner>/<repo>/raw/cards/<file>.svg` | Waits for a session adding or changing a card |
 
