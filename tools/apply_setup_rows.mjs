@@ -1,7 +1,7 @@
 // What one setup row reads as on a repo, an organization, a user or an
-// enterprise: same, would change, set by hand, optional, org's rules, no value
-// or unreadable. Used by tools/apply_setup.mjs; every read goes through a
-// cached gh api GET.
+// enterprise: same, would change, set by hand, optional, org's rules, no value,
+// unreadable, or for a paid row paid, refused or no budget. Used by
+// tools/apply_setup.mjs; every read goes through a cached gh api GET.
 
 import { reaches } from "../quality/collectors/settings/repo-settings-refs.mjs";
 
@@ -74,32 +74,70 @@ function fieldCheck(read, check, path, vars, graphql) {
   return { met: same(got, want), note: `${check.field} is ${JSON.stringify(got ?? null)}, want ${JSON.stringify(want)}` };
 }
 
+// A check's answer, or { missing } for a key the values lack, or { unreadable }.
+function guard(read) {
+  try {
+    return read();
+  } catch (err) {
+    return err.missing ? { missing: err.missing } : { unreadable: err.message };
+  }
+}
+
 // Whether a row's check holds: { met, note, org }, { missing } or { unreadable }.
 function checkRow(row, { read, graphql, vars, scope }) {
-  try {
-    if (row.check.ruleset) return rulesetCheck(read, row.check.ruleset, vars, scope);
-    return fieldCheck(read, row.check, row.path, vars, graphql);
-  } catch (err) {
-    if (err.missing) return { missing: err.missing };
-    return { unreadable: err.message };
-  }
+  return guard(() => (row.check.ruleset ? rulesetCheck(read, row.check.ruleset, vars, scope) : fieldCheck(read, row.check, row.path, vars, graphql)));
+}
+
+// A paid row's hard stop: met when an item of the list at field holds every key of where.
+function budgetCheck(read, { get: route, field, where }, vars) {
+  const answer = read(fill(route, vars));
+  const items = answer === null ? [] : at(answer, field);
+  if (!Array.isArray(items)) throw new Error(`the answer has no ${field} list: an admin token reads it`);
+  return { met: items.some((b) => holds(b, fill(where, vars))), note: `no budget at ${fill(route, vars)} holds ${JSON.stringify(where)}` };
+}
+
+// The page where the owner sees or sets a row, as a note suffix.
+function page(row, vars) {
+  if (!row.ui_url) return "";
+  const url = guard(() => fill(row.ui_url, vars));
+  return ` (${typeof url === "string" ? url : row.ui_url})`;
+}
+
+// A paid row's state before its check (rules/compute.md, Money): refused when billed per use, paid until paid_yes names it, no budget until its hard stop holds; null once both hold.
+function paidState(row, { read, vars, paidYes }) {
+  if (row.paid.kind !== "flat") return { status: "refused", note: `billed per use, which rules/compute.md never turns on${page(row, vars)}` };
+  if (!paidYes.has(row.id)) return { status: "paid", note: `${row.paid.price}; set only after the owner's yes, in paid_yes${page(row, vars)}` };
+  const budget = guard(() => budgetCheck(read, row.paid.budget, vars));
+  if (budget.met) return null;
+  const why = budget.missing ? `the values file has no ${budget.missing}` : (budget.unreadable ?? budget.note);
+  return { status: "no budget", note: `${why}; set the hard stop first${page(row, vars)}`, failed: true };
+}
+
+// The state a row takes before its check is read: optional, a paid row's, or by hand with no check; null when the check decides.
+function gateState(row, ctx) {
+  if (row.optional && !ctx.optionalOn.has(row.id)) return { status: "optional", note: "off by default; turn on with optional_on" };
+  const paid = row.paid ? paidState(row, ctx) : null;
+  if (paid) return paid;
+  return row.check ? null : { status: "by hand", note: `${row.reason}${page(row, ctx.vars)}` };
 }
 
 /**
  * One row's state, as { status, note }. status: "same", "would change",
  * "by hand" (no API sets it), "optional" (off by default and not turned on),
  * "org's rules" (an organization ruleset governs it), "no value" (the values
- * file lacks a key) or "unreadable". `failed` is true for a row --check fails.
+ * file lacks a key), "unreadable", or for a paid row "paid" (no yes yet),
+ * "refused" (billed per use) or "no budget" (no hard stop yet). `failed` is
+ * true for a row --check fails.
  */
 export function rowState(row, ctx) {
-  if (row.optional && !ctx.optionalOn.has(row.id)) return { status: "optional", note: "off by default; turn on with optional_on" };
-  if (!row.check) return { status: "by hand", note: row.reason };
+  const gate = gateState(row, ctx);
+  if (gate) return gate;
   const got = checkRow(row, ctx);
   if (got.missing) return { status: "no value", note: `the values file has no ${got.missing}` };
   if (got.unreadable) return { status: "unreadable", note: got.unreadable, failed: true };
   if (got.met) return { status: "same", note: "" };
   if (row.when === "no_org_ruleset" && got.org) return { status: "org's rules", note: `${got.note}; the organization's rulesets govern it` };
-  if (row.api === false) return { status: "by hand", note: `${got.note}; ${row.reason}`, failed: true };
+  if (row.api === false) return { status: "by hand", note: `${got.note}; ${row.reason}${page(row, ctx.vars)}`, failed: true };
   return { status: "would change", note: got.note, failed: true };
 }
 
