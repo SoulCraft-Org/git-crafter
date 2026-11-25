@@ -31,6 +31,11 @@ name: ci-standard
 # runner: the overflow switch (templates/ci/DECISIONS.md, 2026-11-11). Empty, the standard job runs on ubuntu-latest.
 # A caller that opts in passes ci-overflow.yml's label output here; a label that is no lane's in
 # .github/ci-overflow.json is ubuntu-latest too, so no caller input picks another runner. short stays on ubuntu-slim.
+#
+# pool: a free self-hosted runner label (an org's own pool, with no GitHub minutes). Empty, both jobs run on GitHub's
+# pool as above. Set, short and standard both run on that label, ahead of the overflow switch. ci_standard.py check fails
+# a caller that sets it until .github/ci-standard.json holds an exception for the caller's job with a reason, so a pool
+# is always a written, reviewed choice (templates/ci/DECISIONS.md, 2026-11-25).
 on:
   workflow_call:
     inputs:
@@ -64,6 +69,10 @@ on:
         default: ""
       runner:
         description: The standard job's runner, from ci-overflow.yml's label output. Empty, or no lane's label, is ubuntu-latest
+        type: string
+        default: ""
+      pool:
+        description: One self-hosted runner label from a free pool the org runs, for the short and standard jobs. Empty runs them on GitHub's pool. The caller needs an exception with a reason in .github/ci-standard.json
         type: string
         default: ""
       timeout:
@@ -718,7 +727,10 @@ jobs:
           # Rules no .github/ci-standard.json can waive: each one is a bill that no meter stops.
           NEVER_EXCEPTED = ("blacksmith",)
           # ci-standard.yml's standard job: a Blacksmith label only from its runner input, and only one of the listed lanes.
-          CHOOSER_RE = re.compile(r"\$\{\{ contains\(fromJSON\('\[[^\]]*\]'\), inputs\.runner\) && inputs\.runner \|\| 'ubuntu-latest' \}\}")
+          # A caller's pool input (a free self-hosted runner label) comes first in both jobs' runs-on; empty falls through to GitHub's pool.
+          POOL_PREFIX = r"inputs\.pool != '' && inputs\.pool \|\| "
+          CHOOSER_RE = re.compile(r"\$\{\{ (?:" + POOL_PREFIX + r")?contains\(fromJSON\('\[[^\]]*\]'\), inputs\.runner\) && inputs\.runner \|\| 'ubuntu-latest' \}\}")
+          POOL_SLIM_RE = re.compile(r"\$\{\{ " + POOL_PREFIX + r"'ubuntu-slim' \}\}")
           # Blacksmith's sticky disk and Docker layer cache actions: they keep storage Blacksmith bills, which the pool meter does not count.
           BLACKSMITH_CACHES = ("useblacksmith/stickydisk", "useblacksmith/build-push-action", "useblacksmith/setup-docker-builder")
           STANDARD_LABELS = {"ubuntu-latest", "ubuntu-24.04", "ubuntu-22.04"}
@@ -841,6 +853,8 @@ jobs:
               text = runs_on if isinstance(runs_on, str) else json.dumps(runs_on)
               if text == SLIM or text in STANDARD_LABELS:
                   return None
+              if POOL_SLIM_RE.fullmatch(text):
+                  return "the short job's runs-on; a self-hosted label only from the caller's pool input"
               if "blacksmith" in text.lower():
                   return "the chooser's runs-on; a lane label only from ci-overflow.yml" if CHOOSER_RE.fullmatch(text) else None
               if "vars.CI_RUNNER" in text:
@@ -887,6 +901,9 @@ jobs:
                   uses = str(job["uses"])
                   if not uses.startswith("./") and not SHA_RE.fullmatch(uses):
                       found.append(("pinned", where, f"{uses} is not pinned to a full commit SHA"))
+                  pool = job["with"].get("pool") if isinstance(job.get("with"), dict) else None
+                  if str(pool or "").strip() and (STANDARD_RE.match(uses) or uses == LOCAL_STANDARD):
+                      found.append(("runner", where, f"pool: {pool} sends the standard's jobs to a self-hosted runner; add an exception with a reason"))
                   return found
               if not job.get("timeout-minutes"):
                   found.append(("timeout", where, "no timeout-minutes; a hung job bills to GitHub's 6-hour limit"))
@@ -1126,7 +1143,7 @@ jobs:
   short:
     needs: changes
     if: inputs.short != '' && needs.changes.outputs.run == 'true'
-    runs-on: ubuntu-slim
+    runs-on: ${{ inputs.pool != '' && inputs.pool || 'ubuntu-slim' }}
     timeout-minutes: 15
     steps: &steps
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -1172,7 +1189,7 @@ jobs:
     needs: changes
     if: inputs.standard != '' && needs.changes.outputs.run_standard == 'true'
     # The lane labels are .github/ci-overflow.json's (tools/tests/test_ci_overflow.py holds them equal).
-    runs-on: ${{ contains(fromJSON('["blacksmith-2vcpu-ubuntu-2404"]'), inputs.runner) && inputs.runner || 'ubuntu-latest' }}
+    runs-on: ${{ inputs.pool != '' && inputs.pool || contains(fromJSON('["blacksmith-2vcpu-ubuntu-2404"]'), inputs.runner) && inputs.runner || 'ubuntu-latest' }}
     timeout-minutes: ${{ inputs.timeout }}
     steps: *steps
 
