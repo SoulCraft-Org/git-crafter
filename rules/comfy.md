@@ -38,7 +38,7 @@ Climb one tier only when the one below cannot do the job. Say why first.
 
 | `tools/comfy_guard.py` | Rule |
 |---|---|
-| Any run tool | It denies unless `usage-guard check comfy-cloud` answers go (exit 1) |
+| All four run tools | It denies unless `usage-guard check comfy-cloud` answers go (exit 1) |
 | Any `confirm`, a batch item's `confirm`, or a `submit_batch` with a `partner_generate` item | It asks the owner first, in Claude Code's own prompt |
 | bypassPermissions or dontAsk mode | A confirm denies instead |
 | Which guard | Only `~/.local/bin/usage-guard` in the account's home, never one on PATH |

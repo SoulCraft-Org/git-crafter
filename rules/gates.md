@@ -39,7 +39,7 @@ automated check: a lint, a hook, a guard, a parity or token check.
 | Where | CI only, never locally (`rules/compute.md`) |
 | Payload | A harmless marker such as `echo PWNED` |
 | A template lacks the placeholder | Stop before running anything |
-| Timeout | Kill each shell's own process group: `subprocess.run(timeout=)` kills only the shell it started |
+| Timeout | Start each shell in its own process group and kill the group on timeout: `subprocess.run(timeout=)` kills only the shell it started |
 | Why | On 2026-11-04 a local harness ran a template with no placeholder, and bash joined `r\` and `m -rf ~` into `rm -rf ~` |
 
 ## Tracking
