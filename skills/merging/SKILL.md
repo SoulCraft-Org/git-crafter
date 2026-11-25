@@ -18,7 +18,7 @@ merges when, at the head commit:
 |---|---|
 | 1 | `python3 -I ~/.claude/code-os/claude_deny.py --check ~/.claude/settings.json` passes. |
 | 2 | Every CI check passed; the repo's verify command passed in the cloud (CI or a `cloud-test` run) after the last change. |
-| 3 | The review its risk needs ([reviewing.md](reviewing.md)), in at most three rounds. After a third, rethink the approach, not a fourth round (Anthropic, "How the Claude Code team does code review", 2026-10-15). |
+| 3 | The review its risk needs ([reviewing.md](reviewing.md)), in at most three rounds. After a third, rethink the approach (Anthropic, "How the Claude Code team does code review", 2026-10-15). |
 
 The owner ranks quality, speed and token use above safety, privacy and
 security, and wants no over-engineering. A rule fix keeps one regression
@@ -27,15 +27,14 @@ case, and a new rule needs a real incident.
 | Merge | Rule |
 |---|---|
 | Order | Post each verdict, then merge passes in order. |
-| Checks | Wait once (`gh pr checks N --watch --interval 60`; the 10 s default spends the shared API allowance, #707), then merge, never asking the owner (2026-11-10). |
+| Checks | Wait once with `gh pr checks N --watch --interval 60` (the 10 s default spends the shared API allowance, #707), then merge without asking the owner (2026-11-10). |
 | Pace | Merges a day stay under included Actions money left ÷ days to reset ÷ cost per merge, read each wave (#648). |
 | Waiting | A green PR is any orchestrator's at once unless a live claim holds it ([Claim](reviewing.md#claim); the owner, 2026-11-23; `pull_requests.green_waiting_minutes`). |
 | Branch rule | Keep "require branches to be up to date" off on `main`, so no merge re-runs the others' CI. |
-| Issues first | File any issues first (`gh issue create --type Bug --label <area>`, or `--type Task` for a quick fix; an improvement is a draft board card), then post the verdict. Never edit it: an edit retimes the merge. |
-| Verdict | Before merging, post a PR comment whose first line is exactly `Review: MERGE at <sha>` (or `BLOCK`), with the full 40-hex SHA. GitHub records no review when one account authors and merges, so `quality/collectors/github/github-reviews.mjs` (`MARKER`) reads this line as the review. |
-| Review status | After the verdict, mark that commit reviewed: `gh api repos/<owner>/<repo>/statuses/<sha> -f state=success -f context=review -f description="Review: MERGE"`. The ruleset requires `review`, so a new push needs a new review. |
-| Command | Merge with `gh pr merge N --<method> --auto --match-head-commit <sha>` in an allowed method, typing the literal SHA that passed, never one read at merge time. `--auto` merges a clean PR at once and waits on a blocked one. Never use `--admin`. |
-| Stack | Past the `pull_requests.latest_lines` goal, a PR per layer atop the last, each reviewed at head. `gh api -X POST repos/{owner}/{repo}/stacks -F 'pull_requests[]=<n>'`, bottom up, joins them. `gh api -X PUT …/pulls/<top>/merge-async -f sha=<sha> -f merge_method=squash` merges it and those under; `…/merge-async/<uuid>` reads it. |
+| Issues first | File issues first ([Tracking](../../rules/gates.md#tracking), each with `--label <area>`), then the verdict. Never edit it: an edit retimes the merge. |
+| Verdict | Post a PR comment whose first line is exactly `Review: MERGE at <sha>` (or `BLOCK`), with the full 40-hex SHA. `github-reviews.mjs` (`MARKER`) reads it as the review, since GitHub records none when one account authors and merges. |
+| Command | Then set `review` on that SHA (`gh api repos/<owner>/<repo>/statuses/<sha> -f state=success -f context=review`) and merge with `gh pr merge N --<method> --auto --match-head-commit <sha>` in an allowed method, typing the literal SHA that passed, never one read at merge time. A new push needs a new review. Never use `--admin`. |
+| Stack | Past the `pull_requests.latest_lines` goal, stack one PR per layer, each reviewed at head. `gh api -X POST repos/{owner}/{repo}/stacks -F 'pull_requests[]=<n>'`, bottom up, joins them. `gh api -X PUT …/pulls/<top>/merge-async -f sha=<sha> -f merge_method=squash` merges it and those under; `…/merge-async/<uuid>` reads it. |
 | Tier 1 | After a tier 1 merge (`user-claude` in `manifest.json`): `git -C <checkout> pull --ff-only`, then `claude_os_sync.py apply user-claude --yes --overlay <account folder>`, then `claude_deny.py --merge ~/.claude/settings.json --yes`. A `cp` leaves the sync record stale (#657). |
 | Live site | Load and confirm a live page each merge deploys. |
 | Repo `CLAUDE.md` | On main, it may name its orchestrator and merge method within these conditions, never wider. |

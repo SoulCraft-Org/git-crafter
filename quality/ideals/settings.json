@@ -133,7 +133,7 @@
   "parts": [
     {
       "part": "General",
-      "ideal": "One merge method, auto-merge on and gated on CI and a `review` status, merged branches deleted, no wiki, forking off for a private repo",
+      "ideal": "One merge method, auto-merge on and gated on CI and a review status, merged branches deleted, no wiki, forking off for a private repo",
       "setup": "Set them once on the General page, then name the values in the repo's targets so drift is counted"
     },
     {

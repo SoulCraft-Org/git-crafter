@@ -58,7 +58,7 @@ flowchart LR
 
 | Option (`optional: true`) | For | Row and needs |
 |---|---|---|
-| Merge queue | a busy branch | `rules.merge_queue`. CI runs `on: merge_group` and reports `review` there ([how](OPTIONS.md#merge-queue)). `gh pr merge --auto` joins the queue once the head's checks pass |
+| Merge queue | a busy branch | `rules.merge_queue`, with CI on `merge_group` ([how](OPTIONS.md#merge-queue)) |
 | Artifact attestations | a repo that publishes an artifact | `manual.artifact_attestations`: [actions/attest](https://github.com/actions/attest), with `id-token: write` and `attestations: write` ([step](OPTIONS.md#attestations)) |
 
 ## Check
