@@ -14,6 +14,7 @@ Paste this file into the project's Instructions field. Fill each `<...>` cell, t
 | Every thread | Do |
 |---|---|
 | Ship | Branch `claude/<topic>`. Draft PR within 10 minutes. Push after every step. Stop at the open PR: never merge, never push to `<default branch>` |
+| Track | A bug or quick fix is an issue typed Bug or Task. A feature or improvement is a draft card on board `<board number>`. File each when found, over REST. The PR's first line is `Closes #n` or `Card: PVTI_id`. Commands: the repo's `AGENTS.md`, from Git Crafter's `templates/agents/AGENTS.md` |
 | Check | Read the repo's `CLAUDE.md` and `AGENTS.md` first, also after adding a repo. CI is the gate |
 | GitHub | `<the GitHub tool this environment allows, such as "gh api, not gh pr">` |
 | Ask first | Spend, deletes, posts, credentials: ask in the PR body. Decide the rest |
