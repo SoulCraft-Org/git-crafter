@@ -139,13 +139,13 @@ runs:
     # The GitHub requests notice (quality/gh-replay.mjs): every gh read this action makes goes through a counting shim, and
     # the report step at the end prints the total as a notice, which ci.pr_run_requests reads from the check-run annotations.
     # Count only: no save to replay or record, so no extra request. A caller that already ran gh-replay's setup (pages.yml
-    # does) sets GH_REPLAY_DIR, so this step and the report step skip.
+    # does) sets GH_REPLAY_DIR, so this step and the report step skip. So does a second call of this action in one job:
+    # the first call's setup already set GH_REPLAY_DIR, and its report ran before the second call began.
     - name: Count this run's GitHub requests
       id: replay
       if: env.GH_REPLAY_DIR == ''
       shell: bash
       env:
-        GH_TOKEN: ${{ inputs.token }}
         GH_REPLAY_COUNT_ONLY: "1"
       run: node "$GITHUB_ACTION_PATH/../../quality/gh-replay.mjs" setup
 
