@@ -35,6 +35,7 @@ flowchart LR
 | 3 | Set the shared environment in Project settings, with an empty setup script |
 | 4 | Add each key as a network secret with its host |
 | 5 | Send the setup check below as the first message |
+| 6 | Optional, to run a Claudius repo as a Code Project: follow its [quick start](https://github.com/Soul-Craft/claudius/blob/main/docs/projects-quickstart.md), which opens with these steps and adds memory seeds, subagents and scheduled tasks |
 
 ```text
 Setup check only. Start no threads and change nothing.
