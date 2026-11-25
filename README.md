@@ -13,28 +13,30 @@ Templates for AI agents to run an open-source or open-weight repo with Claude Co
 | [Quality, Speed and Consumption page](https://soulcraft-org.github.io/git-crafter/quality/) | 13 tabs, each scored against an ideal from current, dated sources |
 | [Process page](https://soulcraft-org.github.io/git-crafter/) | Process maps: each step's tool, rule and metric |
 | [CI standard](templates/ci/README.md) | One reusable workflow on GitHub's standard hosted runners |
-| [Rules](rules/) and [guards](tools/) | What Claude sessions may do, plus the deny list and hookify rules that block one-way doors |
+| [Rules](rules/) and [guards](tools/) | What Claude sessions may do, and the `permissions.deny` list and hookify rules that block one-way doors |
+
+Both pages are public.
 
 
 ## Quickstart: 3 steps
 
 | Step | Do |
 |---|---|
-| 1 | Run the block. Drop unused tabs, add doc globs to `pages.yml`, set `ci.yml`'s inputs, and the process config's `repos`, `repo_url` and `heading` ([ci](templates/ci/README.md), [process](templates/process/README.md)) |
+| 1 | Run the block; set `ci.yml`'s `paths`, `short`, `standard`; `pages.yml`'s doc globs; the process config's `repos`, `repo_url`, `heading`; drop unused tabs ([ci](templates/ci/README.md), [process](templates/process/README.md)) |
 | 2 | A ruleset on `main` requiring `ci / ci-ok` |
 | 3 | Settings, Pages: source "GitHub Actions" |
 
 ```bash
-GC=../git-crafter   # this repo, cloned beside yours
+GC=../git-crafter  # clone
 mkdir -p quality/process .github/workflows
-cp $GC/templates/quality/config.json quality/config.json
-cp $GC/templates/process/config.json quality/process/config.json
+cp -n $GC/templates/quality/config.json quality/config.json
+cp -n $GC/templates/process/config.json quality/process/config.json
 cp $GC/templates/ci/ci.yml $GC/templates/ci/pages.yml .github/workflows/
-cp $GC/templates/ci/dependabot.yml .github/dependabot.yml
-python3 -I $GC/tools/ci_standard.py check --repo .   # follows the standard
+cp -n $GC/templates/ci/dependabot.yml .github/dependabot.yml
+python3 -I $GC/tools/ci_standard.py check --repo .
 ```
 
-Optional: [open](templates/open/README.md), [setup.json](templates/setup.json), [agents](templates/agents/README.md), [projects](templates/projects/README.md), [CI pool](templates/ci/CI-POOL.md).
+More: [open](templates/open/README.md), [setup.json](templates/setup.json), [agents](templates/agents/README.md), [projects](templates/projects/README.md).
 
 ## The 13 tabs
 
@@ -103,6 +105,7 @@ Each map's steps: [pages/maps](pages/maps/README.md).
 
 | Need | Go to |
 |---|---|
-| Help and ideas | [SUPPORT.md](SUPPORT.md) |
+| Help, bugs, ideas | [SUPPORT.md](SUPPORT.md) |
 | Changes and template fixes | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Security problems | [SECURITY.md](SECURITY.md) |
+| Maintainer | SoulCraft, publisher |
