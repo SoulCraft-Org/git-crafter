@@ -24,6 +24,7 @@ flowchart LR
 | Keys | Network secrets, never variables | The agent proxy adds a secret outside the VM. Anyone using the environment reads a variable |
 | First message | A setup check that starts no threads | A gap shows before work depends on it |
 | Mac folders | Only a local thread's **Allow once** card | The card names the folder and asks first |
+| Work log | A project memory file for each lasting fact, saved the turn it is learned | A new thread starts without the old thread's context |
 | Dot-named repo | Work on it in a local thread (Remote Control) | A cloud thread with a dot-named repo skips every repo's skills |
 
 ## Steps
@@ -43,6 +44,32 @@ Setup check only. Start no threads and change nothing.
 3. Name each expected key, by name only, and say whether it is a network secret.
 4. Report pass or fail per line, and name any missing tool or key.
 ```
+
+## What a cloud thread loads
+
+A thread clones each attached repo. It does not read everything in `.claude/`.
+
+| In the repo | Cloud thread | If you need it |
+|---|---|---|
+| `CLAUDE.md`, `.claude/CLAUDE.md`, `.claude/rules/` | Loaded. Path-specific rules wait | |
+| Skills, agents, commands | Loaded | A dot-named repo skips them: use a local thread |
+| `.mcp.json` servers | Not loaded | Use your account's connectors |
+| Hooks and permission rules in `.claude/settings.json` | Not run | Use a local thread |
+| `env` in `.claude/settings.json` | Not applied | Set it in the cloud environment |
+
+## Limits and cost
+
+| Limit | Value | Do |
+|---|---|---|
+| Plans | Pro, Max, Ultra. Not Team or Enterprise | Check **Projects** shows in the sidebar |
+| New threads | 500 a day across your projects | Start a thread per task, not per step |
+| Cache | One hour | Start a fresh thread for new work: an idle thread re-reads its whole history |
+| Models | A new project runs Opus at medium effort | Ask for a smaller model on docs and lint threads |
+| PR watching | An idle thread wakes on CI or a review comment, and spends usage | Ask the thread to stop watching once the PR merges |
+| Usage limit | A thread waits, then continues when the limit resets | Turn off **Continue threads automatically** to stop that |
+| Where to read it | **Project settings > Usage** | Check it weekly |
+
+Read 2026-11-25 in [claude-projects](https://code.claude.com/docs/en/claude-projects).
 
 ## Smoke test
 
