@@ -63,6 +63,8 @@ export function crawl(site, { max = 200, skip = [], concurrency = 4 } = {}) {
   return once(site, `crawl ${max} ${skip.join(" ")}`, async () => {
     const { origin, pathname: base } = new URL(site.origin);
     const skipped = (path) => skip.some((s) => path.startsWith(s));
+    // A link is read when it stays on the site, under the origin's path, and outside the skipped prefixes.
+    const inScope = (u) => u.origin === origin && u.pathname.startsWith(base) && !skipped(u.pathname);
     const pages = new Map();
     const queue = [base];
     const seen = new Set(queue);
@@ -80,7 +82,7 @@ export function crawl(site, { max = 200, skip = [], concurrency = 4 } = {}) {
           rec.links = extractLinks(await res.text(), at.href);
           for (const link of rec.links) {
             const u = new URL(link);
-            if (u.origin !== origin || !u.pathname.startsWith(base) || skipped(u.pathname) || seen.has(u.pathname)) continue;
+            if (!inScope(u) || seen.has(u.pathname)) continue;
             seen.add(u.pathname);
             queue.push(u.pathname);
           }
