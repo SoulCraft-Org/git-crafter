@@ -30,7 +30,7 @@ Both pages are public.
 | Optional | Community files | [open](templates/open/README.md) |
 | Optional | Switches | [setup.json](templates/setup.json) with `tools/apply_setup.mjs` |
 | Optional | Agent files | [agents](templates/agents/README.md) |
-| Optional | Claude Projects setup | [projects](templates/projects/README.md) |
+| Optional | Projects | [projects](templates/projects/README.md) |
 | Optional | CI pool | [CI-POOL.md](templates/ci/CI-POOL.md) |
 
 ## The 13 tabs
@@ -92,7 +92,7 @@ Each map's steps: [pages/maps](pages/maps/README.md).
 | `rules/` | Rules for Claude sessions |
 | `skills/` | The `merging` skill |
 | `templates/` | Starters: `quality/`, `process/`, `ci/`, `open/`, `setup.json`, `agents/`, `projects/` |
-| `tests/` | Page and verify tests |
+| `tests/` | Page, verify tests |
 | `tools/` | Guards, lints, sync, org collector |
 | `wiki/` | Wiki pages, published on merge |
 
@@ -100,7 +100,7 @@ Each map's steps: [pages/maps](pages/maps/README.md).
 
 | Need | Go to |
 |---|---|
-| Help, bugs and ideas | [SUPPORT.md](SUPPORT.md) |
-| Changes and adopter template fixes | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Help, bugs, ideas | [SUPPORT.md](SUPPORT.md) |
+| Changes and template fixes | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Security problems | [SECURITY.md](SECURITY.md) |
 | Maintainer | SoulCraft, publisher |
