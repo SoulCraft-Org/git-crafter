@@ -16,6 +16,7 @@ const ID = {
 };
 export const metricIds = Object.values(ID);
 
+// Every Account security metric for one login, keyed by id.
 export async function collect({ owner, params = {}, mode, lib, gh, env } = {}) {
   const r = results(metricIds, SOURCE);
   const read = levelReader({ gh, lib, mode, env });
@@ -33,10 +34,11 @@ export async function collect({ owner, params = {}, mode, lib, gh, env } = {}) {
   else if (typeof me.two_factor_authentication === "boolean") r.val(ID.twoFactor, me.two_factor_authentication ? 1 : 0, tfSource);
   else r.cnc(ID.twoFactor, "gh api user answered without two_factor_authentication: the token is not the user's own", tfSource);
 
+  const u = encodeURIComponent(login);
   const keySource = `state: gh api users/${login}/gpg_keys and users/${login}/ssh_signing_keys`;
   try {
-    const gpg = await read.restAll(`users/${login}/gpg_keys?per_page=100`);
-    const ssh = await read.restAll(`users/${login}/ssh_signing_keys?per_page=100`);
+    const gpg = await read.restAll(`users/${u}/gpg_keys?per_page=100`);
+    const ssh = await read.restAll(`users/${u}/ssh_signing_keys?per_page=100`);
     r.val(ID.keys, gpg.length + ssh.length, keySource, [{ label: "GPG keys", value: gpg.length, unit: "keys" }, { label: "SSH signing keys", value: ssh.length, unit: "keys" }]);
   } catch (err) {
     r.cnc(ID.keys, why(err), keySource);
