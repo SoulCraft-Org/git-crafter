@@ -1,0 +1,25 @@
+{
+ "org_members.without_2fa": {
+  "value": 2,
+  "source": "sample: state: gh api orgs/octo-org/members?filter=2fa_disabled, every page; a count"
+ },
+ "org_members.base_permission_least": {
+  "value": 0,
+  "detail": [
+   {
+    "label": "write",
+    "value": 1,
+    "unit": "base permission"
+   }
+  ],
+  "source": "sample: state: gh api orgs/octo-org: default_repository_permission is none or read"
+ },
+ "org_members.read_seconds": {
+  "value": 0,
+  "source": "sample: wall time of this collector, org octo-org"
+ },
+ "org_members.requests": {
+  "value": 2,
+  "source": "sample: gh api requests this collector made, one per page, org octo-org"
+ }
+}

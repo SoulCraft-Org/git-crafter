@@ -7,6 +7,10 @@
   [
    "org-rules",
    "Org rules"
+  ],
+  [
+   "org-members",
+   "Org members"
   ]
  ]
 }

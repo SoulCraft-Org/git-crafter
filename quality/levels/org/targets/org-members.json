@@ -1,0 +1,70 @@
+[
+ {
+  "id": "org_members.without_2fa",
+  "tab": "org-members",
+  "kind": "quality",
+  "group": "Accounts",
+  "label": "Members without 2FA",
+  "means": "Org members with two-factor authentication off. A count, never a login.",
+  "unit": "members",
+  "goal": 0,
+  "near": 1,
+  "direction": "lower",
+  "goal_source": "GitHub Docs, Requiring two-factor authentication in your organization (https://docs.github.com/en/organizations/keeping-your-organization-secure/managing-two-factor-authentication-for-your-organization/requiring-two-factor-authentication-in-your-organization, read 2026-11-26); GitHub Docs, REST API endpoints for organization members (https://docs.github.com/en/rest/orgs/members, read 2026-11-26), filter 2fa_disabled",
+  "source": "state: gh api orgs/<owner>/members?filter=2fa_disabled, every page; the filter answers org owners only",
+  "needs": "github-admin",
+  "chart": "number",
+  "params": {
+   "comment": "owner: the GitHub org read; empty means the quality config's owner.",
+   "owner": ""
+  }
+ },
+ {
+  "id": "org_members.base_permission_least",
+  "tab": "org-members",
+  "kind": "quality",
+  "group": "Access",
+  "label": "Least base permission",
+  "means": "Whether the base permission every member gets on every repo is none or read.",
+  "unit": "on/off",
+  "goal": 1,
+  "near": 0.5,
+  "direction": "higher",
+  "goal_source": "GitHub Docs, Setting base permissions for an organization (https://docs.github.com/en/organizations/managing-user-access-to-your-organizations-repositories/managing-repository-roles/setting-base-permissions-for-an-organization, read 2026-11-26); template goal: read or none, and more access by team",
+  "source": "state: gh api orgs/<owner>: default_repository_permission; not measured without an org owner's admin:org token",
+  "needs": "github-admin",
+  "chart": "number"
+ },
+ {
+  "id": "org_members.read_seconds",
+  "tab": "org-members",
+  "kind": "speed",
+  "group": "Read",
+  "label": "One read",
+  "means": "Seconds this tab's collector takes to read the org's members and base permission.",
+  "unit": "s",
+  "goal": 10,
+  "near": 30,
+  "direction": "lower",
+  "goal_source": "GitHub Docs, Best practices for using the REST API (https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api, read 2026-11-26), asks for serial requests; template goal: a few serial reads finish in seconds",
+  "source": "wall time of this tab's collector, first request to last",
+  "needs": "gh",
+  "chart": "number"
+ },
+ {
+  "id": "org_members.requests",
+  "tab": "org-members",
+  "kind": "consumption",
+  "group": "Read",
+  "label": "API requests per read",
+  "means": "gh api requests one read of the org's members and base permission spends.",
+  "unit": "requests",
+  "goal": 10,
+  "near": 25,
+  "direction": "lower",
+  "goal_source": "GitHub Docs, Rate limits for the REST API (https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api, read 2026-11-26): GITHUB_TOKEN gets 1,000 requests per hour per repository; template goal: one read spends a hundredth of that",
+  "source": "gh api requests this tab's collector made, one per page",
+  "needs": "gh",
+  "chart": "number"
+ }
+]
