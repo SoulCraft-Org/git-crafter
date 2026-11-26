@@ -6,7 +6,7 @@ compatibility: Requires gh signed in and git.
 
 # Bump pins
 
-Dependabot bumps action pins (`uses: ...@<sha> # vX`). It never reads `config/quality.json`, so the pack pin moves here. Git Crafter is the engine, so it has no engine pin to move.
+Dependabot bumps action pins (`uses: ...@<sha> # vX`). It never reads `config/quality.json`, so the pack pin moves here. The Dependabot tab's `tools.packs_latest_share` shows when a pack falls behind its newest release 14 days old. Git Crafter is the engine, so it has no engine pin to move.
 
 | Step | Do |
 |---|---|

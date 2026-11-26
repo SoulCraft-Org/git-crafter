@@ -29,7 +29,8 @@
   {"from":null,"to":"actions","status":"new","reason":"the Actions tab reads its cache storage, the Caches part of its ideal (2026-11-23)","ids":["actions.cache_storage_pct"]},
   {"from":null,"to":"pull-requests","status":"new","reason":"the Pull requests tab reads whether the issue came before the pull request (2026-11-23)","ids":["pull_requests.issue_before_pr_share"]},
   {"from":null,"to":"discussions","status":"new","reason":"the Discussions tab reads the comments an answer takes, its consumption metric (2026-11-25)","ids":["discussions.comments_to_answer"]},
-  {"from":null,"to":"scanning","status":"new","reason":"the Scanning tab reads the hours since code scanning last ran, its speed metric (2026-11-25)","ids":["security.last_analysis_hours"]}
+  {"from":null,"to":"scanning","status":"new","reason":"the Scanning tab reads the hours since code scanning last ran, its speed metric (2026-11-25)","ids":["security.last_analysis_hours"]},
+  {"from":null,"to":"dependabot","status":"new","reason":"the Dependabot tab reads whether each config pack is on its newest allowed release (2026-11-26)","ids":["tools.packs_latest_share"]}
  ],
  "own": [
   {"from":"code","to":"code","status":"kept","ids":["engine.page_seconds"]},
@@ -46,6 +47,7 @@
   {"from":null,"to":"actions","status":"new","reason":"the Actions tab reads its cache storage, the Caches part of its ideal (2026-11-23)","ids":["actions.cache_storage_pct"]},
   {"from":null,"to":"pull-requests","status":"new","reason":"the Pull requests tab reads whether the issue came before the pull request (2026-11-23)","ids":["pull_requests.issue_before_pr_share"]},
   {"from":null,"to":"discussions","status":"new","reason":"the Discussions tab reads the comments an answer takes, its consumption metric (2026-11-25)","ids":["discussions.comments_to_answer"]},
-  {"from":null,"to":"scanning","status":"new","reason":"the Scanning tab reads the hours since code scanning last ran, its speed metric (2026-11-25)","ids":["security.last_analysis_hours"]}
+  {"from":null,"to":"scanning","status":"new","reason":"the Scanning tab reads the hours since code scanning last ran, its speed metric (2026-11-25)","ids":["security.last_analysis_hours"]},
+  {"from":null,"to":"dependabot","status":"new","reason":"the Dependabot tab reads whether each config pack is on its newest allowed release (2026-11-26)","ids":["tools.packs_latest_share"]}
  ]
 }

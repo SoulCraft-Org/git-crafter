@@ -15,7 +15,7 @@
     "needs": "none",
     "chart": "tools",
     "params": {
-      "comment": "repo (default GITHUB_REPOSITORY, then the origin remote), release_age_days (how old a release must be to count), own_action_owners (owners whose actions have no releases; default the repo's owner), dependency_label (the label on update PRs), branch (default main), last_n (merged update PRs read), install_workflow (default: the newest push run with an install step), adopters (owner/name repos that pin this one, for tools.adopters_latest_share; default none), adopter_cooldown_days (how old a tag of this repo must be before an adopter is judged against it; default 7, one weekly Dependabot run; 0 for the newest tag).",
+      "comment": "repo (default GITHUB_REPOSITORY, then the origin remote), release_age_days (how old a release must be to count), own_action_owners (owners whose actions have no releases; default the repo's owner), dependency_label (the label on update PRs), branch (default main), last_n (merged update PRs read), install_workflow (default: the newest push run with an install step), adopters (owner/name repos that pin this one, for tools.adopters_latest_share; default none), config_file (the Quality config whose packs tools.packs_latest_share reads; default quality/config.json, then config/quality.json), adopter_cooldown_days (how old a tag of this repo must be before an adopter is judged against it; default 7, one weekly Dependabot run; 0 for the newest tag).",
       "release_age_days": 14,
       "dependency_label": "dependencies",
       "branch": "main",
@@ -55,6 +55,23 @@
     "source": "state: uses: pins in .github/workflows and gh api repos/<owner>/<repo>/releases; actions of params.own_action_owners (default the repo's owner) left out",
     "needs": "none",
     "chart": "table"
+  },
+  {
+    "id": "tools.packs_latest_share",
+    "tab": "dependabot",
+    "kind": "quality",
+    "group": "Versions",
+    "label": "Packs pinned to the latest allowed",
+    "means": "Packs in the Quality config whose pinned SHA is the commit of their newest release old enough to take.",
+    "unit": "%",
+    "goal": 100,
+    "near": 50,
+    "direction": "higher",
+    "goal_source": "template goal, no public benchmark: every pack on its newest allowed release. Dependabot never reads the Quality config, so a pack pin drifts until it is moved by hand (.claude/skills/bump-pins); a pack is code that runs in CI, so it is pinned to a full commit SHA as GitHub's security hardening guide recommends for actions (docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions)",
+    "source": "state: owner/repo@<sha> entries of the Quality config's packs (params.config_file, else quality/config.json or config/quality.json) and gh api repos/<owner>/<repo>/releases; local folders and level: entries left out",
+    "needs": "gh",
+    "chart": "table",
+    "defined": "2026-11-26"
   },
   {
     "id": "tools.adopters_latest_share",

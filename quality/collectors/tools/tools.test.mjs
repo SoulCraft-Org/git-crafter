@@ -9,7 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { after, test } from 'node:test';
 import { loadTargets } from '../lib/score.mjs';
-import { actionPins, area, collect, compareVersions, directDependencies, eligibleVersion, GITHUB_GROUPS, judge, lockfileVersions, heldMajors, metricIds, nodeKeys, nodeMajor, READS, setupNodeSteps } from './tools.mjs';
+import { actionPins, area, packPins, collect, compareVersions, directDependencies, eligibleVersion, GITHUB_GROUPS, judge, lockfileVersions, heldMajors, metricIds, nodeKeys, nodeMajor, READS, setupNodeSteps } from './tools.mjs';
 
 // Only this collector's targets files, so another collector's file never fails these tests.
 function ownTargets(...files) {
@@ -35,6 +35,8 @@ write('package.json', { workspaces: ['site'], devDependencies: { lib: '1.0.0' } 
 write('site/package.json', { name: '@x/site', dependencies: { big: '1.0.0', fresh: '2.0.1', lib: '1.0.0', '@x/shared': '*' } });
 write('package-lock.json', { packages: { 'node_modules/lib': { version: '1.0.0' }, 'node_modules/big': { version: '1.0.0' }, 'node_modules/fresh': { version: '2.0.1' } } });
 write('.nvmrc', '26\n');
+// Packs: kit is on its eligible v1.2.0; old is behind; a local folder and a level are left out.
+write('quality/config.json', { packs: [`acme/kit@${'e'.repeat(40)}`, `acme/old@${'f'.repeat(40)}`, './local-pack', 'level:org'] });
 write('.github/workflows/ci.yml', `jobs:\n  a:\n    steps:\n      - uses: actions/checkout@${'a'.repeat(40)} # v7\n      - uses: acme/tools/actions/pages@${'b'.repeat(40)}\n      - uses: actions/setup-node@v4\n        with:\n          node-version-file: .nvmrc\n`);
 
 // npm: lib is current; big is a major behind, its 1.1.0 eligible since 6 days;
@@ -55,6 +57,10 @@ function fakeExec({ gh = true } = {}) {
     // checkout: v7.0.1 is the newest by version; a v2 backport came out later.
     if (url.endsWith('checkout/releases?per_page=30')) return JSON.stringify([release('v2.8.0', 20), release('v7.0.1', 30), release('v7.1.0', 5), release('v8.0.0-beta', 40, { prerelease: true })]);
     if (url.endsWith('setup-node/releases?per_page=30')) return JSON.stringify([release('v4.0.0', 300)]);
+    if (url.endsWith('kit/releases?per_page=30')) return JSON.stringify([release('v1.2.0', 20), release('v1.3.0', 3)]);
+    if (url.endsWith('old/releases?per_page=30')) return JSON.stringify([release('v2.0.0', 40)]);
+    if (url.includes('kit/commits/v1.2.0')) return JSON.stringify({ sha: 'e'.repeat(40) });
+    if (url.includes('old/commits/v2.0.0')) return JSON.stringify({ sha: '9'.repeat(40) });
     if (url.includes('checkout/commits/v7.0.1')) return JSON.stringify({ sha: 'a'.repeat(40) });
     if (url.includes('setup-node/commits/')) return JSON.stringify({ sha: 'd'.repeat(40) });
     if (url.includes('head_sha=c3')) return JSON.stringify({ workflow_runs: [{ id: 30 }] });
@@ -126,6 +132,9 @@ test('collect: every metric from a good fixture', async () => {
   // checkout matches v7.0.1; setup-node is pinned to a tag, not a SHA; acme/tools is the repo owner's own.
   assert.equal(out['tools.actions_latest_share'].value, 50);
   assert.deepEqual(out['tools.actions_latest_share'].detail.map((r) => r.status), ['current', 'not a SHA']);
+  // kit is on v1.2.0 (v1.3.0 is 3 days old, too new to take); old is behind its v2.0.0.
+  assert.equal(out['tools.packs_latest_share'].value, 50);
+  assert.deepEqual(out['tools.packs_latest_share'].detail.map((r) => [r.label, r.status]), [['acme/kit', 'current'], ['acme/old', 'behind']]);
   assert.equal(out['tools.node_lts'].value, 1);
   assert.equal(out['tools.open_dependency_prs'].value, 2);
   assert.equal(out['tools.oldest_dependency_pr_days'].value, 9);
@@ -200,6 +209,7 @@ test('collect: no gh, no npm answer or no index never read as 0', async () => {
   const noGh = await collect({ ...base, exec: fakeExec({ gh: false }) });
   for (const id of [
     'tools.actions_latest_share',
+    'tools.packs_latest_share',
     'tools.open_dependency_prs',
     'tools.oldest_dependency_pr_days',
     'tools.latest_dependency_pr_ci_minutes',
@@ -209,6 +219,28 @@ test('collect: no gh, no npm answer or no index never read as 0', async () => {
   assert.match(noNpm['tools.deps_latest_share'].could_not_check, /npm view answered for no dependency/);
   const noIndex = await collect({ ...base, exec: fakeExec(), fetchJson: async () => { throw new Error('offline'); } });
   assert.match(noIndex['tools.node_lts'].could_not_check, /offline/);
+});
+
+test('pack pins: params.config_file first, then the default paths; none found reads as not checked', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tools-packs-'));
+  try {
+    assert.deepEqual(packPins(dir), { file: null, pins: [] });
+    fs.mkdirSync(path.join(dir, 'config'));
+    fs.writeFileSync(path.join(dir, 'config', 'quality.json'), JSON.stringify({ packs: [`acme/kit@${'e'.repeat(40)}`, 'acme/kit@v1'] }));
+    assert.deepEqual(packPins(dir).pins.map((p) => `${p.owner}/${p.repo}@${p.ref.slice(0, 2)}`), ['acme/kit@ee'], 'a tag is refused by the engine, so it is not a pin here');
+    fs.writeFileSync(path.join(dir, 'mine.json'), JSON.stringify({ packs: [] }));
+    assert.equal(packPins(dir, 'mine.json').file, 'mine.json');
+    assert.deepEqual(packPins(dir, 'gone.json'), { file: 'gone.json', pins: [], missing: true }, 'a named file is never swapped for a default');
+    assert.equal(packPins(dir, path.join(dir, 'mine.json')).file, path.join(dir, 'mine.json'), 'an absolute path reads as itself');
+    fs.writeFileSync(path.join(dir, 'dots.json'), JSON.stringify({ packs: [`../kit@${'e'.repeat(40)}`, `acme/.x@${'e'.repeat(40)}`] }));
+    assert.deepEqual(packPins(dir, 'dots.json').pins, [], 'an owner or repo that starts with a dot is refused, as packs.mjs refuses it');
+    const none = await collect({ ...base, root: dir, exec: fakeExec(), params: { ...params, config_file: 'mine.json' } });
+    assert.match(none['tools.packs_latest_share'].could_not_check, /no owner\/repo@<sha> pack in mine.json/);
+    const gone = await collect({ ...base, root: dir, exec: fakeExec(), params: { ...params, config_file: 'gone.json' } });
+    assert.match(gone['tools.packs_latest_share'].could_not_check, /names gone.json, which is not there/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('lockfiles: pnpm and Yarn pin versions as npm does', () => {
