@@ -34,6 +34,8 @@ jobs:
       checks: read
       issues: read
       pull-requests: read
+      # The commit statuses of merged pull requests (a `review` status is one); without it the pull request counts are not measured.
+      statuses: read
       # Dependabot's open alerts, read live on every run; without it they come from the last local snapshot.
       vulnerability-alerts: read
     steps:
