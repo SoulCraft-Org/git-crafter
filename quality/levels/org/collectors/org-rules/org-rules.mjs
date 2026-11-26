@@ -26,6 +26,7 @@ export const guardsDefault = (rs) => {
   return onAllRepos(rs) && (refs.includes("~DEFAULT_BRANCH") || refs.includes("~ALL")) && GUARD.every((t) => types.has(t));
 };
 
+// Every Org rules metric for one org, keyed by id.
 export async function collect({ owner, params = {}, mode, lib, gh, env } = {}) {
   const r = results(metricIds, SOURCE);
   const org = String(params.owner || owner || "");
