@@ -30,6 +30,7 @@ flowchart LR
 | Area label | Every issue carries one area label from `area_labels` in the repo's `config/quality/targets/github.json`, next to `enhancement` or its type. The Issues tab reads it (`issues.area_labeled`, goal 100%) |
 | Link | The pull request has `Closes #n`, or `Card: PVTI_...` for a draft card with no issue number, on a line of its own. Any position passes, so attribution lines may come first |
 | Public repos | File only what the pull request needs. Never put a private name, path or key in a public issue |
+| Cloud session | A session bound to its repos cannot write the board. Follow [board-access.md](board-access.md) |
 | Missed metrics | `quality/sync-issues.mjs` files them. Do not file them by hand |
 
 ## Backfill
