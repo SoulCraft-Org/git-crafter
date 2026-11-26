@@ -176,8 +176,8 @@ def entry_problems(d, rules):
     if not (isinstance(d, dict) and isinstance(d.get("deny"), str)):
         return ["dropped entry %r: needs an object with a deny string" % (d,)]
     deny, unblocks = d["deny"], d.get("unblocks")
-    out = [] if deny and d.get("by") and d.get("why") else ["dropped %r: needs deny, by and why" % deny]
-    out += [p for p in [pattern_problem(deny)] if p]
+    out = [] if d.get("by") and d.get("why") else ["dropped %r: needs by and why" % deny]
+    out += list(filter(None, [pattern_problem(deny)]))  # an empty deny fails here
     out += ["dropped %s is still a deny rule" % deny] if deny in rules else []
     return out + ["dropped %s: %s" % (deny, p) for p in _false_hits(rules, [unblocks] if isinstance(unblocks, str) else [], "Bash")]
 
