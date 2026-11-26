@@ -1,8 +1,6 @@
 # Git Crafter
 
-Templates for AI agents to build and run an open-source or open-weight repo on their own, with Claude Code or OpenCode.
-The owner sets the vision. Agents plan, build, review, correct and merge, with no human in the loop.
-Auto-merge is on by default, gated by CI and a review at the head commit ([#586](https://github.com/SoulCraft-Org/git-crafter/pull/586)).
+Templates for AI agents to build, review and merge a repo on their own, from the owner's vision, with Claude Code or OpenCode.
 
 | License | Publisher | Began as |
 |---|---|---|
@@ -16,8 +14,6 @@ Auto-merge is on by default, gated by CI and a review at the head commit ([#586]
 | [Process page](https://soulcraft-org.github.io/git-crafter/) | Process maps: each step's tool, rule and metric |
 | [CI standard](templates/ci/README.md) | One reusable workflow on GitHub's standard hosted runners |
 | [Rules](rules/) and [guards](tools/) | What Claude sessions may do, and the `permissions.deny` list and hookify rules that block one-way doors |
-
-Both pages are public.
 
 
 ## Quickstart: 3 steps
@@ -51,7 +47,7 @@ More: [cloud](skills/merging/cloud.md#lessons), [open](templates/open/README.md)
 | `code` `documentation` `issues` `pull-requests` `discussions` `actions` `projects` `security` `dependabot` `scanning` `insights` `settings` | On |
 | `pages` | Off: it scores a site, so a repo's config turns it on |
 
-What each measures, and which to drop: [templates/quality](templates/quality/README.md).
+Each tab: [templates/quality](templates/quality/README.md).
 
 ## The maps
 
