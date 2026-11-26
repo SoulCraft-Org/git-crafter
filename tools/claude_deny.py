@@ -171,18 +171,20 @@ def dropped(data):
     return out
 
 
+def entry_problems(d, rules):
+    """One dropped entry with no deny, by or why, a malformed pattern, still listed, or whose unblocks example is still blocked."""
+    if not (isinstance(d, dict) and isinstance(d.get("deny"), str)):
+        return ["dropped entry %r: needs an object with a deny string" % (d,)]
+    deny, unblocks = d["deny"], d.get("unblocks")
+    out = [] if deny and d.get("by") and d.get("why") else ["dropped %r: needs deny, by and why" % deny]
+    out += [p for p in [pattern_problem(deny)] if p]
+    out += ["dropped %s is still a deny rule" % deny] if deny in rules else []
+    return out + ["dropped %s: %s" % (deny, p) for p in _false_hits(rules, [unblocks] if isinstance(unblocks, str) else [], "Bash")]
+
+
 def dropped_problems(data, rules):
-    """A dropped entry with no deny, by or why, a malformed pattern, one still listed, or one whose unblocks example is still blocked."""
-    out = []
-    for d in data.get("dropped", []):
-        if not (isinstance(d, dict) and isinstance(d.get("deny"), str)):
-            out.append("dropped entry %r: needs an object with a deny string" % (d,))
-            continue
-        out += [] if d.get("deny") and d.get("by") and d.get("why") else ["dropped %r: needs deny, by and why" % d.get("deny")]
-        out += [p for p in [pattern_problem(d.get("deny", ""))] if p]
-        out += ["dropped %s is still a deny rule" % d["deny"]] if d.get("deny") in rules else []
-        out += ["dropped %s: %s" % (d.get("deny"), p) for p in _false_hits(rules, [d["unblocks"]], "Bash")] if d.get("unblocks") else []
-    return out
+    """Every dropped entry's problems."""
+    return [p for d in data.get("dropped", []) for p in entry_problems(d, rules)]
 
 
 STALE = "Bash(gh pr merge *--auto*)"  # #586 dropped it; #654 found settings files that kept it
