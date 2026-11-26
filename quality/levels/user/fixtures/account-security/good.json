@@ -1,0 +1,5 @@
+{
+ "user": { "login": "octo-user", "two_factor_authentication": true },
+ "users/octo-user/gpg_keys?per_page=100": [{ "id": 1 }],
+ "users/octo-user/ssh_signing_keys?per_page=100": [{ "id": 2 }, { "id": 3 }]
+}
