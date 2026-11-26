@@ -1,0 +1,4 @@
+{
+ "orgs/octo-org": { "login": "octo-org", "default_repository_permission": "write" },
+ "orgs/octo-org/members?filter=2fa_disabled&per_page=100": [{ "login": "member-one" }, { "login": "member-two" }]
+}

@@ -1,0 +1,28 @@
+{
+ "ideal": "Every member signs in with two factors, and every new repo starts with a code security configuration.",
+ "sources": [
+  {
+   "title": "GitHub Docs: Requiring two-factor authentication in your organization",
+   "url": "https://docs.github.com/en/organizations/keeping-your-organization-secure/managing-two-factor-authentication-for-your-organization/requiring-two-factor-authentication-in-your-organization",
+   "date": "2026-11-26"
+  },
+  {
+   "title": "GitHub Docs: REST API endpoints for code security settings",
+   "url": "https://docs.github.com/en/rest/code-security/configurations",
+   "date": "2026-11-26"
+  },
+  {
+   "title": "GitHub Docs: Best practices for using the REST API",
+   "url": "https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api",
+   "date": "2026-11-26"
+  },
+  {
+   "title": "GitHub Docs: Rate limits for the REST API",
+   "url": "https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api",
+   "date": "2026-11-26"
+  }
+ ],
+ "quality": "2FA is required, and a default security configuration covers new public and private repos.",
+ "speed": "One read of these settings finishes in seconds.",
+ "consumption": "One read spends a hundredth of the workflow token's hourly requests."
+}

@@ -1,0 +1,17 @@
+{
+ "orgs/octo-org/rulesets?targets=branch&per_page=100": [
+  { "id": 10, "name": "Every default branch", "target": "branch", "enforcement": "active" },
+  { "id": 11, "name": "Trial", "target": "branch", "enforcement": "evaluate" },
+  { "id": 12, "name": "Docs repos", "target": "branch", "enforcement": "active" }
+ ],
+ "orgs/octo-org/rulesets/10": {
+  "id": 10, "name": "Every default branch", "target": "branch", "enforcement": "active",
+  "conditions": { "repository_name": { "include": ["~ALL"], "exclude": [] }, "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] } },
+  "rules": [{ "type": "pull_request" }, { "type": "non_fast_forward" }, { "type": "deletion" }]
+ },
+ "orgs/octo-org/rulesets/12": {
+  "id": 12, "name": "Docs repos", "target": "branch", "enforcement": "active",
+  "conditions": { "repository_name": { "include": ["docs-*"], "exclude": [] }, "ref_name": { "include": ["~ALL"], "exclude": [] } },
+  "rules": [{ "type": "deletion" }]
+ }
+}
