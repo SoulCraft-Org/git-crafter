@@ -3,6 +3,10 @@
   [
    "org-security",
    "Org security"
+  ],
+  [
+   "org-rules",
+   "Org rules"
   ]
  ]
 }
