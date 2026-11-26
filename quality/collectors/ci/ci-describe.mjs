@@ -126,9 +126,10 @@ export function cacheVerdict(log) {
  * than a quiet one sampled just as deep.
  */
 export function weightedLightShare(sample, runs) {
-  const counts = groupBy(runs.filter((r) => r.status === "completed"), (r) => `${r.workflow}\n${r.event}`);
+  // A run that ended "skipped" had no job run: it got no runner and billed nothing, so it is neither light nor a run.
+  const counts = groupBy(runs.filter((r) => r.status === "completed" && r.conclusion !== "skipped"), (r) => `${r.workflow}\n${r.event}`);
   const byWorkflow = new Map();
-  for (const [key, g] of groupBy(sample, (r) => `${r.workflow}\n${r.event}`)) {
+  for (const [key, g] of groupBy(sample.filter((r) => r.conclusion !== "skipped"), (r) => `${r.workflow}\n${r.event}`)) {
     const total = counts.get(key)?.length ?? g.length;
     const acc = byWorkflow.get(g[0].workflow) ?? { light: 0, total: 0 };
     acc.light += (g.filter((r) => r.light).length / g.length) * total;

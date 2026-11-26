@@ -13,7 +13,7 @@ const EXPECTED = {
   "ci.latest_flow": 10, // the latest head that went all green, s4: 13:00 to 13:10
   "ci.latest_full_run_minutes": 4.7, // unit-tests' latest real run, 9: 4.67; dependency-scan's, 6: 0.58
   "ci.main_red_minutes": 0, // unit-tests' one push to main, run 9, passed
-  "ci.light_run_share": 18.2, // runs 7 and 8 of the 11 completed
+  "ci.light_run_share": 10, // run 7 of the 10 that did not end skipped; run 8 ended skipped, got no runner, and is not counted
   "ci.flaky_reruns": 11.1, // unit-tests on s2 failed its first attempt: 1 of 9 workflow and commit pairs
   "ci.cache_hit_rate": 75, // jobs 109, 105, 101 hit; 103 missed; 112's log has no cache line
   // The latest merge, #11: unit-tests run 3, 12 billed minutes x $0.006, and
@@ -143,7 +143,7 @@ describe("collect", () => {
     ], "a file name matches; so does a workflow name");
     const light = got["ci.light_run_share"];
     assert.equal(light.value, 16.7, "unit-tests alone: dependency-scan's light runs are not counted");
-    assert.deepEqual(light.detail.at(-1), { label: "dependency-scan, left out, must run every time: it scans every push", value: 20, unit: "%" });
+    assert.deepEqual(light.detail.at(-1), { label: "dependency-scan, left out, must run every time: it scans every push", value: 0, unit: "%" });
     assert.equal(alwaysRunWhy({ "ci.yml": "x" }, "ci", ".github/workflows/ci.yml@refs/heads/main"), "x", "a run's path ends in @ref");
     assert.equal(alwaysRunWhy({ ".github/workflows/ci.yml": "y" }, "ci", ".github/workflows/ci.yml"), "y");
     assert.equal(alwaysRunWhy({}, "ci", null), undefined);
