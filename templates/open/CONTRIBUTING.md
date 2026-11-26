@@ -50,5 +50,5 @@ cd <repo>
 | Before you push | Rule |
 |---|---|
 | Check your paths | `python3 -I tools/merge_policy.py --base origin/main` |
-| Approvals | An AI review is the approval, once the checks pass |
+| Approvals | An AI review is the approval |
 | A fork's run | It waits for approval and gets no secrets |
