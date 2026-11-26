@@ -1,0 +1,114 @@
+{
+ "id": "account-guard",
+ "name": "Account guard",
+ "why": "A personal account's settings, from sign-in to the email its commits show",
+ "ideal": "The account signs in with two factors, signs its commits, and keeps its personal email out of public history.",
+ "sources": [
+  {
+   "title": "GitHub Docs: Configuring two-factor authentication",
+   "url": "https://docs.github.com/en/authentication/securing-your-account-with-two-factor-authentication-2fa/configuring-two-factor-authentication",
+   "date": "2026-11-26"
+  },
+  {
+   "title": "GitHub Docs: About commit signature verification",
+   "url": "https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification",
+   "date": "2026-11-26"
+  },
+  {
+   "title": "GitHub Docs: Setting your commit email address",
+   "url": "https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-email-preferences/setting-your-commit-email-address",
+   "date": "2026-11-26"
+  },
+  {
+   "title": "GitHub Docs: Blocking command line pushes that expose your personal email address",
+   "url": "https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-email-preferences/blocking-command-line-pushes-that-expose-your-personal-email-address",
+   "date": "2026-11-26"
+  },
+  {
+   "title": "GitHub Docs: Best practices for using the REST API",
+   "url": "https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api",
+   "date": "2026-11-26"
+  },
+  {
+   "title": "GitHub Docs: Rate limits for the REST API",
+   "url": "https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api",
+   "date": "2026-11-26"
+  }
+ ],
+ "critical_path": [
+  "sign-in",
+  "sign",
+  "private",
+  "history",
+  "read",
+  "spend"
+ ],
+ "steps": [
+  {
+   "id": "sign-in",
+   "name": "Two factors",
+   "actor": "owner",
+   "tools": [
+    "Password and authentication settings"
+   ],
+   "rule": "Two-factor authentication is on for the account.",
+   "rule_ref": "https://docs.github.com/en/authentication/securing-your-account-with-two-factor-authentication-2fa/configuring-two-factor-authentication",
+   "metric": "account_security.two_factor_on"
+  },
+  {
+   "id": "sign",
+   "name": "Sign commits",
+   "actor": "owner",
+   "tools": [
+    "SSH and GPG keys"
+   ],
+   "rule": "At least one GPG or SSH signing key is on the account.",
+   "rule_ref": "https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification",
+   "metric": "account_security.signing_keys"
+  },
+  {
+   "id": "private",
+   "name": "Private email",
+   "actor": "owner",
+   "tools": [
+    "Email settings"
+   ],
+   "rule": "The primary email is kept private.",
+   "rule_ref": "https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-email-preferences/setting-your-commit-email-address",
+   "metric": "email_privacy.primary_private"
+  },
+  {
+   "id": "history",
+   "name": "Public history",
+   "actor": "github",
+   "tools": [
+    "Commit search"
+   ],
+   "rule": "No recent public commit shows a personal author email.",
+   "rule_ref": "https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-email-preferences/blocking-command-line-pushes-that-expose-your-personal-email-address",
+   "metric": "email_privacy.personal_commit_emails"
+  },
+  {
+   "id": "read",
+   "name": "Read",
+   "actor": "ci",
+   "tools": [
+    "gh api"
+   ],
+   "rule": "One read of the account's settings finishes in seconds.",
+   "rule_ref": "https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api",
+   "metric": "account_security.read_seconds"
+  },
+  {
+   "id": "spend",
+   "name": "Spend",
+   "actor": "ci",
+   "tools": [
+    "gh api"
+   ],
+   "rule": "One read spends few of the hourly requests.",
+   "rule_ref": "https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api",
+   "metric": "email_privacy.requests"
+  }
+ ]
+}

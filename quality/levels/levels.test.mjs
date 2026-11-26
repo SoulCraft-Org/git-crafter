@@ -3,7 +3,7 @@
 // and all three kinds, each pack's map passes the library checks and links
 // every tab, and a sample run builds the page under its byte budget.
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -16,8 +16,7 @@ import { loadConfig, QUALITY } from "../config.mjs";
 import { configDefs, configIdeals } from "../packs.mjs";
 import { tabGaps } from "../score.mjs";
 
-// Only the packs that have landed so far (#669 lands them as a stack).
-const LEVELS = Object.fromEntries(Object.entries({ org: { owner: "octo-org" }, user: {} }).filter(([l]) => existsSync(join(QUALITY, "levels", l, "pack.json"))));
+const LEVELS = { org: { owner: "octo-org" }, user: {} };
 
 // A repo root whose quality config names this level, read from the real built-in packs.
 function levelConfig(level) {
@@ -32,7 +31,7 @@ for (const level of Object.keys(LEVELS)) {
     const config = levelConfig(level);
     const { defs } = configDefs(config, join(QUALITY, "targets"));
     const own = defs.filter((d) => config.tabs.some(([id]) => id === d.tab));
-    assert.ok(config.tabs.length >= 1, "the pack names its tabs");
+    assert.ok(config.tabs.length >= 2, "the pack names its tabs");
     assert.deepEqual(tabGaps(config.tabs, own, configIdeals(config, join(QUALITY, "ideals"))), []);
     for (const [tab] of config.tabs) {
       const n = own.filter((d) => d.tab === tab).length;
@@ -41,7 +40,7 @@ for (const level of Object.keys(LEVELS)) {
     for (const d of own) assert.match(d.goal_source, /https:\/\/docs\.github\.com\/\S+, read 2026-11-26/, d.id);
   });
 
-  test(`levels: the ${level} pack's map passes the library checks and links every tab`, { skip: !existsSync(join(QUALITY, "levels", level, "maps")) }, () => {
+  test(`levels: the ${level} pack's map passes the library checks and links every tab`, () => {
     const config = levelConfig(level);
     const { defs } = configDefs(config, join(QUALITY, "targets"));
     const library = loadLibrary(undefined, config.packs.map((p) => p.maps));
