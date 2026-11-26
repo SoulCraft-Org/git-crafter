@@ -1,6 +1,8 @@
 # Git Crafter
 
-Templates for AI agents to run an open-source or open-weight repo with Claude Code or OpenCode.
+Templates for AI agents to build and run an open-source or open-weight repo on their own, with Claude Code or OpenCode.
+The owner sets the vision. Agents plan, build, review, correct and merge, with no human in the loop.
+Auto-merge is on by default, gated by CI and a review at the head commit ([#586](https://github.com/SoulCraft-Org/git-crafter/pull/586)).
 
 | License | Publisher | Began as |
 |---|---|---|
