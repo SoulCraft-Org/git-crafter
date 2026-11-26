@@ -17,6 +17,7 @@ const ID = {
 export const metricIds = Object.values(ID);
 const LEAST = new Set(["none", "read"]);
 
+// Every Org members metric for one org, keyed by id.
 export async function collect({ owner, params = {}, mode, lib, gh, env } = {}) {
   const r = results(metricIds, SOURCE);
   const org = String(params.owner || owner || "");
