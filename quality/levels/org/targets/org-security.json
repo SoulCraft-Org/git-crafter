@@ -1,0 +1,70 @@
+[
+ {
+  "id": "org_security.two_factor_required",
+  "tab": "org-security",
+  "kind": "quality",
+  "group": "Accounts",
+  "label": "Two-factor authentication required",
+  "means": "Whether the org requires two-factor authentication of every member and outside collaborator.",
+  "unit": "on/off",
+  "goal": 1,
+  "near": 0.5,
+  "direction": "higher",
+  "goal_source": "GitHub Docs, Requiring two-factor authentication in your organization (https://docs.github.com/en/organizations/keeping-your-organization-secure/managing-two-factor-authentication-for-your-organization/requiring-two-factor-authentication-in-your-organization, read 2026-11-26)",
+  "source": "state: gh api orgs/<owner>: two_factor_requirement_enabled; not measured without an org owner's admin:org token",
+  "needs": "github-admin",
+  "chart": "number",
+  "params": {
+   "comment": "owner: the GitHub org read; empty means the quality config's owner.",
+   "owner": ""
+  }
+ },
+ {
+  "id": "org_security.new_repo_security_config",
+  "tab": "org-security",
+  "kind": "quality",
+  "group": "Repos",
+  "label": "Security configuration for new repos",
+  "means": "Whether a code security configuration is the default for new public and private repos.",
+  "unit": "on/off",
+  "goal": 1,
+  "near": 0.5,
+  "direction": "higher",
+  "goal_source": "GitHub Docs, REST API endpoints for code security settings (https://docs.github.com/en/rest/code-security/configurations, read 2026-11-26): a default configuration applies to each new repo",
+  "source": "state: gh api orgs/<owner>/code-security/configurations/defaults: default_for_new_repos is all, or both public and private_and_internal",
+  "needs": "github-admin",
+  "chart": "number"
+ },
+ {
+  "id": "org_security.read_seconds",
+  "tab": "org-security",
+  "kind": "speed",
+  "group": "Read",
+  "label": "One read",
+  "means": "Seconds this tab's collector takes to read the org's security settings.",
+  "unit": "s",
+  "goal": 10,
+  "near": 30,
+  "direction": "lower",
+  "goal_source": "GitHub Docs, Best practices for using the REST API (https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api, read 2026-11-26), asks for serial requests; template goal: a few serial reads finish in seconds",
+  "source": "wall time of this tab's collector, first request to last",
+  "needs": "gh",
+  "chart": "number"
+ },
+ {
+  "id": "org_security.requests",
+  "tab": "org-security",
+  "kind": "consumption",
+  "group": "Read",
+  "label": "API requests per read",
+  "means": "gh api requests one read of the org's security settings spends.",
+  "unit": "requests",
+  "goal": 10,
+  "near": 25,
+  "direction": "lower",
+  "goal_source": "GitHub Docs, Rate limits for the REST API (https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api, read 2026-11-26): GITHUB_TOKEN gets 1,000 requests per hour per repository; template goal: one read spends a hundredth of that",
+  "source": "gh api requests this tab's collector made, one per page",
+  "needs": "gh",
+  "chart": "number"
+ }
+]
