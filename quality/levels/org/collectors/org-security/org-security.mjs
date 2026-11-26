@@ -37,8 +37,7 @@ async function securityConfig(r, read, org) {
     const list = Array.isArray(defaults) ? defaults : [];
     r.val(ID.config, coversAll(list) ? 1 : 0, src, list.map((d) => ({ label: `default for ${d.default_for_new_repos}`, value: 1, unit: "configuration" })));
   } catch (err) {
-    const admin = err?.status === 403 || err?.status === 404;
-    r.cnc(ID.config, admin ? "needs an org owner's or security manager's token with read:org" : why(err), src);
+    r.cnc(ID.config, [403, 404].includes(err?.status) ? "needs an org owner's or security manager's token with read:org" : why(err), src);
   }
 }
 
@@ -48,12 +47,9 @@ export async function collect({ owner, params = {}, mode, lib, gh, env } = {}) {
   const org = String(params.owner || owner || "");
   if (!org) return r.all("no org to read: set owner in the quality config, or params.owner");
   const read = levelReader({ gh, lib, mode, env });
-  let o;
-  try {
-    o = await read.rest(`orgs/${org}`);
-  } catch (err) {
-    return r.all(`gh api orgs/${org}: ${why(err)}`);
-  }
+  let failed;
+  const o = await read.rest(`orgs/${org}`).catch((err) => (failed = err));
+  if (failed) return r.all(`gh api orgs/${org}: ${why(failed)}`);
   twoFactor(r, o, org);
   await securityConfig(r, read, org);
   timing(r, read, ID, `org ${org}`);
