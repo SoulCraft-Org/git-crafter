@@ -13,7 +13,8 @@ block and allow, and the deny rules it has dropped. COMMANDS lists what this
 file runs; --self-test checks that every block example matches one of its own
 rule's patterns, no allow example matches any pattern, each retired guard rule
 is accounted for once, no dropped rule is still listed, a stale settings file
-loses only its dropped rules, and the model passes its own self-test.
+loses only its dropped rules, an inert Write(path) rule fails --check and
+--merge --yes turns it into Edit(path), and the model passes its own self-test.
 
 An account's own rules go in claude_deny.local.json beside this file (the account
 overlay's code-os/claude_deny.local.json). It has the same shape; every command
@@ -189,6 +190,7 @@ def dropped_problems(data, rules):
 
 STALE = "Bash(gh pr merge *--auto*)"  # #586 dropped it; #654 found settings files that kept it
 OWN = "Bash(my-own-rule *)"
+INERT_RULE, INERT_FIXED = "Write(~/.claude/hooks/x.sh)", "Edit(~/.claude/hooks/x.sh)"
 
 
 def stale_problems(data, rules):
@@ -211,13 +213,36 @@ def stale_problems(data, rules):
     return out
 
 
+def inert_problems(rules):
+    """A settings file with a Write(path) deny rule fails --check, and --merge --yes turns it into Edit(path) once."""
+    import contextlib
+    import io
+    import tempfile
+    out = ["inert_fix(%r) is %r" % (r, inert_fix(r)) for r, want in (
+        (INERT_RULE, INERT_FIXED), ("Grep(~/.ssh/**)", "Read(~/.ssh/**)"), ("NotebookEdit(**/*.ipynb)", "Edit(**/*.ipynb)"),
+        ("Write(*)", None), ("Edit(~/x)", None), ("Read(~/x)", None), ("Bash(Write(x))", None)) if inert_fix(r) != want]
+    out += ["%r is an inert form in the list itself" % r for r in rules if inert_fix(r)]
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, "settings.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump({"permissions": {"deny": rules + [INERT_FIXED, INERT_RULE]}}, f)
+        data = {"rules": [{"deny": rules}]}
+        with contextlib.redirect_stdout(io.StringIO()):
+            before, _, after = check(path, data), merge(path, data, True), check(path, data)
+        got = read_settings(path)["permissions"]["deny"]
+    out += [] if before == 1 else ["--check passes a settings file that holds %s" % INERT_RULE]
+    out += [] if after == 0 else ["--check still fails after --merge --yes replaced %s" % INERT_RULE]
+    out += [] if got == rules + [INERT_FIXED] else ["--merge --yes did not replace %s with one %s" % (INERT_RULE, INERT_FIXED)]
+    return out
+
+
 def self_test(data):
     """Run every rule's examples, the accounting and the model's own test; 0 when all pass."""
     rules = deny_list(data)
     problems = [p for rule in data["rules"] for p in rule_problems(rule, rules)]
     accounting, accounted = accounting_problems(data)
     problems += accounting + duplicate_problems(data, rules) + merge_problems()
-    problems += dropped_problems(data, rules) + stale_problems(data, rules)
+    problems += dropped_problems(data, rules) + stale_problems(data, rules) + inert_problems(rules)
     for p in problems:
         print("FAIL " + p)
     print("claude_deny self-test: %d rules for %d retired guard rules, %s"
@@ -233,9 +258,13 @@ COMMANDS = {("--self-test",): self_test}
 # apply that changes the list, run --merge ~/.claude/settings.json --yes.
 #   --check FILE        exit 0 when FILE holds every rule and no dropped one, else list
 #                       the missing and the dropped ones. A rule in neither list is the
-#                       account's own: listed as kept, never a failure. Read-only.
-#   --merge FILE [--yes] print the missing and dropped rules; with --yes add the missing
-#                       ones to the end of permissions.deny and remove the dropped ones,
+#                       account's own: listed as kept, and a failure only when inert.
+#                       Read-only.
+#                       An inert rule (Write, MultiEdit, NotebookEdit, Glob or Grep with
+#                       a path, which Claude Code never matches) fails it too.
+#   --merge FILE [--yes] print the missing, dropped and inert rules; with --yes add the
+#                       missing ones to the end of permissions.deny, remove the dropped
+#                       ones and replace each inert one with its Edit or Read form,
 #                       keeping every other rule and key, through a temporary file
 #                       renamed into place.
 #   --table             the Markdown table of retired rules and what replaces each.
@@ -266,32 +295,66 @@ def stale(settings, data):
     return [r for r in have(settings) if r in gone]
 
 
+# Claude Code accepts a path rule for these tools but never matches a file check against it: Edit(path) covers
+# Write, MultiEdit and NotebookEdit, and Read(path) covers Glob and Grep (code.claude.com/docs/en/permissions,
+# "Write(path), Glob(path), and Grep(path) rules don't match", read 2026-11-26). Only a bare * path is honored.
+INERT = {"Write": "Edit", "MultiEdit": "Edit", "NotebookEdit": "Edit", "Glob": "Read", "Grep": "Read"}
+
+
+def inert_fix(rule):
+    """The Edit(...) or Read(...) rule that does what an inert path rule meant, or None for any other rule."""
+    tool, sep, rest = rule.partition("(")
+    if tool in INERT and sep and rest.endswith(")") and rest[:-1].strip() not in ("", "*"):
+        return "%s(%s" % (INERT[tool], rest)
+    return None
+
+
+def inert(settings):
+    """The deny rules of a settings file that Claude Code never matches, each with its fix, in file order."""
+    return [(r, inert_fix(r)) for r in have(settings) if inert_fix(r)]
+
+
 def own(settings, data):
     """The rules a settings file holds that the list neither has nor dropped: the account's own."""
     known = set(deny_list(data)) | set(dropped(data))
     return [r for r in have(settings) if r not in known]
 
 
+def rewritten(settings, add, cut, fix):
+    """A settings file's deny list without the dropped rules, with each inert rule fixed and the missing ones added, each once."""
+    out = []
+    for r in [fix.get(r, r) for r in have(settings) if r not in cut] + add:
+        out += [] if r in out else [r]
+    return out
+
+
+def write_settings(path, settings):
+    """Write a settings file through a temporary file renamed into place, keeping its mode."""
+    import tempfile
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(path)), prefix=".settings-")
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(json.dumps(settings, indent=2, ensure_ascii=False) + "\n")
+    os.chmod(tmp, os.stat(path).st_mode & 0o777)
+    os.replace(tmp, path)
+
+
 def merge(path, data, write):
     """Print the missing and dropped rules; with write add the missing ones and remove the dropped ones."""
     settings = read_settings(path)
     rules = deny_list(data)
-    add, cut = missing(settings, rules), stale(settings, data)
+    add, cut, fix = missing(settings, rules), stale(settings, data), dict(inert(settings))
     for r in add:
         print("add " + r)
     for r in cut:
         print("remove %s (dropped)" % r)
-    if write and (add or cut):
-        import tempfile
-        perms = settings.setdefault("permissions", {})
-        perms["deny"] = [r for r in have(settings) if r not in cut] + add
-        fd, tmp = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(path)), prefix=".settings-")
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            f.write(json.dumps(settings, indent=2, ensure_ascii=False) + "\n")
-        os.chmod(tmp, os.stat(path).st_mode & 0o777)
-        os.replace(tmp, path)
-    print("%d of %d rules %s, %d dropped rules %s" % (len(add), len(rules), "added" if write else "to add",
-                                                       len(cut), "removed" if write else "to remove (pass --yes to write)"))
+    for r, f in fix.items():
+        print("replace %s with %s (Claude Code never matches it)" % (r, f))
+    if write and (add or cut or fix):
+        settings.setdefault("permissions", {})["deny"] = rewritten(settings, add, cut, fix)
+        write_settings(path, settings)
+    done = ("added", "removed", "replaced") if write else ("to add", "to remove", "to replace (pass --yes to write)")
+    print("%d of %d rules %s, %d dropped rules %s, %d inert rules %s"
+          % (len(add), len(rules), done[0], len(cut), done[1], len(fix), done[2]))
     return 0
 
 
@@ -310,10 +373,12 @@ def check(path, data):
     """Exit 0 when a settings file holds every deny rule and no dropped one; list the missing, dropped and own ones."""
     settings = read_settings(os.path.expanduser(path))
     gone, cut, kept = missing(settings, deny_list(data)), stale(settings, data), own(settings, data)
+    bad = inert(settings)
     lines = ["missing %s" % r for r in gone] + ["dropped %s" % r for r in cut] + ["own %s (kept)" % r for r in kept]
-    print("".join(line + "\n" for line in lines) + "%d deny rules missing from %s, %d dropped rules still in it, %d own rules"
-          % (len(gone), path, len(cut), len(kept)))
-    return 1 if gone or cut else 0
+    lines += ["inert %s: Claude Code never matches it, use %s" % rf for rf in bad]
+    print("".join(line + "\n" for line in lines) + "%d deny rules missing from %s, %d dropped rules still in it, %d own rules, %d inert"
+          % (len(gone), path, len(cut), len(kept), len(bad)))
+    return 1 if gone or cut or bad else 0
 
 
 COMMANDS.update({
