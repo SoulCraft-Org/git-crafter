@@ -1,0 +1,15 @@
+{
+ "user": { "login": "octo-user" },
+ "user/emails?per_page=100": [
+  { "email": "primary@mail.example", "primary": true, "verified": true, "visibility": "private" },
+  { "email": "1+octo-user@users.noreply.github.com", "primary": false, "verified": true, "visibility": null }
+ ],
+ "search/commits?q=author%3Aocto-user&sort=author-date&order=desc&per_page=100": {
+  "items": [
+   { "commit": { "author": { "email": "1+octo-user@users.noreply.github.com" } } },
+   { "commit": { "author": { "email": "Work@Mail.example" } } },
+   { "commit": { "author": { "email": "work@mail.example" } } },
+   { "commit": { "author": { "email": "noreply@github.com" } } }
+  ]
+ }
+}
