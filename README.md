@@ -36,7 +36,7 @@ cp -n $GC/templates/ci/dependabot.yml .github/dependabot.yml
 python3 -I $GC/tools/ci_standard.py check --repo .
 ```
 
-More: [open](templates/open/README.md), [setup.json](templates/setup.json), [agents](templates/agents/README.md), [projects](templates/projects/README.md).
+More: [cloud](skills/merging/cloud.md#lessons), [open](templates/open/README.md), [setup.json](templates/setup.json), [agents](templates/agents/README.md), [projects](templates/projects/README.md).
 
 ## The 13 tabs
 
