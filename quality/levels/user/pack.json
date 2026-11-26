@@ -3,6 +3,10 @@
   [
    "account-security",
    "Account security"
+  ],
+  [
+   "email-privacy",
+   "Email privacy"
   ]
  ]
 }

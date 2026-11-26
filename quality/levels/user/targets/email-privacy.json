@@ -1,0 +1,70 @@
+[
+ {
+  "id": "email_privacy.primary_private",
+  "tab": "email-privacy",
+  "kind": "quality",
+  "group": "Settings",
+  "label": "Primary email private",
+  "means": "Whether the account's primary email has visibility private.",
+  "unit": "on/off",
+  "goal": 1,
+  "near": 0.5,
+  "direction": "higher",
+  "goal_source": "GitHub Docs, Setting your commit email address (https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-email-preferences/setting-your-commit-email-address, read 2026-11-26); GitHub Docs, REST API endpoints for emails (https://docs.github.com/en/rest/users/emails, read 2026-11-26)",
+  "source": "state: gh api user/emails: visibility of the primary address; needs the user:email scope (gh auth refresh -s user:email)",
+  "needs": "gh",
+  "chart": "number",
+  "params": {
+   "comment": "owner: the GitHub user read; empty means the signed-in user. Private settings answer only the signed-in user.",
+   "owner": ""
+  }
+ },
+ {
+  "id": "email_privacy.personal_commit_emails",
+  "tab": "email-privacy",
+  "kind": "quality",
+  "group": "History",
+  "label": "Personal emails in recent commits",
+  "means": "Distinct non-noreply author emails in the latest 100 public commits. A count, never an address.",
+  "unit": "emails",
+  "goal": 0,
+  "near": 1,
+  "direction": "lower",
+  "goal_source": "GitHub Docs, Blocking command line pushes that expose your personal email address (https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-email-preferences/blocking-command-line-pushes-that-expose-your-personal-email-address, read 2026-11-26); template goal: none",
+  "source": "last 100 events: gh api search/commits?q=author:<login>&sort=author-date, the newest 100; new commits replace old within hours",
+  "needs": "gh",
+  "chart": "number"
+ },
+ {
+  "id": "email_privacy.read_seconds",
+  "tab": "email-privacy",
+  "kind": "speed",
+  "group": "Read",
+  "label": "One read",
+  "means": "Seconds this tab's collector takes to read the account's email settings and recent commits.",
+  "unit": "s",
+  "goal": 10,
+  "near": 30,
+  "direction": "lower",
+  "goal_source": "GitHub Docs, Best practices for using the REST API (https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api, read 2026-11-26), asks for serial requests; template goal: a few serial reads finish in seconds",
+  "source": "wall time of this tab's collector, first request to last",
+  "needs": "gh",
+  "chart": "number"
+ },
+ {
+  "id": "email_privacy.requests",
+  "tab": "email-privacy",
+  "kind": "consumption",
+  "group": "Read",
+  "label": "API requests per read",
+  "means": "gh api requests one read of the account's email settings and recent commits spends.",
+  "unit": "requests",
+  "goal": 10,
+  "near": 25,
+  "direction": "lower",
+  "goal_source": "GitHub Docs, Rate limits for the REST API (https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api, read 2026-11-26): GITHUB_TOKEN gets 1,000 requests per hour per repository; template goal: one read spends a hundredth of that",
+  "source": "gh api requests this tab's collector made, one per page",
+  "needs": "gh",
+  "chart": "number"
+ }
+]
