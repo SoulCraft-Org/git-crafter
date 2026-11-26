@@ -22,6 +22,27 @@ export const coversAll = (defaults) => {
   return scopes.has("all") || (scopes.has("public") && scopes.has("private_and_internal"));
 };
 
+// Two-factor required: 1 or 0, or not measured when the token cannot see it.
+function twoFactor(r, o, org) {
+  const src = `state: gh api orgs/${org}: two_factor_requirement_enabled`;
+  if (typeof o.two_factor_requirement_enabled === "boolean") r.val(ID.twoFactor, o.two_factor_requirement_enabled ? 1 : 0, src);
+  else r.cnc(ID.twoFactor, "this token sees no two_factor_requirement_enabled: it needs an org owner's token with admin:org", src);
+}
+
+// A default code security configuration for new public and private repos.
+async function securityConfig(r, read, org) {
+  const src = `state: gh api orgs/${org}/code-security/configurations/defaults: default_for_new_repos covers public and private repos`;
+  try {
+    const defaults = await read.rest(`orgs/${org}/code-security/configurations/defaults`);
+    const list = Array.isArray(defaults) ? defaults : [];
+    r.val(ID.config, coversAll(list) ? 1 : 0, src, list.map((d) => ({ label: `default for ${d.default_for_new_repos}`, value: 1, unit: "configuration" })));
+  } catch (err) {
+    const admin = err?.status === 403 || err?.status === 404;
+    r.cnc(ID.config, admin ? "needs an org owner's or security manager's token with read:org" : why(err), src);
+  }
+}
+
+// Every Org security metric for one org, keyed by id.
 export async function collect({ owner, params = {}, mode, lib, gh, env } = {}) {
   const r = results(metricIds, SOURCE);
   const org = String(params.owner || owner || "");
@@ -33,21 +54,8 @@ export async function collect({ owner, params = {}, mode, lib, gh, env } = {}) {
   } catch (err) {
     return r.all(`gh api orgs/${org}: ${why(err)}`);
   }
-
-  const tfSource = `state: gh api orgs/${org}: two_factor_requirement_enabled`;
-  if (typeof o.two_factor_requirement_enabled === "boolean") r.val(ID.twoFactor, o.two_factor_requirement_enabled ? 1 : 0, tfSource);
-  else r.cnc(ID.twoFactor, "this token sees no two_factor_requirement_enabled: it needs an org owner's token with admin:org", tfSource);
-
-  const cfgSource = `state: gh api orgs/${org}/code-security/configurations/defaults: default_for_new_repos covers public and private repos`;
-  try {
-    const defaults = await read.rest(`orgs/${org}/code-security/configurations/defaults`);
-    const list = Array.isArray(defaults) ? defaults : [];
-    r.val(ID.config, coversAll(list) ? 1 : 0, cfgSource, list.map((d) => ({ label: `default for ${d.default_for_new_repos}`, value: 1, unit: "configuration" })));
-  } catch (err) {
-    const admin = err?.status === 403 || err?.status === 404;
-    r.cnc(ID.config, admin ? "needs an org owner's or security manager's token with read:org" : why(err), cfgSource);
-  }
-
+  twoFactor(r, o, org);
+  await securityConfig(r, read, org);
   timing(r, read, ID, `org ${org}`);
   return r.done();
 }
