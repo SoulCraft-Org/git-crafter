@@ -136,6 +136,19 @@ runs:
       shell: bash
       run: npm ci --prefix "$GITHUB_ACTION_PATH/../.." --ignore-scripts --no-audit --no-fund --loglevel=error
 
+    # The GitHub requests notice (quality/gh-replay.mjs): every gh read this action makes goes through a counting shim, and
+    # the report step at the end prints the total as a notice, which ci.pr_run_requests reads from the check-run annotations.
+    # Count only: no save to replay or record, so no extra request. A caller that already ran gh-replay's setup (pages.yml
+    # does) sets GH_REPLAY_DIR, so this step and the report step skip. So does a second call of this action in one job:
+    # the first call's setup already set GH_REPLAY_DIR, and its report ran before the second call began.
+    - name: Count this run's GitHub requests
+      id: replay
+      if: env.GH_REPLAY_DIR == ''
+      shell: bash
+      env:
+        GH_REPLAY_COUNT_ONLY: "1"
+      run: node "$GITHUB_ACTION_PATH/../../quality/gh-replay.mjs" setup
+
     # A pack (quality/CONFIG.md, Packs) is code the collect runs, so each is fetched at the full commit SHA its
     # config pins, in every mode: the builds read its targets, ideals and maps too. Later steps find them through
     # CODE_OS_PACKS. A public pack needs no token; a pack named by path fails here, as in any CI run.
@@ -257,6 +270,12 @@ runs:
       run: node "$GITHUB_ACTION_PATH/../../pages/build.mjs" --config "$CONFIG"
 
     # ---- Gate ----
+
+    # After every build, so the total holds each read; skipped when a caller's own setup owns the shim.
+    - name: Print the GitHub requests notice
+      if: always() && steps.replay.outcome == 'success'
+      shell: bash
+      run: node "$GITHUB_ACTION_PATH/../../quality/gh-replay.mjs" report
 
     # Last, after the pages built (mode all) or the run uploaded (mode
     # collect), so a push to main still publishes the page that shows the miss.
