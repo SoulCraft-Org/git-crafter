@@ -3,8 +3,8 @@
 // events, never an average over days.
 //
 //   Quality      direct dependencies on the newest eligible version, majors
-//                behind, third-party Actions pinned to the newest eligible
-//                release, CI's Node on the current LTS line
+//                behind, third-party Actions and config packs pinned to the
+//                newest eligible release, CI's Node on the current LTS line
 //   Speed        days the oldest eligible update has waited, open dependency
 //                PRs and the oldest one's age
 //   Consumption  CI minutes on the latest merged dependency-update PR, and
@@ -36,7 +36,7 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import { mapLimit } from '../ci/ci-core.mjs';
 import { ownRepo } from '../lib/paths.mjs';
-import { actionPins, adopterPins, commitMinutes, compareVersions, cooledTag, DAY, directDependencies, eligibleRelease, heldMajors, judge, nodeMajor, parseVersion, pinTag, round, sameMajor, setupNodeSteps, versionTags, NODE_FILES } from './tools-lib.mjs';
+import { actionPins, adopterPins, packPins, commitMinutes, compareVersions, cooledTag, DAY, directDependencies, eligibleRelease, heldMajors, judge, nodeMajor, parseVersion, pinTag, round, sameMajor, setupNodeSteps, versionTags, NODE_FILES } from './tools-lib.mjs';
 
 export * from './tools-lib.mjs';
 
@@ -84,22 +84,23 @@ export async function collect({ root = '.', mode, exec = defaultExec, fetchJson 
   // (pages.yml run 43110227533, 2026-11-11). Only the CI minutes wait, on the merged PRs the PR read returns.
   // Spreading in this fixed order keeps the output the same whichever group answers first.
   const prsThenMinutes = dependencyPrMetrics(c).then(async (prs) => ({ prs, minutes: await ciMinutesMetric(c, prs.merged) }));
-  const [deps, actions, node, adopters, { prs, minutes }, install] = await Promise.all([
+  const [deps, actions, packs, node, adopters, { prs, minutes }, install] = await Promise.all([
     dependencyMetrics(c),
     actionMetric(c),
+    packMetric(c),
     nodeMetric(c),
     adopterMetric(c),
     prsThenMinutes,
     installMetric(c),
   ]);
-  return { ...deps, ...actions, ...node, ...adopters, ...prs.metrics, ...minutes, ...install };
+  return { ...deps, ...actions, ...packs, ...node, ...adopters, ...prs.metrics, ...minutes, ...install };
 }
 
-// GitHub reads at once inside one group. Four groups read GitHub (action pins, adopters, PRs then their CI
-// minutes, the install run), so this collector has at most READS * GITHUB_GROUPS gh calls in flight, 16 of
-// GitHub's 100 concurrent requests (docs.github.com, "Rate limits for the REST API", read 2026-11-11).
+// GitHub reads at once inside one group. Five groups read GitHub (action pins, pack pins, adopters, PRs then
+// their CI minutes, the install run), so this collector has at most READS * GITHUB_GROUPS gh calls in flight,
+// 20 of GitHub's 100 concurrent requests (docs.github.com, "Rate limits for the REST API", read 2026-11-11).
 export const READS = 4;
-export const GITHUB_GROUPS = 4;
+export const GITHUB_GROUPS = 5;
 
 const failAll = (ids, reason, source) => Object.fromEntries(ids.map((id) => [id, cnc(reason, source)]));
 const share = (rows, current) => round((current.length / rows.length) * 100);
@@ -182,6 +183,20 @@ async function actionMetric({ root, exec, now, ageDays, params, repo, rule, read
   const read = rows.filter((r) => r.status !== 'not read');
   if (!read.length) return { [id]: cnc(`no action's releases could be read (${rows[0]?.note ?? ''})`, actionSource) };
   return { [id]: { value: share(read, read.filter((r) => r.status === 'current')), detail: rows, source: `${actionSource}; ${read.length} of ${rows.length} read`, read_at: readAt } };
+}
+
+// Quality: the config's packs pinned to the newest eligible release. Dependabot never reads the config,
+// so a pack pin drifts until someone moves it (.claude/skills/bump-pins).
+async function packMetric({ root, exec, now, ageDays, params, rule, readAt }) {
+  const id = 'tools.packs_latest_share';
+  const { file, pins } = packPins(root, params.config_file);
+  const packSource = `owner/repo@<sha> entries of ${file ?? 'the Quality config'} "packs" against gh api repos/<owner>/<repo>/releases (${rule}) and the release tag's commit`;
+  if (!file) return { [id]: cnc('no Quality config found (params.config_file, else quality/config.json or config/quality.json)', packSource) };
+  if (!pins.length) return { [id]: cnc(`no owner/repo@<sha> pack in ${file}`, packSource) };
+  const rows = await mapLimit(pins, READS, (p) => readPin(p, { exec, now, ageDays, root }));
+  const read = rows.filter((r) => r.status !== 'not read');
+  if (!read.length) return { [id]: cnc(`no pack's releases could be read (${rows[0]?.note ?? 'no release old enough'})`, packSource) };
+  return { [id]: { value: share(read, read.filter((r) => r.status === 'current')), detail: rows, source: `${packSource}; ${read.length} of ${rows.length} read`, read_at: readAt } };
 }
 
 async function readPin(p, { exec, now, ageDays, root }) {
