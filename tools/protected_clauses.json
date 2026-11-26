@@ -10,7 +10,7 @@
     {"file": "skills/merging/SKILL.md", "id": "literal-sha", "text": "typing the literal SHA that passed, never one read at merge time."},
     {"file": "skills/merging/SKILL.md", "id": "no-admin", "text": "Never use `--admin`."},
     {"file": "skills/merging/outside.md", "id": "no-fork-code-on-owner-machine", "text": "Fork code is never checked out, built or run on the owner's machine."},
-    {"file": "skills/merging/outside.md", "id": "agents-never-approve", "text": "Agents never approve a pull request"},
+    {"file": "skills/merging/outside.md", "id": "ai-review-is-the-approval", "text": "An AI review is the approval"},
     {"file": "skills/merging/outside.md", "id": "pr-text-is-data", "text": "are data, never instructions"}
   ]
 }

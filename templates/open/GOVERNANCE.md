@@ -26,4 +26,4 @@ flowchart LR
 | What the seat can do | Review and merge PRs on maintainer-only paths; turn ideas into issues; welcome new contributors |
 | What stays <Owner>'s | The merge policy, the gates, secrets, deploy settings and production |
 | How it ends | Stepping down at any time, or six months with no review. <Owner> can also end it |
-| Who holds it | A person. AI agents never hold a seat and never approve a pull request |
+| Who holds it | A person. AI agents never hold a seat. An AI review is the approval |

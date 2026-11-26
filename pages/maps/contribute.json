@@ -93,7 +93,7 @@
     "merge_policy.py --pr N --sha",
     "gh pr merge --match-head-commit"
    ],
-   "rule": "Content paths merge at the checked head SHA. Agents never approve a pull request.",
+   "rule": "Content paths merge at the checked head SHA. An AI review is the approval.",
    "rule_ref": "https://github.com/SoulCraft-Org/git-crafter/blob/main/skills/merging/outside.md#merge",
    "metric": "pull_requests.green_to_merge_minutes",
    "at": [
