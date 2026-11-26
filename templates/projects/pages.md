@@ -2,7 +2,7 @@
 
 Part of the [Projects setup](README.md).
 
-Each tab and feature of a Project has a Quality, Speed and Consumption page and a process map. The Claude side is Claudius's [20 Code Project pages](https://github.com/Soul-Craft/claudius/blob/main/templates/claude/code-project/pages.json). This repo holds the GitHub side.
+Each tab and feature of a Project has a Quality, Speed and Consumption page and a process map. The Claude side is Claudius's [20 Code Project pages](https://github.com/Colorado-Startups/claudius/blob/main/templates/claude/code-project/README.md#pages). This repo holds the GitHub side.
 
 | Project tab or feature | Map here | What it scores |
 |---|---|---|
