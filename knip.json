@@ -23,7 +23,8 @@
   "quality/collectors/site/design.mjs",
   "quality/collectors/site/usability.mjs",
   "quality/collectors/tests/tests.mjs",
-  "quality/collectors/tools/tools.mjs"
+  "quality/collectors/tools/tools.mjs",
+  "quality/levels/*/collectors/*/*.mjs"
  ],
  "project": [
   "**/*.{mjs,js}"

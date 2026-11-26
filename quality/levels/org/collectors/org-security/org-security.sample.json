@@ -1,0 +1,30 @@
+{
+ "org_security.two_factor_required": {
+  "value": 1,
+  "source": "sample: state: gh api orgs/octo-org: two_factor_requirement_enabled"
+ },
+ "org_security.new_repo_security_config": {
+  "value": 1,
+  "detail": [
+   {
+    "label": "default for public",
+    "value": 1,
+    "unit": "configuration"
+   },
+   {
+    "label": "default for private_and_internal",
+    "value": 1,
+    "unit": "configuration"
+   }
+  ],
+  "source": "sample: state: gh api orgs/octo-org/code-security/configurations/defaults: default_for_new_repos covers public and private repos"
+ },
+ "org_security.read_seconds": {
+  "value": 0,
+  "source": "sample: wall time of this collector, org octo-org"
+ },
+ "org_security.requests": {
+  "value": 2,
+  "source": "sample: gh api requests this collector made, one per page, org octo-org"
+ }
+}
