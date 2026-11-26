@@ -1,0 +1,25 @@
+{
+ "org_rules.all_repo_rulesets": {
+  "value": 1,
+  "detail": [
+   {
+    "label": "Every default branch",
+    "value": 1,
+    "unit": "ruleset"
+   }
+  ],
+  "source": "sample: state: gh api orgs/octo-org/rulesets?targets=branch, then each active one in full; 3 branch rulesets"
+ },
+ "org_rules.default_branch_guarded": {
+  "value": 1,
+  "source": "sample: state: gh api orgs/octo-org/rulesets?targets=branch, then each active one in full: one on ~ALL repos, ~DEFAULT_BRANCH, with rules pull_request, non_fast_forward, deletion"
+ },
+ "org_rules.read_seconds": {
+  "value": 0,
+  "source": "sample: wall time of this collector, org octo-org"
+ },
+ "org_rules.requests": {
+  "value": 3,
+  "source": "sample: gh api requests this collector made, one per page, org octo-org"
+ }
+}

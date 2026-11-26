@@ -1,0 +1,28 @@
+{
+ "ideal": "One active ruleset covers every repo, and its default branch takes changes only by pull request.",
+ "sources": [
+  {
+   "title": "GitHub Docs: About rulesets",
+   "url": "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets",
+   "date": "2026-11-26"
+  },
+  {
+   "title": "GitHub Docs: REST API endpoints for rules",
+   "url": "https://docs.github.com/en/rest/orgs/rules",
+   "date": "2026-11-26"
+  },
+  {
+   "title": "GitHub Docs: Best practices for using the REST API",
+   "url": "https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api",
+   "date": "2026-11-26"
+  },
+  {
+   "title": "GitHub Docs: Rate limits for the REST API",
+   "url": "https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api",
+   "date": "2026-11-26"
+  }
+ ],
+ "quality": "A ruleset on every repo requires a pull request and blocks force pushes and deletion.",
+ "speed": "One read of these settings finishes in seconds.",
+ "consumption": "One read spends a hundredth of the workflow token's hourly requests."
+}
