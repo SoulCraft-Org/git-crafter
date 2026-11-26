@@ -1,0 +1,33 @@
+{
+ "ideal": "The account's personal email stays private, and no public commit shows it.",
+ "sources": [
+  {
+   "title": "GitHub Docs: Setting your commit email address",
+   "url": "https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-email-preferences/setting-your-commit-email-address",
+   "date": "2026-11-26"
+  },
+  {
+   "title": "GitHub Docs: Blocking command line pushes that expose your personal email address",
+   "url": "https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-email-preferences/blocking-command-line-pushes-that-expose-your-personal-email-address",
+   "date": "2026-11-26"
+  },
+  {
+   "title": "GitHub Docs: REST API endpoints for emails",
+   "url": "https://docs.github.com/en/rest/users/emails",
+   "date": "2026-11-26"
+  },
+  {
+   "title": "GitHub Docs: Best practices for using the REST API",
+   "url": "https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api",
+   "date": "2026-11-26"
+  },
+  {
+   "title": "GitHub Docs: Rate limits for the REST API",
+   "url": "https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api",
+   "date": "2026-11-26"
+  }
+ ],
+ "quality": "The primary email is private, and no recent public commit has a personal author email.",
+ "speed": "One read of these settings finishes in seconds.",
+ "consumption": "One read spends a hundredth of the workflow token's hourly requests."
+}

@@ -1,0 +1,18 @@
+{
+ "email_privacy.primary_private": {
+  "value": 1,
+  "source": "sample: state: gh api user/emails: visibility of the primary address"
+ },
+ "email_privacy.personal_commit_emails": {
+  "value": 1,
+  "source": "sample: last 100 events: gh api search/commits?q=author:octo-user, newest first; distinct author emails other than GitHub noreply, a count; 4 commits"
+ },
+ "email_privacy.read_seconds": {
+  "value": 0,
+  "source": "sample: wall time of this collector, user octo-user"
+ },
+ "email_privacy.requests": {
+  "value": 3,
+  "source": "sample: gh api requests this collector made, one per page, user octo-user"
+ }
+}
