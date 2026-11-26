@@ -189,8 +189,9 @@ async function actionMetric({ root, exec, now, ageDays, params, repo, rule, read
 // so a pack pin drifts until someone moves it (.claude/skills/bump-pins).
 async function packMetric({ root, exec, now, ageDays, params, rule, readAt }) {
   const id = 'tools.packs_latest_share';
-  const { file, pins } = packPins(root, params.config_file);
+  const { file, pins, missing } = packPins(root, params.config_file);
   const packSource = `owner/repo@<sha> entries of ${file ?? 'the Quality config'} "packs" against gh api repos/<owner>/<repo>/releases (${rule}) and the release tag's commit`;
+  if (missing) return { [id]: cnc(`params.config_file names ${file}, which is not there`, packSource) };
   if (!file) return { [id]: cnc('no Quality config found (params.config_file, else quality/config.json or config/quality.json)', packSource) };
   if (!pins.length) return { [id]: cnc(`no owner/repo@<sha> pack in ${file}`, packSource) };
   const rows = await mapLimit(pins, READS, (p) => readPin(p, { exec, now, ageDays, root }));

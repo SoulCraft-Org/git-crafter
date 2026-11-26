@@ -238,15 +238,18 @@ export function actionPins(root) {
 // Where a repo keeps its Quality config when params.config_file names none.
 export const CONFIG_FILES = ['quality/config.json', 'config/quality.json'];
 
-// The Quality config's pinned packs, as actionPins gives a pin: { file, pins }.
-// The config is params.config_file, else the first default path that exists;
-// file is null when none does. Local folders and level: entries are left out.
+// The Quality config's pinned packs, as actionPins gives a pin: { file, pins, missing }.
+// The config is params.config_file, else the first default path that exists.
+// A named file that is not there is missing, never swapped for a default;
+// file is null when no default exists. Local folders and level: entries are left out.
 export function packPins(root, configFile) {
-  const file = [configFile, ...CONFIG_FILES].find((f) => f && fs.existsSync(path.join(root, f)));
+  const at = (f) => path.resolve(root, f);
+  if (configFile && !fs.existsSync(at(configFile))) return { file: configFile, pins: [], missing: true };
+  const file = configFile || CONFIG_FILES.find((f) => fs.existsSync(at(f))) || null;
   if (!file) return { file: null, pins: [] };
-  const packs = JSON.parse(fs.readFileSync(path.join(root, file), 'utf8')).packs ?? [];
+  const packs = JSON.parse(fs.readFileSync(at(file), 'utf8')).packs ?? [];
   const pins = (Array.isArray(packs) ? packs : [])
-    .map((s) => /^([\w.-]+)\/([\w.-]+)@([0-9a-f]{40})$/.exec(String(s)))
+    .map((s) => /^(?!\.)([\w.-]+)\/(?!\.)([\w.-]+)@([0-9a-f]{40})$/.exec(String(s)))
     .filter(Boolean)
     .map((m) => ({ owner: m[1], repo: m[2], path: '', ref: m[3], files: [file] }));
   return { file, pins };

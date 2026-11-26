@@ -230,8 +230,14 @@ test('pack pins: params.config_file first, then the default paths; none found re
     assert.deepEqual(packPins(dir).pins.map((p) => `${p.owner}/${p.repo}@${p.ref.slice(0, 2)}`), ['acme/kit@ee'], 'a tag is refused by the engine, so it is not a pin here');
     fs.writeFileSync(path.join(dir, 'mine.json'), JSON.stringify({ packs: [] }));
     assert.equal(packPins(dir, 'mine.json').file, 'mine.json');
+    assert.deepEqual(packPins(dir, 'gone.json'), { file: 'gone.json', pins: [], missing: true }, 'a named file is never swapped for a default');
+    assert.equal(packPins(dir, path.join(dir, 'mine.json')).file, path.join(dir, 'mine.json'), 'an absolute path reads as itself');
+    fs.writeFileSync(path.join(dir, 'dots.json'), JSON.stringify({ packs: [`../kit@${'e'.repeat(40)}`, `acme/.x@${'e'.repeat(40)}`] }));
+    assert.deepEqual(packPins(dir, 'dots.json').pins, [], 'an owner or repo that starts with a dot is refused, as packs.mjs refuses it');
     const none = await collect({ ...base, root: dir, exec: fakeExec(), params: { ...params, config_file: 'mine.json' } });
     assert.match(none['tools.packs_latest_share'].could_not_check, /no owner\/repo@<sha> pack in mine.json/);
+    const gone = await collect({ ...base, root: dir, exec: fakeExec(), params: { ...params, config_file: 'gone.json' } });
+    assert.match(gone['tools.packs_latest_share'].could_not_check, /names gone.json, which is not there/);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
