@@ -23,7 +23,7 @@ Both pages are public.
 | Step | Do |
 |---|---|
 | 1 | Run the block; set `ci.yml`'s `paths`, `short`, `standard`; `pages.yml`'s doc globs; process config's `repos`, `repo_url`, `heading`; drop unused tabs ([ci](templates/ci/README.md), [process](templates/process/README.md)) |
-| 2 | Ruleset on `main` requiring `ci / ci-ok` |
+| 2 | Ruleset on `main` requiring `ci / ci-ok`. The owner saves it, since GitHub asks for their passkey |
 | 3 | Settings, Pages: source "GitHub Actions". Push: pages at `https://<owner>.github.io/<repo>/` and `.../quality/` |
 
 ```bash
@@ -35,6 +35,13 @@ cp -n $GC/templates/ci/ci.yml $GC/templates/ci/pages.yml .github/workflows/
 cp -n $GC/templates/ci/dependabot.yml .github/dependabot.yml
 python3 -I $GC/tools/ci_standard.py check --repo .
 ```
+
+| Lesson | Do instead |
+|---|---|
+| A Claude cloud session refuses GraphQL, so `gh pr` and `gh project` fail | `gh api` REST, or the GitHub MCP tools |
+| The cloud proxy refuses commit status writes (HTTP 403) | Post `Review: MERGE at <sha>`, then merge with that SHA as the guard ([cloud merge](skills/merging/cloud.md)) |
+| A ruleset save asks for a passkey | The owner saves it in the browser |
+| Dependabot never reads `packs` in the Quality config | Move them with [bump-pins](.claude/skills/bump-pins/SKILL.md). `tools.packs_latest_share` flags one behind |
 
 More: [open](templates/open/README.md), [setup.json](templates/setup.json), [agents](templates/agents/README.md), [projects](templates/projects/README.md).
 
