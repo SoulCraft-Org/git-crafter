@@ -166,7 +166,8 @@ def dropped(data):
     rules = set(deny_list(data))
     out = []
     for d in data.get("dropped", []):
-        out += [d["deny"]] if d.get("deny") and d["deny"] not in out and d["deny"] not in rules else []
+        deny = d.get("deny") if isinstance(d, dict) else None
+        out += [deny] if isinstance(deny, str) and deny and deny not in out and deny not in rules else []
     return out
 
 
@@ -174,6 +175,9 @@ def dropped_problems(data, rules):
     """A dropped entry with no deny, by or why, a malformed pattern, one still listed, or one whose unblocks example is still blocked."""
     out = []
     for d in data.get("dropped", []):
+        if not (isinstance(d, dict) and isinstance(d.get("deny"), str)):
+            out.append("dropped entry %r: needs an object with a deny string" % (d,))
+            continue
         out += [] if d.get("deny") and d.get("by") and d.get("why") else ["dropped %r: needs deny, by and why" % d.get("deny")]
         out += [p for p in [pattern_problem(d.get("deny", ""))] if p]
         out += ["dropped %s is still a deny rule" % d["deny"]] if d.get("deny") in rules else []
@@ -328,7 +332,7 @@ def main(argv):
         return 2
     try:
         return COMMANDS[shape](load(), *argv[1:2])
-    except (OSError, ValueError, KeyError) as e:
+    except (OSError, ValueError, KeyError, AttributeError, TypeError) as e:
         print("claude_deny: %s" % e, file=sys.stderr)
         return 2
 
