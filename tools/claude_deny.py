@@ -320,6 +320,24 @@ def own(settings, data):
     return [r for r in have(settings) if r not in known]
 
 
+def rewritten(settings, add, cut, fix):
+    """A settings file's deny list without the dropped rules, with each inert rule fixed and the missing ones added, each once."""
+    out = []
+    for r in [fix.get(r, r) for r in have(settings) if r not in cut] + add:
+        out += [] if r in out else [r]
+    return out
+
+
+def write_settings(path, settings):
+    """Write a settings file through a temporary file renamed into place, keeping its mode."""
+    import tempfile
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(path)), prefix=".settings-")
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(json.dumps(settings, indent=2, ensure_ascii=False) + "\n")
+    os.chmod(tmp, os.stat(path).st_mode & 0o777)
+    os.replace(tmp, path)
+
+
 def merge(path, data, write):
     """Print the missing and dropped rules; with write add the missing ones and remove the dropped ones."""
     settings = read_settings(path)
@@ -332,20 +350,11 @@ def merge(path, data, write):
     for r, f in fix.items():
         print("replace %s with %s (Claude Code never matches it)" % (r, f))
     if write and (add or cut or fix):
-        import tempfile
-        perms = settings.setdefault("permissions", {})
-        kept = []
-        for r in [fix.get(r, r) for r in have(settings) if r not in cut] + add:
-            kept += [] if r in kept else [r]
-        perms["deny"] = kept
-        fd, tmp = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(path)), prefix=".settings-")
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            f.write(json.dumps(settings, indent=2, ensure_ascii=False) + "\n")
-        os.chmod(tmp, os.stat(path).st_mode & 0o777)
-        os.replace(tmp, path)
+        settings.setdefault("permissions", {})["deny"] = rewritten(settings, add, cut, fix)
+        write_settings(path, settings)
+    done = ("added", "removed", "replaced") if write else ("to add", "to remove", "to replace (pass --yes to write)")
     print("%d of %d rules %s, %d dropped rules %s, %d inert rules %s"
-          % (len(add), len(rules), "added" if write else "to add", len(cut), "removed" if write else "to remove",
-             len(fix), "replaced" if write else "to replace (pass --yes to write)"))
+          % (len(add), len(rules), done[0], len(cut), done[1], len(fix), done[2]))
     return 0
 
 
