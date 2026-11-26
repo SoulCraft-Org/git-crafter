@@ -1,0 +1,7 @@
+{
+ "orgs/octo-org": { "login": "octo-org", "two_factor_requirement_enabled": true, "default_repository_permission": "read" },
+ "orgs/octo-org/code-security/configurations/defaults": [
+  { "default_for_new_repos": "public", "configuration": { "id": 1, "name": "GitHub recommended" } },
+  { "default_for_new_repos": "private_and_internal", "configuration": { "id": 2, "name": "Private repos" } }
+ ]
+}
