@@ -5,6 +5,7 @@ Instructions for every coding agent in this repo. OpenCode reads this file, and 
 | Topic | Rule |
 | --- | --- |
 | What this repo is | Rules, templates and guards for repos that AI agents run |
+| Auto-merge | On by default (#586), after CI and a review at the head commit. Fix any text that says it stays off |
 | Build and test | Locally, one test file only: `node --test tests/<file>.test.mjs` or `python3 -I tools/<tool>.py --self-test`. Every check (`bash tools/verify.sh`) runs in CI through `.github/workflows/verify.yml` |
 | Where a change goes | The first table in `CONTRIBUTING.md` |
 | Shipping | Branch, commit with `git commit -s`, push, and open a draft pull request from `.github/PULL_REQUEST_TEMPLATE.md`: a facts table, `Closes #n` or `Card: PVTI_id` on its own line, 50 prose words or fewer. Never push to `main`. A merge waits for green CI and a review at the head commit, and names the head SHA as its guard (`skills/merging`) |

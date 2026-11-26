@@ -1,6 +1,6 @@
 # Git Crafter
 
-Templates for AI agents to run an open-source or open-weight repo with Claude Code or OpenCode.
+Templates for AI agents to build, review and merge a repo on their own, from the owner's vision, with Claude Code or OpenCode.
 
 | License | Publisher | Began as |
 |---|---|---|
@@ -14,8 +14,6 @@ Templates for AI agents to run an open-source or open-weight repo with Claude Co
 | [Process page](https://soulcraft-org.github.io/git-crafter/) | Process maps: each step's tool, rule and metric |
 | [CI standard](templates/ci/README.md) | One reusable workflow on GitHub's standard hosted runners |
 | [Rules](rules/) and [guards](tools/) | What Claude sessions may do, and the `permissions.deny` list and hookify rules that block one-way doors |
-
-Both pages are public.
 
 
 ## Quickstart: 3 steps
@@ -49,7 +47,7 @@ More: [cloud](skills/merging/cloud.md#lessons), [open](templates/open/README.md)
 | `code` `documentation` `issues` `pull-requests` `discussions` `actions` `projects` `security` `dependabot` `scanning` `insights` `settings` | On |
 | `pages` | Off: it scores a site, so a repo's config turns it on |
 
-What each measures, and which to drop: [templates/quality](templates/quality/README.md).
+Each tab: [templates/quality](templates/quality/README.md).
 
 ## The maps
 
