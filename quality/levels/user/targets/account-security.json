@@ -1,0 +1,70 @@
+[
+ {
+  "id": "account_security.two_factor_on",
+  "tab": "account-security",
+  "kind": "quality",
+  "group": "Sign-in",
+  "label": "Two-factor authentication",
+  "means": "Whether the signed-in account has two-factor authentication on.",
+  "unit": "on/off",
+  "goal": 1,
+  "near": 0.5,
+  "direction": "higher",
+  "goal_source": "GitHub Docs, Configuring two-factor authentication (https://docs.github.com/en/authentication/securing-your-account-with-two-factor-authentication-2fa/configuring-two-factor-authentication, read 2026-11-26)",
+  "source": "state: gh api user: two_factor_authentication, which GitHub returns to the account itself only",
+  "needs": "gh",
+  "chart": "number",
+  "params": {
+   "comment": "owner: the GitHub user read; empty means the signed-in user. Private settings answer only the signed-in user.",
+   "owner": ""
+  }
+ },
+ {
+  "id": "account_security.signing_keys",
+  "tab": "account-security",
+  "kind": "quality",
+  "group": "Signing",
+  "label": "Commit signing keys",
+  "means": "GPG keys and SSH signing keys on the account, so its commits can show Verified.",
+  "unit": "keys",
+  "goal": 1,
+  "near": 0.5,
+  "direction": "higher",
+  "goal_source": "GitHub Docs, About commit signature verification (https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification, read 2026-11-26); template goal: at least one key",
+  "source": "state: gh api users/<login>/gpg_keys and users/<login>/ssh_signing_keys, public lists that need no scope",
+  "needs": "gh",
+  "chart": "table"
+ },
+ {
+  "id": "account_security.read_seconds",
+  "tab": "account-security",
+  "kind": "speed",
+  "group": "Read",
+  "label": "One read",
+  "means": "Seconds this tab's collector takes to read the account's security settings.",
+  "unit": "s",
+  "goal": 10,
+  "near": 30,
+  "direction": "lower",
+  "goal_source": "GitHub Docs, Best practices for using the REST API (https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api, read 2026-11-26), asks for serial requests; template goal: a few serial reads finish in seconds",
+  "source": "wall time of this tab's collector, first request to last",
+  "needs": "gh",
+  "chart": "number"
+ },
+ {
+  "id": "account_security.requests",
+  "tab": "account-security",
+  "kind": "consumption",
+  "group": "Read",
+  "label": "API requests per read",
+  "means": "gh api requests one read of the account's security settings spends.",
+  "unit": "requests",
+  "goal": 10,
+  "near": 25,
+  "direction": "lower",
+  "goal_source": "GitHub Docs, Rate limits for the REST API (https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api, read 2026-11-26): GITHUB_TOKEN gets 1,000 requests per hour per repository; template goal: one read spends a hundredth of that",
+  "source": "gh api requests this tab's collector made, one per page",
+  "needs": "gh",
+  "chart": "number"
+ }
+]

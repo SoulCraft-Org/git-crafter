@@ -1,0 +1,30 @@
+{
+ "account_security.two_factor_on": {
+  "value": 1,
+  "source": "sample: state: gh api user: two_factor_authentication"
+ },
+ "account_security.signing_keys": {
+  "value": 3,
+  "detail": [
+   {
+    "label": "GPG keys",
+    "value": 1,
+    "unit": "keys"
+   },
+   {
+    "label": "SSH signing keys",
+    "value": 2,
+    "unit": "keys"
+   }
+  ],
+  "source": "sample: state: gh api users/octo-user/gpg_keys and users/octo-user/ssh_signing_keys"
+ },
+ "account_security.read_seconds": {
+  "value": 0,
+  "source": "sample: wall time of this collector, user octo-user"
+ },
+ "account_security.requests": {
+  "value": 3,
+  "source": "sample: gh api requests this collector made, one per page, user octo-user"
+ }
+}
