@@ -235,10 +235,12 @@ export function actionPins(root) {
   return [...pins.values()];
 }
 
+// Where a repo keeps its Quality config when params.config_file names none.
+export const CONFIG_FILES = ['quality/config.json', 'config/quality.json'];
+
 // The Quality config's pinned packs, as actionPins gives a pin: { file, pins }.
 // The config is params.config_file, else the first default path that exists;
 // file is null when none does. Local folders and level: entries are left out.
-export const CONFIG_FILES = ['quality/config.json', 'config/quality.json'];
 export function packPins(root, configFile) {
   const file = [configFile, ...CONFIG_FILES].find((f) => f && fs.existsSync(path.join(root, f)));
   if (!file) return { file: null, pins: [] };
