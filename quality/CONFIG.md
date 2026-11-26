@@ -33,7 +33,7 @@ A pack adds another repo's Quality tabs and Process maps ([`packs.mjs`](packs.mj
 | `"owner/repo@<40-hex sha>"` | `actions/pages` fetches that commit ([`pack-checkouts.mjs`](pack-checkouts.mjs)) |
 | a tag, branch or short SHA | refused: each can move |
 | a folder path | `--local` runs only |
-| `level:<level>` | built in |
+| `level:<level>` | built in [tabs](levels/README.md) |
 
 | Pack file | Adds |
 | --- | --- |
